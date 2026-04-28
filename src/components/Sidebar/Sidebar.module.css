@@ -15,14 +15,13 @@
 .logoContainer {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
   margin-bottom: 4rem;
-  padding-left: 0.75rem;
 }
 
 .logoIcon {
-  width: 42px;
-  height: 42px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;

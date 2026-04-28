@@ -33,7 +33,6 @@ export default function Sidebar() {
         <div className={styles.logoIcon}>
           <img src="/asthros-leads.png" alt="Asthros Logo" className={styles.logoImg} />
         </div>
-        <span className={styles.logoText}>Asthros</span>
       </div>
 
       <nav className={styles.nav}>
