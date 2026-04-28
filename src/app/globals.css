@@ -1,5 +1,5 @@
 :root {
-  /* Modern DeFi Sleek Palette */
+  /* Modern DeFi Sleek Palette - Refined */
   --background: #030303;
   --foreground: #FCFCFC;
   
@@ -11,15 +11,18 @@
   
   --secondary: #1a1a1a;
   --muted: #B5B5B5;
-  --muted-foreground: #8a8a8a;
+  --muted-foreground: #666666;
   
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.06);
   --accent: #56D7FD;
   
-  --radius: 1.25rem;
+  --radius-lg: 1.5rem;
+  --radius-md: 1rem;
+  --radius-sm: 0.5rem;
   
-  /* Fonts */
-  --font-main: var(--font-outfit), sans-serif;
+  /* Fonts - Modern Pair */
+  --font-main: var(--font-jakarta), sans-serif;
+  --font-data: var(--font-inter), sans-serif;
 }
 
 * {
@@ -36,53 +39,46 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   position: relative;
+  letter-spacing: -0.01em;
 }
 
-/* Grainy Texture Overlay */
+/* Enhanced Grainy Texture */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 1000;
   pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 10px;
-}
-
-/* Typography */
-h1, h2, h3, h4 {
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* Glassmorphism Refined */
 .glass {
-  background: rgba(17, 43, 51, 0.4);
-  backdrop-filter: blur(12px);
+  background: rgba(17, 43, 51, 0.3);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 }
 
-/* Layout Utilities */
-.container-wide {
-  max-width: 1440px;
-  margin: 0 auto;
-  width: 100%;
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
-/* Transitions */
-.smooth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+button {
+  font-family: var(--font-main);
 }
