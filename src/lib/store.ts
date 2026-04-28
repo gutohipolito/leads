@@ -79,6 +79,8 @@ export const mockApiKeys: ApiKey[] = [
 export const mockSecurityEvents: SecurityEvent[] = [
   { id: '1', type: 'access', description: 'Novo login detectado: Administrador (IP: 189.12.43.10)', timestamp: '2026-04-28 15:45', severity: 'low' },
   { id: '2', type: 'threat', description: 'Bloqueio de IP por múltiplas requisições: 45.23.11.201', timestamp: '2026-04-28 14:20', severity: 'high' },
+];
+
 export interface SystemUser {
   id: string;
   name: string;

@@ -224,12 +224,18 @@
 }
 
 .inputGroup input, .inputGroup select {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.85rem 1rem;
   border-radius: 0.75rem;
   color: white;
   font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.inputGroup select option {
+  background: #121212;
+  color: white;
 }
 
 .inputGroup input:focus {
@@ -260,4 +266,37 @@
   border-radius: 0.75rem;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.submitBtn:hover {
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.4);
+  transform: translateY(-1px);
+}
+
+.deleteBtn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.deleteBtn:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.dangerIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
 }
