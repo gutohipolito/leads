@@ -1,0 +1,227 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.backNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: white;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.filterBtn, .downloadBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: hsl(var(--muted-foreground));
+}
+
+.filterBtn:hover {
+  border-color: white;
+  color: white;
+}
+
+.downloadBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: white;
+}
+
+.downloadBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.statsSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.miniCard {
+  padding: var(--space-6);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.miniCard span {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.miniCard h2 {
+  font-size: 1.75rem;
+  color: white;
+}
+
+.activeStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: #10b981;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.leadsList {
+  padding: var(--space-6);
+  border-radius: var(--radius);
+}
+
+.cardHeader {
+  margin-bottom: var(--space-6);
+}
+
+.cardHeader h3 {
+  color: white;
+}
+
+.leadsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.leadRow {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 1fr 1fr;
+  align-items: center;
+  padding: var(--space-4);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  transition: all 0.2s;
+  animation: fadeIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.leadRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateX(4px);
+}
+
+.leadMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.leadAvatar {
+  width: 40px;
+  height: 40px;
+  background: var(--secondary);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: hsl(var(--primary));
+}
+
+.leadInfo h4 {
+  color: white;
+  font-size: 1rem;
+}
+
+.leadInfo span {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.leadContact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contactItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.contactItem svg {
+  color: hsl(var(--primary));
+}
+
+.leadDate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.detailsBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: white;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.detailsBtn:hover {
+  background: white;
+  color: black;
+}
+
+.emptyState {
+  padding: var(--space-12);
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}

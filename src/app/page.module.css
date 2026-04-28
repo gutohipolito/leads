@@ -1,0 +1,189 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-6);
+}
+
+.statCard {
+  padding: var(--space-6);
+  border-radius: var(--radius);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.statTitle {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.statValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.statTrend {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+}
+
+@media (max-width: 1200px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mainCard, .sideCard {
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardHeader h3 {
+  font-size: 1.1rem;
+  color: white;
+}
+
+.viewAllBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: hsl(var(--muted-foreground));
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewAllBtn:hover {
+  border-color: hsl(var(--primary));
+  color: white;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th {
+  padding: var(--space-4);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  font-weight: 600;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.table td {
+  padding: var(--space-4);
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.clientBadge {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.statusBadge {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.actionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: hsl(var(--primary));
+}
+
+.actionIcon {
+  width: 40px;
+  height: 40px;
+  background: var(--background);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--primary));
+}

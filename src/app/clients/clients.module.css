@@ -1,0 +1,220 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.topActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.search {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  height: 42px;
+  width: 300px;
+  gap: var(--space-2);
+  color: hsl(var(--muted-foreground));
+}
+
+.search input {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.addBtn {
+  background: hsl(var(--primary));
+  color: white;
+  border: none;
+  padding: 0 var(--space-6);
+  height: 42px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addBtn:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--space-6);
+}
+
+.clientCard {
+  padding: var(--space-6);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.clientAvatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, hsl(var(--primary)), #8b5cf6);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+
+.clientInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.clientInfo h4 {
+  color: white;
+  font-size: 1.1rem;
+}
+
+.clientInfo span {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+}
+
+.moreBtn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+
+.cardStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.value {
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.statusBadge {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.webhookBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.webhookLabel {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.webhookInput {
+  display: flex;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.webhookInput input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.webhookInput button {
+  background: var(--secondary);
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 0 var(--space-3);
+  color: white;
+  cursor: pointer;
+}
+
+.cardActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.viewBtn, .editBtn {
+  padding: var(--space-2);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewBtn {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.viewBtn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.editBtn {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: 1px solid var(--border);
+}
+
+.editBtn:hover {
+  border-color: white;
+  color: white;
+}

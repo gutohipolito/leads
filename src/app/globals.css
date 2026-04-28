@@ -1,0 +1,104 @@
+:root {
+  /* Color Palette - Premium Dark */
+  --background: 220 33% 4%;
+  --foreground: 210 20% 98%;
+  
+  --card: 220 33% 6%;
+  --card-foreground: 210 20% 98%;
+  
+  --popover: 220 33% 6%;
+  --popover-foreground: 210 20% 98%;
+  
+  --primary: 217 91% 60%;
+  --primary-foreground: 210 20% 98%;
+  
+  --secondary: 220 15% 15%;
+  --secondary-foreground: 210 20% 98%;
+  
+  --muted: 220 15% 15%;
+  --muted-foreground: 215 20% 65%;
+  
+  --accent: 217 91% 60%;
+  --accent-foreground: 210 20% 98%;
+  
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 20% 98%;
+  
+  --border: 220 15% 15%;
+  --input: 220 15% 15%;
+  --ring: 217 91% 60%;
+  
+  --radius: 0.75rem;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(10, 12, 16, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(12px);
+  
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-outfit), sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar Style */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--secondary));
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
