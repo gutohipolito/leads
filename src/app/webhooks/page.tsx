@@ -39,7 +39,7 @@ export default function WebhooksPage() {
   };
 
   return (
-    <DashboardLayout title="Webhook Simulator">
+    <DashboardLayout title="Simulador de Webhook">
       <div className={styles.container}>
         
         {/* Configuration Card */}
@@ -48,15 +48,15 @@ export default function WebhooksPage() {
             <div className={styles.headerInfo}>
               <div className={styles.iconCircle}><Cpu size={20} /></div>
               <div>
-                <h3>Signal Injection</h3>
-                <p>Test your capture endpoints with custom payloads.</p>
+                <h3>Injeção de Sinal</h3>
+                <p>Teste seus endpoints de captura com payloads personalizados.</p>
               </div>
             </div>
           </div>
 
           <form className={styles.form} onSubmit={simulateWebhook}>
             <div className={styles.fieldGroup}>
-              <label>Select Target Entity</label>
+              <label>Selecionar Cliente Alvo</label>
               <select 
                 value={selectedClient} 
                 onChange={(e) => setSelectedClient(e.target.value)}
@@ -71,7 +71,7 @@ export default function WebhooksPage() {
             <div className={styles.activeEndpoint}>
               <div className={styles.endpointLabel}>
                 <LinkIcon size={14} />
-                <span>Uplink URL</span>
+                <span>URL de Uplink</span>
               </div>
               <div className={styles.codeBox}>
                 <code>{client?.webhookUrl}</code>
@@ -83,20 +83,20 @@ export default function WebhooksPage() {
 
             <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label>Lead Name</label>
-                <input type="text" name="name" className={styles.input} placeholder="e.g. John Doe" required />
+                <label>Nome do Lead</label>
+                <input type="text" name="name" className={styles.input} placeholder="ex: João Silva" required />
               </div>
               <div className={styles.fieldGroup}>
-                <label>Email Frequency</label>
+                <label>E-mail</label>
                 <input type="email" name="email" className={styles.input} placeholder="john@example.com" required />
               </div>
               <div className={styles.fieldGroup}>
-                <label>Phone Vector</label>
+                <label>Telefone</label>
                 <input type="text" name="phone" className={styles.input} placeholder="+1 (555) 000-0000" />
               </div>
               <div className={styles.fieldGroup}>
-                <label>Custom Data Payload</label>
-                <textarea name="message" className={styles.textarea} placeholder="Inject additional JSON or text..." rows={3} />
+                <label>Payload de Dados Personalizados</label>
+                <textarea name="message" className={styles.textarea} placeholder="Injetar JSON ou texto adicional..." rows={3} />
               </div>
             </div>
 
@@ -106,7 +106,7 @@ export default function WebhooksPage() {
               disabled={status === 'loading'}
             >
               <Zap size={18} fill={status === 'loading' ? 'none' : 'currentColor'} />
-              <span>{status === 'loading' ? 'PROCESSING...' : 'EXECUTE UPLINK'}</span>
+              <span>{status === 'loading' ? 'PROCESSANDO...' : 'EXECUTAR UPLINK'}</span>
             </button>
           </form>
         </section>
@@ -117,8 +117,8 @@ export default function WebhooksPage() {
             <div className={styles.headerInfo}>
               <div className={styles.iconCircle}><Terminal size={20} /></div>
               <div>
-                <h3>System Response</h3>
-                <p>Uplink logs and server status codes.</p>
+                <h3>Resposta do Sistema</h3>
+                <p>Logs de uplink e códigos de status do servidor.</p>
               </div>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function WebhooksPage() {
             {status === 'idle' && (
               <div className={styles.idleState}>
                 <Database size={48} strokeWidth={1} />
-                <p>Waiting for command execution...</p>
+                <p>Aguardando execução do comando...</p>
               </div>
             )}
             
@@ -135,11 +135,11 @@ export default function WebhooksPage() {
               <div className={styles.logBox}>
                 <div className={`${styles.statusBadge} ${styles[status]}`}>
                   {status === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                  <span>SIGNAL: {status === 'success' ? '201 CREATED' : '400 BAD REQUEST'}</span>
+                  <span>SINAL: {status === 'success' ? '201 CRIADO' : '400 REQUISIÇÃO INVÁLIDA'}</span>
                 </div>
                 <div className={styles.jsonWrapper}>
                   <div className={styles.jsonHeader}>
-                    <span>Payload Details</span>
+                    <span>Detalhes do Payload</span>
                     <span className={styles.lang}>JSON</span>
                   </div>
                   <pre>{response}</pre>

@@ -23,8 +23,8 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: 'Geral', path: '/', icon: LayoutDashboard },
-    { name: 'Entidades', path: '/clients', icon: Users },
-    { name: 'Uplink Test', path: '/webhooks', icon: Terminal },
+    { name: 'Clientes', path: '/clients', icon: Users },
+    { name: 'Teste de Uplink', path: '/webhooks', icon: Terminal },
   ];
 
   return (

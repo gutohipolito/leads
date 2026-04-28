@@ -20,7 +20,7 @@ export default function Home() {
           <div className={`${styles.statCard} glass`}>
             <div className={styles.statIcon}><Users size={20} /></div>
             <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Entidades Ativas</span>
+              <span className={styles.statLabel}>Clientes Ativos</span>
               <h2 className={styles.statValue}>{mockClients.length}</h2>
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function Home() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Entidade</th>
+                    <th>Cliente</th>
                     <th>Lead</th>
                     <th>Origem</th>
                     <th>Status</th>

@@ -7,7 +7,7 @@ import { mockClients } from '@/lib/store';
 
 export default function ClientsPage() {
   return (
-    <DashboardLayout title="Protocolos de Entidades">
+    <DashboardLayout title="Gerenciamento de Clientes">
       <div className={styles.container}>
         <div className={styles.topBar}>
           <div className={styles.headerInfo}>
@@ -16,11 +16,11 @@ export default function ClientsPage() {
           <div className={styles.actions}>
             <div className={styles.searchBox}>
               <Search size={18} />
-              <input type="text" placeholder="Localizar entidade..." />
+              <input type="text" placeholder="Localizar cliente..." />
             </div>
             <button className={styles.addBtn}>
               <Plus size={20} />
-              <span>Nova Entidade</span>
+              <span>Novo Cliente</span>
             </button>
           </div>
         </div>
@@ -34,7 +34,7 @@ export default function ClientsPage() {
                 </div>
                 <div className={styles.info}>
                   <h4>{client.name}</h4>
-                  <span className={styles.date}>Created {client.createdAt}</span>
+                  <span className={styles.date}>Criado em {client.createdAt}</span>
                 </div>
                 <button className={styles.moreBtn}>
                   <MoreVertical size={18} />
@@ -45,30 +45,30 @@ export default function ClientsPage() {
                 <div className={styles.metricItem}>
                   <div className={styles.metricHeader}>
                     <UsersIcon size={14} />
-                    <span>Total Captures</span>
+                    <span>Total de Capturas</span>
                   </div>
                   <span className={styles.metricValue}>{client.leadsCount}</span>
                 </div>
                 <div className={styles.metricItem}>
                   <div className={styles.metricHeader}>
                     <ShieldCheck size={14} />
-                    <span>Signal Status</span>
+                    <span>Status do Sinal</span>
                   </div>
-                  <span className={styles.statusActive}>Active Uplink</span>
+                  <span className={styles.statusActive}>Uplink Ativo</span>
                 </div>
               </div>
 
               <div className={styles.webhookSection}>
                 <div className={styles.webhookHeader}>
                   <Clock size={14} />
-                  <span>Webhook Endpoint</span>
+                  <span>Endpoint do Webhook</span>
                 </div>
                 <div className={styles.urlDisplay}>
                   <code>{client.webhookUrl}</code>
                   <button 
                     className={styles.copyBtn} 
                     onClick={() => navigator.clipboard.writeText(client.webhookUrl)}
-                    title="Copy URL"
+                    title="Copiar URL"
                   >
                     <ExternalLink size={14} />
                   </button>

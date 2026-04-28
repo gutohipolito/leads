@@ -16,7 +16,7 @@ export default function Header({ title }: HeaderProps) {
       <div className={styles.right}>
         <div className={styles.searchBar}>
           <Search size={18} strokeWidth={2} />
-          <input type="text" placeholder="Search data..." />
+          <input type="text" placeholder="Pesquisar dados..." />
         </div>
         
         <div className={styles.actions}>
