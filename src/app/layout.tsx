@@ -4,7 +4,7 @@ import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-jakarta",
+  variable: "--font-plus-jakarta",
   weight: ["400", "500", "600", "700", "800"],
 });
 
@@ -24,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={`${plusJakarta.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={`${plusJakarta.variable} ${inter.variable}`}>
+      <body style={{ fontFamily: 'var(--font-plus-jakarta), sans-serif' }}>
         {children}
       </body>
     </html>

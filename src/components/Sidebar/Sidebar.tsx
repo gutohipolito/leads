@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -9,44 +9,36 @@ import {
   Webhook, 
   Settings, 
   LogOut, 
-  Zap, 
-  MoreHorizontal,
-  ChevronDown,
   Activity,
   Box,
-  Layers
+  Terminal,
+  ShieldCheck
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [isMoreOpen, setIsMoreOpen] = useState(true);
 
   const isActive = (path: string) => pathname === path;
 
   const menuItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Clientes', path: '/clients', icon: Users },
-    { name: 'Webhooks', path: '/webhooks', icon: Webhook },
-  ];
-
-  const toolsItems = [
-    { name: 'Rewards', path: '/rewards', icon: Zap },
-    { name: 'Activity', path: '/activity', icon: Activity },
+    { name: 'Geral', path: '/', icon: LayoutDashboard },
+    { name: 'Entidades', path: '/clients', icon: Users },
+    { name: 'Uplink Test', path: '/webhooks', icon: Terminal },
   ];
 
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logoContainer}>
         <div className={styles.logoIcon}>
-          <Box size={24} fill="currentColor" strokeWidth={1.5} />
+          <Box size={22} fill="currentColor" />
         </div>
         <span className={styles.logoText}>Ardentis</span>
       </div>
 
       <nav className={styles.nav}>
         <div className={styles.group}>
-          <span className={styles.groupLabel}>Main Menu</span>
+          <span className={styles.groupLabel}>Monitoramento</span>
           {menuItems.map((item) => (
             <Link 
               key={item.path} 
@@ -62,65 +54,39 @@ export default function Sidebar() {
         </div>
 
         <div className={styles.group}>
-          <span className={styles.groupLabel}>Optimization</span>
-          {toolsItems.map((item) => (
-            <Link 
-              key={item.path} 
-              href={item.path} 
-              className={`${styles.navLink} ${isActive(item.path) ? styles.active : ''}`}
-            >
-              <div className={styles.iconCircle}>
-                <item.icon size={18} />
-              </div>
-              <span className={styles.linkText}>{item.name}</span>
-            </Link>
-          ))}
-        </div>
-
-        <div className={styles.group}>
-          <button 
-            className={`${styles.navLink} ${isMoreOpen ? styles.activeGroup : ''}`}
-            onClick={() => setIsMoreOpen(!isMoreOpen)}
-          >
+          <span className={styles.groupLabel}>Sistema</span>
+          <Link href="/logs" className={styles.navLink}>
             <div className={styles.iconCircle}>
-              <Layers size={18} />
+              <Activity size={18} />
             </div>
-            <span className={styles.linkText}>Uplinks</span>
-            <ChevronDown size={14} className={`${styles.chevron} ${isMoreOpen ? styles.rotate : ''}`} />
-          </button>
-
-          {isMoreOpen && (
-            <div className={styles.subMenu}>
-              <Link href="/lock" className={styles.subLink}>
-                <div className={styles.subDot} />
-                <span>Security Node</span>
-              </Link>
-              <Link href="/liquidation" className={styles.subLink}>
-                <div className={styles.subDot} />
-                <span>Protocol Leak</span>
-              </Link>
-              <Link href="/audit" className={styles.subLink}>
-                <div className={styles.subDot} />
-                <span>Terminal Audit</span>
-              </Link>
+            <span className={styles.linkText}>Logs Globais</span>
+          </Link>
+          <Link href="/security" className={styles.navLink}>
+            <div className={styles.iconCircle}>
+              <ShieldCheck size={18} />
             </div>
-          )}
+            <span className={styles.linkText}>Segurança</span>
+          </Link>
+          <Link href="/settings" className={styles.navLink}>
+            <div className={styles.iconCircle}>
+              <Settings size={18} />
+            </div>
+            <span className={styles.linkText}>Configurações</span>
+          </Link>
         </div>
       </nav>
 
       <div className={styles.footer}>
-        <div className={styles.userSection}>
-          <div className={styles.userCard}>
-            <div className={styles.avatar}>
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ardentis" alt="Avatar" />
-            </div>
-            <div className={styles.userDetails}>
-              <p className={styles.userName}>Ethan Carter</p>
-              <p className={styles.userRole}>Security Engineer</p>
-            </div>
+        <div className={styles.userCard}>
+          <div className={styles.avatar}>
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Avatar" />
           </div>
-          <button className={styles.logoutBtn}>
-            <LogOut size={18} />
+          <div className={styles.userDetails}>
+            <p className={styles.userName}>Administrador</p>
+            <p className={styles.userRole}>Acesso Total</p>
+          </div>
+          <button className={styles.logoutBtn} title="Sair">
+            <LogOut size={16} />
           </button>
         </div>
       </div>

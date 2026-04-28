@@ -1,5 +1,5 @@
 :root {
-  /* Modern DeFi Sleek Palette - Refined */
+  /* Modern DeFi Sleek Palette - Ardentis Exact */
   --background: #030303;
   --foreground: #FCFCFC;
   
@@ -9,19 +9,19 @@
   --primary: #56D7FD;
   --primary-foreground: #030303;
   
-  --secondary: #1a1a1a;
-  --muted: #B5B5B5;
-  --muted-foreground: #666666;
+  --secondary: #0a0a0a;
+  --muted: #A0A0A0;
+  --muted-foreground: #606060;
   
-  --border: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.05);
   --accent: #56D7FD;
   
+  --radius-xl: 2rem;
   --radius-lg: 1.5rem;
   --radius-md: 1rem;
-  --radius-sm: 0.5rem;
   
-  /* Fonts - Modern Pair */
-  --font-main: var(--font-jakarta), sans-serif;
+  /* Fonts - Plus Jakarta Sans is the closest to the reference */
+  --font-main: var(--font-plus-jakarta), sans-serif;
   --font-data: var(--font-inter), sans-serif;
 }
 
@@ -34,12 +34,12 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-main);
+  font-family: var(--font-main) !important;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   position: relative;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 /* Enhanced Grainy Texture */
@@ -49,36 +49,27 @@ body::before {
   inset: 0;
   z-index: 1000;
   pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.07; /* Slightly more visible to ensure user sees it */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* Glassmorphism Refined */
 .glass {
-  background: rgba(17, 43, 51, 0.3);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: rgba(17, 43, 51, 0.2) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6) !important;
 }
 
 h1, h2, h3, h4 {
+  font-family: var(--font-main) !important;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 
 button {
-  font-family: var(--font-main);
+  font-family: var(--font-main) !important;
+  font-weight: 600;
 }
