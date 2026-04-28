@@ -14,13 +14,16 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: hsl(var(--muted-foreground));
-  font-size: 0.9rem;
+  color: rgba(0, 255, 255, 0.5);
+  font-family: var(--font-orbitron);
+  font-size: 0.75rem;
+  text-transform: uppercase;
   transition: color 0.2s;
 }
 
 .backLink:hover {
   color: white;
+  text-shadow: 0 0 8px var(--primary-glow);
 }
 
 .actions {
@@ -33,32 +36,19 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius);
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-family: var(--font-orbitron);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filterBtn {
   background: transparent;
-  border: 1px solid var(--border);
-  color: hsl(var(--muted-foreground));
+  border: 1px solid var(--border-dim);
+  color: hsl(var(--primary));
 }
 
-.filterBtn:hover {
-  border-color: white;
-  color: white;
-}
-
-.downloadBtn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
-  color: white;
-}
-
-.downloadBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+.filterBtn:hover, .downloadBtn:hover {
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 .statsSummary {
@@ -69,20 +59,22 @@
 
 .miniCard {
   padding: var(--space-6);
-  border-radius: var(--radius);
+  background: rgba(0, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
 }
 
 .miniCard span {
-  font-size: 0.8rem;
-  color: hsl(var(--muted-foreground));
+  font-family: var(--font-orbitron);
+  font-size: 0.65rem;
+  color: rgba(0, 255, 255, 0.5);
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .miniCard h2 {
+  font-family: var(--font-mono);
   font-size: 1.75rem;
   color: white;
 }
@@ -91,37 +83,40 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: #10b981;
-  font-weight: 600;
+  color: hsl(var(--primary));
+  font-family: var(--font-orbitron);
+  font-size: 0.7rem;
   margin-top: 4px;
 }
 
 .pulse {
-  width: 8px;
-  height: 8px;
-  background: #10b981;
+  width: 6px;
+  height: 6px;
+  background: hsl(var(--primary));
   border-radius: 50%;
-  box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
-  animation: pulse 2s infinite;
+  box-shadow: 0 0 10px hsl(var(--primary));
+  animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
 }
 
 .leadsList {
   padding: var(--space-6);
-  border-radius: var(--radius);
+  background: rgba(0, 10, 20, 0.4);
 }
 
 .cardHeader {
   margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: var(--space-2);
 }
 
 .cardHeader h3 {
-  color: white;
+  font-family: var(--font-orbitron);
+  font-size: 0.9rem;
 }
 
 .leadsGrid {
@@ -132,21 +127,25 @@
 
 .leadRow {
   display: grid;
-  grid-template-columns: 1.5fr 1.5fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1.5fr 0.8fr 0.8fr;
   align-items: center;
   padding: var(--space-4);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  transition: all 0.2s;
+  background: rgba(0, 255, 255, 0.02);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  transition: all 0.3s;
   animation: fadeIn 0.4s ease-out forwards;
   opacity: 0;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .leadRow:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(59, 130, 246, 0.3);
-  transform: translateX(4px);
+  background: rgba(0, 255, 255, 0.06);
+  border-color: hsl(var(--primary));
+  box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.1);
 }
 
 .leadMain {
@@ -156,25 +155,28 @@
 }
 
 .leadAvatar {
-  width: 40px;
-  height: 40px;
-  background: var(--secondary);
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid hsl(var(--primary));
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-orbitron);
   font-weight: 700;
   color: hsl(var(--primary));
+  background: rgba(0, 255, 255, 0.05);
 }
 
 .leadInfo h4 {
   color: white;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
 }
 
-.leadInfo span {
-  font-size: 0.75rem;
-  color: hsl(var(--muted-foreground));
+.idLabel {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgba(0, 255, 255, 0.4);
 }
 
 .leadContact {
@@ -187,41 +189,71 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.85rem;
-  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .contactItem svg {
   color: hsl(var(--primary));
 }
 
+.dynamicFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.fieldTag {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-dim);
+  padding: 2px 6px;
+  display: flex;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+}
+
+.fieldKey {
+  color: rgba(0, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.fieldValue {
+  color: white;
+}
+
 .leadDate {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.85rem;
-  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(0, 255, 255, 0.4);
 }
 
 .detailsBtn {
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-dim);
   color: white;
-  padding: var(--space-2) var(--space-4);
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-orbitron);
+  font-size: 0.65rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  text-transform: uppercase;
 }
 
 .detailsBtn:hover {
-  background: white;
+  background: hsl(var(--primary));
   color: black;
 }
 
 .emptyState {
   padding: var(--space-12);
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: rgba(0, 255, 255, 0.3);
+  font-family: var(--font-orbitron);
+  text-transform: uppercase;
+  font-size: 0.8rem;
 }

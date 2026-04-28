@@ -1,48 +1,28 @@
 :root {
-  /* Color Palette - Premium Dark */
-  --background: 220 33% 4%;
-  --foreground: 210 20% 98%;
+  /* Jarvis Aesthetic - Tech HUD Palette */
+  --background: 222 47% 2%;
+  --foreground: 180 100% 50%; /* Cyan Neon */
   
-  --card: 220 33% 6%;
-  --card-foreground: 210 20% 98%;
+  --card: 222 47% 4%;
+  --card-foreground: 180 100% 70%;
   
-  --popover: 220 33% 6%;
-  --popover-foreground: 210 20% 98%;
+  --primary: 180 100% 50%; /* Cyan Neon */
+  --primary-glow: rgba(0, 255, 255, 0.5);
   
-  --primary: 217 91% 60%;
-  --primary-foreground: 210 20% 98%;
+  --secondary: 222 47% 8%;
+  --accent: 200 100% 50%; /* Lighter Blue */
   
-  --secondary: 220 15% 15%;
-  --secondary-foreground: 210 20% 98%;
+  --muted: 222 20% 15%;
+  --muted-foreground: 222 20% 60%;
   
-  --muted: 220 15% 15%;
-  --muted-foreground: 215 20% 65%;
+  --border: 180 100% 50%;
+  --border-dim: rgba(0, 255, 255, 0.15);
   
-  --accent: 217 91% 60%;
-  --accent-foreground: 210 20% 98%;
+  --radius: 0; /* Square edges for tech feel */
   
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 20% 98%;
-  
-  --border: 220 15% 15%;
-  --input: 220 15% 15%;
-  --ring: 217 91% 60%;
-  
-  --radius: 0.75rem;
-  
-  /* Glassmorphism */
-  --glass-bg: rgba(10, 12, 16, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-blur: blur(12px);
-  
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-12: 3rem;
+  /* Jarvis Special Effects */
+  --hud-line: rgba(0, 255, 255, 0.1);
+  --scanning-line: rgba(0, 255, 255, 0.05);
 }
 
 * {
@@ -54,51 +34,122 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: var(--font-outfit), sans-serif;
+  font-family: 'Courier New', Courier, monospace; /* Monospace for tech vibe */
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  background-image: 
+    linear-gradient(var(--hud-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hud-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  position: relative;
 }
 
-/* Scrollbar Style */
+/* Scanning Line Animation */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes scan {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+
+/* Scrollbar Style - Minimalist Tech */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 10px;
+  background: var(--primary-glow);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--secondary));
-}
-
-/* Glassmorphism Utility */
+/* Glassmorphism - Tech Version */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: rgba(0, 20, 40, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-dim);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 255, 255, 0.03) 1px,
+    rgba(0, 255, 255, 0.03) 2px
+  );
+  pointer-events: none;
+}
+
+/* HUD Borders */
+.hud-border {
+  border: 1px solid var(--border-dim);
+  position: relative;
+}
+
+.hud-border::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid hsl(var(--primary));
+  border-left: 2px solid hsl(var(--primary));
+}
+
+.hud-border::before {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid hsl(var(--primary));
+  border-right: 2px solid hsl(var(--primary));
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 0 10px var(--primary-glow);
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Glitch Animation */
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+.animate-glitch:hover {
+  animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
 }

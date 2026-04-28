@@ -1,9 +1,9 @@
 .sidebar {
   width: 280px;
   height: 100vh;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-right: 1px solid var(--glass-border);
+  background: rgba(0, 15, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border-right: 2px solid var(--border-dim);
   display: flex;
   flex-direction: column;
   padding: var(--space-6);
@@ -11,36 +11,58 @@
   left: 0;
   top: 0;
   z-index: 100;
+  box-shadow: 10px 0 30px rgba(0, 255, 255, 0.05);
 }
 
 .logo {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-12);
-  padding-left: var(--space-2);
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: var(--space-6);
 }
 
 .logoIcon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, hsl(var(--primary)), #8b5cf6);
-  border-radius: 12px;
+  width: 60px;
+  height: 60px;
+  background: transparent;
+  border: 2px solid hsl(var(--primary));
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-orbitron);
   font-weight: 700;
-  font-size: 1.2rem;
-  color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  font-size: 1.5rem;
+  color: hsl(var(--primary));
+  box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px var(--primary-glow);
+  position: relative;
+}
+
+.logoIcon::after {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border: 1px dashed hsl(var(--primary));
+  border-radius: 50%;
+  animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .logoText {
-  font-size: 1.25rem;
+  font-family: var(--font-orbitron);
+  font-size: 1.1rem;
   font-weight: 700;
-  background: linear-gradient(to right, #fff, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .nav {
@@ -57,34 +79,37 @@
 }
 
 .sectionTitle {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.15em;
+  color: hsl(var(--primary));
   margin-bottom: var(--space-2);
-  padding-left: var(--space-3);
+  opacity: 0.6;
 }
 
 .navLink {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-3);
-  border-radius: var(--radius);
-  color: hsl(var(--muted-foreground));
-  transition: all 0.2s ease;
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-family: var(--font-orbitron);
 }
 
 .navLink:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: hsl(var(--foreground));
-  transform: translateX(4px);
+  color: hsl(var(--primary));
+  background: rgba(0, 255, 255, 0.05);
+  text-shadow: 0 0 8px var(--primary-glow);
+  padding-left: var(--space-6);
 }
 
 .navLink svg {
   color: hsl(var(--primary));
+  filter: drop-shadow(0 0 5px var(--primary-glow));
 }
 
 .clientList {
@@ -98,39 +123,27 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius);
-  color: hsl(var(--muted-foreground));
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
   transition: all 0.2s ease;
+  text-transform: uppercase;
 }
 
 .clientLink:hover {
+  color: white;
   background: rgba(255, 255, 255, 0.03);
-  color: hsl(var(--foreground));
 }
 
 .clientDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 4px;
+  height: 4px;
   background: hsl(var(--primary));
-  opacity: 0.6;
-}
-
-.chevron {
-  margin-left: auto;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.clientLink:hover .chevron {
-  opacity: 0.5;
+  box-shadow: 0 0 5px hsl(var(--primary));
 }
 
 .footer {
   margin-top: auto;
   padding-top: var(--space-6);
-  border-top: 1px solid var(--glass-border);
 }
 
 .logoutBtn {
@@ -140,15 +153,17 @@
   gap: var(--space-3);
   padding: var(--space-3);
   background: transparent;
-  border: none;
-  color: #ef4444;
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  color: #ff4444;
   cursor: pointer;
-  font-family: inherit;
-  font-weight: 500;
-  border-radius: var(--radius);
-  transition: background 0.2s ease;
+  font-family: var(--font-orbitron);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  transition: all 0.2s;
 }
 
 .logoutBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(255, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
 }
