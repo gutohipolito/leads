@@ -7,20 +7,40 @@
 .topBar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: 1.5rem;
 }
 
+@media (max-width: 900px) {
+  .topBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.subtitle {
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .searchBox {
-  background: rgba(0, 255, 255, 0.05);
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   padding: 0 1rem;
   height: 45px;
-  width: 400px;
+  width: 320px;
   gap: 0.75rem;
-  color: hsl(var(--primary));
+  color: var(--muted-foreground);
 }
 
 .searchBox input {
@@ -29,44 +49,42 @@
   color: white;
   width: 100%;
   outline: none;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-family: inherit;
+  font-size: 0.95rem;
 }
 
 .addBtn {
-  background: transparent;
-  border: 1px solid hsl(var(--primary));
-  color: hsl(var(--primary));
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
   padding: 0 1.5rem;
   height: 45px;
-  font-family: var(--font-orbitron);
-  font-size: 0.8rem;
+  border-radius: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .addBtn:hover {
-  background: rgba(0, 255, 255, 0.1);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
   transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(86, 215, 253, 0.4);
 }
 
 .clientGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 1.5rem;
 }
 
 .clientCard {
+  padding: 1.75rem !important;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 1.5rem !important;
 }
 
 .cardHeader {
@@ -76,33 +94,33 @@
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  background: rgba(0, 255, 255, 0.05);
+  width: 42px;
+  height: 42px;
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: hsl(var(--primary));
 }
 
 .info h4 {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   margin-bottom: 2px;
 }
 
-.info span {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
+.date {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
 }
 
 .moreBtn {
   margin-left: auto;
   background: transparent;
   border: none;
-  color: rgba(0, 255, 255, 0.4);
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -110,75 +128,88 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .metricItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.metricLabel {
-  font-family: var(--font-orbitron);
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-}
-
-.metricValue {
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: white;
-}
-
-.statusActive {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: hsl(var(--primary));
-  text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-}
-
-.webhookSection {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.webhookSection label {
-  font-family: var(--font-orbitron);
-  font-size: 0.65rem;
-  color: rgba(0, 255, 255, 0.5);
+.metricHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.statusActive {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.webhookSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.webhookHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
 .urlDisplay {
-  display: flex;
   background: #000;
-  border: 1px solid rgba(0, 255, 255, 0.1);
-  padding: 0.75rem;
-  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .urlDisplay code {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
   color: #34d399;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.urlDisplay button {
+.copyBtn {
   background: transparent;
   border: none;
-  color: rgba(0, 255, 255, 0.4);
+  color: var(--muted);
   cursor: pointer;
+  display: flex;
+  transition: color 0.2s;
+}
+
+.copyBtn:hover {
+  color: white;
 }
 
 .cardFooter {
@@ -189,32 +220,30 @@
 }
 
 .primaryAction, .secondaryAction {
-  padding: 0.75rem;
-  font-family: var(--font-orbitron);
-  font-size: 0.7rem;
+  padding: 0.85rem;
+  border-radius: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .primaryAction {
-  background: hsl(var(--primary));
-  color: black;
+  background: var(--primary);
+  color: var(--primary-foreground);
   border: none;
 }
 
 .primaryAction:hover {
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.3);
 }
 
 .secondaryAction {
-  background: transparent;
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   color: white;
 }
 
 .secondaryAction:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: white;
+  background: rgba(255, 255, 255, 0.08);
 }

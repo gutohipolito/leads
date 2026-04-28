@@ -2,7 +2,7 @@
 
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './clients.module.css';
-import { Plus, Search, ExternalLink, MoreVertical, Globe } from 'lucide-react';
+import { Plus, Search, ExternalLink, MoreVertical, Globe, Users as UsersIcon, Clock, ShieldCheck } from 'lucide-react';
 import { mockClients } from '@/lib/store';
 
 export default function ClientsPage() {
@@ -10,48 +10,66 @@ export default function ClientsPage() {
     <DashboardLayout title="Protocolos de Entidades">
       <div className={styles.container}>
         <div className={styles.topBar}>
-          <div className={styles.searchBox}>
-            <Search size={18} />
-            <input type="text" placeholder="Localizar entidade..." />
+          <div className={styles.headerInfo}>
+            <p className={styles.subtitle}>Gerencie suas conexões e endpoints ativos.</p>
           </div>
-          <button className={styles.addBtn}>
-            <Plus size={20} />
-            <span>Nova Entidade</span>
-          </button>
+          <div className={styles.actions}>
+            <div className={styles.searchBox}>
+              <Search size={18} />
+              <input type="text" placeholder="Localizar entidade..." />
+            </div>
+            <button className={styles.addBtn}>
+              <Plus size={20} />
+              <span>Nova Entidade</span>
+            </button>
+          </div>
         </div>
 
         <div className={styles.clientGrid}>
-          {mockClients.map((client, i) => (
-            <div key={client.id} className={`${styles.clientCard} jarvis-card`}>
+          {mockClients.map((client) => (
+            <div key={client.id} className={`${styles.clientCard} glass`}>
               <div className={styles.cardHeader}>
                 <div className={styles.avatar}>
-                  <Globe size={24} />
+                  <Globe size={20} />
                 </div>
                 <div className={styles.info}>
                   <h4>{client.name}</h4>
-                  <span>Ativo desde {client.createdAt}</span>
+                  <span className={styles.date}>Created {client.createdAt}</span>
                 </div>
                 <button className={styles.moreBtn}>
-                  <MoreVertical size={20} />
+                  <MoreVertical size={18} />
                 </button>
               </div>
 
               <div className={styles.metrics}>
                 <div className={styles.metricItem}>
-                  <span className={styles.metricLabel}>Capturas</span>
+                  <div className={styles.metricHeader}>
+                    <UsersIcon size={14} />
+                    <span>Total Captures</span>
+                  </div>
                   <span className={styles.metricValue}>{client.leadsCount}</span>
                 </div>
                 <div className={styles.metricItem}>
-                  <span className={styles.metricLabel}>Status</span>
-                  <span className={styles.statusActive}>ONLINE</span>
+                  <div className={styles.metricHeader}>
+                    <ShieldCheck size={14} />
+                    <span>Signal Status</span>
+                  </div>
+                  <span className={styles.statusActive}>Active Uplink</span>
                 </div>
               </div>
 
               <div className={styles.webhookSection}>
-                <label>Ponto de Extremidade (Webhook)</label>
+                <div className={styles.webhookHeader}>
+                  <Clock size={14} />
+                  <span>Webhook Endpoint</span>
+                </div>
                 <div className={styles.urlDisplay}>
                   <code>{client.webhookUrl}</code>
-                  <button onClick={() => navigator.clipboard.writeText(client.webhookUrl)}>
+                  <button 
+                    className={styles.copyBtn} 
+                    onClick={() => navigator.clipboard.writeText(client.webhookUrl)}
+                    title="Copy URL"
+                  >
                     <ExternalLink size={14} />
                   </button>
                 </div>

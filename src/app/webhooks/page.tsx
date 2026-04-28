@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './webhooks.module.css';
-import { Play, Copy, CheckCircle2, AlertCircle, Cpu } from 'lucide-react';
+import { Play, Copy, CheckCircle2, AlertCircle, Cpu, Zap, Link as LinkIcon, Database, Terminal } from 'lucide-react';
 import { mockClients } from '@/lib/store';
 
 export default function WebhooksPage() {
@@ -34,25 +34,29 @@ export default function WebhooksPage() {
       else setStatus('error');
     } catch (err) {
       setStatus('error');
-      setResponse('Falha na conexão com o servidor de uplink.');
+      setResponse('Uplink failed: Connection refused by the remote server.');
     }
   };
 
   return (
-    <DashboardLayout title="Teste de Uplink (Webhook)">
+    <DashboardLayout title="Webhook Simulator">
       <div className={styles.container}>
-        <section className={`${styles.configCard} jarvis-card`}>
+        
+        {/* Configuration Card */}
+        <section className={`${styles.configCard} glass`}>
           <div className={styles.cardHeader}>
             <div className={styles.headerInfo}>
-              <h3>Módulo de Simulação</h3>
-              <p>Injetar dados de teste no fluxo de captação.</p>
+              <div className={styles.iconCircle}><Cpu size={20} /></div>
+              <div>
+                <h3>Signal Injection</h3>
+                <p>Test your capture endpoints with custom payloads.</p>
+              </div>
             </div>
-            <Cpu size={24} className={styles.headerIcon} />
           </div>
 
           <form className={styles.form} onSubmit={simulateWebhook}>
             <div className={styles.fieldGroup}>
-              <label>Ponto de Origem</label>
+              <label>Select Target Entity</label>
               <select 
                 value={selectedClient} 
                 onChange={(e) => setSelectedClient(e.target.value)}
@@ -64,8 +68,11 @@ export default function WebhooksPage() {
               </select>
             </div>
 
-            <div className={styles.uplinkInfo}>
-              <label>Endpoint Ativo</label>
+            <div className={styles.activeEndpoint}>
+              <div className={styles.endpointLabel}>
+                <LinkIcon size={14} />
+                <span>Uplink URL</span>
+              </div>
               <div className={styles.codeBox}>
                 <code>{client?.webhookUrl}</code>
                 <button type="button" onClick={() => navigator.clipboard.writeText(client?.webhookUrl || '')}>
@@ -76,20 +83,20 @@ export default function WebhooksPage() {
 
             <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label>Identificador</label>
-                <input type="text" name="name" className={styles.input} placeholder="Ex: Usuário Alfa" required />
+                <label>Lead Name</label>
+                <input type="text" name="name" className={styles.input} placeholder="e.g. John Doe" required />
               </div>
               <div className={styles.fieldGroup}>
-                <label>Frequência (Email)</label>
-                <input type="email" name="email" className={styles.input} placeholder="alfa@universo.com" required />
+                <label>Email Frequency</label>
+                <input type="email" name="email" className={styles.input} placeholder="john@example.com" required />
               </div>
               <div className={styles.fieldGroup}>
-                <label>Vetor de Contato</label>
-                <input type="text" name="phone" className={styles.input} placeholder="+55 (00) 00000-0000" />
+                <label>Phone Vector</label>
+                <input type="text" name="phone" className={styles.input} placeholder="+1 (555) 000-0000" />
               </div>
               <div className={styles.fieldGroup}>
-                <label>Pacote de Dados (Mensagem)</label>
-                <textarea name="message" className={styles.textarea} placeholder="Injetar metadados adicionais..." rows={3} />
+                <label>Custom Data Payload</label>
+                <textarea name="message" className={styles.textarea} placeholder="Inject additional JSON or text..." rows={3} />
               </div>
             </div>
 
@@ -98,30 +105,43 @@ export default function WebhooksPage() {
               className={styles.triggerBtn} 
               disabled={status === 'loading'}
             >
-              {status === 'loading' ? 'PROCESSANDO...' : 'EXECUTAR UPLINK'}
+              <Zap size={18} fill={status === 'loading' ? 'none' : 'currentColor'} />
+              <span>{status === 'loading' ? 'PROCESSING...' : 'EXECUTE UPLINK'}</span>
             </button>
           </form>
         </section>
 
-        <section className={`${styles.statusCard} jarvis-card`}>
+        {/* Terminal Response Card */}
+        <section className={`${styles.statusCard} glass`}>
           <div className={styles.cardHeader}>
-            <h3>Resposta do Terminal</h3>
+            <div className={styles.headerInfo}>
+              <div className={styles.iconCircle}><Terminal size={20} /></div>
+              <div>
+                <h3>System Response</h3>
+                <p>Uplink logs and server status codes.</p>
+              </div>
+            </div>
           </div>
           
           <div className={styles.terminalContent}>
             {status === 'idle' && (
               <div className={styles.idleState}>
-                Aguardando execução de comando...
+                <Database size={48} strokeWidth={1} />
+                <p>Waiting for command execution...</p>
               </div>
             )}
             
             {status !== 'idle' && (
               <div className={styles.logBox}>
-                <div className={`${styles.statusTag} ${styles[status]}`}>
+                <div className={`${styles.statusBadge} ${styles[status]}`}>
                   {status === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                  <span>STATUS: {status === 'success' ? '201 OK' : 'ERRO CRÍTICO'}</span>
+                  <span>SIGNAL: {status === 'success' ? '201 CREATED' : '400 BAD REQUEST'}</span>
                 </div>
                 <div className={styles.jsonWrapper}>
+                  <div className={styles.jsonHeader}>
+                    <span>Payload Details</span>
+                    <span className={styles.lang}>JSON</span>
+                  </div>
                   <pre>{response}</pre>
                 </div>
               </div>

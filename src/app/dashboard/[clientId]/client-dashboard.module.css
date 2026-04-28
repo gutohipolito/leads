@@ -1,7 +1,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 2rem;
 }
 
 .backNav {
@@ -13,88 +13,111 @@
 .backLink {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  color: rgba(0, 255, 255, 0.5);
-  font-family: var(--font-orbitron);
-  font-size: 0.75rem;
-  text-transform: uppercase;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
   transition: color 0.2s;
 }
 
 .backLink:hover {
   color: white;
-  text-shadow: 0 0 8px var(--primary-glow);
 }
 
 .actions {
   display: flex;
-  gap: var(--space-3);
+  gap: 1rem;
 }
 
-.filterBtn, .downloadBtn {
+.primaryBtn, .secondaryBtn {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  font-family: var(--font-orbitron);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--border-dim);
-  color: hsl(var(--primary));
+  transition: all 0.2s;
 }
 
-.filterBtn:hover, .downloadBtn:hover {
-  background: rgba(0, 255, 255, 0.1);
-  box-shadow: 0 0 10px var(--primary-glow);
+.primaryBtn {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+}
+
+.secondaryBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: white;
 }
 
 .statsSummary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-6);
+  gap: 1.5rem;
 }
 
-.miniCard {
-  padding: var(--space-6);
-  background: rgba(0, 255, 255, 0.02);
+@media (max-width: 900px) {
+  .statsSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  padding: 1.5rem !important;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statInfo {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 0.25rem;
 }
 
-.miniCard span {
-  font-family: var(--font-orbitron);
-  font-size: 0.65rem;
-  color: rgba(0, 255, 255, 0.5);
+.label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 600;
   text-transform: uppercase;
-  font-weight: 700;
 }
 
-.miniCard h2 {
-  font-family: var(--font-mono);
+.value {
   font-size: 1.75rem;
+  font-weight: 700;
   color: white;
 }
 
 .activeStatus {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  color: hsl(var(--primary));
-  font-family: var(--font-orbitron);
-  font-size: 0.7rem;
-  margin-top: 4px;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .pulse {
   width: 6px;
   height: 6px;
-  background: hsl(var(--primary));
+  background: var(--primary);
   border-radius: 50%;
-  box-shadow: 0 0 10px hsl(var(--primary));
+  box-shadow: 0 0 10px var(--primary);
   animation: pulse 1.5s infinite;
 }
 
@@ -103,157 +126,162 @@
   100% { transform: scale(2.5); opacity: 0; }
 }
 
-.leadsList {
-  padding: var(--space-6);
-  background: rgba(0, 10, 20, 0.4);
+.leadsSection {
+  padding: 2rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.cardHeader {
-  margin-bottom: var(--space-6);
-  border-bottom: 1px solid var(--border-dim);
-  padding-bottom: var(--space-2);
-}
-
-.cardHeader h3 {
-  font-family: var(--font-orbitron);
-  font-size: 0.9rem;
+.sectionHeader h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 .leadsGrid {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 1rem;
 }
 
 .leadRow {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1.5fr 0.8fr 0.8fr;
+  grid-template-columns: 1.5fr 1.2fr 1.5fr 1fr;
   align-items: center;
-  padding: var(--space-4);
-  background: rgba(0, 255, 255, 0.02);
-  border: 1px solid rgba(0, 255, 255, 0.1);
-  transition: all 0.3s;
-  animation: fadeIn 0.4s ease-out forwards;
-  opacity: 0;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  transition: all 0.2s;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
+@media (max-width: 1100px) {
+  .leadRow {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 
 .leadRow:hover {
-  background: rgba(0, 255, 255, 0.06);
-  border-color: hsl(var(--primary));
-  box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .leadMain {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 1rem;
 }
 
-.leadAvatar {
-  width: 36px;
-  height: 36px;
-  border: 1px solid hsl(var(--primary));
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--card);
+  color: var(--primary);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-orbitron);
   font-weight: 700;
-  color: hsl(var(--primary));
-  background: rgba(0, 255, 255, 0.05);
+  font-size: 1rem;
+  border: 1px solid var(--border);
 }
 
 .leadInfo h4 {
-  color: white;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.id {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
   font-family: var(--font-mono);
 }
 
-.idLabel {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: rgba(0, 255, 255, 0.4);
-}
-
-.leadContact {
+.contactInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.5rem;
 }
 
-.contactItem {
+.infoItem {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
-.contactItem svg {
-  color: hsl(var(--primary));
+.infoItem svg {
+  color: var(--primary);
 }
 
-.dynamicFields {
+.dynamicData {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 0.5rem;
 }
 
-.fieldTag {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-dim);
-  padding: 2px 6px;
+.dataTag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.5rem;
   display: flex;
-  gap: 4px;
-  font-size: 0.65rem;
-  font-family: var(--font-mono);
+  gap: 0.5rem;
+  font-size: 0.75rem;
 }
 
-.fieldKey {
-  color: rgba(0, 255, 255, 0.5);
+.key {
+  color: var(--muted-foreground);
+  font-weight: 600;
   text-transform: uppercase;
 }
 
-.fieldValue {
+.val {
   color: white;
+  font-weight: 500;
 }
 
-.leadDate {
+.meta {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: rgba(0, 255, 255, 0.4);
+  justify-content: flex-end;
+  gap: 1.5rem;
 }
 
-.detailsBtn {
+.date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.viewBtn {
   background: transparent;
-  border: 1px solid var(--border-dim);
+  border: 1px solid var(--border);
   color: white;
-  padding: var(--space-1) var(--space-3);
-  font-family: var(--font-orbitron);
-  font-size: 0.65rem;
-  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  text-transform: uppercase;
+  transition: all 0.2s;
 }
 
-.detailsBtn:hover {
-  background: hsl(var(--primary));
+.viewBtn:hover {
+  background: white;
   color: black;
 }
 
 .emptyState {
-  padding: var(--space-12);
+  padding: 4rem;
   text-align: center;
-  color: rgba(0, 255, 255, 0.3);
-  font-family: var(--font-orbitron);
-  text-transform: uppercase;
-  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--muted-foreground);
 }

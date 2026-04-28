@@ -12,35 +12,44 @@
 }
 
 .configCard, .statusCard {
+  padding: 2rem !important;
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  padding: 2rem !important;
 }
 
 .cardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-  padding-bottom: 1.5rem;
+  align-items: center;
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconCircle {
+  width: 42px;
+  height: 42px;
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .headerInfo h3 {
   font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+  margin-bottom: 2px;
 }
 
 .headerInfo p {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: rgba(0, 255, 255, 0.4);
-  text-transform: uppercase;
-}
-
-.headerIcon {
-  color: hsl(var(--primary));
-  opacity: 0.5;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
 }
 
 .form {
@@ -56,50 +65,54 @@
 }
 
 .fieldGroup label {
-  font-family: var(--font-orbitron);
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: rgba(0, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .select, .input, .textarea {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  border: 1px solid var(--border);
   padding: 1rem;
   color: white;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
+  border-radius: 0.75rem;
+  font-family: inherit;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.2s;
 }
 
 .select:focus, .input:focus, .textarea:focus {
-  border-color: hsl(var(--primary));
-  background: rgba(0, 255, 255, 0.05);
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .select option {
-  background: #0a0c10;
+  background: #030303;
 }
 
-.uplinkInfo {
+.activeEndpoint {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.uplinkInfo label {
-  font-family: var(--font-orbitron);
-  font-size: 0.65rem;
-  color: rgba(0, 255, 255, 0.5);
-  text-transform: uppercase;
+.endpointLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
 }
 
 .codeBox {
   background: #000;
-  border: 1px dashed rgba(0, 255, 255, 0.3);
+  border: 1px solid var(--border);
   padding: 1rem;
+  border-radius: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -108,13 +121,16 @@
 .codeBox code {
   color: #34d399;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .codeBox button {
   background: transparent;
   border: none;
-  color: rgba(0, 255, 255, 0.5);
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -131,27 +147,29 @@
 }
 
 .triggerBtn {
-  background: transparent;
-  border: 1px solid hsl(var(--primary));
-  color: hsl(var(--primary));
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
   padding: 1.25rem;
-  font-family: var(--font-orbitron);
-  font-size: 0.8rem;
+  border-radius: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 3px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .triggerBtn:hover {
-  background: hsl(var(--primary));
-  color: black;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(86, 215, 253, 0.4);
 }
 
 .triggerBtn:disabled {
-  opacity: 0.3;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .terminalContent {
@@ -162,10 +180,16 @@
 
 .idleState {
   margin: auto;
-  font-family: var(--font-orbitron);
-  font-size: 0.8rem;
-  color: rgba(0, 255, 255, 0.2);
-  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted-foreground);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.idleState p {
+  font-size: 0.9rem;
 }
 
 .logBox {
@@ -174,34 +198,58 @@
   gap: 1.5rem;
 }
 
-.statusTag {
+.statusBadge {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-family: var(--font-orbitron);
-  font-size: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
   font-weight: 700;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
 }
 
-.statusTag.success {
+.statusBadge.success {
+  background: rgba(52, 211, 153, 0.1);
   color: #34d399;
-  border-color: rgba(52, 211, 153, 0.3);
+  border: 1px solid rgba(52, 211, 153, 0.2);
 }
 
-.statusTag.error {
+.statusBadge.error {
+  background: rgba(248, 113, 113, 0.1);
   color: #f87171;
-  border-color: rgba(248, 113, 113, 0.3);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.jsonWrapper {
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.jsonHeader {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.jsonHeader span {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+.lang {
+  color: var(--primary) !important;
 }
 
 .jsonWrapper pre {
-  background: #000;
   padding: 1.5rem;
-  border: 1px solid rgba(0, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: rgba(0, 255, 255, 0.8);
+  font-size: 0.85rem;
   overflow-x: auto;
 }
