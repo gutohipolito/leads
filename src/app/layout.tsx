@@ -14,8 +14,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ardentis Leads | Dashboard de Captação",
+  title: "Asthros - Gerenciamento de Leads",
   description: "Monitoramento avançado de leads com interface moderna.",
+  icons: {
+    icon: "/favicon-leads.png",
+  },
 };
 
 export default function RootLayout({

@@ -31,9 +31,9 @@ export default function Sidebar() {
     <aside className={styles.sidebar}>
       <div className={styles.logoContainer}>
         <div className={styles.logoIcon}>
-          <Box size={22} fill="currentColor" />
+          <img src="/asthros-leads.png" alt="Asthros Logo" className={styles.logoImg} />
         </div>
-        <span className={styles.logoText}>Ardentis</span>
+        <span className={styles.logoText}>Asthros</span>
       </div>
 
       <nav className={styles.nav}>
