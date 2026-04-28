@@ -12,7 +12,8 @@ import {
   Activity,
   Box,
   Terminal,
-  ShieldCheck
+  ShieldCheck,
+  UserCircle
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
@@ -60,7 +61,13 @@ export default function Sidebar() {
             </div>
             <span className={styles.linkText}>Logs Globais</span>
           </Link>
-          <Link href="/security" className={styles.navLink}>
+          <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
+            <div className={styles.iconCircle}>
+              <UserCircle size={18} />
+            </div>
+            <span className={styles.linkText}>Usuários</span>
+          </Link>
+          <Link href="/security" className={`${styles.navLink} ${isActive('/security') ? styles.active : ''}`}>
             <div className={styles.iconCircle}>
               <ShieldCheck size={18} />
             </div>

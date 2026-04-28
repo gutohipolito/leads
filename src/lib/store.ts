@@ -79,6 +79,17 @@ export const mockApiKeys: ApiKey[] = [
 export const mockSecurityEvents: SecurityEvent[] = [
   { id: '1', type: 'access', description: 'Novo login detectado: Administrador (IP: 189.12.43.10)', timestamp: '2026-04-28 15:45', severity: 'low' },
   { id: '2', type: 'threat', description: 'Bloqueio de IP por múltiplas requisições: 45.23.11.201', timestamp: '2026-04-28 14:20', severity: 'high' },
-  { id: '3', type: 'key_change', description: 'Nova chave de API gerada para Clínica Sanches', timestamp: '2026-04-28 12:10', severity: 'medium' },
-  { id: '4', type: 'firewall', description: 'Domínio secundário adicionado ao Whitelist', timestamp: '2026-04-27 18:00', severity: 'low' },
+export interface SystemUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'viewer';
+  status: 'active' | 'inactive';
+  lastLogin: string;
+}
+
+export const mockSystemUsers: SystemUser[] = [
+  { id: 'u1', name: 'Administrador', email: 'admin@asthros.com', role: 'admin', status: 'active', lastLogin: '2026-04-28 15:45' },
+  { id: 'u2', name: 'Gustavo Santos', email: 'gustavo@asthros.com', role: 'manager', status: 'active', lastLogin: '2026-04-28 12:10' },
+  { id: 'u3', name: 'Analista de Leads', email: 'analista@asthros.com', role: 'viewer', status: 'inactive', lastLogin: '2026-04-25 09:30' },
 ];

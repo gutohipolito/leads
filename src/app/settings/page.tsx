@@ -244,7 +244,7 @@ export default function SettingsPage() {
                     <Shield size={20} color="var(--primary)" />
                   </div>
                 </div>
-              </main>
+              </section>
             )}
           </main>
         </div>
