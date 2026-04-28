@@ -1,11 +1,12 @@
 .sidebar {
-  width: 260px;
+  width: 280px;
   height: 100vh;
-  background: #030303;
+  background: rgba(3, 3, 3, 0.95);
+  backdrop-filter: blur(20px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  padding: 2rem 1.25rem;
+  padding: 2.5rem 1.5rem;
   position: fixed;
   left: 0;
   top: 0;
@@ -15,61 +16,57 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 3rem;
+  gap: 1rem;
+  margin-bottom: 3.5rem;
   padding-left: 0.5rem;
 }
 
 .logoIcon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   background: var(--primary);
   color: #030303;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 20px rgba(86, 215, 253, 0.2);
 }
 
 .logoText {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: white;
+  letter-spacing: -0.02em;
 }
 
 .nav {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
 }
 
-.section {
+.mainMenu {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-}
-
-.sectionTitle {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted-foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
-  padding-left: 0.75rem;
+  gap: 0.5rem;
 }
 
 .navLink {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.8rem 1rem;
-  border-radius: 0.75rem;
+  gap: 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 2rem; /* Pill shape */
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
 }
 
 .navLink:hover {
@@ -77,55 +74,102 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.active {
-  background: rgba(86, 215, 253, 0.08) !important;
-  color: var(--primary) !important;
+.iconWrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.25s;
 }
 
-.clientList {
+.active {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+}
+
+.active .iconWrapper {
+  background: rgba(86, 215, 253, 0.2);
+  color: var(--primary);
+  box-shadow: 0 0 15px rgba(86, 215, 253, 0.1);
+}
+
+.moreContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.activeMore {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.chevron {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: transform 0.3s;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.subMenu {
+  margin-left: 2.25rem;
+  padding-top: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  position: relative;
 }
 
-.clientItem {
+.subLine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(86, 215, 253, 0.3);
+  margin-left: 1px;
+}
+
+.subLink {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
   color: var(--muted-foreground);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  text-decoration: none;
   transition: all 0.2s;
 }
 
-.clientItem:hover {
-  color: white;
+.subLink:hover {
+  color: var(--primary);
 }
 
-.activeClient {
-  color: white;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.clientDot {
+.subDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--primary);
-  opacity: 0.5;
+  margin-left: -13px; /* Align with subLine */
+  z-index: 1;
 }
 
 .footer {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .userCard {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem;
   border-radius: 1rem;
   display: flex;
   align-items: center;
@@ -134,16 +178,17 @@
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
-  background: #112B33;
-  color: var(--primary);
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.8rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .userInfo {
@@ -152,31 +197,33 @@
 }
 
 .userName {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: white;
 }
 
 .userPlan {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--muted-foreground);
+  font-family: var(--font-mono);
 }
 
 .logoutBtn {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1rem;
   background: transparent;
   border: none;
-  color: #ff4d4d;
-  font-weight: 600;
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  font-size: 1rem;
   cursor: pointer;
-  border-radius: 0.75rem;
+  border-radius: 2rem;
   transition: all 0.2s;
 }
 
 .logoutBtn:hover {
+  color: #ff4d4d;
   background: rgba(255, 77, 77, 0.05);
 }
