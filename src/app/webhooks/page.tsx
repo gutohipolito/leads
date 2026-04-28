@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './webhooks.module.css';
-import { Play, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Play, Copy, CheckCircle2, AlertCircle, Cpu } from 'lucide-react';
 import { mockClients } from '@/lib/store';
 
 export default function WebhooksPage() {
@@ -21,7 +21,6 @@ export default function WebhooksPage() {
     const data = Object.fromEntries(formData.entries());
 
     try {
-      // Usando a rota de API relativa do projeto
       const res = await fetch(`/api/leads/${selectedClient}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,25 +34,25 @@ export default function WebhooksPage() {
       else setStatus('error');
     } catch (err) {
       setStatus('error');
-      setResponse('Falha na conexão com o servidor.');
+      setResponse('Falha na conexão com o servidor de uplink.');
     }
   };
 
   return (
-    <DashboardLayout title="Teste de Webhooks">
+    <DashboardLayout title="Teste de Uplink (Webhook)">
       <div className={styles.container}>
-        <div className={`${styles.testCard} glass animate-fade-in`}>
+        <section className={`${styles.configCard} jarvis-card`}>
           <div className={styles.cardHeader}>
             <div className={styles.headerInfo}>
-              <h3>Simulador de Envio</h3>
-              <p>Teste como seus formulários enviarão dados para o dashboard.</p>
+              <h3>Módulo de Simulação</h3>
+              <p>Injetar dados de teste no fluxo de captação.</p>
             </div>
-            <Play size={24} className={styles.headerIcon} />
+            <Cpu size={24} className={styles.headerIcon} />
           </div>
 
           <form className={styles.form} onSubmit={simulateWebhook}>
-            <div className={styles.inputGroup}>
-              <label>Selecionar Cliente</label>
+            <div className={styles.fieldGroup}>
+              <label>Ponto de Origem</label>
               <select 
                 value={selectedClient} 
                 onChange={(e) => setSelectedClient(e.target.value)}
@@ -65,70 +64,70 @@ export default function WebhooksPage() {
               </select>
             </div>
 
-            <div className={styles.webhookUrl}>
-              <label>Endpoint URL</label>
-              <div className={styles.urlBox}>
+            <div className={styles.uplinkInfo}>
+              <label>Endpoint Ativo</label>
+              <div className={styles.codeBox}>
                 <code>{client?.webhookUrl}</code>
                 <button type="button" onClick={() => navigator.clipboard.writeText(client?.webhookUrl || '')}>
-                  <Copy size={16} />
+                  <Copy size={14} />
                 </button>
               </div>
             </div>
 
-            <hr className={styles.divider} />
-
             <div className={styles.formGrid}>
-              <div className={styles.inputGroup}>
-                <label>Nome do Lead</label>
-                <input type="text" name="name" className={styles.input} placeholder="Ex: João das Couves" required />
+              <div className={styles.fieldGroup}>
+                <label>Identificador</label>
+                <input type="text" name="name" className={styles.input} placeholder="Ex: Usuário Alfa" required />
               </div>
-              <div className={styles.inputGroup}>
-                <label>E-mail</label>
-                <input type="email" name="email" className={styles.input} placeholder="joao@email.com" required />
+              <div className={styles.fieldGroup}>
+                <label>Frequência (Email)</label>
+                <input type="email" name="email" className={styles.input} placeholder="alfa@universo.com" required />
               </div>
-              <div className={styles.inputGroup}>
-                <label>Telefone</label>
-                <input type="text" name="phone" className={styles.input} placeholder="(11) 99999-9999" />
+              <div className={styles.fieldGroup}>
+                <label>Vetor de Contato</label>
+                <input type="text" name="phone" className={styles.input} placeholder="+55 (00) 00000-0000" />
               </div>
-              <div className={styles.inputGroup}>
-                <label>Mensagem / Observação</label>
-                <textarea name="message" className={styles.textarea} placeholder="Olá, gostaria de mais informações..." rows={3} />
+              <div className={styles.fieldGroup}>
+                <label>Pacote de Dados (Mensagem)</label>
+                <textarea name="message" className={styles.textarea} placeholder="Injetar metadados adicionais..." rows={3} />
               </div>
             </div>
 
             <button 
               type="submit" 
-              className={styles.submitBtn} 
+              className={styles.triggerBtn} 
               disabled={status === 'loading'}
             >
-              {status === 'loading' ? 'Enviando...' : 'Enviar Lead de Teste'}
+              {status === 'loading' ? 'PROCESSANDO...' : 'EXECUTAR UPLINK'}
             </button>
           </form>
-        </div>
+        </section>
 
-        <div className={`${styles.resultCard} glass animate-fade-in`} style={{ animationDelay: '0.2s' }}>
+        <section className={`${styles.statusCard} jarvis-card`}>
           <div className={styles.cardHeader}>
-            <h3>Resposta do Servidor</h3>
+            <h3>Resposta do Terminal</h3>
           </div>
           
-          <div className={styles.resultContent}>
+          <div className={styles.terminalContent}>
             {status === 'idle' && (
-              <div className={styles.emptyState}>
-                Aguardando envio de teste...
+              <div className={styles.idleState}>
+                Aguardando execução de comando...
               </div>
             )}
             
             {status !== 'idle' && (
-              <div className={styles.responseBox}>
-                <div className={`${styles.statusIndicator} ${styles[status]}`}>
-                  {status === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-                  <span>{status === 'success' ? 'Sucesso (201)' : 'Erro'}</span>
+              <div className={styles.logBox}>
+                <div className={`${styles.statusTag} ${styles[status]}`}>
+                  {status === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                  <span>STATUS: {status === 'success' ? '201 OK' : 'ERRO CRÍTICO'}</span>
                 </div>
-                <pre>{response}</pre>
+                <div className={styles.jsonWrapper}>
+                  <pre>{response}</pre>
+                </div>
               </div>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </DashboardLayout>
   );

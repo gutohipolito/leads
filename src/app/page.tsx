@@ -1,97 +1,100 @@
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, MousePointerClick, TrendingUp } from 'lucide-react';
+import { Users, Webhook, MousePointerClick, TrendingUp, ChevronRight } from 'lucide-react';
 import { mockClients, mockLeads } from '@/lib/store';
 
 export default function Home() {
   const stats = [
-    { title: 'Total de Leads', value: '209', icon: MousePointerClick, color: '#3b82f6', trend: '+12.5%' },
-    { title: 'Clientes Ativos', value: mockClients.length.toString(), icon: Users, color: '#8b5cf6', trend: '+0%' },
-    { title: 'Webhooks Ativos', value: '2', icon: Webhook, color: '#10b981', trend: '+1' },
-    { title: 'Taxa de Conversão', value: '3.2%', icon: TrendingUp, color: '#f59e0b', trend: '+0.4%' },
+    { title: 'Protocolos Ativos', value: '209', icon: MousePointerClick, color: '#00ffff', trend: '+12.5%' },
+    { title: 'Entidades Cliente', value: mockClients.length.toString(), icon: Users, color: '#00ffff', trend: 'Sync' },
+    { title: 'Webhooks Uplink', value: '2', icon: Webhook, color: '#00ffff', trend: 'Estável' },
+    { title: 'Taxa de Sincronia', value: '3.2%', icon: TrendingUp, color: '#00ffff', trend: '+0.4%' },
   ];
 
   return (
-    <DashboardLayout title="Visão Geral">
-      <div className={styles.dashboard}>
-        {/* Stats Grid */}
+    <DashboardLayout title="Terminal de Monitoramento">
+      <div className={styles.dashboardContainer}>
+        {/* Stats Section */}
         <div className={styles.statsGrid}>
           {stats.map((stat, i) => (
-            <div key={i} className={`${styles.statCard} glass animate-fade-in`} style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className={styles.statInfo}>
-                <span className={styles.statTitle}>{stat.title}</span>
-                <div className={styles.statValueRow}>
-                  <h2 className={styles.statValue}>{stat.value}</h2>
+            <div key={i} className={`${styles.statCard} jarvis-card`}>
+              <div className={styles.statIconWrapper}>
+                <stat.icon size={24} />
+              </div>
+              <div className={styles.statContent}>
+                <span className={styles.statLabel}>{stat.title}</span>
+                <div className={styles.statValueGroup}>
+                  <span className={styles.statValue}>{stat.value}</span>
                   <span className={styles.statTrend}>{stat.trend}</span>
                 </div>
-              </div>
-              <div className={styles.statIcon} style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
-                <stat.icon size={24} />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Content Grid */}
+        {/* Main Content Grid */}
         <div className={styles.contentGrid}>
-          {/* Recent Leads */}
-          <div className={`${styles.mainCard} glass animate-fade-in`} style={{ animationDelay: '0.4s' }}>
-            <div className={styles.cardHeader}>
-              <h3>Leads Recentes</h3>
-              <button className={styles.viewAllBtn}>Ver Todos</button>
+          {/* Recent Transmissions */}
+          <section className={`${styles.recentSection} jarvis-card`}>
+            <div className={styles.sectionHeader}>
+              <h3>Transmissões Recentes</h3>
+              <button className={styles.headerAction}>Histórico Completo</button>
             </div>
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
+            <div className={styles.tableContainer}>
+              <table className={styles.jarvisTable}>
                 <thead>
                   <tr>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Cliente</th>
-                    <th>Data</th>
+                    <th>Identificador</th>
+                    <th>Frequência (Email)</th>
+                    <th>Origem</th>
+                    <th>Timestamp</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {mockLeads.map((lead) => (
                     <tr key={lead.id}>
-                      <td>{lead.name}</td>
+                      <td className={styles.boldCell}>{lead.name}</td>
                       <td>{lead.email}</td>
                       <td>
-                        <span className={styles.clientBadge}>
+                        <span className={styles.originTag}>
                           {mockClients.find(c => c.id === lead.clientId)?.name}
                         </span>
                       </td>
                       <td>{new Date(lead.createdAt).toLocaleDateString('pt-BR')}</td>
                       <td>
-                        <span className={styles.statusBadge}>Novo</span>
+                        <div className={styles.statusGroup}>
+                          <div className={styles.statusDot} />
+                          <span>RECEBIDO</span>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
-          {/* Quick Actions */}
-          <div className={`${styles.sideCard} glass animate-fade-in`} style={{ animationDelay: '0.5s' }}>
-            <div className={styles.cardHeader}>
-              <h3>Ações Rápidas</h3>
+          {/* Quick Access */}
+          <aside className={`${styles.quickAccess} jarvis-card`}>
+            <div className={styles.sectionHeader}>
+              <h3>Ações de Sistema</h3>
             </div>
-            <div className={styles.actionList}>
-              <button className={styles.actionBtn}>
-                <div className={styles.actionIcon}><Users size={20} /></div>
-                <span>Novo Cliente</span>
+            <div className={styles.actionGrid}>
+              <button className={styles.systemBtn}>
+                <Users size={18} />
+                <span>Registrar Cliente</span>
               </button>
-              <button className={styles.actionBtn}>
-                <div className={styles.actionIcon}><Webhook size={20} /></div>
-                <span>Gerar Webhook</span>
+              <button className={styles.systemBtn}>
+                <Webhook size={18} />
+                <span>Gerar Uplink</span>
               </button>
-              <button className={styles.actionBtn}>
-                <div className={styles.actionIcon}><MousePointerClick size={20} /></div>
-                <span>Exportar Dados</span>
+              <button className={styles.systemBtn}>
+                <TrendingUp size={18} />
+                <span>Relatório Analítico</span>
               </button>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </DashboardLayout>

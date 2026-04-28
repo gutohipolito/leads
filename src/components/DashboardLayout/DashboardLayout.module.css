@@ -1,17 +1,28 @@
-.layout {
+.layoutWrapper {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
-.mainContent {
+.mainContainer {
   flex: 1;
   display: flex;
   flex-direction: column;
+  margin-left: 280px; /* Alinhado com a largura da sidebar */
+  min-width: 0; /* Evita quebra de layout por overflow */
 }
 
-.container {
-  padding: var(--space-8);
-  margin-left: 280px; /* Sidebar width */
+.pageContent {
   flex: 1;
-  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent);
+  padding: 2.5rem;
+  overflow-y: auto;
+}
+
+.innerWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }

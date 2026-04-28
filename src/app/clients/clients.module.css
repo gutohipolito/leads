@@ -1,220 +1,220 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: 2.5rem;
 }
 
-.topActions {
+.topBar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-4);
+  gap: 1.5rem;
 }
 
-.search {
-  background: var(--secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+.searchBox {
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.2);
   display: flex;
   align-items: center;
-  padding: 0 var(--space-4);
-  height: 42px;
-  width: 300px;
-  gap: var(--space-2);
-  color: hsl(var(--muted-foreground));
+  padding: 0 1rem;
+  height: 45px;
+  width: 400px;
+  gap: 0.75rem;
+  color: hsl(var(--primary));
 }
 
-.search input {
+.searchBox input {
   background: transparent;
   border: none;
   color: white;
   width: 100%;
   outline: none;
-  font-family: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
 }
 
 .addBtn {
-  background: hsl(var(--primary));
-  color: white;
-  border: none;
-  padding: 0 var(--space-6);
-  height: 42px;
-  border-radius: var(--radius);
-  font-weight: 600;
+  background: transparent;
+  border: 1px solid hsl(var(--primary));
+  color: hsl(var(--primary));
+  padding: 0 1.5rem;
+  height: 45px;
+  font-family: var(--font-orbitron);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
 .addBtn:hover {
-  background: #2563eb;
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
-.grid {
+.clientGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
 }
 
 .clientCard {
-  padding: var(--space-6);
-  border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 1.5rem;
+  padding: 1.5rem !important;
 }
 
 .cardHeader {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 1rem;
 }
 
-.clientAvatar {
+.avatar {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, hsl(var(--primary)), #8b5cf6);
-  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: rgba(0, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: white;
+  color: hsl(var(--primary));
 }
 
-.clientInfo {
-  display: flex;
-  flex-direction: column;
+.info h4 {
+  font-size: 1rem;
+  margin-bottom: 2px;
 }
 
-.clientInfo h4 {
-  color: white;
-  font-size: 1.1rem;
-}
-
-.clientInfo span {
-  color: hsl(var(--muted-foreground));
-  font-size: 0.8rem;
+.info span {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
 }
 
 .moreBtn {
   margin-left: auto;
   background: transparent;
   border: none;
-  color: hsl(var(--muted-foreground));
+  color: rgba(0, 255, 255, 0.4);
   cursor: pointer;
 }
 
-.cardStats {
+.metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  gap: 1rem;
+  padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.stat {
+.metricItem {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.label {
-  font-size: 0.7rem;
-  color: hsl(var(--muted-foreground));
+.metricLabel {
+  font-family: var(--font-orbitron);
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
-  font-weight: 600;
 }
 
-.value {
-  color: white;
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
   font-weight: 700;
-  font-size: 1.1rem;
+  color: white;
 }
 
-.statusBadge {
-  color: #10b981;
-  font-weight: 600;
-  font-size: 0.9rem;
+.statusActive {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: hsl(var(--primary));
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
-.webhookBox {
+.webhookSection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0.5rem;
 }
 
-.webhookLabel {
-  font-size: 0.75rem;
-  color: hsl(var(--muted-foreground));
-  font-weight: 500;
+.webhookSection label {
+  font-family: var(--font-orbitron);
+  font-size: 0.65rem;
+  color: rgba(0, 255, 255, 0.5);
+  text-transform: uppercase;
 }
 
-.webhookInput {
+.urlDisplay {
   display: flex;
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  padding: 0.75rem;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.webhookInput input {
-  flex: 1;
+.urlDisplay code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #34d399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.urlDisplay button {
   background: transparent;
   border: none;
-  padding: var(--space-2) var(--space-3);
-  color: hsl(var(--muted-foreground));
-  font-size: 0.8rem;
-  outline: none;
-}
-
-.webhookInput button {
-  background: var(--secondary);
-  border: none;
-  border-left: 1px solid var(--border);
-  padding: 0 var(--space-3);
-  color: white;
+  color: rgba(0, 255, 255, 0.4);
   cursor: pointer;
 }
 
-.cardActions {
+.cardFooter {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
+  gap: 1rem;
+  margin-top: auto;
 }
 
-.viewBtn, .editBtn {
-  padding: var(--space-2);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
+.primaryAction, .secondaryAction {
+  padding: 0.75rem;
+  font-family: var(--font-orbitron);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.viewBtn {
-  background: rgba(59, 130, 246, 0.1);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+.primaryAction {
+  background: hsl(var(--primary));
+  color: black;
+  border: none;
 }
 
-.viewBtn:hover {
-  background: rgba(59, 130, 246, 0.2);
+.primaryAction:hover {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
 }
 
-.editBtn {
+.secondaryAction {
   background: transparent;
-  color: hsl(var(--muted-foreground));
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: white;
 }
 
-.editBtn:hover {
+.secondaryAction:hover {
+  background: rgba(255, 255, 255, 0.05);
   border-color: white;
-  color: white;
 }

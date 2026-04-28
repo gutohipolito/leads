@@ -10,12 +10,14 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   return (
-    <div className={styles.layout}>
+    <div className={styles.layoutWrapper}>
       <Sidebar />
-      <div className={styles.mainContent}>
+      <div className={styles.mainContainer}>
         <Header title={title} />
-        <main className={styles.container}>
-          {children}
+        <main className={styles.pageContent}>
+          <div className={styles.innerWrapper}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

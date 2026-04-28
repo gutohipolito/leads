@@ -1,42 +1,43 @@
 .header {
-  height: 70px;
-  background: rgba(0, 10, 20, 0.6);
-  backdrop-filter: blur(5px);
-  border-bottom: 2px solid var(--border-dim);
+  height: 80px;
+  width: 100%;
+  padding: 0 2.5rem;
+  background: rgba(0, 10, 20, 0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-8);
   position: sticky;
   top: 0;
   z-index: 90;
-  margin-left: 280px;
 }
 
 .title {
   font-family: var(--font-orbitron);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: white;
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
+  white-space: nowrap;
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: 2rem;
 }
 
 .searchBar {
   background: rgba(0, 255, 255, 0.05);
-  border: 1px solid var(--border-dim);
+  border: 1px solid rgba(0, 255, 255, 0.2);
   display: flex;
   align-items: center;
-  padding: 0 var(--space-4);
-  height: 38px;
-  width: 250px;
-  gap: var(--space-2);
+  padding: 0 1rem;
+  height: 40px;
+  width: 300px;
+  gap: 0.75rem;
   color: hsl(var(--primary));
 }
 
@@ -50,65 +51,55 @@
   font-size: 0.8rem;
 }
 
-.searchBar input::placeholder {
-  color: rgba(0, 255, 255, 0.3);
-  text-transform: uppercase;
-}
-
 .iconBtn {
   background: transparent;
-  border: none;
+  border: 1px solid rgba(0, 255, 255, 0.2);
   color: hsl(var(--primary));
   cursor: pointer;
-  position: relative;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--border-dim);
+  transition: all 0.2s;
+  position: relative;
 }
 
 .iconBtn:hover {
   background: rgba(0, 255, 255, 0.1);
-  box-shadow: 0 0 10px var(--primary-glow);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
 .badge {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 8px;
+  right: 8px;
   width: 6px;
   height: 6px;
   background: hsl(var(--primary));
-  box-shadow: 0 0 8px hsl(var(--primary));
+  border-radius: 50%;
+  box-shadow: 0 0 5px hsl(var(--primary));
 }
 
 .userProfile {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding-left: var(--space-6);
-  border-left: 1px solid var(--border-dim);
+  gap: 1rem;
+  padding-left: 1.5rem;
+  border-left: 1px solid rgba(0, 255, 255, 0.1);
 }
 
 .avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border: 1px solid hsl(var(--primary));
+  background: rgba(0, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
   color: hsl(var(--primary));
-  position: relative;
-}
-
-.avatar::after {
-  content: "";
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
 }
 
 .userInfo {
@@ -118,15 +109,15 @@
 
 .userName {
   font-family: var(--font-orbitron);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: white;
 }
 
 .userRole {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: hsl(var(--primary));
-  opacity: 0.7;
+  opacity: 0.6;
   text-transform: uppercase;
 }
