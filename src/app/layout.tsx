@@ -1,21 +1,15 @@
 import type { Metadata } from "next";
-import { Orbitron, JetBrains_Mono } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
-const orbitron = Orbitron({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-orbitron",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-outfit",
 });
 
 export const metadata: Metadata = {
-  title: "JARVIS LEADS | Protocolo de Captação",
-  description: "Sistema avançado de monitoramento e coleta de leads.",
-  keywords: ["leads", "marketing", "dashboard", "jarvis", "hud"],
+  title: "Ardentis Leads | Dashboard de Captação",
+  description: "Monitoramento avançado de leads com interface moderna.",
 };
 
 export default function RootLayout({
@@ -25,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${orbitron.variable} ${jetbrainsMono.variable}`}>
+      <body className={`${outfit.variable}`}>
         {children}
       </body>
     </html>

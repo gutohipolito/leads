@@ -8,13 +8,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 280px; /* Alinhado com a largura da sidebar */
-  min-width: 0; /* Evita quebra de layout por overflow */
+  margin-left: 260px; /* Aligned with new sidebar width */
+  min-width: 0;
 }
 
 .pageContent {
   flex: 1;
-  padding: 2.5rem;
+  padding: 1.5rem 2.5rem 2.5rem;
   overflow-y: auto;
 }
 
@@ -22,7 +22,4 @@
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
 }

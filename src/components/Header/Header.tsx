@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, Search, Settings, User } from 'lucide-react';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -9,26 +9,33 @@ interface HeaderProps {
 export default function Header({ title }: HeaderProps) {
   return (
     <header className={styles.header}>
-      <h1 className={styles.title}>{title}</h1>
+      <div className={styles.left}>
+        <h1 className={styles.title}>{title}</h1>
+      </div>
       
-      <div className={styles.actions}>
+      <div className={styles.right}>
         <div className={styles.searchBar}>
-          <Search size={18} />
-          <input type="text" placeholder="Pesquisar leads..." />
+          <Search size={18} strokeWidth={2} />
+          <input type="text" placeholder="Search data..." />
         </div>
         
-        <button className={styles.iconBtn}>
-          <Bell size={20} />
-          <span className={styles.badge} />
-        </button>
+        <div className={styles.actions}>
+          <button className={styles.actionBtn}>
+            <Settings size={20} />
+          </button>
+          <button className={styles.actionBtn}>
+            <Bell size={20} />
+            <span className={styles.badge} />
+          </button>
+        </div>
         
-        <div className={styles.userProfile}>
-          <div className={styles.avatar}>
-            <User size={20} />
+        <div className={styles.profile}>
+          <div className={styles.profileInfo}>
+            <span className={styles.name}>Ethan Carter</span>
+            <span className={styles.id}>ID: 944905011UZ</span>
           </div>
-          <div className={styles.userInfo}>
-            <span className={styles.userName}>Gustavo</span>
-            <span className={styles.userRole}>Admin</span>
+          <div className={styles.avatar}>
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ethan" alt="Avatar" />
           </div>
         </div>
       </div>

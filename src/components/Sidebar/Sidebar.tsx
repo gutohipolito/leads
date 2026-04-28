@@ -1,59 +1,83 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Webhook, BarChart3, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Webhook, 
+  Settings, 
+  LogOut, 
+  Database, 
+  CreditCard, 
+  Zap, 
+  UserPlus 
+} from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { mockClients } from '@/lib/store';
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
+  const isActive = (path: string) => pathname === path;
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logo}>
-        <div className={styles.logoIcon}>A</div>
-        <span className={styles.logoText}>Asthros Leads</span>
+        <div className={styles.logoIcon}>
+          <Zap size={24} fill="currentColor" />
+        </div>
+        <span className={styles.logoText}>Ardentis</span>
       </div>
 
       <nav className={styles.nav}>
-        <div className={styles.navSection}>
-          <span className={styles.sectionTitle}>Principal</span>
-          <Link href="/" className={styles.navLink}>
+        <div className={styles.section}>
+          <Link href="/" className={`${styles.navLink} ${isActive('/') ? styles.active : ''}`}>
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
-          <Link href="/clients" className={styles.navLink}>
+          <Link href="/clients" className={`${styles.navLink} ${isActive('/clients') ? styles.active : ''}`}>
             <Users size={20} />
             <span>Clientes</span>
           </Link>
-          <Link href="/webhooks" className={styles.navLink}>
+          <Link href="/webhooks" className={`${styles.navLink} ${isActive('/webhooks') ? styles.active : ''}`}>
             <Webhook size={20} />
             <span>Webhooks</span>
           </Link>
+          <Link href="/rewards" className={styles.navLink}>
+            <Zap size={20} />
+            <span>Rewards</span>
+          </Link>
         </div>
 
-        <div className={styles.navSection}>
-          <span className={styles.sectionTitle}>Clientes Ativos</span>
+        <div className={styles.section}>
+          <span className={styles.sectionTitle}>Monitoramento</span>
           <div className={styles.clientList}>
             {mockClients.map(client => (
-              <Link key={client.id} href={`/dashboard/${client.id}`} className={styles.clientLink}>
+              <Link 
+                key={client.id} 
+                href={`/dashboard/${client.id}`} 
+                className={`${styles.clientItem} ${isActive(`/dashboard/${client.id}`) ? styles.activeClient : ''}`}
+              >
                 <div className={styles.clientDot} />
                 <span>{client.name}</span>
-                <ChevronRight size={14} className={styles.chevron} />
               </Link>
             ))}
           </div>
         </div>
-
-        <div className={styles.navSection}>
-          <span className={styles.sectionTitle}>Sistema</span>
-          <Link href="/settings" className={styles.navLink}>
-            <Settings size={20} />
-            <span>Configurações</span>
-          </Link>
-        </div>
       </nav>
 
       <div className={styles.footer}>
+        <div className={styles.userCard}>
+          <div className={styles.avatar}>GC</div>
+          <div className={styles.userInfo}>
+            <span className={styles.userName}>Gustavo</span>
+            <span className={styles.userPlan}>Pro Plan</span>
+          </div>
+        </div>
         <button className={styles.logoutBtn}>
-          <LogOut size={20} />
+          <LogOut size={18} />
           <span>Sair</span>
         </button>
       </div>
