@@ -2,152 +2,157 @@
 
 import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
-import styles from './webhooks.module.css';
-import { Play, Copy, CheckCircle2, AlertCircle, Cpu, Zap, Link as LinkIcon, Database, Terminal } from 'lucide-react';
-import { mockClients } from '@/lib/store';
+import styles from './webhooks-manage.module.css';
+import { 
+  Webhook, 
+  Copy, 
+  RefreshCcw, 
+  Shield, 
+  Zap, 
+  Plus, 
+  Eye, 
+  EyeOff, 
+  CheckCircle2, 
+  ExternalLink,
+  ShieldAlert,
+  Server
+} from 'lucide-react';
+import { mockClients, currentUser, Client, Webhook as WebhookType } from '@/lib/store';
 
-export default function WebhooksPage() {
-  const [selectedClient, setSelectedClient] = useState(mockClients[0].id);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [response, setResponse] = useState<string | null>(null);
+export default function WebhooksManagePage() {
+  const isAdmin = currentUser.role === 'admin';
+  const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
 
-  const client = mockClients.find(c => c.id === selectedClient);
+  // Filtrar webhooks com base no usuário
+  const allWebhooks = isAdmin 
+    ? mockClients.flatMap(c => c.webhooks.map(w => ({ ...w, clientName: c.name })))
+    : mockClients.filter(c => c.id === currentUser.clientId).flatMap(c => c.webhooks.map(w => ({ ...w, clientName: c.name })));
 
-  const simulateWebhook = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setStatus('loading');
-    
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+  const toggleSecret = (id: string) => {
+    setShowSecret(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
-    try {
-      const res = await fetch(`/api/leads/${selectedClient}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Copiado para a área de transferência!');
+  };
 
-      const result = await res.json();
-      setResponse(JSON.stringify(result, null, 2));
-      
-      if (res.ok) setStatus('success');
-      else setStatus('error');
-    } catch (err) {
-      setStatus('error');
-      setResponse('Uplink failed: Connection refused by the remote server.');
+  const handleRegenerate = (id: string) => {
+    if (confirm('Tem certeza que deseja regenerar este segredo? Aplicações antigas pararão de funcionar.')) {
+      alert(`Segredo para o webhook ${id} regenerado com sucesso!`);
     }
   };
 
   return (
-    <DashboardLayout title="Simulador de Webhook">
+    <DashboardLayout title="Gerenciamento de Webhooks">
       <div className={styles.container}>
         
-        {/* Configuration Card */}
-        <section className={`${styles.configCard} glass`}>
-          <div className={styles.cardHeader}>
-            <div className={styles.headerInfo}>
-              <div className={styles.iconCircle}><Cpu size={20} /></div>
-              <div>
-                <h3>Injeção de Sinal</h3>
-                <p>Teste seus endpoints de captura com payloads personalizados.</p>
-              </div>
-            </div>
+        <div className={styles.headerActions}>
+          <div className={styles.info}>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem' }}>
+              {isAdmin 
+                ? 'Visualize e gerencie todos os sinais de uplink do ecossistema Asthros.' 
+                : 'Configure os pontos de entrada para capturar leads do seu site.'}
+            </p>
           </div>
+          <button className={styles.primaryBtn}>
+            <Plus size={20} />
+            <span>Gerar Novo Webhook</span>
+          </button>
+        </div>
 
-          <form className={styles.form} onSubmit={simulateWebhook}>
-            <div className={styles.fieldGroup}>
-              <label>Selecionar Cliente Alvo</label>
-              <select 
-                value={selectedClient} 
-                onChange={(e) => setSelectedClient(e.target.value)}
-                className={styles.select}
-              >
-                {mockClients.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.activeEndpoint}>
-              <div className={styles.endpointLabel}>
-                <LinkIcon size={14} />
-                <span>URL de Uplink</span>
+        <div className={styles.webhookGrid}>
+          {allWebhooks.map((webhook) => (
+            <div key={webhook.id} className={`${styles.webhookCard} glass`}>
+              <div className={styles.cardTop}>
+                <div className={styles.webhookInfo}>
+                  {isAdmin && <span className={styles.clientName}>{webhook.clientName}</span>}
+                  <h3>{webhook.name}</h3>
+                </div>
+                <div className={styles.statusWrapper}>
+                  <div className={`${styles.statusBadge} ${webhook.status === 'active' ? styles.active : styles.inactive}`}>
+                    <div className={styles.dot} />
+                    <span>{webhook.status === 'active' ? 'SISTEMA ATIVO' : 'SISTEMA INATIVO'}</span>
+                  </div>
+                </div>
               </div>
-              <div className={styles.codeBox}>
-                <code>{client?.webhookUrl}</code>
-                <button type="button" onClick={() => navigator.clipboard.writeText(client?.webhookUrl || '')}>
-                  <Copy size={14} />
+
+              <div className={styles.urlSection}>
+                <div className={styles.labelRow}>
+                  <span>Endpoint de Destino (Uplink)</span>
+                  <ExternalLink size={14} style={{ opacity: 0.5 }} />
+                </div>
+                <div className={styles.urlBox}>
+                  <div className={styles.urlText}>{webhook.url}</div>
+                  <button className={styles.copyBtn} onClick={() => handleCopy(webhook.url)} title="Copiar URL">
+                    <Copy size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.securityGrid}>
+                <div className={styles.securityItem}>
+                  <label>Chave Secreta de Uplink (X-Asthros-Secret)</label>
+                  <div className={styles.secretBox}>
+                    <div className={styles.secretValue}>
+                      {showSecret[webhook.id] ? webhook.secret : '••••••••••••••••••••'}
+                    </div>
+                    <button className={styles.toggleSecret} onClick={() => toggleSecret(webhook.id)}>
+                      {showSecret[webhook.id] ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                    <button className={styles.copyBtn} style={{ width: '32px', height: '32px' }} onClick={() => handleCopy(webhook.secret)}>
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.securityItem}>
+                  <label>Método de Validação</label>
+                  <select 
+                    className={styles.validationSelect} 
+                    defaultValue={webhook.validationType}
+                  >
+                    <option value="header">Header (Recomendado)</option>
+                    <option value="query">Query Parameter</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.cardFooter}>
+                <button className={styles.regenBtn} onClick={() => handleRegenerate(webhook.id)}>
+                  <RefreshCcw size={16} />
+                  <span>Regenerar Sinal</span>
+                </button>
+                <button className={styles.saveBtn}>
+                  <CheckCircle2 size={16} />
+                  <span>Salvar Alterações</span>
                 </button>
               </div>
             </div>
+          ))}
+        </div>
 
-            <div className={styles.formGrid}>
-              <div className={styles.fieldGroup}>
-                <label>Nome do Lead</label>
-                <input type="text" name="name" className={styles.input} placeholder="ex: João Silva" required />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label>E-mail</label>
-                <input type="email" name="email" className={styles.input} placeholder="john@example.com" required />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label>Telefone</label>
-                <input type="text" name="phone" className={styles.input} placeholder="+1 (555) 000-0000" />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label>Payload de Dados Personalizados</label>
-                <textarea name="message" className={styles.textarea} placeholder="Injetar JSON ou texto adicional..." rows={3} />
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              className={styles.triggerBtn} 
-              disabled={status === 'loading'}
-            >
-              <Zap size={18} fill={status === 'loading' ? 'none' : 'currentColor'} />
-              <span>{status === 'loading' ? 'PROCESSANDO...' : 'EXECUTAR UPLINK'}</span>
-            </button>
-          </form>
-        </section>
-
-        {/* Terminal Response Card */}
-        <section className={`${styles.statusCard} glass`}>
-          <div className={styles.cardHeader}>
-            <div className={styles.headerInfo}>
-              <div className={styles.iconCircle}><Terminal size={20} /></div>
+        {!isAdmin && (
+          <div className={`${styles.docsCard} glass`} style={{ padding: '2rem', marginTop: '1rem', border: '1px solid rgba(0, 209, 255, 0.2)' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+              <Shield size={32} color="var(--primary)" />
               <div>
-                <h3>Resposta do Sistema</h3>
-                <p>Logs de uplink e códigos de status do servidor.</p>
+                <h4 style={{ color: 'white', marginBottom: '0.5rem' }}>Instruções de Integração</h4>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                  Para garantir a segurança, todas as requisições para o seu webhook devem incluir o header <strong>X-Asthros-Secret</strong> com a sua chave secreta. 
+                  Sinais sem esta chave ou com chaves incorretas serão descartados pelo nosso firewall.
+                </p>
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                  <button className={styles.regenBtn} style={{ fontSize: '0.75rem' }}>
+                    <Server size={14} />
+                    <span>Ver Documentação API</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className={styles.terminalContent}>
-            {status === 'idle' && (
-              <div className={styles.idleState}>
-                <Database size={48} strokeWidth={1} />
-                <p>Aguardando execução do comando...</p>
-              </div>
-            )}
-            
-            {status !== 'idle' && (
-              <div className={styles.logBox}>
-                <div className={`${styles.statusBadge} ${styles[status]}`}>
-                  {status === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                  <span>SINAL: {status === 'success' ? '201 CRIADO' : '400 REQUISIÇÃO INVÁLIDA'}</span>
-                </div>
-                <div className={styles.jsonWrapper}>
-                  <div className={styles.jsonHeader}>
-                    <span>Detalhes do Payload</span>
-                    <span className={styles.lang}>JSON</span>
-                  </div>
-                  <pre>{response}</pre>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+        )}
+
       </div>
     </DashboardLayout>
   );

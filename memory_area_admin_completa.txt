@@ -1,0 +1,14 @@
+Área do Admin (Gerenciamento de Clientes):
+- Transformação da página /clients em um Painel de Controle Administrativo robusto.
+- Funcionalidades:
+  - Listagem de Clientes em tabela moderna com busca em tempo real.
+  - Monitoramento de Uso: Visualização de leads com barras de progresso proporcionais.
+  - Controle de Acesso: Botões para ativar/desativar contas instantaneamente.
+  - Impersonate: Recurso para simular acesso como o cliente (preparado para integração de sessão).
+  - Reset de Webhooks: Botão para limpar configurações de uplink de clientes específicos.
+  - Provisão de Contas: Modal de criação de novos clientes com formulário de onboarding.
+- UI/UX: Design "Glass-Table" com badges de status, estatísticas rápidas no topo e ações rápidas via ícones.
+Arquivos alterados:
+- src/app/clients/page.tsx
+- src/app/clients/clients.module.css
+- src/lib/store.ts

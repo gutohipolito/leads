@@ -1,6 +1,7 @@
 import React from 'react';
-import { Bell, Search, Settings, User } from 'lucide-react';
+import { Bell, Search, Settings } from 'lucide-react';
 import styles from './Header.module.css';
+import { currentUser } from '@/lib/store';
 
 interface HeaderProps {
   title: string;
@@ -31,11 +32,11 @@ export default function Header({ title }: HeaderProps) {
         
         <div className={styles.profile}>
           <div className={styles.profileInfo}>
-            <span className={styles.name}>Ethan Carter</span>
-            <span className={styles.id}>ID: 944905011UZ</span>
+            <span className={styles.name}>{currentUser.name}</span>
+            <span className={styles.id}>{currentUser.role === 'admin' ? 'ROOT ACCESS' : `ID: ${currentUser.id}`}</span>
           </div>
           <div className={styles.avatar}>
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ethan" alt="Avatar" />
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`} alt="Avatar" />
           </div>
         </div>
       </div>

@@ -1,28 +1,28 @@
 :root {
-  /* Modern DeFi Sleek Palette - Asthros Exact */
-  --background: #030303;
+  /* Ultra-Premium DeFi Palette - Asthros V2 */
+  --background: #020408;
   --foreground: #FCFCFC;
   
-  --card: #112B33;
+  --card: rgba(10, 20, 35, 0.4);
   --card-foreground: #FCFCFC;
   
-  --primary: #56D7FD;
+  --primary: #00D1FF;
+  --primary-glow: rgba(0, 209, 255, 0.3);
   --primary-foreground: #030303;
   
-  --secondary: #0a0a0a;
-  --muted: #A0A0A0;
-  --muted-foreground: #606060;
+  --secondary: #6366f1;
+  --muted: #94a3b8;
+  --muted-foreground: #475569;
   
-  --border: rgba(255, 255, 255, 0.05);
-  --accent: #56D7FD;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #00D1FF;
   
-  --radius-xl: 2rem;
+  --radius-xl: 2.5rem;
   --radius-lg: 1.5rem;
-  --radius-md: 1rem;
+  --radius-md: 0.75rem;
   
-  /* Fonts - Plus Jakarta Sans is the closest to the reference */
-  --font-main: var(--font-plus-jakarta), sans-serif;
-  --font-data: var(--font-inter), sans-serif;
+  --font-main: var(--font-plus-jakarta), 'Inter', sans-serif;
+  --font-data: var(--font-inter), monospace;
 }
 
 * {
@@ -42,24 +42,24 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Enhanced Grainy Texture */
+/* Enhanced Grainy Texture - Softer now */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 1000;
   pointer-events: none;
-  opacity: 0.07; /* Slightly more visible to ensure user sees it */
+  opacity: 0.03; /* Much softer as requested */
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* Glassmorphism Refined */
 .glass {
-  background: rgba(17, 43, 51, 0.2) !important;
-  backdrop-filter: blur(24px) !important;
+  background: var(--card) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-lg) !important;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
 }
 
 h1, h2, h3, h4 {

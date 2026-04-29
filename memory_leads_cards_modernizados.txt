@@ -1,0 +1,9 @@
+Modernização dos Cards de Leads:
+- Cards agora utilizam um layout "Dashboard-style" com cabeçalho, corpo e rodapé.
+- Efeitos visuais avançados: gradientes 145deg, bordas animadas em hover, escala 1.02.
+- Adição de micro-interações: labels que deslizam ("Ver Terminais"), rotação suave de ícones.
+- Inclusão de estatísticas rápidas dentro do card (Capturas, Webhooks, Protocolo).
+- Badges de status dinâmicos (Active Client, Online/Offline).
+Arquivos alterados:
+- src/app/leads/leads.module.css
+- src/app/leads/page.tsx

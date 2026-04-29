@@ -13,19 +13,24 @@ import {
   Box,
   Terminal,
   ShieldCheck,
-  UserCircle
+  UserCircle,
+  Database
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
+import { currentUser } from '@/lib/store';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const isAdmin = currentUser.role === 'admin';
 
   const isActive = (path: string) => pathname === path;
 
   const menuItems = [
     { name: 'Geral', path: '/', icon: LayoutDashboard },
     { name: 'Clientes', path: '/clients', icon: Users },
-    { name: 'Teste de Uplink', path: '/webhooks', icon: Terminal },
+    { name: 'Leads', path: '/leads', icon: Database },
+    { name: 'Webhooks', path: '/webhooks', icon: Webhook },
+    { name: 'Simulador', path: '/simulator', icon: Terminal },
   ];
 
   return (
@@ -40,39 +45,45 @@ export default function Sidebar() {
         <div className={styles.group}>
           <span className={styles.groupLabel}>Monitoramento</span>
           {menuItems.map((item) => (
-            <Link 
-              key={item.path} 
-              href={item.path} 
-              className={`${styles.navLink} ${isActive(item.path) ? styles.active : ''}`}
-            >
-              <div className={styles.iconCircle}>
-                <item.icon size={18} />
-              </div>
-              <span className={styles.linkText}>{item.name}</span>
-            </Link>
+            (!isAdmin && item.path === '/clients') ? null : (
+              <Link 
+                key={item.path} 
+                href={item.path} 
+                className={`${styles.navLink} ${isActive(item.path) ? styles.active : ''}`}
+              >
+                <div className={styles.iconCircle}>
+                  <item.icon size={18} />
+                </div>
+                <span className={styles.linkText}>{item.name}</span>
+              </Link>
+            )
           ))}
         </div>
 
         <div className={styles.group}>
           <span className={styles.groupLabel}>Sistema</span>
-          <Link href="/logs" className={styles.navLink}>
-            <div className={styles.iconCircle}>
-              <Activity size={18} />
-            </div>
-            <span className={styles.linkText}>Logs Globais</span>
-          </Link>
-          <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
-            <div className={styles.iconCircle}>
-              <UserCircle size={18} />
-            </div>
-            <span className={styles.linkText}>Usuários</span>
-          </Link>
-          <Link href="/security" className={`${styles.navLink} ${isActive('/security') ? styles.active : ''}`}>
-            <div className={styles.iconCircle}>
-              <ShieldCheck size={18} />
-            </div>
-            <span className={styles.linkText}>Segurança</span>
-          </Link>
+          {isAdmin && (
+            <>
+              <Link href="/logs" className={styles.navLink}>
+                <div className={styles.iconCircle}>
+                  <Activity size={18} />
+                </div>
+                <span className={styles.linkText}>Logs Globais</span>
+              </Link>
+              <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
+                <div className={styles.iconCircle}>
+                  <UserCircle size={18} />
+                </div>
+                <span className={styles.linkText}>Usuários</span>
+              </Link>
+              <Link href="/security" className={`${styles.navLink} ${isActive('/security') ? styles.active : ''}`}>
+                <div className={styles.iconCircle}>
+                  <ShieldCheck size={18} />
+                </div>
+                <span className={styles.linkText}>Segurança</span>
+              </Link>
+            </>
+          )}
           <Link href="/settings" className={styles.navLink}>
             <div className={styles.iconCircle}>
               <Settings size={18} />
@@ -85,11 +96,11 @@ export default function Sidebar() {
       <div className={styles.footer}>
         <div className={styles.userCard}>
           <div className={styles.avatar}>
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Avatar" />
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`} alt="Avatar" />
           </div>
           <div className={styles.userDetails}>
-            <p className={styles.userName}>Administrador</p>
-            <p className={styles.userRole}>Acesso Total</p>
+            <p className={styles.userName}>{currentUser.name}</p>
+            <p className={styles.userRole}>{currentUser.role === 'admin' ? 'Acesso Total' : 'Cliente'}</p>
           </div>
           <button className={styles.logoutBtn} title="Sair">
             <LogOut size={16} />
