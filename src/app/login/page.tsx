@@ -18,10 +18,12 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      console.log('Iniciando tentativa de login para:', email);
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      console.log('Resposta do Supabase recebida:', { data, error: authError });
 
       if (authError) throw authError;
 
