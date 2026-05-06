@@ -20,17 +20,21 @@ import {
   ShieldCheck,
   UserPlus,
   Building2,
-  Fingerprint
+  Fingerprint,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
 import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
+import StatsDrawer from '@/components/StatsDrawer/StatsDrawer';
 
 export default function ClientsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedClientForStats, setSelectedClientForStats] = useState<any>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newClientName, setNewClientName] = useState('');
@@ -190,6 +194,29 @@ export default function ClientsPage() {
     });
   };
 
+  const handleDeleteClient = async (client: any) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Cliente',
+      message: `Tem certeza que deseja excluir permanentemente ${client.name}? Todos os leads, usuários e webhooks vinculados a esta conta serão removidos. Esta ação não pode ser desfeita.`,
+      type: 'danger',
+      confirmLabel: 'Excluir Permanentemente',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from('clients')
+          .delete()
+          .eq('id', client.id);
+
+        if (error) {
+          alert('Erro ao excluir cliente: ' + error.message);
+        } else {
+          await logAction('Exclusão de Cliente', 'client', client.id, { name: client.name });
+          loadClients();
+        }
+      }
+    });
+  };
+
   return (
     <DashboardLayout title="Painel de Controle Administrativo">
       <div className={styles.container}>
@@ -295,8 +322,22 @@ export default function ClientsPage() {
                         >
                           <RefreshCcw size={18} />
                         </button>
-                        <button className={styles.iconAction} title="Estatísticas">
+                        <button 
+                          className={styles.iconAction} 
+                          title="Estatísticas"
+                          onClick={() => {
+                            setSelectedClientForStats(client);
+                            setIsDrawerOpen(true);
+                          }}
+                        >
                           <BarChart3 size={18} />
+                        </button>
+                        <button 
+                          className={`${styles.iconAction} ${styles.btnDelete}`} 
+                          title="Excluir Cliente"
+                          onClick={() => handleDeleteClient(client)}
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -372,6 +413,14 @@ export default function ClientsPage() {
         )}
 
       </div>
+
+      {selectedClientForStats && (
+        <StatsDrawer 
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          client={selectedClientForStats}
+        />
+      )}
 
       <ConfirmModal 
         isOpen={confirmConfig.isOpen}

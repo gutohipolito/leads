@@ -322,17 +322,24 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.btnPowerOff:hover {
-  background: rgba(239, 68, 68, 0.1) !important;
-  color: #ef4444 !important;
-  border-color: rgba(239, 68, 68, 0.2) !important;
-}
-
 .btnPowerOn:hover {
   background: rgba(52, 211, 153, 0.1) !important;
   color: #34d399 !important;
   border-color: rgba(52, 211, 153, 0.2) !important;
 }
+
+.btnPowerOff:hover {
+  background: rgba(245, 158, 11, 0.1) !important;
+  color: #f59e0b !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.btnDelete:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
 
 /* CNPJ Lookup Styles */
 .inputWithAction {

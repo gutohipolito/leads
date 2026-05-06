@@ -158,6 +158,11 @@
   color: white;
 }
 
+.actionIcon.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
 /* Modal */
 .modalOverlay {
   position: fixed;

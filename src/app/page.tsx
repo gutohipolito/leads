@@ -17,7 +17,8 @@ export default function Home() {
     leads7Days: 0,
     activeClientsCount: 0,
     chartData: [] as any[],
-    recentLeads: [] as any[]
+    recentLeads: [] as any[],
+    lastSignalTime: null as number | null
   });
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
 
@@ -95,13 +96,17 @@ export default function Home() {
           return { date: dateStr, leads: count };
         });
 
+        const lastLead = recentLeads?.[0];
+        const lastSignalTime = lastLead ? new Date(lastLead.created_at).getTime() : null;
+
         setStats({
           totalLeads: totalLeads || 0,
           leadsToday: allLeads?.filter(l => l.created_at >= todayStart).length || 0,
           leads7Days: allLeads?.filter(l => l.created_at >= weekStart).length || 0,
           activeClientsCount,
           chartData,
-          recentLeads: recentLeads || []
+          recentLeads: recentLeads || [],
+          lastSignalTime
         });
       }
       setLoading(false);
@@ -119,6 +124,18 @@ export default function Home() {
   }
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
+
+  const getLastSignalText = () => {
+    if (!stats.lastSignalTime) return 'Sem Sinais';
+    const mins = Math.floor((Date.now() - stats.lastSignalTime) / 60000);
+    if (mins < 1) return 'Sinal: Agora';
+    if (mins < 60) return `Sinal: ${mins} min`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `Sinal: ${hours}h`;
+    return `Sinal: ${Math.floor(hours / 24)}d`;
+  };
+
+  const isRecent = stats.lastSignalTime && (Date.now() - stats.lastSignalTime) < 300000; // 5 minutos
 
   return (
     <DashboardLayout title={dashboardTitle}>
@@ -167,8 +184,8 @@ export default function Home() {
               <div className={styles.statInfo}>
                 <span className={styles.statLabel}>Terminal Uplink</span>
                 <div className={styles.statusContainer}>
-                  <div className={styles.pulse} />
-                  <h2 className={styles.statValue}>Ativo</h2>
+                  <div className={`${styles.pulse} ${isRecent ? styles.pulseGreen : styles.pulseYellow}`} />
+                  <h2 className={styles.statValue}>{getLastSignalText()}</h2>
                 </div>
               </div>
             </div>

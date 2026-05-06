@@ -14,7 +14,9 @@ import {
   ChevronRight,
   Filter,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -134,6 +136,29 @@ export default function UsersManagementPage() {
     }
   };
 
+  const handleDeleteUser = async (user: any) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Usuário',
+      message: `Deseja excluir permanentemente o acesso de ${user.name}? Esta ação não pode ser desfeita.`,
+      type: 'danger',
+      confirmLabel: 'Excluir Acesso',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from('system_users')
+          .delete()
+          .eq('id', user.id);
+
+        if (!error) {
+          await logAction('Exclusão de Usuário', 'user', user.id, { name: user.name });
+          loadData();
+        } else {
+          alert('Erro ao excluir usuário: ' + error.message);
+        }
+      }
+    });
+  };
+
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -211,7 +236,14 @@ export default function UsersManagementPage() {
                           onClick={() => handleEditClick(user)}
                           title="Editar Usuário"
                         >
-                          <MoreHorizontal size={18} />
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          className={`${styles.actionIcon} ${styles.danger}`} 
+                          onClick={() => handleDeleteUser(user)}
+                          title="Excluir Usuário"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
