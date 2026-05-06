@@ -1,15 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  if (typeof window !== 'undefined') {
-    console.error('ERRO CRÍTICO: Chaves do Supabase não encontradas no ambiente do navegador.');
-  }
-}
-
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder'
-);
+// Criamos o cliente do navegador que gerencia cookies automaticamente para o Next.js
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
