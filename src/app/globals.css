@@ -17,12 +17,12 @@
   --border: rgba(255, 255, 255, 0.08);
   --accent: #00D1FF;
   
-  --radius-xl: 2.5rem;
-  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-lg: 1.25rem;
   --radius-md: 0.75rem;
   
-  --font-main: var(--font-plus-jakarta), 'Inter', sans-serif;
-  --font-data: var(--font-inter), monospace;
+  --font-main: var(--font-outfit), var(--font-plus-jakarta), sans-serif;
+  --font-data: var(--font-plus-jakarta), monospace;
 }
 
 * {
@@ -39,7 +39,8 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   position: relative;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  line-height: 1.6;
 }
 
 /* Enhanced Grainy Texture - Softer now */

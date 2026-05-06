@@ -1,17 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './simulator.module.css';
 import { Play, Copy, CheckCircle2, AlertCircle, Cpu, Zap, Link as LinkIcon, Database, Terminal } from 'lucide-react';
-import { mockClients } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 
 export default function WebhooksPage() {
-  const [selectedClient, setSelectedClient] = useState(mockClients[0].id);
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState('');
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [response, setResponse] = useState<string | null>(null);
 
-  const client = mockClients.find(c => c.id === selectedClient);
+  useEffect(() => {
+    async function loadClients() {
+      setLoading(true);
+      const { data } = await supabase.from('clients').select('*').order('name');
+      if (data && data.length > 0) {
+        setClients(data);
+        setSelectedClient(data[0].id);
+      }
+      setLoading(false);
+    }
+    loadClients();
+  }, []);
 
   const simulateWebhook = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,6 +51,8 @@ export default function WebhooksPage() {
     }
   };
 
+  const webhookUrl = selectedClient ? `${window.location.origin}/api/leads/${selectedClient}` : '';
+
   return (
     <DashboardLayout title="Simulador de Webhook">
       <div className={styles.container}>
@@ -61,8 +76,9 @@ export default function WebhooksPage() {
                 value={selectedClient} 
                 onChange={(e) => setSelectedClient(e.target.value)}
                 className={styles.select}
+                disabled={loading}
               >
-                {mockClients.map(c => (
+                {clients.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
@@ -71,11 +87,11 @@ export default function WebhooksPage() {
             <div className={styles.activeEndpoint}>
               <div className={styles.endpointLabel}>
                 <LinkIcon size={14} />
-                <span>URL de Uplink ({client?.webhooks[0]?.name})</span>
+                <span>URL de Uplink</span>
               </div>
               <div className={styles.codeBox}>
-                <code>{client?.webhooks[0]?.url}</code>
-                <button type="button" onClick={() => navigator.clipboard.writeText(client?.webhooks[0]?.url || '')}>
+                <code>{webhookUrl}</code>
+                <button type="button" onClick={() => navigator.clipboard.writeText(webhookUrl)}>
                   <Copy size={14} />
                 </button>
               </div>
@@ -103,7 +119,7 @@ export default function WebhooksPage() {
             <button 
               type="submit" 
               className={styles.triggerBtn} 
-              disabled={status === 'loading'}
+              disabled={status === 'loading' || !selectedClient}
             >
               <Zap size={18} fill={status === 'loading' ? 'none' : 'currentColor'} />
               <span>{status === 'loading' ? 'PROCESSANDO...' : 'EXECUTAR UPLINK'}</span>

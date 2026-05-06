@@ -48,7 +48,14 @@
   font-size: 1.5rem;
   font-weight: 800;
   color: white;
-  margin-top: 2px;
+  margin: 0.1rem 0;
+}
+
+.statSub {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  opacity: 0.8;
 }
 
 .mainGrid {
@@ -91,10 +98,37 @@
   cursor: pointer;
 }
 
-.chartArea {
-  height: 200px;
+.chartLegend {
   display: flex;
-  align-items: flex-end;
+  gap: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legendItem .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.legendItem span {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+.chartArea {
+  height: 320px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .svgChart {

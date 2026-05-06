@@ -89,26 +89,5 @@ export const mockSecurityEvents: SecurityEvent[] = [
   { id: '2', type: 'threat', description: 'Bloqueio de IP por múltiplas requisições: 45.23.11.201', timestamp: '2026-04-28 14:20', severity: 'high' },
 ];
 
-export interface SystemUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'manager' | 'viewer';
-  status: 'active' | 'inactive';
-  lastLogin: string;
-}
-
-export const mockSystemUsers: SystemUser[] = [
-  { id: 'u1', name: 'Administrador', email: 'admin@asthros.com', role: 'admin', status: 'active', lastLogin: '2026-04-28 15:45' },
-  { id: 'u2', name: 'Gustavo Santos', email: 'gustavo@asthros.com', role: 'manager', status: 'active', lastLogin: '2026-04-28 12:10' },
-  { id: 'u3', name: 'Analista de Leads', email: 'analista@asthros.com', role: 'viewer', status: 'inactive', lastLogin: '2026-04-25 09:30' },
-];
-
-// Mock do usuário logado no momento para simular diferentes visões
-// Mude 'role' para 'admin' ou 'client' e adicione 'clientId' se for cliente
-export const currentUser = {
-  id: 'u1',
-  name: 'Administrador',
-  role: 'admin', // 'admin' ou 'client'
-  clientId: null as string | null
-};
+// O usuário logado agora é gerenciado pelo Supabase Auth.
+// Removido o mock estático para evitar conflitos de sessão.

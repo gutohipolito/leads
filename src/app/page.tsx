@@ -1,35 +1,77 @@
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3 } from 'lucide-react';
-import { mockClients, mockLeads, currentUser } from '@/lib/store';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp } from 'lucide-react';
+import { createClient } from '@/utils/supabase/server';
+import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 
-export default function Home() {
-  const isAdmin = currentUser.role === 'admin';
-  const clientId = currentUser.clientId;
-
-  // Filtra leads com base no usuário logado
-  const leads = isAdmin 
-    ? mockLeads 
-    : mockLeads.filter(l => l.clientId === clientId);
-
-  const totalLeads = leads.length;
+export default async function Home() {
+  const supabase = await createClient();
   
-  // Cálculo de leads por período
+  // Obter usuário da sessão
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Buscar perfil no banco para saber se é Admin ou Cliente
+  const { data: profile } = await supabase
+    .from('system_users')
+    .select('*')
+    .eq('email', user?.email)
+    .single();
+
+  const isAdmin = profile?.role === 'admin';
+  const clientId = profile?.client_id;
+
+  // 1. Buscar Total de Leads
+  let leadsQuery = supabase.from('leads').select('*', { count: 'exact' });
+  if (!isAdmin && clientId) {
+    leadsQuery = leadsQuery.eq('client_id', clientId);
+  }
+  const { count: totalLeads, data: allLeads } = await leadsQuery;
+
+  // 2. Buscar Clientes Ativos (apenas para Admin)
+  let activeClientsCount = 0;
+  if (isAdmin) {
+    const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active');
+    activeClientsCount = count || 0;
+  }
+
+  // 3. Buscar Últimos Leads (com join de cliente se for admin)
+  let recentLeadsQuery = supabase
+    .from('leads')
+    .select(`
+      *,
+      clients (name)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (!isAdmin && clientId) {
+    recentLeadsQuery = recentLeadsQuery.eq('client_id', clientId);
+  }
+  const { data: recentLeads } = await recentLeadsQuery;
+
+  // 4. Cálculo de leads por período e dados para o gráfico
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  
+  // Gerar últimos 7 dias para o gráfico
+  const chartData = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+    
+    const count = allLeads?.filter(l => {
+      const ts = new Date(l.created_at).getTime();
+      return ts >= dayStart && ts < dayEnd;
+    }).length || 0;
 
-  const leadsToday = leads.filter(l => new Date(l.createdAt) >= todayStart).length;
-  const leads7Days = leads.filter(l => new Date(l.createdAt) >= sevenDaysAgo).length;
-  const leads30Days = leads.filter(l => new Date(l.createdAt) >= thirtyDaysAgo).length;
+    return { date: dateStr, leads: count };
+  });
 
-  // Últimos leads recebidos (ordenados por data)
-  const recentLeads = [...leads]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const leadsToday = allLeads?.filter(l => l.created_at >= todayStart).length || 0;
+  const leads7Days = allLeads?.filter(l => l.created_at >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()).length || 0;
 
-  // Status do webhook (ativo se for cliente cadastrado ou admin)
   const webhookStatus = !isAdmin && !clientId ? "Inativo" : "Ativo";
 
   return (
@@ -39,20 +81,29 @@ export default function Home() {
         {/* Statistics Grid */}
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} glass`}>
+            <div className={styles.statIcon}><TrendingUp size={20} /></div>
+            <div className={styles.statInfo}>
+              <span className={styles.statLabel}>Leads Totais</span>
+              <h2 className={styles.statValue}>{totalLeads || 0}</h2>
+              <span className={styles.statSub}>Acumulado total</span>
+            </div>
+          </div>
+          
+          <div className={`${styles.statCard} glass`}>
             <div className={styles.statIcon}><Activity size={20} /></div>
             <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Total de Leads</span>
-              <h2 className={styles.statValue}>{totalLeads}</h2>
+              <span className={styles.statLabel}>Capturas Hoje</span>
+              <h2 className={styles.statValue}>{leadsToday}</h2>
+              <span className={styles.statSub}>Últimas 24 horas</span>
             </div>
           </div>
           
           <div className={`${styles.statCard} glass`}>
             <div className={styles.statIcon}><Clock size={20} /></div>
             <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Hoje / 7d / 30d</span>
-              <h2 className={styles.statValue}>
-                {leadsToday} <span className={styles.slash}>/</span> {leads7Days} <span className={styles.slash}>/</span> {leads30Days}
-              </h2>
+              <span className={styles.statLabel}>Últimos 7 dias</span>
+              <h2 className={styles.statValue}>{leads7Days}</h2>
+              <span className={styles.statSub}>Volume semanal</span>
             </div>
           </div>
 
@@ -60,7 +111,7 @@ export default function Home() {
             <div className={`${styles.statCard} glass`}>
               <div className={styles.statIcon}><Webhook size={20} /></div>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>Status Webhook</span>
+                <span className={styles.statLabel}>Terminal Uplink</span>
                 <div className={styles.statusContainer}>
                   <div className={styles.pulse} />
                   <h2 className={styles.statValue}>{webhookStatus}</h2>
@@ -71,19 +122,12 @@ export default function Home() {
             <div className={`${styles.statCard} glass`}>
               <div className={styles.statIcon}><Users size={20} /></div>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>Clientes Ativos</span>
-                <h2 className={styles.statValue}>{mockClients.length}</h2>
+                <span className={styles.statLabel}>Parceiros Ativos</span>
+                <h2 className={styles.statValue}>{activeClientsCount}</h2>
+                <span className={styles.statSub}>Clientes no sistema</span>
               </div>
             </div>
           )}
-
-          <div className={`${styles.statCard} glass`}>
-            <div className={styles.statIcon}><Shield size={20} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Segurança</span>
-              <h2 className={styles.statValue}>Uplink SSL</h2>
-            </div>
-          </div>
         </div>
 
         <div className={styles.mainGrid}>
@@ -92,32 +136,17 @@ export default function Home() {
             <div className={styles.cardHeader}>
               <div className={styles.titleWithIcon}>
                 <BarChart3 size={18} className={styles.iconPrimary} />
-                <h3>Volume de Capturas</h3>
+                <h3>Análise de Conversão</h3>
+              </div>
+              <div className={styles.chartLegend}>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} />
+                  <span>Sinais de Uplink</span>
+                </div>
               </div>
             </div>
             <div className={styles.chartArea}>
-              <svg viewBox="0 0 800 200" className={styles.svgChart}>
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path 
-                  d="M0,150 Q100,140 200,160 T400,120 T600,140 T800,100 L800,200 L0,200 Z" 
-                  fill="url(#chartGradient)" 
-                />
-                <path 
-                  d="M0,150 Q100,140 200,160 T400,120 T600,140 T800,100" 
-                  fill="none" 
-                  stroke="var(--primary)" 
-                  strokeWidth="3" 
-                />
-                {/* Simulated data points */}
-                <circle cx="200" cy="160" r="4" fill="var(--primary)" />
-                <circle cx="400" cy="120" r="4" fill="var(--primary)" />
-                <circle cx="600" cy="140" r="4" fill="var(--primary)" />
-              </svg>
+              <AnalyticsChart data={chartData} />
             </div>
           </div>
 
@@ -138,16 +167,16 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentLeads.length > 0 ? recentLeads.map((lead) => (
+                  {recentLeads && recentLeads.length > 0 ? recentLeads.map((lead) => (
                     <tr key={lead.id}>
-                      {isAdmin && <td>{mockClients.find(c => c.id === lead.clientId)?.name || 'N/A'}</td>}
+                      {isAdmin && <td>{(lead.clients as any)?.name || 'N/A'}</td>}
                       <td>
                         <div className={styles.leadInfoMini}>
-                          <span className={styles.leadName}>{lead.name}</span>
-                          <span className={styles.leadEmail}>{lead.email}</span>
+                          <span className={styles.leadName}>{lead.name || 'Sem nome'}</span>
+                          <span className={styles.leadEmail}>{lead.email || 'Sem e-mail'}</span>
                         </div>
                       </td>
-                      <td>{new Date(lead.createdAt).toLocaleDateString('pt-BR')}</td>
+                      <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
                       <td>
                         <span className={styles.statusBadge}>OK</span>
                       </td>
@@ -155,7 +184,7 @@ export default function Home() {
                   )) : (
                     <tr>
                       <td colSpan={isAdmin ? 4 : 3} className={styles.emptyTable}>
-                        Nenhum registro encontrado.
+                        Nenhum registro encontrado no banco.
                       </td>
                     </tr>
                   )}
@@ -169,3 +198,4 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+

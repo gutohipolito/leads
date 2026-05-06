@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './leads.module.css';
 import { 
@@ -16,15 +16,24 @@ import {
   Table as TableIcon, 
   FileJson,
   ArrowLeft,
-  Webhook
+  Webhook,
+  X
 } from 'lucide-react';
-import { mockClients, mockLeads, currentUser, Client, Webhook as WebhookType, Lead } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
+import { logAction } from '@/utils/logger';
+import Loader from '@/components/Loader/Loader';
 
 export default function LeadsPage() {
-  const isAdmin = currentUser.role === 'admin';
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userClientId, setUserClientId] = useState<string | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
   
   // Filtros
   const [filterName, setFilterName] = useState('');
@@ -32,41 +41,52 @@ export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  const currentClient = useMemo(() => {
-    if (!isAdmin) return mockClients.find(c => c.id === currentUser.clientId);
-    return mockClients.find(c => c.id === selectedClientId);
-  }, [selectedClientId, isAdmin]);
+  // Carregar Sessão e Dados
+  useEffect(() => {
+    async function loadAllData() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
+        const isUserAdmin = profile?.role === 'admin';
+        const clientId = profile?.client_id;
+        setIsAdmin(isUserAdmin);
+        setUserClientId(clientId);
 
-  // Lógica de visualização inicial
+        const { data: clientsData } = await supabase.from('clients').select(`*, webhooks (*)`);
+        if (clientsData) setClients(clientsData);
+
+        let leadsQuery = supabase.from('leads').select('*').order('created_at', { ascending: false });
+        if (!isUserAdmin && clientId) leadsQuery = leadsQuery.eq('client_id', clientId);
+        const { data: leadsData } = await leadsQuery;
+        if (leadsData) setLeads(leadsData);
+      }
+      setLoading(false);
+    }
+    loadAllData();
+  }, []);
+
+  const currentClient = useMemo(() => {
+    if (!isAdmin) return clients.find(c => c.id === userClientId);
+    return clients.find(c => c.id === selectedClientId);
+  }, [selectedClientId, isAdmin, clients, userClientId]);
+
   const showClientSelection = isAdmin && !selectedClientId;
-  const showWebhookSelection = currentClient && currentClient.webhooks.length > 1 && !selectedWebhookId;
-  const showLeadsList = (currentClient && currentClient.webhooks.length === 1) || selectedWebhookId;
+  const showWebhookSelection = currentClient && currentClient.webhooks?.length > 1 && !selectedWebhookId;
+  const showLeadsList = (currentClient && (!currentClient.webhooks || currentClient.webhooks.length <= 1)) || selectedWebhookId;
 
   const filteredLeads = useMemo(() => {
-    let leads = mockLeads;
-    
-    // Filtrar por cliente
-    if (currentClient) {
-      leads = leads.filter(l => l.clientId === currentClient.id);
-    }
-    
-    // Filtrar por webhook (se houver seleção específica)
+    let result = [...leads];
+    if (currentClient) result = result.filter(l => l.client_id === currentClient.id);
     if (selectedWebhookId) {
-      leads = leads.filter(l => l.webhookId === selectedWebhookId);
-    } else if (currentClient && currentClient.webhooks.length === 1) {
-      leads = leads.filter(l => l.webhookId === currentClient.webhooks[0].id);
+      result = result.filter(l => l.webhook_id === selectedWebhookId);
+    } else if (currentClient && currentClient.webhooks?.length === 1) {
+      result = result.filter(l => l.webhook_id === currentClient.webhooks[0].id);
     }
-
-    // Filtros de texto
-    if (filterName) {
-      leads = leads.filter(l => l.name.toLowerCase().includes(filterName.toLowerCase()));
-    }
-    if (filterEmail) {
-      leads = leads.filter(l => l.email.toLowerCase().includes(filterEmail.toLowerCase()));
-    }
-
-    return leads;
-  }, [currentClient, selectedWebhookId, filterName, filterEmail]);
+    if (filterName) result = result.filter(l => (l.name || '').toLowerCase().includes(filterName.toLowerCase()));
+    if (filterEmail) result = result.filter(l => (l.email || '').toLowerCase().includes(filterEmail.toLowerCase()));
+    return result;
+  }, [currentClient, selectedWebhookId, filterName, filterEmail, leads]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -76,7 +96,7 @@ export default function LeadsPage() {
   const totalPages = Math.ceil(filteredLeads.length / pageSize);
 
   const resetSelection = () => {
-    if (selectedWebhookId && currentClient && currentClient.webhooks.length > 1) {
+    if (selectedWebhookId && currentClient && currentClient.webhooks?.length > 1) {
       setSelectedWebhookId(null);
     } else {
       setSelectedClientId(null);
@@ -86,126 +106,114 @@ export default function LeadsPage() {
   };
 
   const handleExport = (format: string) => {
-    alert(`Exportando ${filteredLeads.length} leads em formato ${format.toUpperCase()}...`);
+    if (filteredLeads.length === 0) return;
+
+    if (format === 'json') {
+      const dataStr = JSON.stringify(filteredLeads, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `asthros_leads_${new Date().getTime()}.json`;
+      link.click();
+    } else if (format === 'csv') {
+      // Obter todas as chaves únicas de todos os leads.data para as colunas
+      const dynamicKeys = new Set<string>();
+      filteredLeads.forEach(l => {
+        if (l.data) Object.keys(l.data).forEach(k => dynamicKeys.add(k));
+      });
+      const dynamicKeysArray = Array.from(dynamicKeys);
+
+      const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray];
+      
+      const rows = filteredLeads.map(l => {
+        const base = [
+          l.id,
+          l.name || '',
+          l.email || '',
+          l.phone || '',
+          new Date(l.created_at).toLocaleString('pt-BR'),
+        ];
+        const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
+        return [...base, ...extra].map(val => `"${val.replace(/"/g, '""')}"`).join(',');
+      });
+
+      const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `asthros_leads_${new Date().getTime()}.csv`;
+      link.click();
+    }
+
+    logAction('Exportação Realizada', 'lead', undefined, { format, count: filteredLeads.length });
     setExportOpen(false);
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Gerenciamento de Leads">
+        <Loader text="Sincronizando Leads" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Gerenciamento de Leads">
       <div className={styles.container}>
         
-        {/* VIEW: ADMIN CLIENT SELECTION */}
         {showClientSelection && (
           <div className={styles.selectionSection}>
-            <div className={styles.listHeader}>
-              <h3>Selecione um Cliente para Ver os Leads</h3>
-            </div>
+            <div className={styles.listHeader}><h3>Selecione um Cliente</h3></div>
             <div className={styles.selectionGrid}>
-              {mockClients.map(client => (
+              {clients.map(client => (
                 <div key={client.id} className={`${styles.card} glass`} onClick={() => setSelectedClientId(client.id)}>
                   <div className={styles.cardTop}>
-                    <div className={styles.iconBox}>
-                      <Users size={24} />
-                    </div>
-                    <div className={styles.cardBadge}>Active Client</div>
+                    <div className={styles.iconBox}><Users size={24} /></div>
+                    <div className={styles.cardBadge}>{client.status === 'active' ? 'Ativo' : 'Inativo'}</div>
                   </div>
                   <div className={styles.cardBody}>
                     <h3>{client.name}</h3>
                     <div className={styles.cardStats}>
-                      <div className={styles.statItem}>
-                        <span className={styles.statLabel}>Capturas</span>
-                        <span className={styles.statValue}>{client.leadsCount}</span>
-                      </div>
-                      <div className={styles.statItem}>
-                        <span className={styles.statLabel}>Webhooks</span>
-                        <span className={styles.statValue}>{client.webhooks.length}</span>
-                      </div>
+                      <div className={styles.statItem}><span className={styles.statLabel}>Webhooks</span><span className={styles.statValue}>{client.webhooks?.length || 0}</span></div>
                     </div>
                   </div>
-                  <div className={styles.cardFooter}>
-                    <span className={styles.enterLabel}>Ver Terminais</span>
-                    <div className={styles.arrowCircle}>
-                      <ChevronRight size={18} />
-                    </div>
-                  </div>
+                  <div className={styles.cardFooter}><span className={styles.enterLabel}>Ver Terminais</span><div className={styles.arrowCircle}><ChevronRight size={18} /></div></div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* VIEW: WEBHOOK SELECTION (Multi-webhook clients) */}
         {showWebhookSelection && (
           <div className={styles.selectionSection}>
             <div className={styles.listHeader}>
-              <button className={styles.backBtn} onClick={resetSelection}>
-                <ArrowLeft size={18} />
-                <span>Voltar para Clientes</span>
-              </button>
-              <h3>Selecione a Origem dos Leads ({currentClient?.name})</h3>
+              <button className={styles.backBtn} onClick={resetSelection}><ArrowLeft size={18} /><span>Voltar</span></button>
+              <h3>Selecione a Origem ({currentClient?.name})</h3>
             </div>
             <div className={styles.selectionGrid}>
-              {currentClient?.webhooks.map(webhook => (
+              {currentClient?.webhooks.map((webhook: any) => (
                 <div key={webhook.id} className={`${styles.card} glass`} onClick={() => setSelectedWebhookId(webhook.id)}>
-                  <div className={styles.cardTop}>
-                    <div className={styles.iconBox}>
-                      <Webhook size={24} />
-                    </div>
-                    <div className={styles.cardBadge}>{webhook.status === 'active' ? '● Online' : '○ Offline'}</div>
-                  </div>
-                  <div className={styles.cardBody}>
-                    <h3>{webhook.name}</h3>
-                    <div className={styles.cardStats}>
-                      <div className={styles.statItem}>
-                        <span className={styles.statLabel}>Protocolo</span>
-                        <span className={styles.statValue}>HTTPS/JSON</span>
-                      </div>
-                      <div className={styles.statItem}>
-                        <span className={styles.statLabel}>ID do Uplink</span>
-                        <span className={styles.statValue}>{webhook.id}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className={styles.cardFooter}>
-                    <span className={styles.enterLabel}>Acessar Leads</span>
-                    <div className={styles.arrowCircle}>
-                      <ChevronRight size={18} />
-                    </div>
-                  </div>
+                  <div className={styles.cardTop}><div className={styles.iconBox}><Webhook size={24} /></div></div>
+                  <div className={styles.cardBody}><h3>{webhook.name}</h3></div>
+                  <div className={styles.cardFooter}><span className={styles.enterLabel}>Acessar Leads</span><div className={styles.arrowCircle}><ChevronRight size={18} /></div></div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* VIEW: LEADS LIST */}
         {showLeadsList && (
           <div className={styles.listSection}>
             <div className={styles.listHeader}>
-              <button className={styles.backBtn} onClick={resetSelection}>
-                <ArrowLeft size={18} />
-                <span>Voltar</span>
-              </button>
-              
+              <button className={styles.backBtn} onClick={resetSelection}><ArrowLeft size={18} /><span>Voltar</span></button>
               <div className={styles.actions}>
                 <div className={styles.exportDropdown}>
-                  <button className={styles.primaryBtn} onClick={() => setExportOpen(!exportOpen)}>
-                    <Download size={18} />
-                    <span>Exportar Leads</span>
-                  </button>
+                  <button className={styles.primaryBtn} onClick={() => setExportOpen(!exportOpen)}><Download size={18} /><span>Exportar Leads</span></button>
                   <div className={`${styles.dropdownMenu} ${exportOpen ? styles.open : ''}`}>
-                    <button className={styles.dropdownItem} onClick={() => handleExport('csv')}>
-                      <TableIcon size={16} /> <span>CSV (Excel)</span>
-                    </button>
-                    <button className={styles.dropdownItem} onClick={() => handleExport('xlsx')}>
-                      <FileText size={16} /> <span>Excel (XLSX)</span>
-                    </button>
-                    <button className={styles.dropdownItem} onClick={() => handleExport('pdf')}>
-                      <FileText size={16} /> <span>PDF Document</span>
-                    </button>
-                    <button className={styles.dropdownItem} onClick={() => handleExport('json')}>
-                      <FileJson size={16} /> <span>JSON Raw</span>
-                    </button>
+                    <button className={styles.dropdownItem} onClick={() => handleExport('csv')}><TableIcon size={16} /> <span>CSV</span></button>
+                    <button className={styles.dropdownItem} onClick={() => handleExport('json')}><FileJson size={16} /> <span>JSON</span></button>
                   </div>
                 </div>
               </div>
@@ -213,134 +221,62 @@ export default function LeadsPage() {
 
             <div className={styles.leadsTableWrapper}>
               <div className={styles.filtersBar}>
-                <div className={styles.filterField}>
-                  <label>Filtrar por Nome</label>
-                  <input 
-                    type="text" 
-                    placeholder="Buscar nome..." 
-                    className={styles.filterInput} 
-                    value={filterName}
-                    onChange={(e) => setFilterName(e.target.value)}
-                  />
-                </div>
-                <div className={styles.filterField}>
-                  <label>Filtrar por E-mail</label>
-                  <input 
-                    type="text" 
-                    placeholder="Buscar e-mail..." 
-                    className={styles.filterInput} 
-                    value={filterEmail}
-                    onChange={(e) => setFilterEmail(e.target.value)}
-                  />
-                </div>
-                <div className={styles.filterField}>
-                  <label>Status</label>
-                  <select className={styles.filterInput}>
-                    <option>Todos</option>
-                    <option>Recebido</option>
-                    <option>Processado</option>
-                  </select>
-                </div>
+                <div className={styles.filterField}><label>Nome</label><input type="text" className={styles.filterInput} value={filterName} onChange={(e) => setFilterName(e.target.value)}/></div>
+                <div className={styles.filterField}><label>E-mail</label><input type="text" className={styles.filterInput} value={filterEmail} onChange={(e) => setFilterEmail(e.target.value)}/></div>
+                <div className={styles.filterField}><label>Total</label><div className={styles.countBadge}>{filteredLeads.length}</div></div>
               </div>
 
               <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Lead</th>
-                    <th>Informações de Contato</th>
-                    <th>Dados Adicionais</th>
-                    <th>Data de Captura</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Lead</th><th>Contato</th><th>Data</th><th>Ações</th></tr></thead>
                 <tbody>
-                  {paginatedLeads.length > 0 ? paginatedLeads.map(lead => (
-                    <tr key={lead.id}>
-                      <td>
-                        <div className={styles.leadMain}>
-                          <div className={styles.avatar}>{lead.name.charAt(0)}</div>
-                          <div className={styles.leadName}>
-                            <span className={styles.name}>{lead.name}</span>
-                            <span className={styles.id}>ID: {lead.id}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.leadInfoMini}>
-                          <span>{lead.email}</span>
-                          <span className={styles.leadEmail}>{lead.phone}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.dataTags}>
-                          {Object.entries(lead.data).map(([key, val]) => (
-                            <div key={key} className={styles.tag}>
-                              <span className={styles.key}>{key}:</span>
-                              <span>{String(val)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td>
-                        {new Date(lead.createdAt).toLocaleDateString('pt-BR')}
-                        <br />
-                        <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>
-                          {new Date(lead.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </td>
-                      <td>
-                        <button className={styles.secondaryBtn} style={{ padding: '0.4rem' }}>
-                          <MoreHorizontal size={18} />
-                        </button>
-                      </td>
+                  {paginatedLeads.map(lead => (
+                    <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
+                      <td><div className={styles.leadMain}><div className={styles.avatar}>{(lead.name || 'U').charAt(0)}</div><div><p className={styles.name}>{lead.name || 'Sem nome'}</p><p className={styles.id}>ID: {lead.id.substring(0, 8)}</p></div></div></td>
+                      <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{lead.phone || 'N/A'}</span></div></td>
+                      <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
+                      <td><button className={styles.secondaryBtn} style={{ padding: '0.4rem' }}><MoreHorizontal size={18} /></button></td>
                     </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={5} className={styles.emptyState}>
-                        <Database size={48} strokeWidth={1} />
-                        <p>Nenhum lead encontrado com estes filtros.</p>
-                      </td>
-                    </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
 
-              {filteredLeads.length > 0 && (
-                <div className={styles.pagination}>
-                  <div className={styles.pageInfo}>
-                    Mostrando <b>{(currentPage - 1) * pageSize + 1}</b> a <b>{Math.min(currentPage * pageSize, filteredLeads.length)}</b> de <b>{filteredLeads.length}</b> leads
-                  </div>
-                  <div className={styles.pageControls}>
-                    <button 
-                      className={styles.pageBtn} 
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(p => p - 1)}
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <button 
-                        key={i} 
-                        className={`${styles.pageBtn} ${currentPage === i + 1 ? styles.active : ''}`}
-                        onClick={() => setCurrentPage(i + 1)}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-                    <button 
-                      className={styles.pageBtn} 
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(p => p + 1)}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
+              <div className={styles.pagination}>
+                <div className={styles.pageControls}>
+                  <button className={styles.pageBtn} disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={18} /></button>
+                  <button className={styles.pageBtn} disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight size={18} /></button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
 
+        {/* Drawer: Detalhes do Lead */}
+        {selectedLead && (
+          <div className={styles.drawerOverlay} onClick={() => setSelectedLead(null)}>
+            <div className={`${styles.drawer} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.drawerHeader}>
+                <div className={styles.drawerTitle}>
+                  <div className={styles.avatarBig}>{(selectedLead.name || 'U').charAt(0)}</div>
+                  <div><h3>{selectedLead.name || 'Lead Sem Nome'}</h3><span>ID: {selectedLead.id}</span></div>
+                </div>
+                <button className={styles.closeBtn} onClick={() => setSelectedLead(null)}><X size={24} /></button>
+              </div>
+              <div className={styles.drawerBody}>
+                <div className={styles.detailSection}><h4>Contato</h4><div className={styles.detailGrid}><div className={styles.detailItem}><label>E-mail</label><p>{selectedLead.email || 'N/A'}</p></div><div className={styles.detailItem}><label>Telefone</label><p>{selectedLead.phone || 'N/A'}</p></div></div></div>
+                <div className={styles.detailSection}><h4>Captura</h4><div className={styles.detailGrid}><div className={styles.detailItem}><label>Data</label><p>{new Date(selectedLead.created_at).toLocaleString('pt-BR')}</p></div></div></div>
+                <div className={styles.detailSection}><h4>Payload JSON</h4><div className={styles.jsonView}>
+                    {Object.entries(selectedLead.data || {}).map(([key, val]) => (
+                      <div key={key} className={styles.jsonRow}><span className={styles.jsonKey}>{key}:</span><span className={styles.jsonValue}>{JSON.stringify(val)}</span></div>
+                    ))}
+                </div></div>
+              </div>
+              <div className={styles.drawerFooter}>
+                <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>Exportar para CRM</button>
+                <button className={styles.secondaryBtn} onClick={() => setSelectedLead(null)}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

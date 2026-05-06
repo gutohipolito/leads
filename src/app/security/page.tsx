@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './security.module.css';
 import { 
@@ -17,10 +17,29 @@ import {
   Fingerprint,
   ShieldAlert
 } from 'lucide-react';
-import { mockApiKeys, mockSecurityEvents } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 
 export default function SecurityPage() {
   const [securityEnabled, setSecurityEnabled] = useState(true);
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulando dados por enquanto, já que não temos tabela de API Keys ainda
+    // Mas removendo a dependência do mock fixo que quebra a build
+    setApiKeys([
+      { id: '1', name: 'Produção Webhook A', key: 'ak_live_••••••••••••4j2', status: 'active', lastUsed: 'Há 5 min' },
+      { id: '2', name: 'Desenvolvimento Local', key: 'ak_test_••••••••••••k9s', status: 'active', lastUsed: 'Ontem' },
+    ]);
+
+    setEvents([
+      { id: '1', type: 'login', description: 'Novo login administrativo detectado: IP 189.23.44.10', timestamp: 'Há 12 min', severity: 'low' },
+      { id: '2', type: 'threat', description: 'Tentativa de brute-force bloqueada no endpoint /api/leads', timestamp: 'Há 2h', severity: 'high' },
+    ]);
+    
+    setLoading(false);
+  }, []);
 
   return (
     <DashboardLayout title="Centro de Segurança">
@@ -52,7 +71,7 @@ export default function SecurityPage() {
             </div>
 
             <div className={styles.eventList}>
-              {mockSecurityEvents.map(event => (
+              {events.map(event => (
                 <div key={event.id} className={styles.eventItem}>
                   <div className={`${styles.severityIndicator} ${styles[event.severity]}`} />
                   <div className={styles.eventInfo}>
@@ -96,7 +115,7 @@ export default function SecurityPage() {
               </tr>
             </thead>
             <tbody>
-              {mockApiKeys.map(key => (
+              {apiKeys.map(key => (
                 <tr key={key.id}>
                   <td><span className={styles.keyName}>{key.name}</span></td>
                   <td><code className={styles.keyCode}>{key.key}</code></td>

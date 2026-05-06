@@ -1,0 +1,172 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.searchBar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 0 1.5rem;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--muted-foreground);
+  transition: all 0.3s;
+}
+
+.searchBar:focus-within {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.1);
+}
+
+.searchBar input {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  font-size: 1rem;
+}
+
+.statusBadge {
+  background: rgba(0, 209, 255, 0.1);
+  color: var(--primary);
+  padding: 0.75rem 1.25rem;
+  border-radius: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid rgba(0, 209, 255, 0.2);
+}
+
+.loadingArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 40vh;
+  gap: 1.5rem;
+  color: var(--muted-foreground);
+}
+
+.loader {
+  width: 40px;
+  height: 2px;
+  background: var(--primary);
+  animation: charging 1s infinite ease-in-out;
+}
+
+@keyframes charging {
+  0% { transform: scaleX(0); transform-origin: left; }
+  50% { transform: scaleX(1); transform-origin: left; }
+  51% { transform: scaleX(1); transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+.logsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.logItem {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+.logItem:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.logLeft {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.iconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.iconBox.client { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.iconBox.lead { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.iconBox.webhook { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+
+.logMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.logAction {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.logMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.dot { opacity: 0.3; }
+
+.logRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.logTime {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.ipTag {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  color: var(--muted-foreground);
+  font-family: monospace;
+}
+
+.emptyState {
+  padding: 5rem;
+  text-align: center;
+  color: var(--muted-foreground);
+}

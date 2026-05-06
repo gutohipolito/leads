@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './clients.module.css';
 import { 
@@ -19,23 +19,81 @@ import {
   ShieldCheck,
   UserPlus
 } from 'lucide-react';
-import { mockClients, currentUser } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
+import { logAction } from '@/utils/logger';
+import Loader from '@/components/Loader/Loader';
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const filteredClients = mockClients.filter(c => 
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+
+  // Carregar Clientes do Supabase
+  const loadClients = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('clients')
+      .select(`
+        *,
+        webhooks (count),
+        leads (count)
+      `);
+    
+    if (data) {
+      setClients(data);
+    }
+    setLoading(false);
+  };
+
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const action = searchParams?.get('action');
+
+  useEffect(() => {
+    loadClients();
+    if (action === 'new') {
+      setIsModalOpen(true);
+    }
+  }, [action]);
+
+  const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleToggleStatus = (id: string, currentStatus: string) => {
-    const action = currentStatus === 'active' ? 'desativar' : 'ativar';
-    alert(`Conta ${id} será ${action}da.`);
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const { error } = await supabase
+      .from('clients')
+      .update({ status: newStatus })
+      .eq('id', id);
+
+    if (!error) {
+      loadClients();
+    }
   };
 
-  const handleImpersonate = (name: string) => {
-    alert(`Iniciando sessão como: ${name}\nRedirecionando para o dashboard do cliente...`);
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase
+      .from('clients')
+      .insert([{ name: newClientName }])
+      .select()
+      .single();
+
+    if (error) {
+      alert('Erro ao criar cliente: ' + error.message);
+    } else {
+      if (data) {
+        await logAction('Cliente Criado', 'client', data.id, { name: data.name });
+      }
+      alert('Cliente provisionado com sucesso!');
+      setIsModalOpen(false);
+      setNewClientName('');
+      setNewClientEmail('');
+      loadClients();
+    }
   };
 
   const handleResetWebhook = (id: string) => {
@@ -52,11 +110,13 @@ export default function ClientsPage() {
         <div className={styles.adminStats}>
           <div className={`${styles.miniStat} glass`}>
             <span className={styles.miniLabel}>Total de Clientes</span>
-            <h3 className={styles.miniValue}>{mockClients.length}</h3>
+            <h3 className={styles.miniValue}>{clients.length}</h3>
           </div>
           <div className={`${styles.miniStat} glass`}>
             <span className={styles.miniLabel}>Leads Gerados (Total)</span>
-            <h3 className={styles.miniValue}>67.659</h3>
+            <h3 className={styles.miniValue}>
+              {clients.reduce((acc, c) => acc + (c.leads?.[0]?.count || 0), 0)}
+            </h3>
           </div>
           <div className={`${styles.miniStat} glass`}>
             <span className={styles.miniLabel}>Sistemas Online</span>
@@ -81,78 +141,89 @@ export default function ClientsPage() {
         </div>
 
         <div className={styles.tableWrapper}>
-          <table className={styles.adminTable}>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Status</th>
-                <th>Uso (Leads)</th>
-                <th>Webhooks</th>
-                <th>Ações de Controle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredClients.map((client) => (
-                <tr key={client.id}>
-                  <td>
-                    <div className={styles.clientCell}>
-                      <div className={styles.clientAvatar}>
-                        <Globe size={18} />
-                      </div>
-                      <div className={styles.clientInfo}>
-                        <span className={styles.clientName}>{client.name}</span>
-                        <span className={styles.clientDate}>Desde {client.createdAt}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className={`${styles.statusBadge} ${client.status === 'active' ? styles.active : styles.inactive}`}>
-                      {client.status === 'active' ? 'Ativo' : 'Desativado'}
-                    </div>
-                  </td>
-                  <td>
-                    <div className={styles.usageCell}>
-                      <span className={styles.usageValue}>{client.leadsCount}</span>
-                      <div className={styles.usageBar}>
-                        <div className={styles.usageProgress} style={{ width: `${Math.min((client.leadsCount / 200) * 100, 100)}%` }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={styles.webhookCount}>{client.webhooks.length} Terminais</span>
-                  </td>
-                  <td>
-                    <div className={styles.actionGrid}>
-                      <button 
-                        className={styles.iconAction} 
-                        title="Impersonar Cliente"
-                        onClick={() => handleImpersonate(client.name)}
-                      >
-                        <UserCog size={18} />
-                      </button>
-                      <button 
-                        className={`${styles.iconAction} ${client.status === 'active' ? styles.btnPowerOff : styles.btnPowerOn}`} 
-                        title={client.status === 'active' ? 'Desativar Conta' : 'Ativar Conta'}
-                        onClick={() => handleToggleStatus(client.id, client.status)}
-                      >
-                        {client.status === 'active' ? <Power size={18} /> : <PowerOff size={18} />}
-                      </button>
-                      <button 
-                        className={styles.iconAction} 
-                        title="Resetar Webhooks"
-                        onClick={() => handleResetWebhook(client.id)}
-                      >
-                        <RefreshCcw size={18} />
-                      </button>
-                      <button className={styles.iconAction} title="Estatísticas">
-                        <BarChart3 size={18} />
-                      </button>
-                    </div>
-                  </td>
+          {loading ? (
+            <Loader text="Sincronizando Carteira" />
+          ) : (
+            <table className={styles.adminTable}>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Status</th>
+                  <th>Uso (Leads)</th>
+                  <th>Webhooks</th>
+                  <th>Ações de Controle</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredClients.map((client) => (
+                  <tr key={client.id}>
+                    <td>
+                      <div className={styles.clientCell}>
+                        <div className={styles.clientAvatar}>
+                          <Globe size={18} />
+                        </div>
+                        <div className={styles.clientInfo}>
+                          <span className={styles.clientName}>{client.name}</span>
+                          <span className={styles.clientDate}>Desde {new Date(client.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className={`${styles.statusBadge} ${client.status === 'active' ? styles.active : styles.inactive}`}>
+                        {client.status === 'active' ? 'Ativo' : 'Desativado'}
+                      </div>
+                    </td>
+                    <td>
+                      <div className={styles.usageCell}>
+                        <span className={styles.usageValue}>{client.leads?.[0]?.count || 0}</span>
+                        <div className={styles.usageBar}>
+                          <div className={styles.usageProgress} style={{ width: `${Math.min(((client.leads?.[0]?.count || 0) / 200) * 100, 100)}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={styles.webhookCount}>{client.webhooks?.[0]?.count || 0} Terminais</span>
+                    </td>
+                    <td>
+                      <div className={styles.actionGrid}>
+                        <button 
+                          className={styles.iconAction} 
+                          title="Impersonar Cliente"
+                          onClick={() => alert('Impersonação em breve')}
+                        >
+                          <UserCog size={18} />
+                        </button>
+                        <button 
+                          className={`${styles.iconAction} ${client.status === 'active' ? styles.btnPowerOff : styles.btnPowerOn}`} 
+                          title={client.status === 'active' ? 'Desativar Conta' : 'Ativar Conta'}
+                          onClick={() => handleToggleStatus(client.id, client.status)}
+                        >
+                          {client.status === 'active' ? <Power size={18} /> : <PowerOff size={18} />}
+                        </button>
+                        <button 
+                          className={styles.iconAction} 
+                          title="Resetar Webhooks"
+                          onClick={() => handleResetWebhook(client.id)}
+                        >
+                          <RefreshCcw size={18} />
+                        </button>
+                        <button className={styles.iconAction} title="Estatísticas">
+                          <BarChart3 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredClients.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+                      Nenhum cliente encontrado.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Modal de Nova Conta */}
@@ -163,14 +234,26 @@ export default function ClientsPage() {
                 <h3>Novo Cliente Asthros</h3>
                 <p>Configure a nova conta e gere os primeiros sinais de uplink.</p>
               </div>
-              <form className={styles.form} onSubmit={(e) => { e.preventDefault(); alert('Conta criada!'); setIsModalOpen(false); }}>
+              <form className={styles.form} onSubmit={handleCreateClient}>
                 <div className={styles.inputGroup}>
                   <label>Nome da Empresa/Cliente</label>
-                  <input type="text" placeholder="Ex: Suprema Odontologia" required />
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Suprema Odontologia" 
+                    value={newClientName}
+                    onChange={(e) => setNewClientName(e.target.value)}
+                    required 
+                  />
                 </div>
                 <div className={styles.inputGroup}>
                   <label>E-mail Administrativo</label>
-                  <input type="email" placeholder="admin@cliente.com" required />
+                  <input 
+                    type="email" 
+                    placeholder="admin@cliente.com" 
+                    value={newClientEmail}
+                    onChange={(e) => setNewClientEmail(e.target.value)}
+                    required 
+                  />
                 </div>
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>

@@ -113,6 +113,60 @@
 
 .linkText {
   letter-spacing: -0.02em;
+  flex: 1;
+}
+
+.chevron {
+  transition: transform 0.3s ease;
+  opacity: 0.5;
+}
+
+.rotated {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0 0.5rem 2.5rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+.subLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: all 0.2s;
+  border-radius: 2rem;
+}
+
+.subLink:hover {
+  color: var(--primary);
+  background: rgba(0, 209, 255, 0.03);
+}
+
+.subActive {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.subDot {
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .footer {
