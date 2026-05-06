@@ -27,8 +27,7 @@ export default function LoginPage() {
 
       if (authError) throw authError;
 
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Erro ao realizar login');
     } finally {
