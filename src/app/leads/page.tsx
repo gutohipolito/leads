@@ -17,7 +17,9 @@ import {
   FileJson,
   ArrowLeft,
   Webhook,
-  X
+  X,
+  Edit2,
+  Save
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -40,6 +42,63 @@ export default function LeadsPage() {
   const [filterEmail, setFilterEmail] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
+  
+  // Renomeação de campos
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameConfig, setRenameConfig] = useState({
+    webhookId: '',
+    originalKey: '',
+    newName: ''
+  });
+
+  const handleStartRename = (key: string, currentDisplay: string, webhookId: string) => {
+    setRenameConfig({
+      webhookId,
+      originalKey: key,
+      newName: currentDisplay === key ? '' : currentDisplay
+    });
+    setIsRenaming(true);
+  };
+
+  const handleSaveRename = async () => {
+    if (!renameConfig.webhookId) return;
+
+    // 1. Buscar mapping atual
+    const { data: webhook } = await supabase
+      .from('webhooks')
+      .select('field_mapping')
+      .eq('id', renameConfig.webhookId)
+      .single();
+
+    const currentMapping = webhook?.field_mapping || {};
+    const newMapping = { 
+      ...currentMapping, 
+      [renameConfig.originalKey]: renameConfig.newName 
+    };
+
+    // 2. Salvar novo mapping
+    const { error } = await supabase
+      .from('webhooks')
+      .update({ field_mapping: newMapping })
+      .eq('id', renameConfig.webhookId);
+
+    if (!error) {
+      // Atualizar estado local dos leads para refletir a mudança
+      setLeads(prev => prev.map(l => {
+        if (l.webhook_id === renameConfig.webhookId) {
+          return { ...l, webhooks: { ...l.webhooks, field_mapping: newMapping } };
+        }
+        return l;
+      }));
+      setIsRenaming(false);
+      logAction('Campo Renomeado', 'webhook', renameConfig.webhookId, { 
+        key: renameConfig.originalKey, 
+        alias: renameConfig.newName 
+      });
+    } else {
+      alert('Erro ao renomear campo: ' + error.message);
+    }
+  };
 
   // Carregar Sessão e Dados
   useEffect(() => {
@@ -66,7 +125,7 @@ export default function LeadsPage() {
           setSelectedClientId(impData.id);
         }
 
-        let leadsQuery = supabase.from('leads').select('*').order('created_at', { ascending: false });
+        let leadsQuery = supabase.from('leads').select('*, webhooks(field_mapping)').order('created_at', { ascending: false });
         if (activeClientId) {
           leadsQuery = leadsQuery.eq('client_id', activeClientId);
         }
@@ -137,7 +196,8 @@ export default function LeadsPage() {
       });
       const dynamicKeysArray = Array.from(dynamicKeys);
 
-      const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray];
+      const mapping = filteredLeads[0]?.webhooks?.field_mapping || {};
+      const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
       
       const rows = filteredLeads.map(l => {
         const base = [
@@ -277,15 +337,72 @@ export default function LeadsPage() {
               <div className={styles.drawerBody}>
                 <div className={styles.detailSection}><h4>Contato</h4><div className={styles.detailGrid}><div className={styles.detailItem}><label>E-mail</label><p>{selectedLead.email || 'N/A'}</p></div><div className={styles.detailItem}><label>Telefone</label><p>{selectedLead.phone || 'N/A'}</p></div></div></div>
                 <div className={styles.detailSection}><h4>Captura</h4><div className={styles.detailGrid}><div className={styles.detailItem}><label>Data</label><p>{new Date(selectedLead.created_at).toLocaleString('pt-BR')}</p></div></div></div>
-                <div className={styles.detailSection}><h4>Payload JSON</h4><div className={styles.jsonView}>
-                    {Object.entries(selectedLead.data || {}).map(([key, val]) => (
-                      <div key={key} className={styles.jsonRow}><span className={styles.jsonKey}>{key}:</span><span className={styles.jsonValue}>{JSON.stringify(val)}</span></div>
-                    ))}
-                </div></div>
+                <div className={styles.detailSection}>
+                  <h4>Dados da Captura</h4>
+                  <div className={styles.jsonView}>
+                    {Object.entries(selectedLead.data || {}).map(([key, val]) => {
+                      const isSystemField = ['name', 'email', 'phone', 'nome', 'telefone', 'e_mail', 'form_name', 'page_url'].includes(key.toLowerCase());
+                      const displayKey = selectedLead.webhooks?.field_mapping?.[key] || key;
+                      
+                      return (
+                        <div key={key} className={styles.jsonRow}>
+                          <div className={styles.keyContainer}>
+                            <span className={`${styles.jsonKey} ${isSystemField ? '' : styles.customField}`}>
+                              {displayKey}
+                            </span>
+                            {!isSystemField && (
+                              <button 
+                                className={styles.editFieldBtn} 
+                                title="Renomear este campo"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartRename(key, displayKey, selectedLead.webhook_id);
+                                }}
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                          <span className={styles.jsonValue}>{typeof val === 'object' ? JSON.stringify(val) : String(val)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
               <div className={styles.drawerFooter}>
                 <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>Exportar para CRM</button>
                 <button className={styles.secondaryBtn} onClick={() => setSelectedLead(null)}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Modal: Renomear Campo */}
+        {isRenaming && (
+          <div className={styles.modalOverlay} onClick={() => setIsRenaming(false)}>
+            <div className={`${styles.modal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Renomear Campo Técnico</h3>
+                <p>O ID original <strong>{renameConfig.originalKey}</strong> será substituído por este apelido em todo o sistema.</p>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.field}>
+                  <label>Apelido do Campo</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Onde nos conheceu?"
+                    value={renameConfig.newName}
+                    onChange={(e) => setRenameConfig({...renameConfig, newName: e.target.value})}
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className={styles.modalActions}>
+                <button className={styles.secondaryBtn} onClick={() => setIsRenaming(false)}>Cancelar</button>
+                <button className={styles.primaryBtn} onClick={handleSaveRename}>
+                  <Save size={18} />
+                  <span>Salvar Apelido</span>
+                </button>
               </div>
             </div>
           </div>
