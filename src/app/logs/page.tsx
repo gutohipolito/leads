@@ -15,8 +15,10 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
+import { useRouter } from 'next/navigation';
 
 export default function LogsPage() {
+  const router = useRouter();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +26,25 @@ export default function LogsPage() {
   useEffect(() => {
     async function fetchLogs() {
       setLoading(true);
+      
+      // Validar se o usuário é admin
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('system_users')
+        .select('role')
+        .eq('email', user.email)
+        .single();
+
+      if (profile?.role !== 'admin') {
+        router.push('/');
+        return;
+      }
+
       const { data } = await supabase
         .from('system_logs')
         .select('*')
@@ -33,7 +54,7 @@ export default function LogsPage() {
       setLoading(false);
     }
     fetchLogs();
-  }, []);
+  }, [router]);
 
   const filteredLogs = logs.filter(log => 
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
