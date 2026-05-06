@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { UserCheck, X } from 'lucide-react';
 import Sidebar from '../Sidebar/Sidebar';
