@@ -202,6 +202,86 @@
   font-size: 0.9rem;
 }
 
+.webhooksSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.webhookList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.webhookCard {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.whInfo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.whName {
+  font-weight: 700;
+  color: white;
+  font-size: 0.85rem;
+}
+
+.whStatus {
+  color: #34d399;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.urlCopy {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.urlInput {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: var(--muted-foreground);
+  font-family: monospace;
+  font-size: 0.75rem;
+  outline: none;
+}
+
+.copyBtn {
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 8px;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copyBtn:hover {
+  background: #3ebef5;
+  transform: scale(1.05);
+}
+
+.emptyMsg {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 1rem;
+}
+
 .footer {
   padding: 2.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);

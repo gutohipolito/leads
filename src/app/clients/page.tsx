@@ -66,7 +66,7 @@ export default function ClientsPage() {
       .from('clients')
       .select(`
         *,
-        webhooks (count),
+        webhooks (*),
         leads (count)
       `);
     

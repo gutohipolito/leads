@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
 /**
- * Rota de Webhook para captura de leads com autenticação via Secret Key.
- * URL: /api/leads/[clientId]
+ * Rota de Webhook para captura de leads ultra-compatível (Elementor, WPForms, etc).
+ * URL: /api/leads/[clientId]?secret=SUA_CHAVE
  */
 export async function POST(
   request: NextRequest,
@@ -11,48 +11,59 @@ export async function POST(
 ) {
   try {
     const { clientId } = await params;
-    const body = await request.json();
+    
+    // Suporte a JSON ou Form Data (Elementor pode enviar ambos)
+    const contentType = request.headers.get('content-type') || '';
+    let body: any = {};
+
+    if (contentType.includes('application/json')) {
+      body = await request.json();
+    } else {
+      const formData = await request.formData();
+      formData.forEach((value, key) => {
+        body[key] = value;
+      });
+    }
     
     // 1. Validar Autenticação (Secret Key)
-    // Pode vir via Header ou Query Param
     const secret = request.headers.get('x-asthros-secret') || request.nextUrl.searchParams.get('secret');
 
     if (!secret) {
-      return NextResponse.json({ error: 'Chave secreta ausente (X-Asthros-Secret)' }, { status: 401 });
+      return NextResponse.json({ error: 'Chave secreta ausente. Use ?secret= no final da URL ou o header X-Asthros-Secret.' }, { status: 401 });
     }
 
     // 2. Verificar se o segredo pertence a um webhook ativo do cliente
     const { data: webhook, error: authError } = await supabase
       .from('webhooks')
-      .select('id, status')
+      .select('id, status, name')
       .eq('client_id', clientId)
       .eq('secret', secret)
       .eq('status', 'active')
       .single();
 
     if (authError || !webhook) {
-      return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo' }, { status: 401 });
+      return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
     }
 
-    // 3. Validação básica de dados do lead
-    if (!body.email && !body.name && !body.nome && !body.phone && !body.telefone) {
-      return NextResponse.json(
-        { error: 'Dados insuficientes para criar um lead (nome, email ou telefone)' },
-        { status: 400 }
-      );
-    }
+    // 3. Normalização de dados (Mapeamento Inteligente)
+    // Procuramos em níveis diferentes (raiz ou dentro de 'fields' do Elementor)
+    const fields = body.fields || {};
+    
+    const name = body.name || body.nome || body.full_name || fields.name || fields.nome || 'Lead s/ Nome';
+    const email = body.email || body.e_mail || fields.email || fields.e_mail || null;
+    const phone = body.phone || body.telefone || body.whatsapp || fields.phone || fields.telefone || null;
 
-    // 4. Salvar o Lead associado ao Webhook
+    // 4. Salvar o Lead
     const { data: lead, error: insertError } = await supabase
       .from('leads')
       .insert([
         {
           client_id: clientId,
           webhook_id: webhook.id,
-          name: body.name || body.nome || null,
-          email: body.email || null,
-          phone: body.phone || body.telefone || null,
-          data: body
+          name: name,
+          email: email,
+          phone: phone,
+          data: body // Salvamos o JSON bruto completo para auditoria
         }
       ])
       .select()
@@ -60,8 +71,7 @@ export async function POST(
 
     if (insertError) throw insertError;
 
-    // Criar notificação para o cliente
-    // Buscamos o primeiro usuário do sistema vinculado a este cliente para notificar
+    // 5. Notificação em Tempo Real
     const { data: userData } = await supabase
       .from('system_users')
       .select('id')
@@ -73,24 +83,29 @@ export async function POST(
       await supabase.from('notifications').insert([{
         user_id: userData.id,
         client_id: clientId,
-        title: 'Novo Lead Capturado',
-        message: `O lead "${lead.name || 'Sem Nome'}" foi recebido via ${webhook.name}.`,
+        title: 'Novo Lead via Elementor',
+        message: `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`,
         type: 'success'
       }]);
     }
 
     return NextResponse.json(
       { 
-        message: 'Sinal recebido e lead processado!', 
-        leadId: lead.id,
-        webhook: webhook.id
+        status: 'success',
+        message: 'Sinal de Uplink processado com sucesso!', 
+        lead_id: lead.id
       }, 
-      { status: 201 }
+      { 
+        status: 201,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        }
+      }
     );
   } catch (error) {
     console.error('Erro no processamento do uplink:', error);
     return NextResponse.json(
-      { error: 'Falha crítica no processamento do lead' },
+      { error: 'Falha no processamento. Verifique o formato dos dados.' },
       { status: 500 }
     );
   }
@@ -102,8 +117,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, Authorization',
-      'Access-Control-Max-Age': '86400',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
     },
   });
 }

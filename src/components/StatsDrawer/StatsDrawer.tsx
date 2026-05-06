@@ -86,14 +86,41 @@ export default function StatsDrawer({ isOpen, onClose, client }: StatsDrawerProp
             </div>
           </div>
 
-          <div className={styles.detailsList}>
-            <div className={styles.detailItem}>
-              <Calendar size={16} />
-              <span>Início da Parceria: {new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
+          <div className={styles.webhooksSection}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.titleIcon}>
+                <Zap size={18} />
+                <h4>Terminais de Webhook</h4>
+              </div>
             </div>
-            <div className={styles.detailItem}>
-              <Users size={16} />
-              <span>Canais de Captação: {client.webhooks?.[0]?.count || 0} Webhooks</span>
+            <div className={styles.webhookList}>
+              {client.webhooks?.map((wh: any) => (
+                <div key={wh.id} className={`${styles.webhookCard} glass`}>
+                  <div className={styles.whInfo}>
+                    <span className={styles.whName}>{wh.name}</span>
+                    <span className={styles.whStatus}>● Ativo</span>
+                  </div>
+                  <div className={styles.urlCopy}>
+                    <input 
+                      readOnly 
+                      value={`https://leads.asthros.com.br/api/leads/${client.id}?secret=${wh.secret}`} 
+                      className={styles.urlInput}
+                    />
+                    <button 
+                      className={styles.copyBtn}
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://leads.asthros.com.br/api/leads/${client.id}?secret=${wh.secret}`);
+                        alert('URL copiada para o Elementor!');
+                      }}
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {(!client.webhooks || client.webhooks.length === 0) && (
+                <p className={styles.emptyMsg}>Nenhum terminal configurado para este cliente.</p>
+              )}
             </div>
           </div>
         </div>
