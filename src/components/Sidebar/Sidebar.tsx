@@ -25,6 +25,7 @@ export default function Sidebar() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -41,6 +42,10 @@ export default function Sidebar() {
       }
     }
     loadUser();
+
+    // Checar se está impersonando
+    const impersonated = localStorage.getItem('impersonated_client');
+    setIsImpersonating(!!impersonated);
   }, []);
 
   useEffect(() => {
@@ -73,7 +78,13 @@ export default function Sidebar() {
     { name: 'Leads', path: '/leads', icon: Database },
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
     { name: 'Simulador', path: '/simulator', icon: Terminal },
-  ];
+  ].filter(item => {
+    // Se estiver impersonando, removemos Clientes, Webhooks (opcional) e Simulador
+    if (isImpersonating) {
+      return ['Geral', 'Leads'].includes(item.name);
+    }
+    return true;
+  });
 
   return (
     <aside className={styles.sidebar}>
@@ -138,7 +149,7 @@ export default function Sidebar() {
 
         <div className={styles.group}>
           <span className={styles.groupLabel}>Sistema</span>
-          {isAdmin && (
+          {isAdmin && !isImpersonating && (
             <>
               <Link href="/logs" className={styles.navLink}>
                 <div className={styles.iconCircle}>

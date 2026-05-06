@@ -17,7 +17,7 @@ interface AnalyticsChartProps {
 
 export default function AnalyticsChart({ data }: AnalyticsChartProps) {
   return (
-    <div style={{ width: '100%', height: 300, marginTop: '1rem' }}>
+    <div style={{ width: '100%', height: 300, marginTop: '1rem', minWidth: 0 }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}

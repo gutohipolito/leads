@@ -67,11 +67,18 @@ export default function WebhooksManagePage() {
       const clientId = profile?.client_id;
       
       setIsAdmin(isUserAdmin);
-      setUserClientId(clientId);
       
-      if (!isUserAdmin) {
-        setNewWebhook(prev => ({ ...prev, client_id: clientId || '' }));
+      // Checar Impersonação
+      const impersonated = localStorage.getItem('impersonated_client');
+      let activeClientId = clientId;
+      
+      if (isUserAdmin && impersonated) {
+        const impData = JSON.parse(impersonated);
+        activeClientId = impData.id;
       }
+      
+      setUserClientId(activeClientId);
+      setNewWebhook(prev => ({ ...prev, client_id: activeClientId || '' }));
 
       // 2. Carregar Webhooks
       let query = supabase
@@ -81,8 +88,8 @@ export default function WebhooksManagePage() {
           clients (name)
         `);
       
-      if (!isUserAdmin && clientId) {
-        query = query.eq('client_id', clientId);
+      if (activeClientId) {
+        query = query.eq('client_id', activeClientId);
       }
 
       const { data: webhooksData } = await query;
@@ -94,8 +101,8 @@ export default function WebhooksManagePage() {
         })));
       }
 
-      // 3. Carregar Clientes para o Modal (apenas se for admin)
-      if (isUserAdmin) {
+      // 3. Carregar Clientes para o Modal (apenas se for admin e não estiver impersonando)
+      if (isUserAdmin && !impersonated) {
         const { data: clientsData } = await supabase.from('clients').select('id, name').eq('status', 'active');
         if (clientsData) setClients(clientsData);
       }

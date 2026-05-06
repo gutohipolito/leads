@@ -1,0 +1,117 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  text-align: center;
+  position: relative;
+  animation: scaleUp 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeBtn:hover {
+  color: white;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.iconWrapper {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.infoIcon { color: var(--primary); }
+.warningIcon { color: #f59e0b; }
+.dangerIcon { color: #ef4444; }
+.successIcon { color: #10b981; }
+
+.header h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.75rem;
+}
+
+.header p {
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.confirmBtn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.confirmBtn.info { background: var(--primary); color: var(--background); }
+.confirmBtn.warning { background: #f59e0b; color: var(--background); }
+.confirmBtn.danger { background: #ef4444; color: white; }
+.confirmBtn.success { background: #10b981; color: var(--background); }
+
+.confirmBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

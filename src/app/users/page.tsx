@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 export default function UsersManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -33,6 +34,25 @@ export default function UsersManagementPage() {
     email: '',
     role: 'viewer',
     client_id: ''
+  });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  // Estados para o Modal de Confirmação Customizado
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    confirmLabel: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirmar',
+    onConfirm: () => {}
   });
 
   useEffect(() => {
@@ -51,20 +71,54 @@ export default function UsersManagementPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase
-      .from('system_users')
-      .insert([newUser])
-      .select()
-      .single();
+    
+    if (isEditMode && editingUserId) {
+      const { error } = await supabase
+        .from('system_users')
+        .update(newUser)
+        .eq('id', editingUserId);
 
-    if (!error) {
-      await logAction('Usuário Provisionado', 'user', data.id, { email: newUser.email });
-      setIsModalOpen(false);
-      setNewUser({ name: '', email: '', role: 'viewer', client_id: '' });
-      loadData();
+      if (!error) {
+        await logAction('Usuário Atualizado', 'user', editingUserId, { email: newUser.email });
+        closeModal();
+        loadData();
+      } else {
+        alert('Erro ao atualizar usuário: ' + error.message);
+      }
     } else {
-      alert('Erro ao criar usuário: ' + error.message);
+      const { data, error } = await supabase
+        .from('system_users')
+        .insert([newUser])
+        .select()
+        .single();
+
+      if (!error) {
+        await logAction('Usuário Provisionado', 'user', data.id, { email: newUser.email });
+        closeModal();
+        loadData();
+      } else {
+        alert('Erro ao criar usuário: ' + error.message);
+      }
     }
+  };
+
+  const handleEditClick = (user: any) => {
+    setNewUser({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      client_id: user.client_id || ''
+    });
+    setEditingUserId(user.id);
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsEditMode(false);
+    setEditingUserId(null);
+    setNewUser({ name: '', email: '', role: 'viewer', client_id: '' });
   };
 
   const toggleUserStatus = async (id: string, currentStatus: string) => {
@@ -152,7 +206,13 @@ export default function UsersManagementPage() {
                         >
                           {user.status === 'active' ? <UserMinus size={18} /> : <UserCheck size={18} />}
                         </button>
-                        <button className={styles.actionIcon}><MoreHorizontal size={18} /></button>
+                        <button 
+                          className={styles.actionIcon} 
+                          onClick={() => handleEditClick(user)}
+                          title="Editar Usuário"
+                        >
+                          <MoreHorizontal size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -167,8 +227,8 @@ export default function UsersManagementPage() {
           <div className={styles.modalOverlay}>
             <div className={`${styles.modal} glass`}>
               <div className={styles.modalHeader}>
-                <h3>Provisionar Novo Usuário</h3>
-                <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
+                <h3>{isEditMode ? 'Editar Perfil de Usuário' : 'Provisionar Novo Usuário'}</h3>
+                <button onClick={closeModal}><X size={20} /></button>
               </div>
               <form className={styles.form} onSubmit={handleCreateUser}>
                 <div className={styles.field}>
@@ -213,13 +273,23 @@ export default function UsersManagementPage() {
                   </div>
                 </div>
                 <button type="submit" className={styles.submitBtn}>
-                  Confirmar Provisionamento
+                  {isEditMode ? 'Salvar Alterações' : 'Confirmar Provisionamento'}
                 </button>
               </form>
             </div>
           </div>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        confirmLabel={confirmConfig.confirmLabel}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </DashboardLayout>
   );
 }

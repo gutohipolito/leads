@@ -56,8 +56,21 @@ export default function LeadsPage() {
         const { data: clientsData } = await supabase.from('clients').select(`*, webhooks (*)`);
         if (clientsData) setClients(clientsData);
 
+        // Checar Impersonação
+        const impersonated = localStorage.getItem('impersonated_client');
+        let activeClientId = clientId;
+        
+        if (isUserAdmin && impersonated) {
+          const impData = JSON.parse(impersonated);
+          activeClientId = impData.id;
+          setSelectedClientId(impData.id);
+        }
+
         let leadsQuery = supabase.from('leads').select('*').order('created_at', { ascending: false });
-        if (!isUserAdmin && clientId) leadsQuery = leadsQuery.eq('client_id', clientId);
+        if (activeClientId) {
+          leadsQuery = leadsQuery.eq('client_id', activeClientId);
+        }
+        
         const { data: leadsData } = await leadsQuery;
         if (leadsData) setLeads(leadsData);
       }

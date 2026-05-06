@@ -224,11 +224,24 @@
   border-radius: 0.75rem;
   color: white;
   outline: none;
+  transition: all 0.2s;
+}
+
+.field input:focus, .field select:focus {
+  border-color: var(--primary);
+  background: rgba(0, 209, 255, 0.05);
+  box-shadow: 0 0 15px rgba(0, 209, 255, 0.1);
+}
+
+.field select option {
+  background: #0f172a; /* Azul muito escuro para contraste */
+  color: white;
+  padding: 10px;
 }
 
 .gridFields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 

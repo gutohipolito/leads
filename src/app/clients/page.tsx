@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './clients.module.css';
 import { 
@@ -17,19 +18,42 @@ import {
   Zap,
   Globe,
   ShieldCheck,
-  UserPlus
+  UserPlus,
+  Building2,
+  Fingerprint
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newClientName, setNewClientName] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
+  const [newClientCnpj, setNewClientCnpj] = useState('');
+  const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
+
+  // Estados para o Modal de Confirmação Customizado
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    confirmLabel: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirmar',
+    onConfirm: () => {}
+  });
 
   // Carregar Clientes do Supabase
   const loadClients = async () => {
@@ -62,7 +86,7 @@ export default function ClientsPage() {
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleToggleStatus = async (id: string, currentStatus: string) => {
+  const handleToggleStatus = async (id: string, currentStatus: string, clientName: string) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     const { error } = await supabase
       .from('clients')
@@ -70,7 +94,37 @@ export default function ClientsPage() {
       .eq('id', id);
 
     if (!error) {
+      await logAction(
+        newStatus === 'active' ? 'Conta Reativada' : 'Conta Suspensa', 
+        'client', 
+        id, 
+        { name: clientName, previousStatus: currentStatus }
+      );
       loadClients();
+    }
+  };
+
+  const handleLookupCNPJ = async () => {
+    if (!newClientCnpj || newClientCnpj.length < 14) return;
+    
+    setIsLookingUpCnpj(true);
+    try {
+      const cleanCnpj = newClientCnpj.replace(/\D/g, '');
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+      const data = await response.json();
+      
+      if (data && data.razao_social) {
+        setNewClientName(data.razao_social);
+        // Opcional: preencher e-mail se disponível no cadastro do CNPJ
+        if (data.email) setNewClientEmail(data.email);
+      } else {
+        alert('CNPJ não encontrado ou erro na consulta.');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CNPJ:', error);
+      alert('Erro na conexão com o serviço de busca.');
+    } finally {
+      setIsLookingUpCnpj(false);
     }
   };
 
@@ -96,10 +150,44 @@ export default function ClientsPage() {
     }
   };
 
-  const handleResetWebhook = (id: string) => {
-    if (confirm('Deseja resetar TODOS os webhooks deste cliente? Esta ação é irreversível.')) {
-      alert(`Webhooks do cliente ${id} foram resetados.`);
-    }
+  const handleResetWebhook = async (clientId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Resetar Webhooks',
+      message: 'Deseja resetar TODOS os webhooks deste cliente? Esta ação removerá os pontos de captura atuais e é irreversível.',
+      type: 'danger',
+      confirmLabel: 'Resetar Tudo',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from('webhooks')
+          .delete()
+          .eq('client_id', clientId);
+
+        if (error) {
+          alert('Erro ao resetar webhooks: ' + error.message);
+        } else {
+          await logAction('Reset de Webhooks', 'client', clientId, { action: 'delete_all_webhooks' });
+          loadClients();
+        }
+      }
+    });
+  };
+
+  const handleImpersonate = (client: any) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Ativar Modo Impersonação',
+      message: `Você será redirecionado para o dashboard com a visão exclusiva de ${client.name}.`,
+      type: 'info',
+      confirmLabel: 'Acessar Painel',
+      onConfirm: () => {
+        localStorage.setItem('impersonated_client', JSON.stringify({
+          id: client.id,
+          name: client.name
+        }));
+        router.push('/');
+      }
+    });
   };
 
   return (
@@ -189,14 +277,14 @@ export default function ClientsPage() {
                         <button 
                           className={styles.iconAction} 
                           title="Impersonar Cliente"
-                          onClick={() => alert('Impersonação em breve')}
+                          onClick={() => handleImpersonate(client)}
                         >
                           <UserCog size={18} />
                         </button>
                         <button 
                           className={`${styles.iconAction} ${client.status === 'active' ? styles.btnPowerOff : styles.btnPowerOn}`} 
                           title={client.status === 'active' ? 'Desativar Conta' : 'Ativar Conta'}
-                          onClick={() => handleToggleStatus(client.id, client.status)}
+                          onClick={() => handleToggleStatus(client.id, client.status, client.name)}
                         >
                           {client.status === 'active' ? <Power size={18} /> : <PowerOff size={18} />}
                         </button>
@@ -236,6 +324,26 @@ export default function ClientsPage() {
               </div>
               <form className={styles.form} onSubmit={handleCreateClient}>
                 <div className={styles.inputGroup}>
+                  <label>CNPJ (Opcional - Para busca automática)</label>
+                  <div className={styles.inputWithAction}>
+                    <input 
+                      type="text" 
+                      placeholder="00.000.000/0000-00" 
+                      value={newClientCnpj}
+                      onChange={(e) => setNewClientCnpj(e.target.value)}
+                    />
+                    <button 
+                      type="button" 
+                      className={styles.inlineActionBtn}
+                      onClick={handleLookupCNPJ}
+                      disabled={isLookingUpCnpj || !newClientCnpj}
+                    >
+                      {isLookingUpCnpj ? <RefreshCcw size={16} className={styles.spin} /> : 'Buscar'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.inputGroup}>
                   <label>Nome da Empresa/Cliente</label>
                   <input 
                     type="text" 
@@ -246,13 +354,12 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>E-mail Administrativo</label>
+                  <label>E-mail Administrativo (Opcional)</label>
                   <input 
                     type="email" 
-                    placeholder="admin@cliente.com" 
+                    placeholder="empresa@exemplo.com (pode ser preenchido depois)" 
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
-                    required 
                   />
                 </div>
                 <div className={styles.modalActions}>
@@ -265,6 +372,16 @@ export default function ClientsPage() {
         )}
 
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        confirmLabel={confirmConfig.confirmLabel}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </DashboardLayout>
   );
 }
