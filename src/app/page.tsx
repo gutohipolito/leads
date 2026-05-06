@@ -125,17 +125,15 @@ export default function Home() {
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
 
-  const getLastSignalText = () => {
-    if (!stats.lastSignalTime) return 'Sem Sinais';
+  const getLastLeadTime = () => {
+    if (!stats.lastSignalTime) return 'Nenhuma captura';
     const mins = Math.floor((Date.now() - stats.lastSignalTime) / 60000);
-    if (mins < 1) return 'Sinal: Agora';
-    if (mins < 60) return `Sinal: ${mins} min`;
+    if (mins < 1) return 'Agora mesmo';
+    if (mins < 60) return `${mins} min atrás`;
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `Sinal: ${hours}h`;
-    return `Sinal: ${Math.floor(hours / 24)}d`;
+    if (hours < 24) return `${hours}h atrás`;
+    return `${Math.floor(hours / 24)}d atrás`;
   };
-
-  const isRecent = stats.lastSignalTime && (Date.now() - stats.lastSignalTime) < 300000; // 5 minutos
 
   return (
     <DashboardLayout title={dashboardTitle}>
@@ -182,11 +180,12 @@ export default function Home() {
             <div className={`${styles.statCard} glass`}>
               <div className={styles.statIcon}><Webhook size={20} /></div>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>Terminal Uplink</span>
+                <span className={styles.statLabel}>Status do Sistema</span>
                 <div className={styles.statusContainer}>
-                  <div className={`${styles.pulse} ${isRecent ? styles.pulseGreen : styles.pulseYellow}`} />
-                  <h2 className={styles.statValue}>{getLastSignalText()}</h2>
+                  <div className={`${styles.pulse} ${styles.pulseGreen}`} />
+                  <h2 className={styles.statValue}>Operacional</h2>
                 </div>
+                <span className={styles.statSub}>Última captura: {getLastLeadTime()}</span>
               </div>
             </div>
           )}
