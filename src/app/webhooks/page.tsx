@@ -29,7 +29,8 @@ import {
   Globe,
   Link,
   Mail,
-  Play
+  Play,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
