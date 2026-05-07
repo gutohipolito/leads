@@ -18,7 +18,7 @@
         return;
     }
 
-    console.log('[Asthros] Rastreador Ativo: ' + config.clientId);
+    console.log('%c[Asthros] Rastreador Ativo: ' + config.clientId, 'color: #56d7fd; font-weight: bold;');
 
     const startTime = Date.now();
     let maxScroll = 0;
@@ -31,9 +31,9 @@
     function getUtms() {
         const urlParams = new URLSearchParams(window.location.search);
         return {
-            source: urlParams.get('utm_source'),
-            medium: urlParams.get('utm_medium'),
-            campaign: urlParams.get('utm_campaign'),
+            source: urlParams.get('utm_source') || 'direto',
+            medium: urlParams.get('utm_medium') || 'organico',
+            campaign: urlParams.get('utm_campaign') || 'nenhuma',
             term: urlParams.get('utm_term'),
             content: urlParams.get('utm_content'),
             gclid: urlParams.get('gclid'),
@@ -50,6 +50,8 @@
     async function trackLead(e) {
         const link = e.target.closest('a');
         if (!link || !isWhatsAppLink(link.href)) return;
+
+        console.log('[Asthros] Clique em WhatsApp detectado!', link.href);
 
         const utms = getUtms();
         const payload = {
@@ -70,17 +72,28 @@
 
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
 
-        // Prioridade absoluta para Beacon (assíncrono e resiliente)
-        if (navigator.sendBeacon) {
-            const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-            navigator.sendBeacon(endpoint, blob);
-        } else {
+        try {
+            if (navigator.sendBeacon) {
+                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                const success = navigator.sendBeacon(endpoint, blob);
+                if (success) {
+                    console.log('[Asthros] Sinal de lead enviado via Beacon.');
+                    return;
+                }
+            }
+
+            // Fallback via Fetch se Beacon falhar ou não existir
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
                 keepalive: true
-            }).catch(() => {});
+            })
+            .then(() => console.log('[Asthros] Sinal de lead enviado via Fetch.'))
+            .catch(err => console.error('[Asthros] Erro ao enviar sinal:', err));
+
+        } catch (err) {
+            console.error('[Asthros] Erro crítico no rastreador:', err);
         }
     }
 
