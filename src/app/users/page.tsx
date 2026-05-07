@@ -101,8 +101,11 @@ export default function UsersManagementPage() {
       }
     } else {
       // Garantir que client_id seja null se estiver vazio para evitar erro de UUID
+      // E removemos o password pois ele não existe na tabela system_users (segurança)
+      const { password, ...userDataWithoutPassword } = newUser;
+      
       const userToInsert = {
-        ...newUser,
+        ...userDataWithoutPassword,
         client_id: newUser.client_id === '' ? null : newUser.client_id
       };
 
