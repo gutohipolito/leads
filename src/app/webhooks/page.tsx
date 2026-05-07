@@ -421,7 +421,6 @@ export default function WebhooksManagePage() {
             </div>
           </div>
         )}
-        )}
 
         {/* Modal: Guia Técnico */}
         {isDocsModalOpen && selectedDocsWebhook && (
