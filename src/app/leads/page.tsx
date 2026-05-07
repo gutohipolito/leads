@@ -147,18 +147,34 @@ export default function LeadsPage() {
   const showWebhookSelection = currentClient && currentClient.webhooks?.length > 1 && !selectedWebhookId;
   const showLeadsList = (currentClient && (!currentClient.webhooks || currentClient.webhooks.length <= 1)) || selectedWebhookId;
 
+  const [activeCategory, setActiveCategory] = useState<'all' | 'forms' | 'whatsapp'>('all');
+
   const filteredLeads = useMemo(() => {
     let result = [...leads];
+    
+    // Filtro por Cliente
     if (currentClient) result = result.filter(l => l.client_id === currentClient.id);
+    
+    // Filtro por Webhook (se selecionado)
     if (selectedWebhookId) {
       result = result.filter(l => l.webhook_id === selectedWebhookId);
     } else if (currentClient && currentClient.webhooks?.length === 1) {
       result = result.filter(l => l.webhook_id === currentClient.webhooks[0].id);
     }
+
+    // Filtro por Categoria (Abas)
+    if (activeCategory === 'whatsapp') {
+      result = result.filter(l => l.source === 'whatsapp_tracker');
+    } else if (activeCategory === 'forms') {
+      result = result.filter(l => l.source !== 'whatsapp_tracker');
+    }
+
+    // Busca por Texto
     if (filterName) result = result.filter(l => (l.name || '').toLowerCase().includes(filterName.toLowerCase()));
     if (filterEmail) result = result.filter(l => (l.email || '').toLowerCase().includes(filterEmail.toLowerCase()));
+    
     return result;
-  }, [currentClient, selectedWebhookId, filterName, filterEmail, leads]);
+  }, [currentClient, selectedWebhookId, filterName, filterEmail, leads, activeCategory]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -293,6 +309,18 @@ export default function LeadsPage() {
             </div>
 
             <div className={styles.leadsTableWrapper}>
+              <div className={styles.categoryTabs}>
+                <button className={`${styles.catTab} ${activeCategory === 'all' ? styles.active : ''}`} onClick={() => setActiveCategory('all')}>
+                  Todos os Leads
+                </button>
+                <button className={`${styles.catTab} ${activeCategory === 'forms' ? styles.active : ''}`} onClick={() => setActiveCategory('forms')}>
+                  Formulários
+                </button>
+                <button className={`${styles.catTab} ${activeCategory === 'whatsapp' ? styles.active : ''}`} onClick={() => setActiveCategory('whatsapp')}>
+                  WhatsApp
+                </button>
+              </div>
+
               <div className={styles.filtersBar}>
                 <div className={styles.filterField}><label>Nome</label><input type="text" className={styles.filterInput} value={filterName} onChange={(e) => setFilterName(e.target.value)}/></div>
                 <div className={styles.filterField}><label>E-mail</label><input type="text" className={styles.filterInput} value={filterEmail} onChange={(e) => setFilterEmail(e.target.value)}/></div>
@@ -300,12 +328,27 @@ export default function LeadsPage() {
               </div>
 
               <table className={styles.table}>
-                <thead><tr><th>Lead</th><th>Contato</th><th>Data</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Lead</th><th>Contato</th><th>Origem</th><th>Data</th><th>Ações</th></tr></thead>
                 <tbody>
                   {paginatedLeads.map(lead => (
                     <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
-                      <td><div className={styles.leadMain}><div className={styles.avatar}>{(lead.name || 'U').charAt(0)}</div><div><p className={styles.name}>{lead.name || 'Sem nome'}</p><p className={styles.id}>ID: {lead.id.substring(0, 8)}</p></div></div></td>
+                      <td>
+                        <div className={styles.leadMain}>
+                          <div className={styles.avatar}>{(lead.name || 'U').charAt(0)}</div>
+                          <div>
+                            <p className={styles.name}>{lead.name || 'Sem nome'}</p>
+                            <p className={styles.id}>ID: {lead.id.substring(0, 8)}</p>
+                          </div>
+                        </div>
+                      </td>
                       <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{lead.phone || 'N/A'}</span></div></td>
+                      <td>
+                        {lead.source === 'whatsapp_tracker' ? (
+                          <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>WhatsApp</span></div>
+                        ) : (
+                          <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
+                        )}
+                      </td>
                       <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
                       <td><button className={styles.secondaryBtn} style={{ padding: '0.4rem' }}><MoreHorizontal size={18} /></button></td>
                     </tr>
