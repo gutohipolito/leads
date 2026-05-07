@@ -1,8 +1,16 @@
 (function() {
+    // Busca robusta pelo script (suporta GTM e injeção dinâmica)
+    const script = document.currentScript || document.querySelector('script[src*="tracker.js"]') || document.querySelector('script[src*="tracker.min.js"]');
+    
+    if (!script) {
+        console.warn('[Asthros] Erro crítico: Não foi possível localizar a tag do rastreador.');
+        return;
+    }
+
     const config = {
-        clientId: document.currentScript.getAttribute('data-client-id'),
-        secret: document.currentScript.getAttribute('data-secret'),
-        apiUrl: document.currentScript.getAttribute('data-api-url') || 'https://leads.asthros.com.br'
+        clientId: script.getAttribute('data-client-id'),
+        secret: script.getAttribute('data-secret'),
+        apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br'
     };
 
     if (!config.clientId || !config.secret) {
@@ -10,7 +18,7 @@
         return;
     }
 
-    console.log('[Asthros] Rastreador Ativo em: ' + config.apiUrl);
+    console.log('[Asthros] Rastreador Ativo: ' + config.clientId);
 
     const startTime = Date.now();
     let maxScroll = 0;
@@ -62,19 +70,19 @@
 
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
 
-        // Prioridade para Beacon (não bloqueia redirecionamento)
+        // Prioridade absoluta para Beacon (assíncrono e resiliente)
         if (navigator.sendBeacon) {
-            navigator.sendBeacon(endpoint, JSON.stringify(payload));
+            const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+            navigator.sendBeacon(endpoint, blob);
         } else {
             fetch(endpoint, {
                 method: 'POST',
-                mode: 'no-cors', // Evita problemas de CORS em envios unidirecionais
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
                 keepalive: true
-            });
+            }).catch(() => {});
         }
     }
 
-    // Captura global no nível do document para garantir que pegamos antes de outros preventDefault()
     document.addEventListener('click', trackLead, { capture: true });
 })();
