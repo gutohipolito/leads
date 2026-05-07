@@ -1,8 +1,7 @@
 (function() {
-    // Log imediato para confirmar carregamento
-    console.log('%c[Asthros] Iniciando carregamento do rastreador...', 'color: #56d7fd; font-size: 10px;');
+    console.log('%c[Asthros] Iniciando depuração do rastreador...', 'color: #56d7fd; font-weight: bold;');
 
-    // 1. Busca de Configuração (Prioridade: Global > Atributos da Tag)
+    // 1. Busca de Configuração
     let config = window.AsthrosConfig || null;
 
     if (!config) {
@@ -20,11 +19,16 @@
     }
 
     if (!config || !config.clientId || !config.secret) {
-        console.error('[Asthros] Erro crítico: Configurações não encontradas. Use window.AsthrosConfig.');
+        console.error('[Asthros] CONFIGURAÇÃO NÃO ENCONTRADA! Certifique-se de que window.AsthrosConfig está definido ou a tag <script> tem os atributos data-.');
         return;
     }
 
-    console.log('%c[Asthros] Rastreador Ativo e Configurado!', 'color: #25d366; font-weight: bold;');
+    console.log('[Asthros] Configuração Carregada:', {
+        clientId: config.clientId,
+        apiUrl: config.apiUrl,
+        // Ocultamos parte do secret por segurança no log
+        secret: config.secret.substring(0, 10) + '...'
+    });
 
     const startTime = Date.now();
     let maxScroll = 0;
@@ -39,35 +43,33 @@
         return {
             source: urlParams.get('utm_source') || 'direto',
             medium: urlParams.get('utm_medium') || 'organico',
-            campaign: urlParams.get('utm_campaign') || 'nenhuma',
-            term: urlParams.get('utm_term'),
-            content: urlParams.get('utm_content'),
-            gclid: urlParams.get('gclid'),
-            fbclid: urlParams.get('fbclid')
+            campaign: urlParams.get('utm_campaign') || 'nenhuma'
         };
     }
 
     function isWhatsAppLink(url) {
         if (!url) return false;
         const lowerUrl = url.toLowerCase();
-        // Regex mais abrangente para links curtos e protocolos
-        return /wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:/.test(lowerUrl);
+        const matches = /wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:/.test(lowerUrl);
+        return matches;
     }
 
     async function trackLead(e) {
-        // Buscamos o link mais próximo (suporta ícones ou spans dentro do <a>)
         const link = e.target.closest('a');
-        if (!link || !isWhatsAppLink(link.href)) return;
+        if (!link) return;
 
-        console.log('[Asthros] Capturando clique em:', link.href);
+        console.log('[Asthros] Clique detectado em link:', link.href);
 
-        const utms = getUtms();
+        if (!isWhatsAppLink(link.href)) {
+            console.log('[Asthros] Link ignorado (não é WhatsApp).');
+            return;
+        }
+
+        console.log('%c[Asthros] CAPTURANDO LEAD WHATSAPP!', 'color: #25d366; font-weight: bold;');
+
         const payload = {
             source: 'whatsapp_tracker',
-            marketing: {
-                ...utms,
-                referrer: document.referrer || 'direto'
-            },
+            marketing: { ...getUtms(), referrer: document.referrer || 'direto' },
             behavior: {
                 time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
                 scroll_depth: maxScroll + '%',
@@ -81,30 +83,28 @@
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
 
         try {
-            // Tentamos o Beacon primeiro (mais resiliente a trocas de página)
             if (navigator.sendBeacon) {
                 const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
                 if (navigator.sendBeacon(endpoint, blob)) {
-                    console.log('[Asthros] Sinal enviado (Beacon)');
+                    console.log('[Asthros] Sucesso: Sinal enviado via Beacon API.');
                     return;
                 }
             }
 
-            // Fallback via Fetch (com keepalive para garantir o envio)
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
                 keepalive: true
             })
-            .then(() => console.log('[Asthros] Sinal enviado (Fetch)'))
-            .catch(err => console.error('[Asthros] Erro no envio:', err));
+            .then(() => console.log('[Asthros] Sucesso: Sinal enviado via Fetch API.'))
+            .catch(err => console.error('[Asthros] Falha no envio (Fetch):', err));
 
         } catch (err) {
-            console.error('[Asthros] Falha crítica no rastreador:', err);
+            console.error('[Asthros] Erro crítico no processamento:', err);
         }
     }
 
-    // Usamos capture: true para garantir que pegamos o evento antes de outros scripts do Elementor
     document.addEventListener('click', trackLead, { capture: true });
+    console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
 })();
