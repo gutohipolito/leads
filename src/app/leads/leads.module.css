@@ -58,37 +58,72 @@
 .iconBox {
   width: 56px;
   height: 56px;
-  background: rgba(0, 209, 255, 0.05);
-  border: 1px solid rgba(0, 209, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--primary);
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
+}
+
+.initials {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+
+.clientLogoBox {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clientLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .card:hover .iconBox {
-  background: var(--primary);
-  color: var(--background);
-  box-shadow: 0 0 20px var(--primary-glow);
-  transform: rotate(-5deg);
+  border-color: var(--primary);
+  background: rgba(0, 209, 255, 0.05);
 }
 
 .cardBadge {
-  padding: 4px 12px;
+  padding: 6px 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activeNeon {
+  background: rgba(37, 211, 102, 0.05) !important;
+  border-color: rgba(37, 211, 102, 0.3) !important;
+  color: #25d366 !important;
+  box-shadow: 0 0 15px rgba(37, 211, 102, 0.2);
+  text-shadow: 0 0 8px rgba(37, 211, 102, 0.5);
 }
 
 .cardBody h3 {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: white;
   margin-bottom: 0.5rem;
@@ -97,7 +132,7 @@
 
 .cardStats {
   display: flex;
-  gap: 1.5rem;
+  gap: 2rem;
   margin-top: 0.5rem;
 }
 

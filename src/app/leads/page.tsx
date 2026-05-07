@@ -112,7 +112,7 @@ export default function LeadsPage() {
         setIsAdmin(isUserAdmin);
         setUserClientId(clientId);
 
-        const { data: clientsData } = await supabase.from('clients').select(`*, webhooks (*)`);
+        const { data: clientsData } = await supabase.from('clients').select(`*, webhooks (*), leads(count)`);
         if (clientsData) setClients(clientsData);
 
         // Checar Impersonação
@@ -259,16 +259,36 @@ export default function LeadsPage() {
               {clients.map(client => (
                 <div key={client.id} className={`${styles.card} glass`} onClick={() => setSelectedClientId(client.id)}>
                   <div className={styles.cardTop}>
-                    <div className={styles.iconBox}><Users size={24} /></div>
-                    <div className={styles.cardBadge}>{client.status === 'active' ? 'Ativo' : 'Inativo'}</div>
+                    {client.logo_url ? (
+                      <div className={styles.clientLogoBox}>
+                        <img src={client.logo_url} alt={client.name} className={styles.clientLogo} />
+                      </div>
+                    ) : (
+                      <div className={styles.iconBox}>
+                        <span className={styles.initials}>{client.name.substring(0, 2).toUpperCase()}</span>
+                      </div>
+                    )}
+                    <div className={`${styles.cardBadge} ${client.status === 'active' ? styles.activeNeon : ''}`}>
+                      {client.status === 'active' ? '● Ativo' : 'Inativo'}
+                    </div>
                   </div>
                   <div className={styles.cardBody}>
                     <h3>{client.name}</h3>
                     <div className={styles.cardStats}>
-                      <div className={styles.statItem}><span className={styles.statLabel}>Webhooks</span><span className={styles.statValue}>{client.webhooks?.length || 0}</span></div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Terminais</span>
+                        <span className={styles.statValue}>{client.webhooks?.length || 0}</span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Volume Leads</span>
+                        <span className={styles.statValue}>{client.leads?.[0]?.count || 0}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className={styles.cardFooter}><span className={styles.enterLabel}>Ver Terminais</span><div className={styles.arrowCircle}><ChevronRight size={18} /></div></div>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.enterLabel}>Gerenciar Inteligência</span>
+                    <div className={styles.arrowCircle}><ChevronRight size={18} /></div>
+                  </div>
                 </div>
               ))}
             </div>
