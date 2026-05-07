@@ -189,6 +189,45 @@ export default function WebhooksManagePage() {
     }
   };
 
+  const handleToggleStatus = async (webhook: any) => {
+    const newStatus = webhook.status === 'active' ? 'inactive' : 'active';
+    const actionLabel = newStatus === 'active' ? 'Reativado' : 'Desativado';
+
+    const { error } = await supabase
+      .from('webhooks')
+      .update({ status: newStatus })
+      .eq('id', webhook.id);
+
+    if (!error) {
+      logAction(`Webhook ${actionLabel}`, 'webhook', webhook.id);
+      loadWebhooksData();
+      if (selectedWebhook?.id === webhook.id) {
+        setSelectedWebhook({ ...selectedWebhook, status: newStatus });
+      }
+      alert(`Terminal ${actionLabel} com sucesso!`);
+    } else {
+      alert('Erro ao alterar status: ' + error.message);
+    }
+  };
+
+  const handleDeleteWebhook = async (id: string) => {
+    if (!confirm('ATENÇÃO: Esta ação é irreversível. Todos os logs vinculados a este terminal serão perdidos. Deseja continuar?')) return;
+
+    const { error } = await supabase
+      .from('webhooks')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      logAction('Webhook Excluído', 'webhook', id);
+      setIsDetailsModalOpen(false);
+      loadWebhooksData();
+      alert('Terminal removido com sucesso!');
+    } else {
+      alert('Erro ao excluir: ' + error.message);
+    }
+  };
+
   if (loading) return <DashboardLayout title="Gerenciamento"><Loader text="Sincronizando Sistema" /></DashboardLayout>;
 
   return (
@@ -411,8 +450,22 @@ export default function WebhooksManagePage() {
 
                 <div className={styles.premiumActionGrid}>
                   <button className={styles.mainAction} onClick={() => { setSelectedDocsWebhook(selectedWebhook); setIsDocsModalOpen(true); }}><BookOpen size={18} /><span>Guia Técnico</span></button>
-                  <button className={styles.secAction} onClick={() => handleRegenerate(selectedWebhook.id)}><RefreshCcw size={18} /><span>Regenerar Chave</span></button>
-                  <button className={styles.dangerAction}><ShieldAlert size={18} /><span>Desativar</span></button>
+                  <button className={styles.secAction} onClick={() => handleRegenerate(selectedWebhook.id)}><RefreshCcw size={18} /><span>Regenerar</span></button>
+                  
+                  {selectedWebhook.status === 'active' ? (
+                    <button className={styles.dangerAction} onClick={() => handleToggleStatus(selectedWebhook)}>
+                      <ShieldAlert size={18} /><span>Desativar</span>
+                    </button>
+                  ) : (
+                    <>
+                      <button className={styles.successAction} onClick={() => handleToggleStatus(selectedWebhook)}>
+                        <Zap size={18} /><span>Reativar</span>
+                      </button>
+                      <button className={styles.deleteAction} onClick={() => handleDeleteWebhook(selectedWebhook.id)}>
+                        <Trash2 size={18} /><span>Excluir</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
