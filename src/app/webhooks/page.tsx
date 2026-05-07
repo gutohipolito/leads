@@ -25,7 +25,8 @@ import {
   ArrowRight,
   Info,
   ShieldCheck,
-  Cpu
+  Cpu,
+  Globe
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
