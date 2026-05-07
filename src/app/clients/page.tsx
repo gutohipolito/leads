@@ -66,12 +66,18 @@ export default function ClientsPage() {
       .from('clients')
       .select(`
         *,
-        webhooks (*),
-        leads (count)
+        webhooks(count),
+        leads(count)
       `);
     
     if (data) {
-      setClients(data);
+      // Normalizar os dados para garantir que a contagem seja acessível
+      const normalizedData = data.map(client => ({
+        ...client,
+        webhookCount: client.webhooks?.[0]?.count || 0,
+        leadsCount: client.leads?.[0]?.count || 0
+      }));
+      setClients(normalizedData);
     }
     setLoading(false);
   };
@@ -234,8 +240,10 @@ export default function ClientsPage() {
             </h3>
           </div>
           <div className={`${styles.miniStat} glass`}>
-            <span className={styles.miniLabel}>Sistemas Online</span>
-            <h3 className={styles.miniValue}>100%</h3>
+            <span className={styles.miniLabel}>Webhooks Ativos</span>
+            <h3 className={styles.miniValue}>
+              {clients.reduce((acc, c) => acc + (c.webhookCount || 0), 0)}
+            </h3>
           </div>
         </div>
 
@@ -290,14 +298,14 @@ export default function ClientsPage() {
                     </td>
                     <td>
                       <div className={styles.usageCell}>
-                        <span className={styles.usageValue}>{client.leads?.[0]?.count || 0}</span>
+                        <span className={styles.usageValue}>{client.leadsCount}</span>
                         <div className={styles.usageBar}>
-                          <div className={styles.usageProgress} style={{ width: `${Math.min(((client.leads?.[0]?.count || 0) / 200) * 100, 100)}%` }} />
+                          <div className={styles.usageProgress} style={{ width: `${Math.min((client.leadsCount / 200) * 100, 100)}%` }} />
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className={styles.webhookCount}>{client.webhooks?.[0]?.count || 0} Terminais</span>
+                      <span className={styles.webhookCount}>{client.webhookCount} Terminais</span>
                     </td>
                     <td>
                       <div className={styles.actionGrid}>
