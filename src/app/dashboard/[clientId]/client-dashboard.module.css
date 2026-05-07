@@ -220,28 +220,61 @@
 .dynamicData {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.dataTag {
-  background: rgba(255, 255, 255, 0.05);
+.dataGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.groupLabel {
+  font-size: 0.6rem;
+  color: var(--primary);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-left: 0.25rem;
+}
+
+.groupItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.dataTag, .subTag {
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 0.5rem;
   display: flex;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
-.key {
+.subTag {
+  background: rgba(86, 215, 253, 0.03);
+  border-color: rgba(86, 215, 253, 0.1);
+}
+
+.key, .subKey {
   color: var(--muted-foreground);
   font-weight: 600;
   text-transform: uppercase;
 }
 
-.val {
+.subKey {
+  color: rgba(86, 215, 253, 0.6);
+}
+
+.val, .subVal {
   color: white;
   font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .meta {
@@ -249,6 +282,31 @@
   align-items: center;
   justify-content: flex-end;
   gap: 1.5rem;
+}
+
+.sourceIndicator {
+  display: flex;
+  align-items: center;
+}
+
+.wppBadge, .formBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2rem;
+  text-transform: uppercase;
+}
+
+.wppBadge {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366;
+  border: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.formBadge {
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(86, 215, 253, 0.2);
 }
 
 .date {

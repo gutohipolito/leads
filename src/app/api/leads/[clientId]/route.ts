@@ -46,12 +46,16 @@ export async function POST(
     }
 
     // 3. Normalização de dados (Mapeamento Inteligente)
-    // Procuramos em níveis diferentes (raiz ou dentro de 'fields' do Elementor)
+    const isWppTracker = body.source === 'whatsapp_tracker';
     const fields = body.fields || {};
     
-    const name = body.name || body.nome || body.full_name || fields.name || fields.nome || 'Lead s/ Nome';
+    let name = body.name || body.nome || body.full_name || fields.name || fields.nome || 'Lead s/ Nome';
     const email = body.email || body.e_mail || fields.email || fields.e_mail || null;
     const phone = body.phone || body.telefone || body.whatsapp || fields.phone || fields.telefone || null;
+
+    if (isWppTracker) {
+      name = `Click Wpp: ${body.marketing?.source || 'Direto'}`;
+    }
 
     // 4. Salvar o Lead
     const { data: lead, error: insertError } = await supabase
@@ -80,12 +84,17 @@ export async function POST(
       .single();
 
     if (userData) {
+      const notificationTitle = isWppTracker ? 'Intercepção de WhatsApp' : 'Novo Lead via Form';
+      const notificationMsg = isWppTracker 
+        ? `Um usuário de ${body.marketing?.source || 'origem direta'} clicou no WhatsApp.`
+        : `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`;
+
       await supabase.from('notifications').insert([{
         user_id: userData.id,
         client_id: clientId,
-        title: 'Novo Lead via Elementor',
-        message: `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`,
-        type: 'success'
+        title: notificationTitle,
+        message: notificationMsg,
+        type: isWppTracker ? 'info' : 'success'
       }]);
     }
 

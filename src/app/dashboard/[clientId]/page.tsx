@@ -98,18 +98,42 @@ export default async function ClientDashboard({ params }: { params: Promise<{ cl
                 </div>
 
                 <div className={styles.dynamicData}>
-                  {Object.entries(lead.data).map(([key, value]) => (
-                    <div key={key} className={styles.dataTag}>
-                      <span className={styles.key}>{key}</span>
-                      <span className={styles.val}>{String(value)}</span>
-                    </div>
-                  ))}
+                  {Object.entries(lead.data).map(([key, value]) => {
+                    if (typeof value === 'object' && value !== null) {
+                      return (
+                        <div key={key} className={styles.dataGroup}>
+                          <span className={styles.groupLabel}>{key.toUpperCase()}</span>
+                          <div className={styles.groupItems}>
+                            {Object.entries(value).map(([subKey, subValue]) => (
+                              <div key={subKey} className={styles.subTag} title={`${subKey}: ${subValue}`}>
+                                <span className={styles.subKey}>{subKey}</span>
+                                <span className={styles.subVal}>{String(subValue)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={key} className={styles.dataTag}>
+                        <span className={styles.key}>{key}</span>
+                        <span className={styles.val}>{String(value)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className={styles.meta}>
                   <div className={styles.date}>
                     <Calendar size={14} />
                     <span>{new Date(lead.createdAt).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className={styles.sourceIndicator}>
+                    {lead.data.source === 'whatsapp_tracker' ? (
+                      <span className={styles.wppBadge}>WhatsApp</span>
+                    ) : (
+                      <span className={styles.formBadge}>Formulário</span>
+                    )}
                   </div>
                   <button className={styles.viewBtn}>Detalhes</button>
                 </div>

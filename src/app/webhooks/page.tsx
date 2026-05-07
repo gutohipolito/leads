@@ -22,7 +22,10 @@ import {
   Lightbulb,
   AlertTriangle,
   Terminal,
-  ArrowRight
+  ArrowRight,
+  Info,
+  ShieldCheck,
+  Cpu
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -36,9 +39,11 @@ export default function WebhooksManagePage() {
   const [loading, setLoading] = useState(true);
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
   
-  // Modal states
+  const [activeTab, setActiveTab] = useState<'webhooks' | 'whatsapp'>('webhooks');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedWebhook, setSelectedWebhook] = useState<any>(null);
   const [selectedDocsWebhook, setSelectedDocsWebhook] = useState<any>(null);
 
   const [newWebhook, setNewWebhook] = useState({
@@ -53,45 +58,20 @@ export default function WebhooksManagePage() {
 
   async function loadWebhooksData() {
     setLoading(true);
-    
-    // 1. Obter Usuário e Perfil
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase
-        .from('system_users')
-        .select('*')
-        .eq('email', user.email)
-        .single();
-      
+      const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
       const isUserAdmin = profile?.role === 'admin';
-      const clientId = profile?.client_id;
-      
       setIsAdmin(isUserAdmin);
-      
-      // Checar Impersonação
       const impersonated = localStorage.getItem('impersonated_client');
-      let activeClientId = clientId;
-      
+      let activeClientId = profile?.client_id;
       if (isUserAdmin && impersonated) {
-        const impData = JSON.parse(impersonated);
-        activeClientId = impData.id;
+        activeClientId = JSON.parse(impersonated).id;
       }
-      
       setUserClientId(activeClientId);
       setNewWebhook(prev => ({ ...prev, client_id: activeClientId || '' }));
-
-      // 2. Carregar Webhooks
-      let query = supabase
-        .from('webhooks')
-        .select(`
-          *,
-          clients (name)
-        `);
-      
-      if (activeClientId) {
-        query = query.eq('client_id', activeClientId);
-      }
-
+      let query = supabase.from('webhooks').select('*, clients (name)');
+      if (activeClientId) query = query.eq('client_id', activeClientId);
       const { data: webhooksData } = await query;
       if (webhooksData) {
         setWebhooks(webhooksData.map(w => ({
@@ -100,21 +80,15 @@ export default function WebhooksManagePage() {
           fullUrl: `${window.location.origin}/api/leads/${w.client_id}`
         })));
       }
-
-      // 3. Carregar Clientes para o Modal (apenas se for admin e não estiver impersonando)
       if (isUserAdmin && !impersonated) {
         const { data: clientsData } = await supabase.from('clients').select('id, name').eq('status', 'active');
         if (clientsData) setClients(clientsData);
       }
     }
-    
     setLoading(false);
   }
 
-  const toggleSecret = (id: string) => {
-    setShowSecret(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
+  const toggleSecret = (id: string) => setShowSecret(prev => ({ ...prev, [id]: !prev[id] }));
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Copiado para a área de transferência!');
@@ -123,31 +97,18 @@ export default function WebhooksManagePage() {
   const handleCreateWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWebhook.name || !newWebhook.client_id) return;
-
     const secret = 'whsec_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const slug = newWebhook.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-    const { data, error } = await supabase
-      .from('webhooks')
-      .insert([
-        {
-          name: newWebhook.name,
-          client_id: newWebhook.client_id,
-          url_slug: slug,
-          secret: secret,
-          validation_type: newWebhook.validation_type,
-          status: 'active'
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      alert('Erro ao criar webhook: ' + error.message);
-    } else {
-      if (data) {
-        await logAction('Webhook Ativado', 'webhook', data.id, { name: newWebhook.name });
-      }
+    const { data, error } = await supabase.from('webhooks').insert([{
+      name: newWebhook.name,
+      client_id: newWebhook.client_id,
+      url_slug: slug,
+      secret: secret,
+      validation_type: newWebhook.validation_type,
+      status: 'active'
+    }]).select().single();
+    if (!error && data) {
+      await logAction('Webhook Ativado', 'webhook', data.id, { name: newWebhook.name });
       setIsModalOpen(false);
       setNewWebhook({ name: '', client_id: isAdmin ? '' : userClientId || '', validation_type: 'header' });
       loadWebhooksData();
@@ -157,257 +118,188 @@ export default function WebhooksManagePage() {
   const handleRegenerate = async (id: string) => {
     if (confirm('Tem certeza que deseja regenerar este segredo? Aplicações antigas pararão de funcionar.')) {
       const newSecret = 'whsec_' + Math.random().toString(36).substring(2, 15);
-      const { error } = await supabase
-        .from('webhooks')
-        .update({ secret: newSecret })
-        .eq('id', id);
-
+      const { error } = await supabase.from('webhooks').update({ secret: newSecret }).eq('id', id);
       if (!error) {
         setWebhooks(prev => prev.map(w => w.id === id ? { ...w, secret: newSecret } : w));
+        if (selectedWebhook?.id === id) setSelectedWebhook({ ...selectedWebhook, secret: newSecret });
         alert(`Segredo regenerado com sucesso!`);
       }
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout title="Gerenciamento de Webhooks">
-        <Loader text="Sincronizando Uplinks" />
-      </DashboardLayout>
-    );
-  }
+  if (loading) return <DashboardLayout title="Gerenciamento"><Loader text="Sincronizando Sistema" /></DashboardLayout>;
 
   return (
     <DashboardLayout title="Gerenciamento de Webhooks">
       <div className={styles.container}>
-        
-        <div className={styles.headerActions}>
-          <div className={styles.info}>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem' }}>
-              {isAdmin 
-                ? 'Visualize e gerencie todos os sinais de uplink do ecossistema Asthros.' 
-                : 'Configure os pontos de entrada para capturar leads do seu site.'}
-            </p>
-          </div>
-          <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)}>
-            <Plus size={20} />
-            <span>Gerar Novo Webhook</span>
+        <div className={styles.tabsContainer}>
+          <button className={`${styles.tabBtn} ${activeTab === 'webhooks' ? styles.activeTab : ''}`} onClick={() => setActiveTab('webhooks')}>
+            <Webhook size={18} /><span>Webhook de Formulários</span>
+          </button>
+          <button className={`${styles.tabBtn} ${activeTab === 'whatsapp' ? styles.activeTab : ''}`} onClick={() => setActiveTab('whatsapp')}>
+            <Zap size={18} /><span>Rastreador de WhatsApp</span>
           </button>
         </div>
 
-        <div className={styles.webhookGrid}>
-          {webhooks.length > 0 ? webhooks.map((webhook) => (
-            <div key={webhook.id} className={`${styles.webhookCard} glass`}>
-              <div className={styles.cardTop}>
-                <div className={styles.webhookInfo}>
-                  {isAdmin && <span className={styles.clientName}>{webhook.clientName}</span>}
-                  <h3>{webhook.name}</h3>
-                </div>
-                <div className={styles.statusWrapper}>
-                  <div className={`${styles.statusBadge} ${webhook.status === 'active' ? styles.active : styles.inactive}`}>
-                    <div className={styles.dot} />
-                    <span>{webhook.status === 'active' ? 'SISTEMA ATIVO' : 'SISTEMA INATIVO'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.urlSection}>
-                <div className={styles.labelRow}>
-                  <span>Endpoint de Destino (Uplink)</span>
-                  <ExternalLink size={14} style={{ opacity: 0.5 }} />
-                </div>
-                <div className={styles.urlBox}>
-                  <div className={styles.urlText}>{webhook.fullUrl}</div>
-                  <button className={styles.copyBtn} onClick={() => handleCopy(webhook.fullUrl)} title="Copiar URL">
-                    <Copy size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className={styles.securityGrid}>
-                <div className={styles.securityItem}>
-                  <label>Chave Secreta de Uplink (X-Asthros-Secret)</label>
-                  <div className={styles.secretBox}>
-                    <div className={styles.secretValue}>
-                      {showSecret[webhook.id] ? webhook.secret : '••••••••••••••••••••'}
+        {activeTab === 'webhooks' ? (
+          <>
+            <div className={styles.headerActions}>
+              <p className={styles.tabDesc}>Configure e gerencie endpoints para capturar leads via formulários externos.</p>
+              <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)}>
+                <Plus size={20} /><span>Gerar Novo Webhook</span>
+              </button>
+            </div>
+            <div className={styles.webhookGrid}>
+              {webhooks.map((webhook) => (
+                <div key={webhook.id} className={`${styles.compactCard} glass`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
+                  <div className={styles.cardHeaderCompact}>
+                    <div className={styles.typeIcon}><Server size={18} /></div>
+                    <div className={styles.mainInfo}>
+                      {isAdmin && <span className={styles.clientTag}>{webhook.clientName}</span>}
+                      <h4>{webhook.name}</h4>
                     </div>
-                    <button className={styles.toggleSecret} onClick={() => toggleSecret(webhook.id)}>
-                      {showSecret[webhook.id] ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                    <button className={styles.copyBtn} style={{ width: '32px', height: '32px' }} onClick={() => handleCopy(webhook.secret)}>
-                      <Copy size={14} />
-                    </button>
+                    <div className={`${styles.miniStatus} ${webhook.status === 'active' ? styles.active : styles.inactive}`} />
+                  </div>
+                  <div className={styles.cardBrief}>
+                    <div className={styles.briefItem}><Zap size={14} /><span>Ativo</span></div>
+                    <ArrowRight size={16} className={styles.arrow} />
                   </div>
                 </div>
-
-                <div className={styles.securityItem}>
-                  <label>Método de Validação</label>
-                  <select 
-                    className={styles.validationSelect} 
-                    defaultValue={webhook.validation_type}
-                    disabled={!isAdmin}
-                  >
-                    <option value="header">Header (Recomendado)</option>
-                    <option value="query">Query Parameter</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.cardFooter}>
-                <button 
-                  className={styles.secondaryBtn} 
-                  style={{ marginRight: 'auto', gap: '0.5rem', background: 'rgba(255,255,255,0.05)' }}
-                  onClick={() => {
-                    setSelectedDocsWebhook(webhook);
-                    setIsDocsModalOpen(true);
-                  }}
-                >
-                  <BookOpen size={16} />
-                  <span>Guia de Integração</span>
-                </button>
-                <button className={styles.regenBtn} onClick={() => handleRegenerate(webhook.id)}>
-                  <RefreshCcw size={16} />
-                  <span>Regenerar Sinal</span>
-                </button>
-                <button className={styles.saveBtn} onClick={() => alert('Alterações salvas')}>
-                  <CheckCircle2 size={16} />
-                  <span>Salvar Alterações</span>
-                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className={styles.whatsappTrackerSection}>
+            <div className={`${styles.trackerHero} glass`}>
+              <div className={styles.heroText}>
+                <h3>Rastreamento de Conversões via WhatsApp</h3>
+                <p>Monitore cliques em botões de contato e capture dados de origem e comportamento sem interromper o fluxo.</p>
               </div>
             </div>
-          )) : (
-            <div className={styles.emptyState}>
-              Nenhum webhook configurado para este cliente.
-            </div>
-          )}
-        </div>
-
-        {isModalOpen && (
-          <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
-            <div className={`${styles.modal} glass`} style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Configurar Novo Uplink</h3>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem' }}>
-                  Preencha os dados abaixo para gerar um novo ponto de captura seguro.
-                </p>
-              </div>
-
-              <div className={styles.minimalSteps}>
-                <div className={styles.miniStep}>
-                  <div className={styles.miniStepContent}>
-                    <strong>1. Identificação</strong>
-                    <p>Defina o nome da origem para organizar seus sinais de captura.</p>
+            <div className={styles.trackerGrid}>
+              <div className={`${styles.trackerCard} glass`}>
+                <div className={styles.cardHeader}><Terminal size={18} /><h4>Configuração de Instalação</h4></div>
+                <div className={styles.trackerSelectionArea}>
+                  <label className={styles.areaLabel}>Origens de Captura</label>
+                  <div className={styles.compactTrackerGrid}>
+                    {webhooks.map(w => (
+                      <div key={w.id} className={`${styles.trackerMiniCard} ${selectedDocsWebhook?.id === w.id ? styles.activeTracker : ''} glass`} onClick={() => setSelectedDocsWebhook(selectedDocsWebhook?.id === w.id ? null : w)}>
+                        <div className={styles.dotIndicator} /><span>{w.name}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className={styles.miniStep}>
-                  <div className={styles.miniStepContent}>
-                    <strong>2. Segurança</strong>
-                    <p>Gere sua chave exclusiva para autenticar as transmissões de dados.</p>
+                {selectedDocsWebhook ? (
+                  <div className={styles.codeWrapper}>
+                    <div className={styles.codeHeader}><span>Script HTML/JS</span>
+                      <button className={styles.copyCodeBtn} onClick={() => handleCopy(`<script src="${window.location.origin}/tracker.js" data-client-id="${selectedDocsWebhook.client_id}" data-secret="${selectedDocsWebhook.secret}" data-api-url="${window.location.origin}"></script>`)}>
+                        <Copy size={14} /><span>Copiar Script</span>
+                      </button>
+                    </div>
+                    <pre className={styles.codeBlock}>{`<script 
+  src="${window.location.origin}/tracker.js" 
+  data-client-id="${selectedDocsWebhook.client_id}" 
+  data-secret="${selectedDocsWebhook.secret}"
+  data-api-url="${window.location.origin}">
+</script>`}</pre>
                   </div>
-                </div>
-                <div className={styles.miniStep}>
-                  <div className={styles.miniStepContent}>
-                    <strong>3. Instalação</strong>
-                    <p>Copie o endpoint gerado e insira no seu formulário ou sistema externo.</p>
-                  </div>
-                </div>
-              </div>
-
-              <form className={styles.form} onSubmit={handleCreateWebhook} style={{ marginTop: '0.5rem' }}>
-                <div className={styles.inputGroup}>
-                  <label>Nome do Ponto de Captura</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Landing Page Campanha Black Friday" 
-                    value={newWebhook.name}
-                    onChange={e => setNewWebhook({...newWebhook, name: e.target.value})}
-                    required 
-                  />
-                </div>
-                
-                {isAdmin && (
-                  <div className={styles.inputGroup}>
-                    <label>Cliente Destinatário</label>
-                    <select 
-                      value={newWebhook.client_id}
-                      onChange={e => setNewWebhook({...newWebhook, client_id: e.target.value})}
-                      required
-                    >
-                      <option value="">Selecionar Cliente...</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                ) : (
+                  <div className={styles.noWebhookSelectedInline}>
+                    <AlertTriangle size={18} />
+                    <p>Selecione uma das origens acima para visualizar as credenciais.</p>
                   </div>
                 )}
-
-                <div className={styles.inputGroup}>
-                  <label>Tipo de Autenticação</label>
-                  <select 
-                    value={newWebhook.validation_type}
-                    onChange={e => setNewWebhook({...newWebhook, validation_type: e.target.value})}
-                  >
-                    <option value="header">Segurança via Header (Recomendado)</option>
-                    <option value="query">Segurança via URL</option>
-                  </select>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.4rem' }}>
-                    O uso de Header é a prática recomendada para evitar exposição de chaves em logs.
-                  </p>
+              </div>
+              <div className={styles.stepsCard}>
+                <div className={styles.stepsHeader}><h4>Funcionamento</h4></div>
+                <div className={styles.stepsList}>
+                  <div className={styles.stepItem}><div className={styles.stepNum}>01</div><div className={styles.stepContent}><strong>Monitoramento</strong><p>Identifica cliques em links wa.me automaticamente.</p></div></div>
+                  <div className={styles.stepItem}><div className={styles.stepNum}>02</div><div className={styles.stepContent}><strong>Atribuição</strong><p>Captura UTMs, referrer e tempo de sessão.</p></div></div>
+                  <div className={styles.stepItem}><div className={styles.stepNum}>03</div><div className={styles.stepContent}><strong>Uplink</strong><p>Envia os dados via Beacon API de alta prioridade.</p></div></div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-                <div className={styles.modalActions} style={{ marginTop: '1.5rem', gap: '1rem' }}>
-                  <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>
-                    Cancelar
-                  </button>
-                  <button type="submit" className={styles.modalSubmitBtn}>
-                    ATIVAR UPLINK
-                  </button>
-                </div>
+        {/* Modal: Novo Webhook */}
+        {isModalOpen && (
+          <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
+            <div className={`${styles.modal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}><h3>Novo Ponto de Captura</h3></div>
+              <form className={styles.form} onSubmit={handleCreateWebhook}>
+                <div className={styles.inputGroup}><label>Nome do Ponto</label><input type="text" placeholder="Ex: Site Principal" value={newWebhook.name} onChange={e => setNewWebhook({...newWebhook, name: e.target.value})} required /></div>
+                {isAdmin && (<div className={styles.inputGroup}><label>Cliente</label><select value={newWebhook.client_id} onChange={e => setNewWebhook({...newWebhook, client_id: e.target.value})} required><option value="">Selecionar...</option>{clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div>)}
+                <div className={styles.inputGroup}><label>Autenticação</label><select value={newWebhook.validation_type} onChange={e => setNewWebhook({...newWebhook, validation_type: e.target.value})}><option value="header">Header (Recomendado)</option><option value="query">URL Parameter</option></select></div>
+                <div className={styles.modalActions}><button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button><button type="submit" className={styles.modalSubmitBtn}>ATIVAR</button></div>
               </form>
             </div>
           </div>
         )}
 
-        {!isAdmin && (
-          <div className={`${styles.docsCard} glass`} style={{ padding: '2rem', marginTop: '1rem', border: '1px solid rgba(0, 209, 255, 0.2)' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-              <Shield size={32} color="var(--primary)" />
-              <div>
-                <h4 style={{ color: 'white', marginBottom: '0.5rem' }}>Instruções de Integração</h4>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                  Para garantir a segurança, todas as requisições para o seu webhook devem incluir o header <strong>X-Asthros-Secret</strong> com a sua chave secreta. 
-                  Sinais sem esta chave ou com chaves incorretas serão descartados pelo nosso firewall.
-                </p>
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                  <button className={styles.regenBtn} style={{ fontSize: '0.75rem' }}>
-                    <Server size={14} />
-                    <span>Ver Documentação API</span>
-                  </button>
+        {/* Modal: Detalhes do Webhook */}
+        {isDetailsModalOpen && selectedWebhook && (
+          <div className={styles.modalOverlay} onClick={() => setIsDetailsModalOpen(false)}>
+            <div className={`${styles.premiumModal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.premiumModalHeader}>
+                <div className={styles.titleSection}>
+                  <div className={styles.clientBadge}>{selectedWebhook.clientName}</div>
+                  <h3>{selectedWebhook.name}</h3>
+                </div>
+                <button className={styles.closeBtn} onClick={() => setIsDetailsModalOpen(false)}><X size={20} /></button>
+              </div>
+              <div className={styles.premiumModalBody}>
+                <div className={styles.infoSection}>
+                  <label><ExternalLink size={14} /> URL DE UPLINK</label>
+                  <div className={styles.copyBox}>
+                    <code>{selectedWebhook.fullUrl}</code>
+                    <button onClick={() => handleCopy(selectedWebhook.fullUrl)}><Copy size={16} /></button>
+                  </div>
+                </div>
+                <div className={styles.infoGrid}>
+                  <div className={styles.infoSection}>
+                    <label><Shield size={14} /> CHAVE SECRETA</label>
+                    <div className={styles.copyBox}>
+                      <code>{showSecret[selectedWebhook.id] ? selectedWebhook.secret : '••••••••••••••••'}</code>
+                      <button onClick={() => toggleSecret(selectedWebhook.id)}>{showSecret[selectedWebhook.id] ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                      <button onClick={() => handleCopy(selectedWebhook.secret)}><Copy size={16} /></button>
+                    </div>
+                  </div>
+                  <div className={styles.infoSection}>
+                    <label><Cpu size={14} /> VALIDAÇÃO</label>
+                    <div className={styles.staticValue}>{selectedWebhook.validation_type === 'header' ? 'X-Asthros-Secret' : 'URL Parameter'}</div>
+                  </div>
+                </div>
+                <div className={styles.premiumActionGrid}>
+                  <button className={styles.mainAction} onClick={() => { setSelectedDocsWebhook(selectedWebhook); setIsDocsModalOpen(true); }}><BookOpen size={18} /><span>Guia Técnico</span></button>
+                  <button className={styles.secAction} onClick={() => handleRegenerate(selectedWebhook.id)}><RefreshCcw size={18} /><span>Regenerar Chave</span></button>
+                  <button className={styles.dangerAction}><ShieldAlert size={18} /><span>Desativar</span></button>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Modal: Guia de Integração */}
+        {/* Modal: Guia Técnico */}
         {isDocsModalOpen && selectedDocsWebhook && (
           <div className={styles.modalOverlay} onClick={() => setIsDocsModalOpen(false)}>
-            <div className={`${styles.docsModal} glass`} onClick={e => e.stopPropagation()}>
-              <div className={styles.docsHeader}>
+            <div className={`${styles.docsPremiumModal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.docsHeaderPremium}>
                 <div className={styles.docsTitle}>
-                  <h3>Guia de Integração Técnica</h3>
-                  <p>{selectedDocsWebhook.name}</p>
+                  <Code2 size={24} className={styles.docsIcon} />
+                  <div>
+                    <h3>Implementação Técnica</h3>
+                    <p>{selectedDocsWebhook.name}</p>
+                  </div>
                 </div>
-                <button className={styles.closeBtn} onClick={() => setIsDocsModalOpen(false)}><X size={24} /></button>
+                <button className={styles.closeBtn} onClick={() => setIsDocsModalOpen(false)}><X size={20} /></button>
               </div>
-
-              <div className={styles.docsBody}>
-                <div className={styles.docSection}>
-                  <h4>Exemplo Rápido (JavaScript)</h4>
-                  <p>Utilize este código para disparar o sinal manualmente de qualquer aplicação web.</p>
-                  <div className={styles.codeBlock}>
-                    <pre>
-{`fetch('${selectedDocsWebhook.fullUrl}', {
+              <div className={styles.docsBodyPremium}>
+                <div className={styles.docsStep}>
+                  <div className={styles.stepLabel}>OPÇÃO 1: FETCH API (JAVASCRIPT)</div>
+                  <p>Ideal para disparos manuais em formulários personalizados.</p>
+                  <div className={styles.premiumCodeBlock}>
+                    <pre>{`fetch('${selectedDocsWebhook.fullUrl}', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -415,59 +307,28 @@ export default function WebhooksManagePage() {
   },
   body: JSON.stringify({
     name: 'Nome do Lead',
-    email: 'lead@exemplo.com',
-    phone: '11999999999',
-    data: { origem: 'site_principal' }
+    email: 'lead@exemplo.com'
   })
-});`}
-                    </pre>
+});`}</pre>
                   </div>
                 </div>
-
-                <div className={styles.docSection}>
-                  <h4>Cenário: Formulário com Webhook Existente</h4>
-                  <p>Caso seu formulário já possua um webhook configurado, utilize um disparo assíncrono para evitar interrupções no fluxo principal.</p>
-                  <div className={styles.tipBox}>
-                    <strong>Estratégia de Envio Paralelo</strong>
-                    <p>Mantenha seu envio atual e adicione a chamada para o Asthros como uma função secundária. Isso garante que, mesmo em caso de latência, o usuário final não seja impactado.</p>
-                  </div>
-                  <div className={styles.codeBlock}>
-                    <pre>
-{`const handleSubmit = async (event) => {
-  event.preventDefault();
-  const formData = new FormData(event.target);
-  
-  // 1. Envio para seu sistema atual
-  await sendToCurrentCRM(formData);
-  
-  // 2. Envio Secundário (Asthros)
-  fetch('${selectedDocsWebhook.fullUrl}', {
-    method: 'POST',
-    headers: { 'X-Asthros-Secret': '${selectedDocsWebhook.secret}', 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.fromEntries(formData))
-  }).catch(() => {});
-
-  window.location.href = '/sucesso';
-};`}
-                    </pre>
+                <div className={styles.docsStep}>
+                  <div className={styles.stepLabel}>OPÇÃO 2: ELEMENTOR / WEBHOOKS</div>
+                  <p>Configure a URL abaixo no campo Webhook do seu formulário.</p>
+                  <div className={styles.premiumCodeBlock}>
+                    <pre>{selectedDocsWebhook.validation_type === 'header' 
+                      ? `${selectedDocsWebhook.fullUrl}\n(Requer Header X-Asthros-Secret)` 
+                      : `${selectedDocsWebhook.fullUrl}?secret=${selectedDocsWebhook.secret}`}</pre>
                   </div>
                 </div>
-
-                <div className={styles.docSection}>
-                  <h4>Segurança e Performance</h4>
-                  <p>Recomendamos sempre o uso de blocos try/catch ou tratamento de erros vazio (.catch) em envios de webhooks secundários para manter a estabilidade da interface do usuário.</p>
+                <div className={styles.docsSafetyTip}>
+                  <ShieldCheck size={18} />
+                  <p>Sinal transmitido via canal criptografado SSL 256-bit.</p>
                 </div>
-              </div>
-
-              <div className={styles.docsFooter}>
-                <button className={styles.primaryBtn} style={{ width: 'auto', padding: '0.8rem 2.5rem' }} onClick={() => setIsDocsModalOpen(false)}>
-                  Concluir Leitura
-                </button>
               </div>
             </div>
           </div>
         )}
-
       </div>
     </DashboardLayout>
   );
