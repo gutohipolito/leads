@@ -2,13 +2,15 @@
     const config = {
         clientId: document.currentScript.getAttribute('data-client-id'),
         secret: document.currentScript.getAttribute('data-secret'),
-        apiUrl: document.currentScript.getAttribute('data-api-url') || window.location.origin
+        apiUrl: document.currentScript.getAttribute('data-api-url') || 'https://leads.asthros.com.br'
     };
 
     if (!config.clientId || !config.secret) {
-        console.warn('Asthros Tracker: Faltando client-id ou secret.');
+        console.warn('[Asthros] Faltando client-id ou secret no script.');
         return;
     }
+
+    console.log('[Asthros] Rastreador Ativo em: ' + config.apiUrl);
 
     const startTime = Date.now();
     let maxScroll = 0;
@@ -16,7 +18,7 @@
     window.addEventListener('scroll', () => {
         const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
         if (scrollPercent > maxScroll) maxScroll = Math.round(scrollPercent);
-    });
+    }, { passive: true });
 
     function getUtms() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -34,13 +36,7 @@
     function isWhatsAppLink(url) {
         if (!url) return false;
         const lowerUrl = url.toLowerCase();
-        return (
-            lowerUrl.includes('wa.me') || 
-            lowerUrl.includes('api.whatsapp.com') || 
-            lowerUrl.includes('chat.whatsapp.com') || 
-            lowerUrl.includes('web.whatsapp.com') || 
-            lowerUrl.startsWith('whatsapp://')
-        );
+        return /wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:\/\//.test(lowerUrl);
     }
 
     async function trackLead(e) {
@@ -49,46 +45,36 @@
 
         const utms = getUtms();
         const payload = {
-            name: 'Lead via WhatsApp',
-            email: 'whatsapp@tracker.internal',
-            phone: link.href.split('phone=')[1]?.split('&')[0] || 'N/A',
             source: 'whatsapp_tracker',
-            data: {
-                marketing: {
-                    ...utms,
-                    referrer: document.referrer || 'direto'
-                },
-                behavior: {
-                    time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
-                    scroll_depth: maxScroll + '%',
-                    page_url: window.location.href,
-                    clicked_url: link.href
-                },
-                device: {
-                    user_agent: navigator.userAgent,
-                    platform: navigator.platform,
-                    screen_res: `${window.screen.width}x${window.screen.height}`,
-                    language: navigator.language
-                }
-            }
+            marketing: {
+                ...utms,
+                referrer: document.referrer || 'direto'
+            },
+            behavior: {
+                time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
+                scroll_depth: maxScroll + '%',
+                page_url: window.location.href,
+                button_text: link.innerText.trim() || 'Botão WhatsApp'
+            },
+            url: window.location.href,
+            timestamp: new Date().toISOString()
         };
 
-        try {
-            // Usamos fetch com keepalive para garantir que a requisição seja completada
-            // mesmo que o redirecionamento aconteça instantaneamente
-            fetch(`${config.apiUrl}/api/leads/${config.clientId}`, {
+        const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
+
+        // Prioridade para Beacon (não bloqueia redirecionamento)
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(endpoint, JSON.stringify(payload));
+        } else {
+            fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Asthros-Secret': config.secret
-                },
+                mode: 'no-cors', // Evita problemas de CORS em envios unidirecionais
                 body: JSON.stringify(payload),
                 keepalive: true
             });
-        } catch (err) {
-            console.error('Asthros Tracker Error:', err);
         }
     }
 
+    // Captura global no nível do document para garantir que pegamos antes de outros preventDefault()
     document.addEventListener('click', trackLead, { capture: true });
 })();

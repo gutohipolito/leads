@@ -28,7 +28,8 @@ import {
   Cpu,
   Globe,
   Link,
-  Mail
+  Mail,
+  Play
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -95,6 +96,45 @@ export default function WebhooksManagePage() {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Copiado para a área de transferência!');
+  };
+
+  const [testStatus, setTestStatus] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    message?: string;
+  }>({ status: 'idle' });
+
+  const handleTestWebhook = async () => {
+    if (!selectedWebhook) return;
+    setTestStatus({ status: 'loading' });
+
+    try {
+      const response = await fetch(`/api/leads/${selectedWebhook.client_id}?secret=${selectedWebhook.secret}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'test_simulation',
+          name: 'Teste de Conexão Asthros',
+          email: 'teste@asthros.com.br',
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setTestStatus({ 
+          status: 'success', 
+          message: 'Sinal recebido com sucesso! O lead de teste já deve aparecer na sua lista.' 
+        });
+      } else {
+        setTestStatus({ 
+          status: 'error', 
+          message: result.error || 'Erro desconhecido na API.' 
+        });
+      }
+    } catch (err: any) {
+      setTestStatus({ status: 'error', message: 'Falha na requisição: ' + err.message });
+    }
   };
 
   const handleUpdateWebhook = async () => {
@@ -307,6 +347,29 @@ export default function WebhooksManagePage() {
                       onChange={(e) => setSelectedWebhook({...selectedWebhook, notification_email: e.target.value})}
                     />
                   </div>
+                </div>
+
+                <div className={styles.testSection}>
+                  <div className={styles.testHeader}>
+                    <label>Teste de Conexão</label>
+                    <p>Verifique se o uplink está configurado corretamente disparando um sinal fictício.</p>
+                  </div>
+                  
+                  <button 
+                    className={`${styles.testBtn} ${styles[testStatus.status]}`}
+                    onClick={handleTestWebhook}
+                    disabled={testStatus.status === 'loading'}
+                  >
+                    {testStatus.status === 'loading' ? <RefreshCcw size={16} className={styles.spin} /> : <Play size={16} />}
+                    <span>{testStatus.status === 'loading' ? 'Disparando...' : 'Simular Sinal de Teste'}</span>
+                  </button>
+
+                  {testStatus.status !== 'idle' && (
+                    <div className={`${styles.testFeedback} ${styles[testStatus.status]}`}>
+                      {testStatus.status === 'success' ? <CheckCircle2 size={16} /> : <Info size={16} />}
+                      <span>{testStatus.message}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className={styles.modalActions}>
