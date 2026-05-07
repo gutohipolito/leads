@@ -692,7 +692,7 @@
   outline: none;
 }
 
-.copyBtn, .secretBox button {
+.copyBtn, .copyBox button {
   background: rgba(86, 215, 253, 0.1);
   color: var(--primary);
   border: 1px solid rgba(86, 215, 253, 0.2);
@@ -704,11 +704,13 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.copyBtn:hover, .secretBox button:hover {
+.copyBtn:hover, .copyBox button:hover {
   background: var(--primary);
   color: var(--background);
+  transform: scale(1.05);
 }
 
 .validationBox {
