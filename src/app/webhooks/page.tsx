@@ -232,7 +232,6 @@ export default function WebhooksManagePage() {
                 </div>
               ))}
             </div>
-          </div>
         ) : (
           <div className={styles.whatsappTrackerSection}>
             <div className={`${styles.trackerHero} glass`}>
