@@ -194,10 +194,12 @@ export default function LeadsPage() {
   };
 
   const handleExport = (format: string) => {
-    if (filteredLeads.length === 0) return;
+    // Filtramos para não exportar simulações
+    const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
+    if (leadsToExport.length === 0) return;
 
     if (format === 'json') {
-      const dataStr = JSON.stringify(filteredLeads, null, 2);
+      const dataStr = JSON.stringify(leadsToExport, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -207,15 +209,15 @@ export default function LeadsPage() {
     } else if (format === 'csv') {
       // Obter todas as chaves únicas de todos os leads.data para as colunas
       const dynamicKeys = new Set<string>();
-      filteredLeads.forEach(l => {
+      leadsToExport.forEach(l => {
         if (l.data) Object.keys(l.data).forEach(k => dynamicKeys.add(k));
       });
       const dynamicKeysArray = Array.from(dynamicKeys);
 
-      const mapping = filteredLeads[0]?.webhooks?.field_mapping || {};
+      const mapping = leadsToExport[0]?.webhooks?.field_mapping || {};
       const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
       
-      const rows = filteredLeads.map(l => {
+      const rows = leadsToExport.map(l => {
         const base = [
           l.id,
           l.name || '',
@@ -236,7 +238,7 @@ export default function LeadsPage() {
       link.click();
     }
 
-    logAction('Exportação Realizada', 'lead', undefined, { format, count: filteredLeads.length });
+    logAction('Exportação Realizada', 'lead', undefined, { format, count: leadsToExport.length });
     setExportOpen(false);
   };
 
@@ -344,7 +346,7 @@ export default function LeadsPage() {
               <div className={styles.filtersBar}>
                 <div className={styles.filterField}><label>Nome</label><input type="text" className={styles.filterInput} value={filterName} onChange={(e) => setFilterName(e.target.value)}/></div>
                 <div className={styles.filterField}><label>E-mail</label><input type="text" className={styles.filterInput} value={filterEmail} onChange={(e) => setFilterEmail(e.target.value)}/></div>
-                <div className={styles.filterField}><label>Total</label><div className={styles.countBadge}>{filteredLeads.length}</div></div>
+                <div className={styles.filterField}><label>Total Real</label><div className={styles.countBadge}>{filteredLeads.filter(l => l.source !== 'test_simulation').length}</div></div>
               </div>
 
               <table className={styles.table}>
@@ -363,7 +365,9 @@ export default function LeadsPage() {
                       </td>
                       <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{lead.phone || 'N/A'}</span></div></td>
                       <td>
-                        {lead.source === 'whatsapp_tracker' ? (
+                        {lead.source === 'test_simulation' ? (
+                          <div className={styles.sourceBadgeTest}><Database size={12} /> <span>Simulação</span></div>
+                        ) : lead.source === 'whatsapp_tracker' ? (
                           <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>WhatsApp</span></div>
                         ) : (
                           <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>

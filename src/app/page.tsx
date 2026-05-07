@@ -60,28 +60,41 @@ export default function Home() {
           setImpersonatedName(null);
         }
 
-        // 1. Buscar Leads
-        let leadsQuery = supabase.from('leads').select('*', { count: 'exact' });
-        if (activeClientId) {
-          leadsQuery = leadsQuery.eq('client_id', activeClientId);
-        }
-        const { count: totalLeads, data: allLeads } = await leadsQuery;
+        // 1. Total Leads (Filtrando simulações)
+        const { count: totalLeads } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .neq('source', 'test_simulation')
+          .match(isUserAdmin && !impersonated ? {} : { client_id: activeClientId });
 
-        // 2. Buscar Clientes Ativos (apenas para Admin real, não no modo impersonação)
+        // 2. Todos os Leads para Analytics (Filtrando simulações)
+        let analyticsQuery = supabase
+          .from('leads')
+          .select('created_at, source, data')
+          .neq('source', 'test_simulation');
+        
+        if (!(isUserAdmin && !impersonated)) {
+          analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
+        }
+        
+        const { data: allLeadsRaw } = await analyticsQuery;
+        const allLeads = allLeadsRaw || [];
+
+        // 3. Buscar Clientes Ativos (apenas para Admin real, não no modo impersonação)
         let activeClientsCount = 0;
         if (isUserAdmin && !impersonated) {
           const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active');
           activeClientsCount = count || 0;
         }
 
-        // 3. Buscar Últimos Leads
+        // 4. Buscar Últimos Leads
         let recentLeadsQuery = supabase
           .from('leads')
           .select('*, clients (name)')
           .order('created_at', { ascending: false })
           .limit(5);
 
-        if (activeClientId) {
+        if (!(isUserAdmin && !impersonated)) {
           recentLeadsQuery = recentLeadsQuery.eq('client_id', activeClientId);
         }
         const { data: recentLeads } = await recentLeadsQuery;

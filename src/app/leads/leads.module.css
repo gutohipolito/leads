@@ -325,7 +325,7 @@
 }
 
 /* Source Badges */
-.sourceBadgeZap, .sourceBadgeForm {
+.sourceBadgeZap, .sourceBadgeForm, .sourceBadgeTest {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -333,6 +333,12 @@
   border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 700;
+}
+
+.sourceBadgeTest {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
 }
 
 .sourceBadgeZap {

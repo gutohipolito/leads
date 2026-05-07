@@ -58,6 +58,10 @@ export async function POST(
     }
 
     // 4. Salvar o Lead
+    const source = body.source === 'test_simulation' 
+      ? 'test_simulation' 
+      : (isWppTracker ? 'whatsapp_tracker' : 'form');
+
     const { data: lead, error: insertError } = await supabase
       .from('leads')
       .insert([
@@ -68,7 +72,7 @@ export async function POST(
           email: email,
           phone: phone,
           data: body,
-          source: isWppTracker ? 'whatsapp_tracker' : 'form'
+          source: source
         }
       ])
       .select()
