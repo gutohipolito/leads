@@ -625,8 +625,152 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.premiumActionGrid button {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 1.5rem 1rem; border-radius: 1.25rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+.primaryBtn, .secondaryBtn, .dangerBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.primaryBtn {
+  background: var(--primary);
+  color: var(--background);
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.3);
+}
+
+.primaryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(86, 215, 253, 0.4);
+}
+
+.secondaryBtn {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.secondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dangerBtn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.dangerBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Uplink and Secret Boxes */
+.urlBox, .secretBox {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.urlText, .secretBox input {
+  flex: 1;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--primary);
+  word-break: break-all;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.copyBtn, .secretBox button {
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(86, 215, 253, 0.2);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copyBtn:hover, .secretBox button:hover {
+  background: var(--primary);
+  color: var(--background);
+}
+
+.validationBox {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  color: white;
+  font-family: monospace;
+}
+
+.uplinkSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.securityGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1.5rem;
+}
+
+.securityItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.securityItem label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.modalFooter {
+  padding: 1.5rem 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actionGroup {
+  display: flex;
+  gap: 1rem;
 }
 .mainAction { background: rgba(86, 215, 253, 0.05); border: 1px solid rgba(86, 215, 253, 0.1); color: white; }
 .mainAction:hover { background: rgba(86, 215, 253, 0.1); border-color: var(--primary); color: var(--primary); }

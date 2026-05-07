@@ -127,7 +127,13 @@ export async function POST(
       .select('id')
       .eq('client_id', clientId)
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
+    };
 
     if (userData) {
       const notificationTitle = isWppTracker ? 'Intercepção de WhatsApp' : 'Novo Lead via Form';
@@ -152,16 +158,17 @@ export async function POST(
       }, 
       { 
         status: 201,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-        }
+        headers: corsHeaders
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro no processamento do uplink:', error);
     return NextResponse.json(
-      { error: 'Falha no processamento. Verifique o formato dos dados.' },
-      { status: 500 }
+      { error: 'Falha no processamento: ' + (error.message || 'Erro interno') },
+      { 
+        status: 500,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      }
     );
   }
 }
