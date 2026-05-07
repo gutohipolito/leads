@@ -1,94 +1,94 @@
-/**
- * ASTHROS LEADS - WhatsApp Tracker
- * Este script deve ser inserido no site do cliente.
- */
 (function() {
+    const config = {
+        clientId: document.currentScript.getAttribute('data-client-id'),
+        secret: document.currentScript.getAttribute('data-secret'),
+        apiUrl: document.currentScript.getAttribute('data-api-url') || window.location.origin
+    };
+
+    if (!config.clientId || !config.secret) {
+        console.warn('Asthros Tracker: Faltando client-id ou secret.');
+        return;
+    }
+
     const startTime = Date.now();
     let maxScroll = 0;
-    
-    // 1. Monitorar Scroll
+
     window.addEventListener('scroll', () => {
-        const scrollPercent = Math.round((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100);
-        if (scrollPercent > maxScroll) maxScroll = scrollPercent;
+        const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+        if (scrollPercent > maxScroll) maxScroll = Math.round(scrollPercent);
     });
 
-    // 2. Coletar Dados do Navegador
-    function getBrowserData() {
+    function getUtms() {
+        const urlParams = new URLSearchParams(window.location.search);
         return {
-            ua: navigator.userAgent,
-            lang: navigator.language,
-            res: `${window.screen.width}x${window.screen.height}`,
-            vp: `${window.innerWidth}x${window.innerHeight}`,
-            ref: document.referrer || 'direto',
-            url: window.location.href,
-            title: document.title
+            source: urlParams.get('utm_source'),
+            medium: urlParams.get('utm_medium'),
+            campaign: urlParams.get('utm_campaign'),
+            term: urlParams.get('utm_term'),
+            content: urlParams.get('utm_content'),
+            gclid: urlParams.get('gclid'),
+            fbclid: urlParams.get('fbclid')
         };
     }
 
-    // 3. Coletar UTMs
-    function getUTMs() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            source: params.get('utm_source'),
-            medium: params.get('utm_medium'),
-            campaign: params.get('utm_campaign'),
-            term: params.get('utm_term'),
-            content: params.get('utm_content'),
-            gclid: params.get('gclid'),
-            fbclid: params.get('fbclid')
-        };
+    function isWhatsAppLink(url) {
+        if (!url) return false;
+        const lowerUrl = url.toLowerCase();
+        return (
+            lowerUrl.includes('wa.me') || 
+            lowerUrl.includes('api.whatsapp.com') || 
+            lowerUrl.includes('chat.whatsapp.com') || 
+            lowerUrl.includes('web.whatsapp.com') || 
+            lowerUrl.startsWith('whatsapp://')
+        );
     }
 
-    // 4. Enviar Lead
-    async function sendLead(targetUrl, buttonId = 'unknown') {
-        const timeOnPage = Math.round((Date.now() - startTime) / 1000);
-        const utms = getUTMs();
-        const browser = getBrowserData();
+    async function trackLead(e) {
+        const link = e.target.closest('a');
+        if (!link || !isWhatsAppLink(link.href)) return;
 
+        const utms = getUtms();
         const payload = {
-            name: "Lead via WhatsApp",
-            source: "whatsapp_tracker",
-            button_id: buttonId,
-            target_url: targetUrl,
-            behavior: {
-                time_on_page: `${timeOnPage}s`,
-                max_scroll: `${maxScroll}%`
-            },
-            marketing: utms,
-            device: browser
+            name: 'Lead via WhatsApp',
+            email: 'whatsapp@tracker.internal',
+            phone: link.href.split('phone=')[1]?.split('&')[0] || 'N/A',
+            source: 'whatsapp_tracker',
+            data: {
+                marketing: {
+                    ...utms,
+                    referrer: document.referrer || 'direto'
+                },
+                behavior: {
+                    time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
+                    scroll_depth: maxScroll + '%',
+                    page_url: window.location.href,
+                    clicked_url: link.href
+                },
+                device: {
+                    user_agent: navigator.userAgent,
+                    platform: navigator.platform,
+                    screen_res: `${window.screen.width}x${window.screen.height}`,
+                    language: navigator.language
+                }
+            }
         };
-
-        // Captura o ClientID e Secret do script tag
-        const scriptTag = document.currentScript || document.querySelector('script[src*="tracker.js"]');
-        const clientId = scriptTag?.getAttribute('data-client-id');
-        const secret = scriptTag?.getAttribute('data-secret');
-        const apiUrl = scriptTag?.getAttribute('data-api-url') || 'https://leads-asthros.vercel.app';
-
-        if (!clientId || !secret) {
-            console.error('Asthros Tracker: ClientID ou Secret ausentes.');
-            return;
-        }
 
         try {
-            await fetch(`${apiUrl}/api/leads/${clientId}?secret=${secret}`, {
+            // Usamos fetch com keepalive para garantir que a requisição seja completada
+            // mesmo que o redirecionamento aconteça instantaneamente
+            fetch(`${config.apiUrl}/api/leads/${config.clientId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Asthros-Secret': config.secret
+                },
                 body: JSON.stringify(payload),
-                keepalive: true // Garante que a requisição complete mesmo mudando de página
+                keepalive: true
             });
-        } catch (e) {
-            console.error('Asthros Tracker Error:', e);
+        } catch (err) {
+            console.error('Asthros Tracker Error:', err);
         }
     }
 
-    // 5. Interceptar Cliques em WhatsApp
-    document.addEventListener('click', (e) => {
-        const link = e.target.closest('a[href*="wa.me"], a[href*="api.whatsapp.com/send"]');
-        if (link) {
-            const buttonId = link.id || link.className || 'wa-button';
-            sendLead(link.href, buttonId);
-        }
-    });
-
-    console.log('Asthros Leads Tracker Ativo 🚀');
+    document.addEventListener('click', trackLead, { capture: true });
 })();
