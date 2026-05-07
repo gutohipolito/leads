@@ -16,7 +16,9 @@ import {
   X,
   CheckCircle2,
   Trash2,
-  Edit2
+  Edit2,
+  Key,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -34,6 +36,7 @@ export default function UsersManagementPage() {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'viewer',
     client_id: ''
   });
@@ -71,6 +74,15 @@ export default function UsersManagementPage() {
     setLoading(false);
   }
 
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let pass = "";
+    for (let i = 0; i < 12; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewUser({ ...newUser, password: pass });
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -88,9 +100,15 @@ export default function UsersManagementPage() {
         alert('Erro ao atualizar usuário: ' + error.message);
       }
     } else {
+      // Garantir que client_id seja null se estiver vazio para evitar erro de UUID
+      const userToInsert = {
+        ...newUser,
+        client_id: newUser.client_id === '' ? null : newUser.client_id
+      };
+
       const { data, error } = await supabase
         .from('system_users')
-        .insert([newUser])
+        .insert([userToInsert])
         .select()
         .single();
 
@@ -108,6 +126,7 @@ export default function UsersManagementPage() {
     setNewUser({
       name: user.name,
       email: user.email,
+      password: '', // Não editamos a senha por aqui por segurança
       role: user.role,
       client_id: user.client_id || ''
     });
@@ -120,7 +139,7 @@ export default function UsersManagementPage() {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingUserId(null);
-    setNewUser({ name: '', email: '', role: 'viewer', client_id: '' });
+    setNewUser({ name: '', email: '', password: '', role: 'viewer', client_id: '' });
   };
 
   const toggleUserStatus = async (id: string, currentStatus: string) => {
@@ -281,6 +300,29 @@ export default function UsersManagementPage() {
                     onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                   />
                 </div>
+                {!isEditMode && (
+                  <div className={styles.field}>
+                    <label>Senha de Acesso</label>
+                    <div className={styles.passwordInputWrapper}>
+                      <Key size={16} className={styles.inputIcon} />
+                      <input 
+                        required
+                        type="text" 
+                        placeholder="Mínimo 8 caracteres"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                      />
+                      <button 
+                        type="button" 
+                        className={styles.generateBtn} 
+                        onClick={generatePassword}
+                        title="Gerar senha forte"
+                      >
+                        <RefreshCw size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className={styles.gridFields}>
                   <div className={styles.field}>
                     <label>Cargo / Permissão</label>
