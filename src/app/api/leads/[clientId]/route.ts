@@ -133,10 +133,12 @@ export async function POST(
       .limit(1)
       .maybeSingle();
 
+    const origin = request.headers.get('origin') || '*';
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
+      'Access-Control-Allow-Credentials': 'true',
     };
 
     if (userData) {
@@ -167,23 +169,29 @@ export async function POST(
     );
   } catch (error: any) {
     console.error('Erro no processamento do uplink:', error);
+    const origin = request.headers.get('origin') || '*';
     return NextResponse.json(
       { error: 'Falha no processamento: ' + (error.message || 'Erro interno') },
       { 
         status: 500,
-        headers: { 'Access-Control-Allow-Origin': '*' }
+        headers: { 
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Credentials': 'true'
+        }
       }
     );
   }
 }
 
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '*';
   return new NextResponse(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
+      'Access-Control-Allow-Credentials': 'true',
     },
   });
 }
