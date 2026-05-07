@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { Montserrat, Outfit } from "next/font/google";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-montserrat",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 const outfit = Outfit({
@@ -28,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${plusJakarta.variable} ${outfit.variable}`}>
-      <body style={{ fontFamily: 'var(--font-outfit), var(--font-plus-jakarta), sans-serif' }}>
+    <html lang="pt-BR" className={`${montserrat.variable} ${outfit.variable}`}>
+      <body style={{ fontFamily: 'var(--font-montserrat), var(--font-outfit), sans-serif' }}>
         {children}
       </body>
     </html>

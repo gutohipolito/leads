@@ -21,8 +21,8 @@
   --radius-lg: 1.25rem;
   --radius-md: 0.75rem;
   
-  --font-main: var(--font-outfit), var(--font-plus-jakarta), sans-serif;
-  --font-data: var(--font-plus-jakarta), monospace;
+  --font-main: var(--font-montserrat), var(--font-outfit), sans-serif;
+  --font-data: var(--font-montserrat), sans-serif;
 }
 
 * {
