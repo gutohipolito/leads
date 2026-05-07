@@ -40,6 +40,7 @@ export default function ClientsPage() {
   const [newClientName, setNewClientName] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
   const [newClientCnpj, setNewClientCnpj] = useState('');
+  const [newClientLogo, setNewClientLogo] = useState('');
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
 
   // Estados para o Modal de Confirmação Customizado
@@ -142,7 +143,10 @@ export default function ClientsPage() {
     e.preventDefault();
     const { data, error } = await supabase
       .from('clients')
-      .insert([{ name: newClientName }])
+      .insert([{ 
+        name: newClientName,
+        logo_url: newClientLogo 
+      }])
       .select()
       .single();
 
@@ -156,6 +160,7 @@ export default function ClientsPage() {
       setIsModalOpen(false);
       setNewClientName('');
       setNewClientEmail('');
+      setNewClientLogo('');
       loadClients();
     }
   };
@@ -406,9 +411,18 @@ export default function ClientsPage() {
                   <label>E-mail Administrativo (Opcional)</label>
                   <input 
                     type="email" 
-                    placeholder="empresa@exemplo.com (pode ser preenchido depois)" 
+                    placeholder="empresa@exemplo.com" 
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>URL do Logotipo (PNG/SVG)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://exemplo.com/logo.png" 
+                    value={newClientLogo}
+                    onChange={(e) => setNewClientLogo(e.target.value)}
                   />
                 </div>
                 <div className={styles.modalActions}>
