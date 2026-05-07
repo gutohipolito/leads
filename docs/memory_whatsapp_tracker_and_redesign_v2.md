@@ -24,6 +24,7 @@
   - `Details Modal`: Gerenciamento seguro de chaves e URLs de uplink.
   - `Docs Modal`: Guia técnico estruturado com exemplos de código para o desenvolvedor.
 - **Tabs:** Separação clara entre Webhooks Tradicionais e Rastreador de WhatsApp.
+- **UX & Suporte:** Adição de guia visual de instalação ("Onde instalar") e tooltips de ajuda para usuários não-técnicos.
 - **Espaçamento:** UI refinada com foco em "respiro" e hierarquia visual.
 
 ## 🛠️ Detalhes Técnicos Importantes
