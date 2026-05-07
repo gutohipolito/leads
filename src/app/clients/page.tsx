@@ -21,7 +21,8 @@ import {
   UserPlus,
   Building2,
   Fingerprint,
-  Trash2
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -33,8 +34,10 @@ export default function ClientsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedClientForStats, setSelectedClientForStats] = useState<any>(null);
+  const [editingClient, setEditingClient] = useState<any>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newClientName, setNewClientName] = useState('');
@@ -161,6 +164,28 @@ export default function ClientsPage() {
       setNewClientName('');
       setNewClientEmail('');
       setNewClientLogo('');
+      loadClients();
+    }
+  };
+
+  const handleUpdateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClient) return;
+
+    const { error } = await supabase
+      .from('clients')
+      .update({ 
+        name: editingClient.name,
+        logo_url: editingClient.logo_url 
+      })
+      .eq('id', editingClient.id);
+
+    if (error) {
+      alert('Erro ao atualizar cliente: ' + error.message);
+    } else {
+      await logAction('Cliente Atualizado', 'client', editingClient.id, { name: editingClient.name });
+      alert('Dados atualizados com sucesso!');
+      setIsEditModalOpen(false);
       loadClients();
     }
   };
@@ -316,6 +341,16 @@ export default function ClientsPage() {
                       <div className={styles.actionGrid}>
                         <button 
                           className={styles.iconAction} 
+                          title="Editar Cliente"
+                          onClick={() => {
+                            setEditingClient(client);
+                            setIsEditModalOpen(true);
+                          }}
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          className={styles.iconAction} 
                           title="Impersonar Cliente"
                           onClick={() => handleImpersonate(client)}
                         >
@@ -428,6 +463,42 @@ export default function ClientsPage() {
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>
                   <button type="submit" className={styles.submitBtn}>Provisionar Conta</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Edição */}
+        {isEditModalOpen && editingClient && (
+          <div className={styles.modalOverlay} onClick={() => setIsEditModalOpen(false)}>
+            <div className={`${styles.modal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Editar Dados do Cliente</h3>
+                <p>Atualize as informações de branding e identificação da conta.</p>
+              </div>
+              <form className={styles.form} onSubmit={handleUpdateClient}>
+                <div className={styles.inputGroup}>
+                  <label>Nome da Empresa/Cliente</label>
+                  <input 
+                    type="text" 
+                    value={editingClient.name}
+                    onChange={(e) => setEditingClient({...editingClient, name: e.target.value})}
+                    required 
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>URL do Logotipo (PNG/SVG)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://exemplo.com/logo.png" 
+                    value={editingClient.logo_url || ''}
+                    onChange={(e) => setEditingClient({...editingClient, logo_url: e.target.value})}
+                  />
+                </div>
+                <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={() => setIsEditModalOpen(false)}>Cancelar</button>
+                  <button type="submit" className={styles.submitBtn}>Salvar Alterações</button>
                 </div>
               </form>
             </div>
