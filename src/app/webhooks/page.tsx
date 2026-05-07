@@ -325,62 +325,65 @@ export default function WebhooksManagePage() {
                   <div className={styles.clientBadge}>{selectedWebhook.clientName}</div>
                   <h3>{selectedWebhook.name}</h3>
                 </div>
-                <div className={styles.detailGroup}>
-                  <label>Webhook de Saída (Integração CRM/Zapier)</label>
-                  <div className={styles.inputWithIcon}>
-                    <Link size={16} />
-                    <input 
-                      type="text" 
-                      placeholder="https://hooks.zapier.com/..." 
-                      value={selectedWebhook.outbound_url || ''}
-                      onChange={(e) => setSelectedWebhook({...selectedWebhook, outbound_url: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.detailGroup}>
-                  <label>E-mail de Alerta Instantâneo</label>
-                  <div className={styles.inputWithIcon}>
-                    <Mail size={16} />
-                    <input 
-                      type="email" 
-                      placeholder="alertas@cliente.com" 
-                      value={selectedWebhook.notification_email || ''}
-                      onChange={(e) => setSelectedWebhook({...selectedWebhook, notification_email: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.testSection}>
-                  <div className={styles.testHeader}>
-                    <label>Teste de Conexão</label>
-                    <p>Verifique se o uplink está configurado corretamente disparando um sinal fictício.</p>
-                  </div>
-                  
-                  <button 
-                    className={`${styles.testBtn} ${styles[testStatus.status]}`}
-                    onClick={handleTestWebhook}
-                    disabled={testStatus.status === 'loading'}
-                  >
-                    {testStatus.status === 'loading' ? <RefreshCcw size={16} className={styles.spin} /> : <Play size={16} />}
-                    <span>{testStatus.status === 'loading' ? 'Disparando...' : 'Simular Sinal de Teste'}</span>
-                  </button>
-
-                  {testStatus.status !== 'idle' && (
-                    <div className={`${styles.testFeedback} ${styles[testStatus.status]}`}>
-                      {testStatus.status === 'success' ? <CheckCircle2 size={16} /> : <Info size={16} />}
-                      <span>{testStatus.message}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.modalActions}>
-                  <button className={styles.secondaryBtn} onClick={() => setIsDetailsModalOpen(false)}>Cancelar</button>
-                  <button className={styles.primaryBtn} onClick={handleUpdateWebhook}>Salvar Configurações</button>
-                </div>
                 <button className={styles.closeBtn} onClick={() => setIsDetailsModalOpen(false)}><X size={20} /></button>
               </div>
+              
               <div className={styles.premiumModalBody}>
+                <div className={styles.configGrid}>
+                  <div className={styles.configForm}>
+                    <div className={styles.detailGroup}>
+                      <label>Webhook de Saída (Integração CRM/Zapier)</label>
+                      <div className={styles.inputWithIcon}>
+                        <Link size={16} />
+                        <input 
+                          type="text" 
+                          placeholder="https://hooks.zapier.com/..." 
+                          value={selectedWebhook.outbound_url || ''}
+                          onChange={(e) => setSelectedWebhook({...selectedWebhook, outbound_url: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.detailGroup}>
+                      <label>E-mail de Alerta Instantâneo</label>
+                      <div className={styles.inputWithIcon}>
+                        <Mail size={16} />
+                        <input 
+                          type="email" 
+                          placeholder="alertas@cliente.com" 
+                          value={selectedWebhook.notification_email || ''}
+                          onChange={(e) => setSelectedWebhook({...selectedWebhook, notification_email: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.testArea}>
+                    <div className={styles.testSection}>
+                      <div className={styles.testHeader}>
+                        <label>Teste de Conexão</label>
+                        <p>Simule um disparo para verificar a integração.</p>
+                      </div>
+                      
+                      <button 
+                        className={`${styles.testBtn} ${styles[testStatus.status]}`}
+                        onClick={handleTestWebhook}
+                        disabled={testStatus.status === 'loading'}
+                      >
+                        {testStatus.status === 'loading' ? <RefreshCcw size={16} className={styles.spin} /> : <Play size={16} />}
+                        <span>{testStatus.status === 'loading' ? 'Disparando...' : 'Simular Sinal de Teste'}</span>
+                      </button>
+
+                      {testStatus.status !== 'idle' && (
+                        <div className={`${styles.testFeedback} ${styles[testStatus.status]}`}>
+                          {testStatus.status === 'success' ? <CheckCircle2 size={16} /> : <Info size={16} />}
+                          <span>{testStatus.message}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className={styles.infoSection}>
                   <label><ExternalLink size={14} /> URL DE UPLINK</label>
                   <div className={styles.copyBox}>
@@ -388,6 +391,7 @@ export default function WebhooksManagePage() {
                     <button onClick={() => handleCopy(selectedWebhook.fullUrl)}><Copy size={16} /></button>
                   </div>
                 </div>
+
                 <div className={styles.infoGrid}>
                   <div className={styles.infoSection}>
                     <label><Shield size={14} /> CHAVE SECRETA</label>
@@ -402,14 +406,21 @@ export default function WebhooksManagePage() {
                     <div className={styles.staticValue}>{selectedWebhook.validation_type === 'header' ? 'X-Asthros-Secret' : 'URL Parameter'}</div>
                   </div>
                 </div>
+
                 <div className={styles.premiumActionGrid}>
                   <button className={styles.mainAction} onClick={() => { setSelectedDocsWebhook(selectedWebhook); setIsDocsModalOpen(true); }}><BookOpen size={18} /><span>Guia Técnico</span></button>
                   <button className={styles.secAction} onClick={() => handleRegenerate(selectedWebhook.id)}><RefreshCcw size={18} /><span>Regenerar Chave</span></button>
                   <button className={styles.dangerAction}><ShieldAlert size={18} /><span>Desativar</span></button>
                 </div>
               </div>
+
+              <div className={styles.premiumModalFooter}>
+                <button className={styles.secondaryBtn} onClick={() => setIsDetailsModalOpen(false)}>Cancelar</button>
+                <button className={styles.primaryBtn} onClick={handleUpdateWebhook}>Salvar Configurações</button>
+              </div>
             </div>
           </div>
+        )}
         )}
 
         {/* Modal: Guia Técnico */}

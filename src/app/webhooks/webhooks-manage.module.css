@@ -426,28 +426,205 @@
 .stepContent strong { display: block; font-size: 0.85rem; color: white; margin-bottom: 2px; }
 .stepContent p { font-size: 0.8rem; color: var(--muted-foreground); line-height: 1.4; margin: 0; }
 
-/* Premium Modal */
+/* Premium Modal - Correção Definitiva de Layout */
 .premiumModal {
-  width: 100%; max-width: 600px; background: rgba(10, 20, 35, 0.98) !important; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2rem; display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,0.6); animation: slideUp 0.3s ease-out;
+  position: relative;
+  width: 95%;
+  max-width: 850px;
+  background: #0a1423;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.premiumModalHeader { padding: 2.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: flex-start; }
-.clientBadge { font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-.premiumModalHeader h3 { font-size: 1.5rem; font-weight: 800; color: white; margin: 0; }
+.premiumModalHeader {
+  padding: 1.5rem 2.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-.premiumModalBody { padding: 2.5rem; display: flex; flex-direction: column; gap: 2rem; }
-.infoSection { display: flex; flex-direction: column; gap: 0.75rem; }
-.infoSection label { font-size: 0.7rem; font-weight: 800; color: var(--muted-foreground); display: flex; align-items: center; gap: 0.5rem; }
+.titleSection h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  margin: 0.25rem 0 0 0;
+}
 
-.copyBox { display: flex; align-items: center; gap: 0.75rem; background: rgba(0, 0, 0, 0.3); padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
-.copyBox code { flex: 1; font-family: monospace; font-size: 0.85rem; color: var(--primary); overflow: hidden; text-overflow: ellipsis; }
-.copyBox button { background: transparent; border: none; color: var(--muted-foreground); cursor: pointer; transition: color 0.2s; }
-.copyBox button:hover { color: white; }
+.clientBadge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
 
-.infoGrid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; }
-.staticValue { background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.85rem; color: white; }
+.premiumModalBody {
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
 
-.premiumActionGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+/* Grade de Configuração Principal */
+.configGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: stretch;
+}
+
+.configForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.testArea {
+  display: flex;
+}
+
+.testSection {
+  flex: 1;
+  padding: 1.5rem;
+  background: linear-gradient(145deg, rgba(86, 215, 253, 0.05), rgba(86, 215, 253, 0.02));
+  border-radius: 16px;
+  border: 1px solid rgba(86, 215, 253, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.detailGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detailGroup label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.inputWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+.inputWithIcon input {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 0.85rem;
+  width: 100%;
+  outline: none;
+}
+
+.infoSection label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.copyBox {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.copyBox code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--primary);
+  word-break: break-all;
+  flex: 1;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1.5rem;
+}
+
+.premiumActionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.premiumModalFooter {
+  padding: 1.5rem 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.25rem;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.closeBtn:hover { color: white; }
+
+.mainAction, .secAction, .dangerAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mainAction { background: rgba(86, 215, 253, 0.05); color: var(--primary); }
+.mainAction:hover { background: rgba(86, 215, 253, 0.1); }
+.secAction { background: transparent; color: white; }
+.secAction:hover { background: rgba(255, 255, 255, 0.05); }
+.dangerAction { background: transparent; color: #ef4444; }
+.dangerAction:hover { background: rgba(239, 68, 68, 0.05); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .premiumActionGrid button {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 1.5rem 1rem; border-radius: 1.25rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
