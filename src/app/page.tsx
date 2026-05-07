@@ -3,10 +3,18 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer, 
+  Tooltip as RechartsTooltip,
+  Legend
+} from 'recharts';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +25,8 @@ export default function Home() {
     leads7Days: 0,
     activeClientsCount: 0,
     chartData: [] as any[],
+    sourceData: [] as any[],
+    topUtms: [] as any[],
     recentLeads: [] as any[],
     lastSignalTime: null as number | null
   });
@@ -81,6 +91,25 @@ export default function Home() {
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
+        // Dados de Origem (WhatsApp vs Form)
+        const wppCount = allLeads?.filter(l => l.source === 'whatsapp_tracker').length || 0;
+        const formCount = (allLeads?.length || 0) - wppCount;
+        const sourceData = [
+          { name: 'WhatsApp', value: wppCount, color: '#25d366' },
+          { name: 'Formulários', value: formCount, color: '#56d7fd' }
+        ];
+
+        // Dados de UTMs
+        const utmMap: any = {};
+        allLeads?.forEach(l => {
+          const utm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
+          utmMap[utm] = (utmMap[utm] || 0) + 1;
+        });
+        const topUtms = Object.entries(utmMap)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+          .slice(0, 5);
+
         const chartData = Array.from({ length: 7 }).map((_, i) => {
           const d = new Date();
           d.setDate(d.getDate() - (6 - i));
@@ -105,6 +134,8 @@ export default function Home() {
           leads7Days: allLeads?.filter(l => l.created_at >= weekStart).length || 0,
           activeClientsCount,
           chartData,
+          sourceData,
+          topUtms,
           recentLeads: recentLeads || [],
           lastSignalTime
         });
@@ -201,6 +232,69 @@ export default function Home() {
             </div>
             <div className={styles.chartArea}>
               <AnalyticsChart data={stats.chartData} />
+            </div>
+          </div>
+
+          <div className={`${styles.sideCharts} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <PieIcon size={18} className={styles.iconSuccess} />
+                <h3>Divisão de Origens</h3>
+              </div>
+            </div>
+            <div className={styles.pieArea}>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={stats.sourceData}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {stats.sourceData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ background: '#0a1423', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontSize: '12px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className={styles.pieLegend}>
+                {stats.sourceData.map((s: any) => (
+                  <div key={s.name} className={styles.legendItem}>
+                    <div className={styles.dot} style={{ background: s.color }} />
+                    <span>{s.name} ({s.value})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.bottomGrid}>
+          <div className={`${styles.utmCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <MapPin size={18} className={styles.iconWarning} />
+                <h3>Top Fontes (UTMs)</h3>
+              </div>
+            </div>
+            <div className={styles.utmList}>
+              {stats.topUtms.map((utm: any, i: number) => (
+                <div key={utm.name} className={styles.utmItem}>
+                  <div className={styles.utmInfo}>
+                    <span className={styles.utmRank}>#{i + 1}</span>
+                    <span className={styles.utmName}>{utm.name}</span>
+                  </div>
+                  <div className={styles.utmBarWrapper}>
+                    <div className={styles.utmBar} style={{ width: `${(utm.value / stats.totalLeads) * 100}%` }} />
+                    <span className={styles.utmValue}>{utm.value}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

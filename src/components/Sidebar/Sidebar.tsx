@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   UserCircle,
   Database,
-  ChevronDown
+  ChevronDown,
+  History
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { supabase } from '@/lib/supabase';
@@ -151,11 +152,11 @@ export default function Sidebar() {
           <span className={styles.groupLabel}>Sistema</span>
           {isAdmin && !isImpersonating && (
             <>
-              <Link href="/logs" className={styles.navLink}>
+              <Link href="/admin/logs" className={`${styles.navLink} ${isActive('/admin/logs') ? styles.active : ''}`}>
                 <div className={styles.iconCircle}>
-                  <Activity size={18} />
+                  <History size={18} />
                 </div>
-                <span className={styles.linkText}>Logs Globais</span>
+                <span className={styles.linkText}>Auditoria de Sinais</span>
               </Link>
               <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
                 <div className={styles.iconCircle}>

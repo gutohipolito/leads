@@ -26,7 +26,9 @@ import {
   Info,
   ShieldCheck,
   Cpu,
-  Globe
+  Globe,
+  Link,
+  Mail
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -93,6 +95,25 @@ export default function WebhooksManagePage() {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Copiado para a área de transferência!');
+  };
+
+  const handleUpdateWebhook = async () => {
+    if (!selectedWebhook) return;
+    const { error } = await supabase
+      .from('webhooks')
+      .update({
+        outbound_url: selectedWebhook.outbound_url,
+        notification_email: selectedWebhook.notification_email
+      })
+      .eq('id', selectedWebhook.id);
+
+    if (error) {
+      alert('Erro ao salvar: ' + error.message);
+    } else {
+      alert('Configurações salvas com sucesso!');
+      setIsDetailsModalOpen(false);
+      loadWebhooks();
+    }
   };
 
   const handleCreateWebhook = async (e: React.FormEvent) => {
@@ -261,6 +282,36 @@ export default function WebhooksManagePage() {
                 <div className={styles.titleSection}>
                   <div className={styles.clientBadge}>{selectedWebhook.clientName}</div>
                   <h3>{selectedWebhook.name}</h3>
+                </div>
+                <div className={styles.detailGroup}>
+                  <label>Webhook de Saída (Integração CRM/Zapier)</label>
+                  <div className={styles.inputWithIcon}>
+                    <Link size={16} />
+                    <input 
+                      type="text" 
+                      placeholder="https://hooks.zapier.com/..." 
+                      value={selectedWebhook.outbound_url || ''}
+                      onChange={(e) => setSelectedWebhook({...selectedWebhook, outbound_url: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.detailGroup}>
+                  <label>E-mail de Alerta Instantâneo</label>
+                  <div className={styles.inputWithIcon}>
+                    <Mail size={16} />
+                    <input 
+                      type="email" 
+                      placeholder="alertas@cliente.com" 
+                      value={selectedWebhook.notification_email || ''}
+                      onChange={(e) => setSelectedWebhook({...selectedWebhook, notification_email: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button className={styles.secondaryBtn} onClick={() => setIsDetailsModalOpen(false)}>Cancelar</button>
+                  <button className={styles.primaryBtn} onClick={handleUpdateWebhook}>Salvar Configurações</button>
                 </div>
                 <button className={styles.closeBtn} onClick={() => setIsDetailsModalOpen(false)}><X size={20} /></button>
               </div>

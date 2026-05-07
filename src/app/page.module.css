@@ -60,22 +60,122 @@
 
 .mainGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
 }
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.chartCard, .logsCard, .sideCharts, .utmCard {
+  border-radius: 24px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+/* Pie Chart Styles */
+.pieArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.pieLegend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* UTM List Styles */
+.utmList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.utmItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.utmInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.utmRank {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: rgba(86, 215, 253, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.utmName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.utmBarWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.utmBar {
+  height: 6px;
+  background: var(--primary);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(86, 215, 253, 0.3);
+  transition: width 1s ease-out;
+}
+
+.utmValue {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+}
+
+.iconSuccess { color: #25d366; }
+.iconWarning { color: #f59e0b; }
 
 @media (max-width: 1100px) {
   .mainGrid {
     grid-template-columns: 1fr;
   }
-}
-
-.chartCard, .logsCard {
-  padding: 1.5rem !important;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  min-width: 0;
 }
 
 .cardHeader {

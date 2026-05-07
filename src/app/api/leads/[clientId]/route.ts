@@ -35,7 +35,7 @@ export async function POST(
     // 2. Verificar se o segredo pertence a um webhook ativo do cliente
     const { data: webhook, error: authError } = await supabase
       .from('webhooks')
-      .select('id, status, name')
+      .select('id, status, name, outbound_url, notification_email')
       .eq('client_id', clientId)
       .eq('secret', secret)
       .eq('status', 'active')
@@ -67,7 +67,8 @@ export async function POST(
           name: name,
           email: email,
           phone: phone,
-          data: body // Salvamos o JSON bruto completo para auditoria
+          data: body,
+          source: isWppTracker ? 'whatsapp_tracker' : 'form'
         }
       ])
       .select()
@@ -75,7 +76,45 @@ export async function POST(
 
     if (insertError) throw insertError;
 
-    // 5. Notificação em Tempo Real
+    // 5. Integração Externa (Outbound Webhook)
+    let outboundStatus = null;
+    let outboundResponse = null;
+    let outboundError = null;
+
+    if (webhook.outbound_url) {
+      try {
+        const response = await fetch(webhook.outbound_url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'lead.captured',
+            lead_id: lead.id,
+            name,
+            email,
+            phone,
+            source: isWppTracker ? 'whatsapp_tracker' : 'form',
+            raw_data: body,
+            timestamp: new Date().toISOString()
+          })
+        });
+        outboundStatus = response.status;
+        outboundResponse = await response.text();
+      } catch (err: any) {
+        outboundError = err.message;
+      }
+    }
+
+    // 6. Auditoria (Logs)
+    await supabase.from('webhook_logs').insert([{
+      webhook_id: webhook.id,
+      client_id: clientId,
+      status_code: outboundStatus || 201,
+      request_body: body,
+      response_body: outboundResponse,
+      error_message: outboundError
+    }]);
+
+    // 7. Notificação Interna
     const { data: userData } = await supabase
       .from('system_users')
       .select('id')
