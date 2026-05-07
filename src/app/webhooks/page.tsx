@@ -263,16 +263,18 @@ export default function WebhooksManagePage() {
                           <span className={styles.tooltipText}>Instalação Global</span>
                         </div>
                       </div>
-                      <button className={styles.copyCodeBtn} onClick={() => handleCopy(`<script src="${window.location.origin}/tracker.js" data-client-id="${selectedDocsWebhook.client_id}" data-secret="${selectedDocsWebhook.secret}" data-api-url="${window.location.origin}"></script>`)}>
-                        <Copy size={14} /><span>Copiar Script</span>
+                      <button className={styles.copyCodeBtn} onClick={() => handleCopy(`<script>\n  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    secret: "${selectedDocsWebhook.secret}",\n    apiUrl: "${window.location.origin}"\n  };\n</script>\n<script src="${window.location.origin}/tracker.js" async></script>`)}>
+                        <Copy size={14} /><span>Copiar Script Completo</span>
                       </button>
                     </div>
-                    <pre className={styles.codeBlock}>{`<script 
-  src="${window.location.origin}/tracker.js" 
-  data-client-id="${selectedDocsWebhook.client_id}" 
-  data-secret="${selectedDocsWebhook.secret}"
-  data-api-url="${window.location.origin}">
-</script>`}</pre>
+                    <pre className={styles.codeBlock}>{`<script>
+  window.AsthrosConfig = {
+    clientId: "${selectedDocsWebhook.client_id}",
+    secret: "${selectedDocsWebhook.secret}",
+    apiUrl: "${window.location.origin}"
+  };
+</script>
+<script src="${window.location.origin}/tracker.js" async></script>`}</pre>
 
                     <div className={styles.installGuide}>
                       <div className={styles.guideHeader}>
