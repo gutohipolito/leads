@@ -286,42 +286,39 @@
 }
 
 .detailGroup {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .detailGroup label {
-  display: block;
   font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--primary);
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  margin-left: 0.25rem;
 }
 
 .inputWithIcon {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
   transition: all 0.2s;
 }
 
 .inputWithIcon:focus-within {
   border-color: var(--primary);
-  background: rgba(0, 0, 0, 0.3);
-  box-shadow: 0 0 15px rgba(86, 215, 253, 0.1);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 20px rgba(86, 215, 253, 0.1);
 }
 
 .inputWithIcon svg {
-  color: var(--muted-foreground);
+  color: var(--primary);
+  opacity: 0.7;
 }
 
 .inputWithIcon input {
@@ -334,26 +331,30 @@
 }
 
 .testSection {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   padding: 1.5rem;
-  background: rgba(86, 215, 253, 0.03);
-  border-radius: 12px;
-  border: 1px dashed rgba(86, 215, 253, 0.2);
+  background: linear-gradient(145deg, rgba(86, 215, 253, 0.05), rgba(86, 215, 253, 0.02));
+  border-radius: 16px;
+  border: 1px solid rgba(86, 215, 253, 0.15);
+}
+
+.testHeader {
+  margin-bottom: 1.25rem;
 }
 
 .testHeader label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: var(--primary);
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
+  letter-spacing: 0.05em;
 }
 
 .testHeader p {
   font-size: 0.75rem;
   color: var(--muted-foreground);
-  margin-bottom: 1rem;
+  margin: 0.25rem 0 0 0;
 }
 
 .testBtn {
