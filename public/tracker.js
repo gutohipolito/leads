@@ -1,24 +1,30 @@
 (function() {
-    // Busca robusta pelo script (suporta GTM e injeção dinâmica)
-    const script = document.currentScript || document.querySelector('script[src*="tracker.js"]') || document.querySelector('script[src*="tracker.min.js"]');
-    
-    if (!script) {
-        console.warn('[Asthros] Erro crítico: Não foi possível localizar a tag do rastreador.');
+    // Log imediato para confirmar carregamento
+    console.log('%c[Asthros] Iniciando carregamento do rastreador...', 'color: #56d7fd; font-size: 10px;');
+
+    // 1. Busca de Configuração (Prioridade: Global > Atributos da Tag)
+    let config = window.AsthrosConfig || null;
+
+    if (!config) {
+        const script = document.currentScript || 
+                       document.querySelector('script[src*="tracker.js"]') || 
+                       document.querySelector('script[src*="tracker.min.js"]');
+        
+        if (script) {
+            config = {
+                clientId: script.getAttribute('data-client-id'),
+                secret: script.getAttribute('data-secret'),
+                apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br'
+            };
+        }
+    }
+
+    if (!config || !config.clientId || !config.secret) {
+        console.error('[Asthros] Erro crítico: Configurações não encontradas. Use window.AsthrosConfig.');
         return;
     }
 
-    const config = {
-        clientId: script.getAttribute('data-client-id'),
-        secret: script.getAttribute('data-secret'),
-        apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br'
-    };
-
-    if (!config.clientId || !config.secret) {
-        console.warn('[Asthros] Faltando client-id ou secret no script.');
-        return;
-    }
-
-    console.log('%c[Asthros] Rastreador Ativo: ' + config.clientId, 'color: #56d7fd; font-weight: bold;');
+    console.log('%c[Asthros] Rastreador Ativo e Configurado!', 'color: #25d366; font-weight: bold;');
 
     const startTime = Date.now();
     let maxScroll = 0;
@@ -44,14 +50,16 @@
     function isWhatsAppLink(url) {
         if (!url) return false;
         const lowerUrl = url.toLowerCase();
-        return /wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:\/\//.test(lowerUrl);
+        // Regex mais abrangente para links curtos e protocolos
+        return /wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:/.test(lowerUrl);
     }
 
     async function trackLead(e) {
+        // Buscamos o link mais próximo (suporta ícones ou spans dentro do <a>)
         const link = e.target.closest('a');
         if (!link || !isWhatsAppLink(link.href)) return;
 
-        console.log('[Asthros] Clique em WhatsApp detectado!', link.href);
+        console.log('[Asthros] Capturando clique em:', link.href);
 
         const utms = getUtms();
         const payload = {
@@ -73,29 +81,30 @@
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
 
         try {
+            // Tentamos o Beacon primeiro (mais resiliente a trocas de página)
             if (navigator.sendBeacon) {
                 const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-                const success = navigator.sendBeacon(endpoint, blob);
-                if (success) {
-                    console.log('[Asthros] Sinal de lead enviado via Beacon.');
+                if (navigator.sendBeacon(endpoint, blob)) {
+                    console.log('[Asthros] Sinal enviado (Beacon)');
                     return;
                 }
             }
 
-            // Fallback via Fetch se Beacon falhar ou não existir
+            // Fallback via Fetch (com keepalive para garantir o envio)
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
                 keepalive: true
             })
-            .then(() => console.log('[Asthros] Sinal de lead enviado via Fetch.'))
-            .catch(err => console.error('[Asthros] Erro ao enviar sinal:', err));
+            .then(() => console.log('[Asthros] Sinal enviado (Fetch)'))
+            .catch(err => console.error('[Asthros] Erro no envio:', err));
 
         } catch (err) {
-            console.error('[Asthros] Erro crítico no rastreador:', err);
+            console.error('[Asthros] Falha crítica no rastreador:', err);
         }
     }
 
+    // Usamos capture: true para garantir que pegamos o evento antes de outros scripts do Elementor
     document.addEventListener('click', trackLead, { capture: true });
 })();
