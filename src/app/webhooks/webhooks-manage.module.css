@@ -207,8 +207,83 @@
 }
 .codeHeader { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; font-weight: 800; color: var(--muted-foreground); }
 .copyCodeBtn { display: flex; align-items: center; gap: 0.5rem; background: rgba(86, 215, 253, 0.1); color: var(--primary); border: 1px solid rgba(86, 215, 253, 0.2); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.7rem; }
-
 .codeBlock { background: #0d1117; padding: 1.5rem; border-radius: 1rem; font-family: monospace; font-size: 0.8rem; color: #e6edf3; overflow-x: auto; margin: 0; }
+
+.titleWithHelp {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.helpTooltip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: var(--primary);
+  cursor: help;
+}
+
+.tooltipText {
+  visibility: hidden;
+  width: 140px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -70px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.helpTooltip:hover .tooltipText {
+  visibility: visible;
+  opacity: 1;
+}
+
+.installGuide {
+  margin-top: 0.5rem;
+  background: rgba(86, 215, 253, 0.03);
+  border: 1px solid rgba(86, 215, 253, 0.1);
+  padding: 1.25rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.guideHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.installGuide p {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.installGuide strong {
+  color: white;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
 
 .noWebhookSelectedInline {
   display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem; border-radius: 12px; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); color: #f59e0b;

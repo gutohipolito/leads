@@ -191,7 +191,14 @@ export default function WebhooksManagePage() {
                 </div>
                 {selectedDocsWebhook ? (
                   <div className={styles.codeWrapper}>
-                    <div className={styles.codeHeader}><span>Script HTML/JS</span>
+                    <div className={styles.codeHeader}>
+                      <div className={styles.titleWithHelp}>
+                        <span>Código de Integração (HTML/JS)</span>
+                        <div className={styles.helpTooltip}>
+                          <Info size={14} />
+                          <span className={styles.tooltipText}>Instalação Global</span>
+                        </div>
+                      </div>
                       <button className={styles.copyCodeBtn} onClick={() => handleCopy(`<script src="${window.location.origin}/tracker.js" data-client-id="${selectedDocsWebhook.client_id}" data-secret="${selectedDocsWebhook.secret}" data-api-url="${window.location.origin}"></script>`)}>
                         <Copy size={14} /><span>Copiar Script</span>
                       </button>
@@ -202,6 +209,14 @@ export default function WebhooksManagePage() {
   data-secret="${selectedDocsWebhook.secret}"
   data-api-url="${window.location.origin}">
 </script>`}</pre>
+
+                    <div className={styles.installGuide}>
+                      <div className={styles.guideHeader}>
+                        <Globe size={14} />
+                        <span>Onde instalar este código?</span>
+                      </div>
+                      <p>Para um rastreamento preciso, cole este código em todas as páginas do seu site, preferencialmente logo antes da tag <strong>&lt;/body&gt;</strong> ou utilize o <strong>Google Tag Manager</strong>.</p>
+                    </div>
                   </div>
                 ) : (
                   <div className={styles.noWebhookSelectedInline}>
