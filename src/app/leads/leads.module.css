@@ -81,13 +81,19 @@
   height: 56px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: white;
+  border: 1px solid rgba(0, 209, 255, 0.2);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
   transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 209, 255, 0.05);
+}
+
+.clientLogoBox:hover {
+  border-color: rgba(0, 209, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 209, 255, 0.1);
 }
 
 .clientLogo {
