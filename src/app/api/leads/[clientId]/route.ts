@@ -114,7 +114,14 @@ export async function POST(
       error_message: outboundError
     }]);
 
-    // 7. Notificação Interna
+    // 7. Notificação por E-mail (Placeholder para Resend/SendGrid)
+    if (webhook.notification_email) {
+      console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);
+      // Aqui entrará a chamada da biblioteca Resend:
+      // resend.emails.send({ from: 'Asthros <leads@asthros.com.br>', to: webhook.notification_email, ... });
+    }
+
+    // 8. Notificação Interna (Painel)
     const { data: userData } = await supabase
       .from('system_users')
       .select('id')
