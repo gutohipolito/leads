@@ -68,9 +68,10 @@ export async function middleware(request: NextRequest) {
     // Lógica de proteção de rotas
     const isLoginPage = request.nextUrl.pathname.startsWith('/login')
     const isApiRoute = request.nextUrl.pathname.startsWith('/api')
-    const isPublicAsset = request.nextUrl.pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4)$/)
+    const isPublicAsset = request.nextUrl.pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
+    const isTracker = request.nextUrl.pathname === '/tracker.js' || request.nextUrl.pathname === '/tracker.min.js'
 
-    if (isPublicAsset || isApiRoute) {
+    if (isPublicAsset || isApiRoute || isTracker) {
       return response
     }
 
