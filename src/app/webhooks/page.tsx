@@ -194,9 +194,19 @@ export default function WebhooksManagePage() {
   return (
     <DashboardLayout title="Gerenciamento de Webhooks">
       <div className={styles.container}>
+        <div className={styles.headerActions}>
+          <div className={styles.headerText}>
+            <h2>Terminais de Uplink</h2>
+            <p>Gerencie seus pontos de captura de leads e scripts de rastreamento.</p>
+          </div>
+          <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)}>
+            <Plus size={20} /><span>Novo Terminal</span>
+          </button>
+        </div>
+
         <div className={styles.tabsContainer}>
           <button className={`${styles.tabBtn} ${activeTab === 'webhooks' ? styles.activeTab : ''}`} onClick={() => setActiveTab('webhooks')}>
-            <Webhook size={18} /><span>Webhook de Formulários</span>
+            <Webhook size={18} /><span>Gestão de Webhooks</span>
           </button>
           <button className={`${styles.tabBtn} ${activeTab === 'whatsapp' ? styles.activeTab : ''}`} onClick={() => setActiveTab('whatsapp')}>
             <Zap size={18} /><span>Rastreador de WhatsApp</span>
@@ -204,14 +214,7 @@ export default function WebhooksManagePage() {
         </div>
 
         {activeTab === 'webhooks' ? (
-          <>
-            <div className={styles.headerActions}>
-              <p className={styles.tabDesc}>Configure e gerencie endpoints para capturar leads via formulários externos.</p>
-              <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)}>
-                <Plus size={20} /><span>Gerar Novo Webhook</span>
-              </button>
-            </div>
-            <div className={styles.webhookGrid}>
+          <div className={styles.webhookGrid}>
               {webhooks.map((webhook) => (
                 <div key={webhook.id} className={`${styles.compactCard} glass`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
                   <div className={styles.cardHeaderCompact}>
