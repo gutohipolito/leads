@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
@@ -213,8 +214,7 @@ export default function Header({ title }: HeaderProps) {
         </button>
       </div>
 
-      {/* Painel Lateral de Notificações (Drawer) */}
-      {isNotifOpen && (
+      {isNotifOpen && typeof window !== 'undefined' && createPortal(
         <div className={styles.notifOverlay} onClick={() => setIsNotifOpen(false)}>
           <div className={styles.notifDrawer} onClick={e => e.stopPropagation()}>
             <div className={styles.notifHeader}>
@@ -258,10 +258,11 @@ export default function Header({ title }: HeaderProps) {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {isModalOpen && (
+      {isModalOpen && typeof window !== 'undefined' && createPortal(
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
@@ -326,7 +327,8 @@ export default function Header({ title }: HeaderProps) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
