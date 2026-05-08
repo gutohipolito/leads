@@ -115,7 +115,9 @@ export default function LiveMonitorPage() {
             <ArrowLeft size={20} />
           </Link>
           <div className={styles.logo}>
-            <div className={styles.logoIcon}><Zap size={24} fill="currentColor" /></div>
+            <div className={styles.logoIcon}>
+              <img src="/asthros-favicon.png" alt="Asthros" style={{ width: '32px', height: '32px' }} />
+            </div>
             <div>
               <h1>ASTHROS<span>LIVE</span></h1>
               <p>Monitoramento de Operações em Tempo Real</p>
