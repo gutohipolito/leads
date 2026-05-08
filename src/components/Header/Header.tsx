@@ -162,7 +162,7 @@ export default function Header({ title }: HeaderProps) {
         </div>
         
         <div className={styles.actions}>
-          {(isAdmin || !passwordChanged) && (
+          {!passwordChanged && (
             <button 
               className={styles.passwordAlert} 
               title="Troca de senha obrigatória"
