@@ -129,31 +129,61 @@
 .submenu {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem 0 0.5rem 2.5rem;
-  animation: slideDown 0.3s ease-out;
+  gap: 0.25rem;
+  padding: 0.5rem 0 0.5rem 0;
+  margin-left: 2.2rem;
+  position: relative;
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.submenu::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0.75rem;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .subLink {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
   font-size: 0.85rem;
+  font-weight: 500;
   color: var(--muted-foreground);
   text-decoration: none;
   transition: all 0.2s;
-  border-radius: 2rem;
+  border-radius: 0 2rem 2rem 0;
+  position: relative;
 }
 
 .subLink:hover {
-  color: var(--primary);
-  background: rgba(0, 209, 255, 0.03);
+  color: white;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.subLink::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 2px;
+  height: 0;
+  background: var(--primary);
+  transition: height 0.2s;
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 .subActive {
-  color: var(--primary);
+  color: var(--primary) !important;
   font-weight: 700;
+  background: rgba(86, 215, 253, 0.03);
+}
+
+.subActive::after {
+  height: 14px;
 }
 
 .subDot {
@@ -161,11 +191,17 @@
   height: 4px;
   background: currentColor;
   border-radius: 50%;
-  opacity: 0.5;
+  opacity: 0.4;
+  transition: all 0.2s;
+}
+
+.subActive .subDot {
+  transform: scale(1.5);
+  opacity: 1;
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
+  from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
