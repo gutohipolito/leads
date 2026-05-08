@@ -316,15 +316,14 @@ export default function ClientsPage() {
                     <td>
                       <div className={styles.clientCell}>
                         <div className={styles.clientAvatar}>
-                          {client.logo ? (
-                            <img src={client.logo} alt={client.name} className={styles.avatarImg} />
+                          {client.logo_url ? (
+                            <img src={client.logo_url} alt={client.name} className={styles.avatarImg} />
                           ) : (
                             <Globe size={18} />
                           )}
                         </div>
                         <div className={styles.clientInfo}>
                           <span className={styles.clientName}>{client.name}</span>
-                          <span className={styles.clientDate}>Desde {new Date(client.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </td>
