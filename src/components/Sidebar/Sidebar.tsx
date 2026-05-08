@@ -16,7 +16,8 @@ import {
   UserCircle,
   Database,
   ChevronDown,
-  History
+  History,
+  FileText
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { supabase } from '@/lib/supabase';
