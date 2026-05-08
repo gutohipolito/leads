@@ -90,7 +90,7 @@ export default function Header({ title }: HeaderProps) {
           if (Notification.permission === 'granted') {
             new Notification(`Asthros: ${newNotif.title}`, {
               body: newNotif.message,
-              icon: '/favicon.ico'
+              icon: '/asthros-favicon.png'
             });
           }
         }
@@ -222,7 +222,6 @@ export default function Header({ title }: HeaderProps) {
                 <h3>Central de Notificações</h3>
                 <p>{unreadCount} novas mensagens</p>
               </div>
-              <button onClick={markAllAsRead} className={styles.clearBtn}>Marcar tudo como lido</button>
             </div>
             
             <div className={styles.notifList}>
@@ -245,6 +244,14 @@ export default function Header({ title }: HeaderProps) {
                 </div>
               )}
             </div>
+
+            {unreadCount > 0 && (
+              <div className={styles.notifFooter}>
+                <button onClick={markAllAsRead} className={styles.clearAllBtn}>
+                  Marcar tudo como lido
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -144,20 +144,30 @@
   margin: 4px 0 0 0;
 }
 
-.clearBtn {
-  background: transparent;
-  border: none;
-  color: var(--primary);
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
+.notifFooter {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(13, 21, 37, 0.8);
+  backdrop-filter: blur(10px);
 }
 
-.clearBtn:hover {
-  background: rgba(86, 215, 253, 0.1);
+.clearAllBtn {
+  width: 100%;
+  background: var(--primary);
+  color: #000;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.2);
+}
+
+.clearAllBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(86, 215, 253, 0.4);
 }
 
 .notifList {
