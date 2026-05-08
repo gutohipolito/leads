@@ -316,7 +316,7 @@ export default function LeadsPage() {
 
       const headers = ['Data/Hora (captura)', 'Nome'];
       if (hasEmail) headers.push('E-mail');
-      if (hasPhone) headers.push('Telefone');
+      if (hasPhone) headers.push(title.includes('Formulário') ? 'Telefone/Whatsapp' : 'Telefone');
       if (hasPage) headers.push('Página');
       if (hasButton) headers.push('Nome Btn');
       if (hasTime) headers.push('Tempo na Pág.');
@@ -361,6 +361,29 @@ export default function LeadsPage() {
         },
         styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
         margin: { top: 50, left: 15 },
+        didDrawCell: (data) => {
+          // Lógica para links clicáveis
+          if (data.section === 'body') {
+            const headerText = data.column.raw;
+            const cellValue = data.cell.raw as string;
+            
+            if (cellValue && cellValue !== 'N/A') {
+              if (headerText === 'E-mail') {
+                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: `mailto:${cellValue}` });
+                doc.setTextColor(86, 215, 253); // Destaque para links
+              } 
+              else if (headerText === 'Telefone' || headerText === 'Telefone/Whatsapp') {
+                const cleanPhone = cellValue.replace(/\D/g, '');
+                // Se não tem DDI, assume 55 (Brasil)
+                const finalPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+                const leadName = data.row.cells[1].raw as string;
+                const message = encodeURIComponent(`Olá ${leadName || ''}, Tudo bem?`);
+                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: `https://wa.me/${finalPhone}?text=${message}` });
+                doc.setTextColor(37, 211, 102); // Verde WhatsApp
+              }
+            }
+          }
+        }
       });
 
       return (doc as any).lastAutoTable.finalY + 15;
