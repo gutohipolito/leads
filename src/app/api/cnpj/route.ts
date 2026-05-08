@@ -11,15 +11,22 @@ export async function GET(request: Request) {
   const cnpj = cnpjRaw.replace(/\D/g, '');
 
   try {
-    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
+    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v2/${cnpj}`, {
       cache: 'no-store'
     });
+
+    if (response.status === 403 || response.status === 429) {
+      return NextResponse.json(
+        { error: 'O serviço de busca automática (BrasilAPI) está instável ou bloqueou a consulta temporariamente. Por favor, preencha os dados manualmente.' }, 
+        { status: response.status }
+      );
+    }
 
     const data = await response.json().catch(() => null);
 
     if (!response.ok || !data) {
       return NextResponse.json(
-        { error: data?.message || 'CNPJ não encontrado ou serviço indisponível.' }, 
+        { error: 'CNPJ não encontrado ou serviço de busca indisponível.' }, 
         { status: response.status || 500 }
       );
     }
