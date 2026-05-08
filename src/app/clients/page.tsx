@@ -43,6 +43,7 @@ export default function ClientsPage() {
   const [newClientEmail, setNewClientEmail] = useState('');
   const [newClientCnpj, setNewClientCnpj] = useState('');
   const [newClientLogo, setNewClientLogo] = useState('');
+  const [newClientLogoBg, setNewClientLogoBg] = useState('#ffffff');
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
 
   // Estados para o Modal de Confirmação Customizado
@@ -151,7 +152,8 @@ export default function ClientsPage() {
       .from('clients')
       .insert([{ 
         name: newClientName,
-        logo_url: newClientLogo 
+        logo_url: newClientLogo,
+        logo_bg: newClientLogoBg
       }])
       .select()
       .single();
@@ -179,7 +181,8 @@ export default function ClientsPage() {
       .from('clients')
       .update({ 
         name: editingClient.name,
-        logo_url: editingClient.logo_url 
+        logo_url: editingClient.logo_url,
+        logo_bg: editingClient.logo_bg
       })
       .eq('id', editingClient.id);
 
@@ -315,11 +318,14 @@ export default function ClientsPage() {
                   <tr key={client.id}>
                     <td>
                       <div className={styles.clientCell}>
-                        <div className={styles.clientAvatar}>
+                        <div 
+                          className={styles.clientAvatar} 
+                          style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
+                        >
                           {client.logo_url ? (
                             <img src={client.logo_url} alt={client.name} className={styles.avatarImg} />
                           ) : (
-                            <Globe size={18} />
+                            <span className={styles.avatarInitial}>{client.name.charAt(0)}</span>
                           )}
                         </div>
                         <div className={styles.clientInfo}>
@@ -478,6 +484,26 @@ export default function ClientsPage() {
                     onChange={(e) => setNewClientLogo(e.target.value)}
                   />
                 </div>
+
+                <div className={styles.colorSelector}>
+                  <label>Cor de Fundo do Quadro</label>
+                  <div className={styles.colorOptions}>
+                    {[
+                      { hex: '#ffffff', label: 'Branco' },
+                      { hex: '#56d7fd', label: 'Azul Claro' },
+                      { hex: '#0a1423', label: 'Marinho' }
+                    ].map(color => (
+                      <button
+                        key={color.hex}
+                        type="button"
+                        className={`${styles.colorBtn} ${newClientLogoBg === color.hex ? styles.colorActive : ''}`}
+                        onClick={() => setNewClientLogoBg(color.hex)}
+                        style={{ backgroundColor: color.hex }}
+                        title={color.label}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>
                   <button type="submit" className={styles.submitBtn}>Provisionar Conta</button>
@@ -513,6 +539,26 @@ export default function ClientsPage() {
                     value={editingClient.logo_url || ''}
                     onChange={(e) => setEditingClient({...editingClient, logo_url: e.target.value})}
                   />
+                </div>
+
+                <div className={styles.colorSelector}>
+                  <label>Cor de Fundo do Quadro</label>
+                  <div className={styles.colorOptions}>
+                    {[
+                      { hex: '#ffffff', label: 'Branco' },
+                      { hex: '#56d7fd', label: 'Azul Claro' },
+                      { hex: '#0a1423', label: 'Marinho' }
+                    ].map(color => (
+                      <button
+                        key={color.hex}
+                        type="button"
+                        className={`${styles.colorBtn} ${editingClient.logo_bg === color.hex ? styles.colorActive : ''}`}
+                        onClick={() => setEditingClient({ ...editingClient, logo_bg: color.hex })}
+                        style={{ backgroundColor: color.hex }}
+                        title={color.label}
+                      />
+                    ))}
+                  </div>
                 </div>
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsEditModalOpen(false)}>Cancelar</button>
