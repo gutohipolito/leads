@@ -366,7 +366,7 @@ export default function LeadsPage() {
       return (doc as any).lastAutoTable.finalY + 15;
     };
 
-    let currentY = 55;
+    let currentY = 48;
     currentY = generateGroupTable('Whatsapp', whatsappLeads, currentY);
     currentY = generateGroupTable('Formulário', formLeads, currentY);
 
@@ -468,7 +468,7 @@ export default function LeadsPage() {
                   <div className={`${styles.dropdownMenu} ${exportOpen ? styles.open : ''}`}>
                     <button className={styles.dropdownItem} onClick={() => handleExport('csv')}><TableIcon size={16} /> <span>CSV</span></button>
                     <button className={styles.dropdownItem} onClick={() => handleExport('json')}><FileJson size={16} /> <span>JSON</span></button>
-                    <button className={styles.dropdownItem} onClick={handleExportPDF}><FileDown size={16} /> <span>PDF Profissional</span></button>
+                    <button className={styles.dropdownItem} onClick={handleExportPDF}><FileDown size={16} /> <span>PDF</span></button>
                   </div>
                 </div>
               </div>
