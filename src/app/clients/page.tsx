@@ -15,7 +15,6 @@ import {
   MoreHorizontal,
   Mail,
   Calendar,
-  Zap,
   Globe,
   ShieldCheck,
   UserPlus,

@@ -19,7 +19,8 @@ import {
   Webhook,
   X,
   Edit2,
-  Save
+  Save,
+  Zap
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
