@@ -74,6 +74,7 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: 'Geral', path: '/', icon: LayoutDashboard },
+    { name: 'Monitor ao Vivo', path: '/admin/live', icon: Tv },
     { 
       name: 'Clientes', 
       path: '/clients', 
