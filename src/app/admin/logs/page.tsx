@@ -46,10 +46,10 @@ export default function LogsPage() {
   const totalPages = Math.ceil(logs.length / pageSize);
   const paginatedLogs = logs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  if (loading) return <DashboardLayout title="Auditoria de Sinais"><Loader text="Lendo Histórico de Uplink..." /></DashboardLayout>;
+  if (loading) return <DashboardLayout title="Auditoria"><Loader text="Sincronizando Registros..." /></DashboardLayout>;
 
   return (
-    <DashboardLayout title="Auditoria de Sinais">
+    <DashboardLayout title="Auditoria">
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.stats}>
