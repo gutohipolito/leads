@@ -77,7 +77,7 @@ export default function StatsDrawer({ isOpen, onClose, client }: StatsDrawerProp
           <div className={styles.titleInfo}>
             <div className={styles.avatar}>{client.name.charAt(0)}</div>
             <div>
-              <h3>Inteligência de Leads</h3>
+              <h3>Análise de Leads</h3>
               <p>{client.name} • ID: {client.id.slice(0, 8)}</p>
             </div>
           </div>

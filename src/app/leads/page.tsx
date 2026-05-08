@@ -458,7 +458,7 @@ export default function LeadsPage() {
                     </div>
                   </div>
                   <div className={styles.cardFooter}>
-                    <span className={styles.enterLabel}>Gerenciar Inteligência</span>
+                    <span className={styles.enterLabel}>Ver Detalhes</span>
                     <div className={styles.arrowCircle}><ChevronRight size={18} /></div>
                   </div>
                 </div>
