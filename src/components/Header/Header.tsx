@@ -66,7 +66,6 @@ export default function Header({ title }: HeaderProps) {
     }
     loadNotifications();
 
-    // Realtime subscription
     const channel = supabase
       .channel('notifications-changes')
       .on(
@@ -129,11 +128,9 @@ export default function Header({ title }: HeaderProps) {
 
     setUpdating(true);
     try {
-      // 1. Atualizar no Auth do Supabase
       const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
       if (authError) throw authError;
 
-      // 2. Marcar como trocada na nossa tabela
       const { error: dbError } = await supabase
         .from('system_users')
         .update({ password_changed: true })
@@ -144,7 +141,7 @@ export default function Header({ title }: HeaderProps) {
       alert('Senha atualizada com sucesso!');
       setIsModalOpen(false);
       setPasswordChanged(true);
-      window.location.reload(); // Refresh para atualizar o estado global
+      window.location.reload();
     } catch (err: any) {
       alert('Erro ao atualizar: ' + err.message);
     } finally {
@@ -175,10 +172,6 @@ export default function Header({ title }: HeaderProps) {
             </button>
           )}
 
-          <button className={styles.actionBtn} onClick={handleLogout} title="Sair do Sistema">
-            <LogOut size={20} />
-          </button>
-          
           <div className={styles.notifWrapper}>
             <button className={styles.actionBtn} onClick={() => setIsNotifOpen(!isNotifOpen)}>
               <Bell size={20} />
@@ -222,6 +215,10 @@ export default function Header({ title }: HeaderProps) {
             />
           </div>
         </div>
+
+        <button className={styles.actionBtn} onClick={handleLogout} title="Sair do Sistema">
+          <LogOut size={20} />
+        </button>
       </div>
 
       {isModalOpen && (
@@ -275,7 +272,7 @@ export default function Header({ title }: HeaderProps) {
                   type="button" 
                   className={styles.cancelBtn} 
                   onClick={() => setIsModalOpen(false)}
-                  disabled={!passwordChanged} // Só pode fechar se já tiver trocado a senha alguma vez
+                  disabled={!passwordChanged}
                 >
                   Cancelar
                 </button>
