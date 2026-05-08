@@ -280,30 +280,31 @@ export default function LeadsPage() {
       });
       const logoWidth = 40;
       const logoHeight = (img.height * logoWidth) / img.width;
-      doc.addImage(img, 'PNG', 15, 8, logoWidth, logoHeight);
+      // Alinhamento vertical centralizado (Header tem 40mm)
+      const logoY = (40 - logoHeight) / 2;
+      doc.addImage(img, 'PNG', 15, logoY, logoWidth, logoHeight);
     } catch (err) {
       doc.setTextColor(86, 215, 253);
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('ASTHROS', 15, 20);
+      doc.text('ASTHROS', 15, 22);
     }
     
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Relatório de Inteligência de Leads', 160, 20);
+    doc.text('Relatório de Leads', 160, 18);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 160, 28);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 160, 34);
+    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 160, 26);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 160, 32);
 
     // 2. Preparação de Colunas (Incluindo Dados de Comportamento)
     const hasEmail = leadsToExport.some(l => l.email && l.email !== 'N/A');
     const hasPhone = leadsToExport.some(l => l.phone && l.phone !== 'N/A');
-    // Checar se existem dados de behavior
     const hasBehavior = leadsToExport.some(l => l.data?.behavior || l.data?.page_url);
 
-    const headers = ['Data/Hora', 'Nome'];
+    const headers = ['Data/Hora (captura)', 'Nome'];
     if (hasEmail) headers.push('E-mail');
     if (hasPhone) headers.push('Telefone');
     if (hasBehavior) {
@@ -327,7 +328,6 @@ export default function LeadsPage() {
         const button = behavior.button_text || l.data?.button_text || 'N/A';
         const time = behavior.time_on_page || l.data?.time_on_page || 'N/A';
         
-        // Limpar a URL para não ocupar muito espaço (mostrar só o final ou domínio)
         const displayUrl = pageUrl !== 'N/A' ? (pageUrl.length > 30 ? '...' + pageUrl.substring(pageUrl.length - 27) : pageUrl) : 'N/A';
         
         row.push(displayUrl);
@@ -355,7 +355,7 @@ export default function LeadsPage() {
       didDrawPage: (data) => {
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text(`Asthros Leads Intelligence - Relatório Confidencial`, 15, 200);
+        doc.text(`Asthros | CO-B. - Relatório de Leads - Confidencial`, 15, 200);
         doc.text(`Página ${data.pageNumber}`, 270, 200);
       }
     });
