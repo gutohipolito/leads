@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
