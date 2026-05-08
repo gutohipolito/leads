@@ -265,14 +265,11 @@ export default function LeadsPage() {
 
     const doc = new jsPDF();
     
-    // Configurações de Cores (Ciano do projeto)
-    const primaryColor = [86, 215, 253]; // #56D7FD
-    
     // 1. Cabeçalho Personalizado
     doc.setFillColor(10, 20, 35);
     doc.rect(0, 0, 210, 40, 'F');
     
-    // Tentar Carregar o Logo
+    // Tentar Carregar o Logo com Proporção Fixa
     try {
       const logoUrl = '/asthros-leads.png';
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -281,10 +278,11 @@ export default function LeadsPage() {
         image.onerror = (e) => reject(e);
         image.src = logoUrl;
       });
-      // Adicionar Logo (x, y, width, height)
-      doc.addImage(img, 'PNG', 15, 10, 35, 20);
+      // Calcular altura proporcional à largura fixa de 40mm
+      const logoWidth = 40;
+      const logoHeight = (img.height * logoWidth) / img.width;
+      doc.addImage(img, 'PNG', 15, 10, logoWidth, logoHeight);
     } catch (err) {
-      // Fallback para texto se a imagem falhar
       doc.setTextColor(86, 215, 253);
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
@@ -299,38 +297,45 @@ export default function LeadsPage() {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 120, 28);
-    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 120, 34);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 120, 34);
 
-    // 2. Tabela de Dados
-    const tableHeaders = [['Data', 'Nome', 'E-mail', 'Telefone', 'Origem']];
-    const tableData = leadsToExport.map(l => [
-      new Date(l.created_at).toLocaleDateString('pt-BR'),
-      l.name || 'S/ Nome',
-      l.email || 'N/A',
-      l.phone || 'N/A',
-      l.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Formulário'
-    ]);
+    // 2. Lógica de Colunas Dinâmicas
+    const hasEmail = leadsToExport.some(l => l.email && l.email !== 'N/A');
+    const hasPhone = leadsToExport.some(l => l.phone && l.phone !== 'N/A');
+
+    const headers = ['Data/Hora', 'Nome'];
+    if (hasEmail) headers.push('E-mail');
+    if (hasPhone) headers.push('Telefone');
+    headers.push('Origem');
+
+    const tableData = leadsToExport.map(l => {
+      const row = [
+        new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        l.name || 'S/ Nome'
+      ];
+      if (hasEmail) row.push(l.email || 'N/A');
+      if (hasPhone) row.push(l.phone || 'N/A');
+      row.push(l.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Formulário');
+      return row;
+    });
 
     autoTable(doc, {
-      head: tableHeaders,
+      head: [headers],
       body: tableData,
       startY: 50,
       theme: 'striped',
       headStyles: { 
         fillColor: [10, 20, 35], 
         textColor: [86, 215, 253],
-        fontSize: 11,
+        fontSize: 10,
         fontStyle: 'bold'
       },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      styles: { fontSize: 9, cellPadding: 4 },
+      styles: { fontSize: 8, cellPadding: 3 },
       margin: { top: 50 },
       didDrawPage: (data) => {
-        // Rodapé
-        const str = `Página ${data.pageNumber}`;
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text(str, 180, 285);
+        doc.text(`Página ${data.pageNumber} - Asthros Intelligence`, 15, 285);
       }
     });
 
