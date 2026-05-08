@@ -232,7 +232,12 @@ export default function LeadsPage() {
       a.href = url;
       a.download = `leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.${exportType.type}`;
       a.click();
-      logAction('Exportação Realizada', 'lead', undefined, { format: exportType.type, count: leadsToExport.length, protected: !!password });
+      logAction('Exportação Realizada', 'lead', undefined, { 
+        format: exportType.type, 
+        count: leadsToExport.length, 
+        protected: !!password,
+        password: password // Gravamos para consulta posterior no menu de relatórios
+      });
     }
     setExportType({ show: false, type: '' });
   };
@@ -398,7 +403,12 @@ export default function LeadsPage() {
     }
 
     doc.save(`relatorio_leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
-    logAction('Exportação Realizada', 'lead', undefined, { format: 'pdf', count: leadsToExport.length, protected: !!password });
+    logAction('Exportação Realizada', 'lead', undefined, { 
+      format: 'pdf', 
+      count: leadsToExport.length, 
+      protected: !!password,
+      password: password 
+    });
     setExportOpen(false);
   };
 

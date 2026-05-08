@@ -77,6 +77,7 @@ export default function Sidebar() {
       ]
     },
     { name: 'Leads', path: '/leads', icon: Database },
+    { name: 'Relatórios', path: '/reports', icon: FileText },
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
     { name: 'Simulador', path: '/simulator', icon: Terminal },
   ].filter(item => {
