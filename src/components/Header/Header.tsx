@@ -222,6 +222,11 @@ export default function Header({ title }: HeaderProps) {
                 <h3>Central de Notificações</h3>
                 <p>{unreadCount} novas mensagens</p>
               </div>
+              <div className={styles.headerActions}>
+                <button onClick={() => setIsNotifOpen(false)} className={styles.closeBtn}>
+                  <X size={20} />
+                </button>
+              </div>
             </div>
             
             <div className={styles.notifList}>
