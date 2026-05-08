@@ -39,6 +39,7 @@ export default function UsersManagementPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
+  // Estilos de Avatar (Usaremos DiceBear com micro-animações CSS e Lordicon para o modal)
   const avatarStyles = [
     { id: 'avataaars', label: 'Humano' },
     { id: 'bottts', label: 'Robô' },
@@ -66,6 +67,11 @@ export default function UsersManagementPage() {
 
   useEffect(() => {
     loadData();
+    // Carregar script do Lordicon para avatares animados
+    const script = document.createElement('script');
+    script.src = "https://cdn.lordicon.com/lordicon.js";
+    script.async = true;
+    document.body.appendChild(script);
   }, []);
 
   async function loadData() {
@@ -91,9 +97,7 @@ export default function UsersManagementPage() {
     e.preventDefault();
     
     if (isEditMode && editingUserId) {
-      // No modo edição, não enviamos a senha se ela estiver vazia
       const { password, ...updateData } = newUser;
-      
       const { error } = await supabase
         .from('system_users')
         .update(updateData)
@@ -331,6 +335,7 @@ export default function UsersManagementPage() {
                   <input 
                     required
                     type="text" 
+                    placeholder="Ex: João Silva"
                     value={newUser.name}
                     onChange={(e) => setNewUser({...newUser, name: e.target.value})}
                   />
@@ -340,13 +345,14 @@ export default function UsersManagementPage() {
                   <input 
                     required
                     type="email" 
+                    placeholder="usuario@empresa.com"
                     value={newUser.email}
                     onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                   />
                 </div>
 
                 <div className={styles.field}>
-                  <label>Estilo do Avatar (Identidade Visual)</label>
+                  <label>Identidade Visual (Avatar Animado)</label>
                   <div className={styles.avatarSelector}>
                     {avatarStyles.map(style => (
                       <div 
@@ -354,7 +360,10 @@ export default function UsersManagementPage() {
                         className={`${styles.avatarOption} ${newUser.avatar_style === style.id ? styles.active : ''}`}
                         onClick={() => setNewUser({ ...newUser, avatar_style: style.id })}
                       >
-                        <img src={`https://api.dicebear.com/7.x/${style.id}/svg?seed=${newUser.email || 'preview'}`} alt={style.id} />
+                        <img 
+                          src={`https://api.dicebear.com/7.x/${style.id}/svg?seed=${newUser.email || 'preview'}`} 
+                          alt={style.id} 
+                        />
                         <span>{style.label}</span>
                       </div>
                     ))}
