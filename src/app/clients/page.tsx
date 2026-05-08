@@ -426,7 +426,19 @@ export default function ClientsPage() {
                       type="text" 
                       placeholder="00.000.000/0000-00" 
                       value={newClientCnpj}
-                      onChange={(e) => setNewClientCnpj(e.target.value)}
+                      maxLength={18}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length > 14) val = val.slice(0, 14);
+                        
+                        // Máscara 00.000.000/0000-00
+                        val = val.replace(/^(\d{2})(\d)/, '$1.$2');
+                        val = val.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                        val = val.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                        val = val.replace(/(\d{4})(\d)/, '$1-$2');
+                        
+                        setNewClientCnpj(val);
+                      }}
                     />
                     <button 
                       type="button" 
@@ -434,7 +446,7 @@ export default function ClientsPage() {
                       onClick={handleLookupCNPJ}
                       disabled={isLookingUpCnpj || !newClientCnpj}
                     >
-                      {isLookingUpCnpj ? <RefreshCcw size={16} className={styles.spin} /> : 'Buscar'}
+                      {isLookingUpCnpj ? <RefreshCcw size={16} className={styles.spin} /> : 'Consultar'}
                     </button>
                   </div>
                 </div>

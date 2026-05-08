@@ -22,7 +22,6 @@ export async function GET(request: Request) {
       
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
-        // Normalizar formato ReceitaWS para o esperado pelo App
         data = {
           razao_social: fallbackData.nome,
           email: fallbackData.email,
@@ -30,6 +29,20 @@ export async function GET(request: Request) {
         };
         console.log('Busca concluída via Fallback ReceitaWS.');
         return NextResponse.json(data);
+      } else {
+        // Segundo Fallback: CNPJ.ws
+        console.warn('ReceitaWS falhou. Tentando Fallback CNPJ.ws...');
+        const lastChanceResponse = await fetch(`https://publica.cnpj.ws/cnpj/${cnpj}`, { cache: 'no-store' });
+        if (lastChanceResponse.ok) {
+          const lastChanceData = await lastChanceResponse.json();
+          data = {
+            razao_social: lastChanceData.razao_social,
+            email: lastChanceData.estabelecimento.email,
+            ...lastChanceData
+          };
+          console.log('Busca concluída via Fallback CNPJ.ws.');
+          return NextResponse.json(data);
+        }
       }
     } else {
       data = await response.json().catch(() => null);
