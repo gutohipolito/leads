@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bell, Search, Settings, LogOut } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +13,8 @@ interface HeaderProps {
 export default function Header({ title }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [avatarStyle, setAvatarStyle] = useState('avataaars');
+  const [passwordChanged, setPasswordChanged] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -22,12 +24,14 @@ export default function Header({ title }: HeaderProps) {
         setUser(user);
         const { data: profile } = await supabase
           .from('system_users')
-          .select('avatar_style')
+          .select('avatar_style, password_changed, role')
           .eq('email', user.email)
           .single();
         
-        if (profile?.avatar_style) {
-          setAvatarStyle(profile.avatar_style);
+        if (profile) {
+          setAvatarStyle(profile.avatar_style || 'avataaars');
+          setPasswordChanged(profile.password_changed ?? true);
+          setIsAdmin(profile.role === 'admin');
         }
       }
     }
@@ -111,6 +115,16 @@ export default function Header({ title }: HeaderProps) {
         </div>
         
         <div className={styles.actions}>
+          {(isAdmin || !passwordChanged) && (
+            <button 
+              className={styles.passwordAlert} 
+              title="Troca de senha obrigatória"
+              onClick={() => router.push('/settings')}
+            >
+              <Key size={20} />
+            </button>
+          )}
+
           <button className={styles.actionBtn} onClick={handleLogout} title="Sair do Sistema">
             <LogOut size={20} />
           </button>
