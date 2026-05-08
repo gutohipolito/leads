@@ -111,6 +111,14 @@
   text-shadow: 0 0 8px rgba(37, 211, 102, 0.5);
 }
 
+.pendingNeon {
+  background: rgba(255, 170, 0, 0.05) !important;
+  border-color: rgba(255, 170, 0, 0.3) !important;
+  color: #ffaa00 !important;
+  box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+  text-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+}
+
 .cardBody h3 {
   font-size: 1.4rem;
   font-weight: 800;

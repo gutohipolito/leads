@@ -441,8 +441,15 @@ export default function LeadsPage() {
                         <span className={styles.initials}>{client.name.charAt(0)}</span>
                       )}
                     </div>
-                    <div className={`${styles.cardBadge} ${client.status === 'active' ? styles.activeNeon : ''}`}>
-                      {client.status === 'active' ? '● Ativo' : 'Inativo'}
+                    <div className={`
+                      ${styles.cardBadge} 
+                      ${client.status === 'active' && (client.webhooks?.length || 0) > 0 ? styles.activeNeon : ''}
+                      ${client.status === 'active' && (client.webhooks?.length || 0) === 0 ? styles.pendingNeon : ''}
+                    `}>
+                      {client.status === 'active' 
+                        ? ((client.webhooks?.length || 0) > 0 ? '● Ativo' : '● Aguardando') 
+                        : 'Inativo'
+                      }
                     </div>
                   </div>
                   <div className={styles.cardBody}>
