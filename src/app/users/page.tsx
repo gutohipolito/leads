@@ -216,61 +216,85 @@ export default function UsersManagementPage() {
                   <th>Usuário</th>
                   <th>Cargo</th>
                   <th>Vínculo</th>
+                  <th>Acesso</th>
                   <th>Status</th>
+                  <th>Permissão</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map(user => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className={styles.userInfo}>
-                        <div className={styles.avatar}>{user.name.charAt(0)}</div>
-                        <div>
-                          <p className={styles.name}>{user.name}</p>
-                          <p className={styles.email}>{user.email}</p>
+                {filteredUsers.map(user => {
+                  const isOnline = user.last_active_at && (new Date().getTime() - new Date(user.last_active_at).getTime() < 300000);
+                  
+                  return (
+                    <tr key={user.id}>
+                      <td>
+                        <div className={styles.userInfo}>
+                          <div className={styles.avatar}>{user.name.charAt(0)}</div>
+                          <div>
+                            <p className={styles.name}>{user.name}</p>
+                            <p className={styles.email}>{user.email}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`${styles.roleTag} ${styles[user.role]}`}>
-                        {user.role === 'admin' ? 'Administrador' : user.role === 'manager' ? 'Gerente' : 'Visualizador'}
-                      </span>
-                    </td>
-                    <td>{user.clients?.name || 'Nenhum (Global)'}</td>
-                    <td>
-                      <div className={`${styles.statusDot} ${styles[user.status]}`}>
-                        <div className={styles.dot} />
-                        <span>{user.status === 'active' ? 'Ativo' : 'Suspenso'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.rowActions}>
-                        <button 
-                          className={styles.actionIcon} 
-                          onClick={() => toggleUserStatus(user.id, user.status)}
-                          title={user.status === 'active' ? 'Suspender' : 'Ativar'}
-                        >
-                          {user.status === 'active' ? <UserMinus size={18} /> : <UserCheck size={18} />}
-                        </button>
-                        <button 
-                          className={styles.actionIcon} 
-                          onClick={() => handleEditClick(user)}
-                          title="Editar Usuário"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          className={`${styles.actionIcon} ${styles.danger}`} 
-                          onClick={() => handleDeleteUser(user)}
-                          title="Excluir Usuário"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <span className={`${styles.roleTag} ${styles[user.role]}`}>
+                          {user.role === 'admin' ? 'Administrador' : user.role === 'manager' ? 'Gerente' : 'Visualizador'}
+                        </span>
+                      </td>
+                      <td>{user.clients?.name || 'Nenhum (Global)'}</td>
+                      <td>
+                        <div className={styles.loginInfo}>
+                          {user.last_login ? (
+                            <>
+                              <span>{new Date(user.last_login).toLocaleDateString('pt-BR')}</span>
+                              <span className={styles.loginTime}>{new Date(user.last_login).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </>
+                          ) : (
+                            <span className={styles.never}>Nunca acessou</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`${styles.onlineStatus} ${isOnline ? styles.online : styles.offline}`}>
+                          <div className={styles.onlineDot} />
+                          <span>{isOnline ? 'Online' : 'Offline'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`${styles.statusDot} ${styles[user.status]}`}>
+                          <div className={styles.dot} />
+                          <span>{user.status === 'active' ? 'Ativo' : 'Suspenso'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.rowActions}>
+                          <button 
+                            className={styles.actionIcon} 
+                            onClick={() => toggleUserStatus(user.id, user.status)}
+                            title={user.status === 'active' ? 'Suspender' : 'Ativar'}
+                          >
+                            {user.status === 'active' ? <UserMinus size={18} /> : <UserCheck size={18} />}
+                          </button>
+                          <button 
+                            className={styles.actionIcon} 
+                            onClick={() => handleEditClick(user)}
+                            title="Editar Usuário"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button 
+                            className={`${styles.actionIcon} ${styles.danger}`} 
+                            onClick={() => handleDeleteUser(user)}
+                            title="Excluir Usuário"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

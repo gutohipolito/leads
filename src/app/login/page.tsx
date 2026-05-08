@@ -27,6 +27,12 @@ export default function LoginPage() {
 
       if (authError) throw authError;
 
+      // Atualizar o último login no perfil do sistema
+      await supabase
+        .from('system_users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('email', email);
+
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Erro ao realizar login');

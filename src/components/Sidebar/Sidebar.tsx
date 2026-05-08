@@ -50,6 +50,22 @@ export default function Sidebar() {
     setIsImpersonating(!!impersonated);
   }, []);
 
+  // Heartbeat para status Online
+  useEffect(() => {
+    if (!user) return;
+
+    const updateActivity = async () => {
+      await supabase
+        .from('system_users')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('email', user.email);
+    };
+
+    updateActivity(); // Primeira execução
+    const interval = setInterval(updateActivity, 120000); // A cada 2 min
+    return () => clearInterval(interval);
+  }, [user]);
+
   useEffect(() => {
     if (pathname.startsWith('/clients')) {
       setIsClientsOpen(true);
