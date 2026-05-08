@@ -409,17 +409,29 @@
   gap: 1rem;
 }
 
+.jsonValue {
+  color: white;
+  font-family: 'Inter', sans-serif;
+  text-align: right;
+  flex: 1;
+  max-width: 60%;
+  overflow-wrap: break-word;
+}
+
+.wppIcon { color: #25d366; }
+.formIcon { color: #56d7fd; }
+.testIcon { color: #a855f7; }
+
 .avatar {
-  width: 32px;
-  height: 32px;
-  background: var(--primary);
-  color: var(--background);
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .leadName {
@@ -542,7 +554,8 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center; /* Alinhamento centralizado */
+  position: relative;
 }
 
 .drawerTitle {
@@ -554,14 +567,14 @@
 .avatarBig {
   width: 64px;
   height: 64px;
-  background: linear-gradient(45deg, var(--primary), #6366f1);
-  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #000;
+  color: white;
+  flex-shrink: 0;
 }
 
 .drawerTitle h3 {
@@ -641,9 +654,12 @@
 .jsonRow {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
   font-size: 0.85rem;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  word-break: break-word; /* Evita quebra de layout com textos longos */
 }
 
 .jsonRow:last-child {

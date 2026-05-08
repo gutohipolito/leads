@@ -20,7 +20,9 @@ import {
   X,
   Edit2,
   Save,
-  Zap
+  Zap,
+  MessageCircle,
+  FlaskConical
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -51,6 +53,17 @@ export default function LeadsPage() {
     originalKey: '',
     newName: ''
   });
+  
+  const getLeadIcon = (source: string, size = 18) => {
+    switch (source) {
+      case 'whatsapp_tracker':
+        return <MessageCircle size={size} className={styles.wppIcon} />;
+      case 'test_simulation':
+        return <FlaskConical size={size} className={styles.testIcon} />;
+      default:
+        return <FileText size={size} className={styles.formIcon} />;
+    }
+  };
 
   const handleStartRename = (key: string, currentDisplay: string, webhookId: string) => {
     setRenameConfig({
@@ -357,7 +370,9 @@ export default function LeadsPage() {
                     <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
                       <td>
                         <div className={styles.leadMain}>
-                          <div className={styles.avatar}>{(lead.name || 'U').charAt(0)}</div>
+                          <div className={styles.avatar}>
+                            {getLeadIcon(lead.source, 20)}
+                          </div>
                           <div>
                             <p className={styles.name}>{lead.name || 'Sem nome'}</p>
                             <p className={styles.id}>ID: {lead.id.substring(0, 8)}</p>
@@ -397,7 +412,9 @@ export default function LeadsPage() {
             <div className={`${styles.drawer} glass`} onClick={e => e.stopPropagation()}>
               <div className={styles.drawerHeader}>
                 <div className={styles.drawerTitle}>
-                  <div className={styles.avatarBig}>{(selectedLead.name || 'U').charAt(0)}</div>
+                  <div className={styles.avatarBig}>
+                    {getLeadIcon(selectedLead.source, 32)}
+                  </div>
                   <div><h3>{selectedLead.name || 'Lead Sem Nome'}</h3><span>ID: {selectedLead.id}</span></div>
                 </div>
                 <button className={styles.closeBtn} onClick={() => setSelectedLead(null)}><X size={24} /></button>
