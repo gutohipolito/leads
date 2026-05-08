@@ -15,7 +15,8 @@ import {
   Database,
   ChevronDown,
   FileText,
-  Terminal
+  Terminal,
+  Tv
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { supabase } from '@/lib/supabase';
