@@ -14,7 +14,8 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronLeft,
-  Search
+  Search,
+  User as UserIcon
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
