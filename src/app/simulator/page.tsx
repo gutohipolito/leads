@@ -110,7 +110,7 @@ export default function WebhooksPage() {
                 <label>Telefone</label>
                 <input type="text" name="phone" className={styles.input} placeholder="+1 (555) 000-0000" />
               </div>
-              <div className={styles.fieldGroup}>
+              <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
                 <label>Payload de Dados Personalizados</label>
                 <textarea name="message" className={styles.textarea} placeholder="Injetar JSON ou texto adicional..." rows={3} />
               </div>

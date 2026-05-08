@@ -137,12 +137,19 @@
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1.25rem;
+}
+
+.fullWidth {
+  grid-column: span 2;
 }
 
 @media (max-width: 600px) {
   .formGrid {
     grid-template-columns: 1fr;
+  }
+  .fullWidth {
+    grid-column: span 1;
   }
 }
 
