@@ -338,11 +338,14 @@ export default function LeadsPage() {
         return row;
       });
 
-      // Título do Grupo
+      // Título do Grupo com Fundo Marinho (50% da largura)
+      doc.setFillColor(10, 20, 35);
+      doc.rect(15, startY - 6, 133.5, 8, 'F'); // 148.5mm - 15mm margem = 133.5mm
+      
       doc.setTextColor(86, 215, 253);
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text(title, 15, startY);
+      doc.text(title.toUpperCase(), 20, startY);
 
       autoTable(doc, {
         head: [headers],
@@ -356,15 +359,15 @@ export default function LeadsPage() {
           fontStyle: 'bold'
         },
         styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-        margin: { top: 50 },
+        margin: { top: 50, left: 15 },
       });
 
       return (doc as any).lastAutoTable.finalY + 15;
     };
 
-    let currentY = 50;
-    currentY = generateGroupTable('1. INTERCEPÇÕES DE WHATSAPP', whatsappLeads, currentY);
-    currentY = generateGroupTable('2. LEADS VIA FORMULÁRIO', formLeads, currentY);
+    let currentY = 55;
+    currentY = generateGroupTable('Whatsapp', whatsappLeads, currentY);
+    currentY = generateGroupTable('Formulário', formLeads, currentY);
 
     // Rodapé em todas as páginas via didDrawPage (configurado na última tabela)
     const pageCount = (doc as any).internal.getNumberOfPages();
