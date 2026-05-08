@@ -319,7 +319,6 @@ export default function ClientsPage() {
               <span>Novo Cliente</span>
             </button>
           </div>
-        </div>
 
         <div className={styles.tableSection}>
           {loading ? (
