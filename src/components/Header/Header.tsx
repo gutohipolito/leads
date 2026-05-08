@@ -223,7 +223,7 @@ export default function Header({ title }: HeaderProps) {
 
       {isModalOpen && (
         <div className={styles.modalOverlay}>
-          <div className={`${styles.modal} glass`}>
+          <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <div className={styles.modalIcon}>
                 <ShieldAlert size={24} />
