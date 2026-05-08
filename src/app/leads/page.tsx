@@ -255,20 +255,15 @@ export default function LeadsPage() {
     const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
     if (leadsToExport.length === 0) return;
 
-    const doc = new jsPDF({ orientation: 'landscape' });
-    
-    if (password) {
-      doc.setEncryption({
+    // No jsPDF moderno, a criptografia deve ser passada no construtor
+    const doc = new jsPDF({ 
+      orientation: 'landscape',
+      encryption: password ? {
         userPassword: password,
         ownerPassword: password,
-        permissions: {
-          printing: 'high-res',
-          modifying: false,
-          copying: false,
-          annotating: true
-        }
-      });
-    }
+        userPermissions: ["print", "modify", "copy", "annot-forms"]
+      } : undefined
+    });
 
     // 1. Cabeçalho Personalizado (Ajustado para Landscape - 297mm de largura)
     doc.setFillColor(10, 20, 35);
