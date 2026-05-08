@@ -320,7 +320,7 @@ export default function ClientsPage() {
             </button>
           </div>
 
-        <div className={styles.tableSection}>
+        <div className={`${styles.tableSection} ${viewMode === 'table' ? styles.tableSectionVisible : ''}`}>
           {loading ? (
             <div className={styles.loadingState}>
               <RefreshCcw size={40} className={styles.spin} />

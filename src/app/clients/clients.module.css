@@ -117,10 +117,13 @@
 }
 
 .tableSection {
-  background: rgba(10, 20, 35, 0.4);
-  border: 1px solid var(--border);
   border-radius: 20px;
   overflow: hidden;
+}
+
+.tableSectionVisible {
+  background: rgba(10, 20, 35, 0.4);
+  border: 1px solid var(--border);
   backdrop-filter: blur(20px);
 }
 
