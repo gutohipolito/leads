@@ -123,15 +123,19 @@ export default function ClientsPage() {
     setIsLookingUpCnpj(true);
     try {
       const cleanCnpj = newClientCnpj.replace(/\D/g, '');
-      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+      const response = await fetch(`/api/proxy/cnpj/${cleanCnpj}`);
       const data = await response.json();
+      
+      if (!response.ok) {
+        alert(data.error || 'Erro ao buscar CNPJ.');
+        return;
+      }
       
       if (data && data.razao_social) {
         setNewClientName(data.razao_social);
-        // Opcional: preencher e-mail se disponível no cadastro do CNPJ
         if (data.email) setNewClientEmail(data.email);
       } else {
-        alert('CNPJ não encontrado ou erro na consulta.');
+        alert('Dados do CNPJ incompletos ou não encontrados.');
       }
     } catch (error) {
       console.error('Erro ao buscar CNPJ:', error);
