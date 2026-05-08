@@ -71,9 +71,28 @@
   text-transform: uppercase;
 }
 
-.pdf { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.pdf { background: rgba(86, 215, 253, 0.1); color: #56d7fd; }
 .csv { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-.json { background: rgba(86, 215, 253, 0.1); color: #56d7fd; }
+.json { background: rgba(255, 255, 255, 0.05); color: #fff; }
+
+.copyBtn {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  padding: 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: 0.5rem;
+}
+
+.copyBtn:hover {
+  background: rgba(34, 197, 94, 0.25);
+  transform: scale(1.1);
+}
 
 .securityBadge {
   display: inline-flex;

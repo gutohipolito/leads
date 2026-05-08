@@ -16,7 +16,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
-  Search
+  Search,
+  Copy,
+  Check
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -26,6 +28,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPasswordId, setShowPasswordId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const pageSize = 10;
 
@@ -36,8 +39,7 @@ export default function ReportsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Verificar role
-      const { data: profile } = await supabase.from('system_users').select('role, client_id').eq('email', user.email).single();
+      const { data: profile } = await supabase.from('system_users').select('role').eq('email', user.email).single();
       const isUserAdmin = profile?.role === 'admin';
       setIsAdmin(isUserAdmin);
 
@@ -47,15 +49,13 @@ export default function ReportsPage() {
         .eq('action', 'Exportação Realizada')
         .order('created_at', { ascending: false });
 
-      // Se não for admin, filtrar apenas logs do próprio usuário
       if (!isUserAdmin) {
         query = query.eq('user_id', user.id);
       }
 
-      const { data, error } = await query;
+      const { data } = await query;
 
       if (data) {
-        // Formatar dados para facilitar exibição
         const formatted = data.map(log => ({
           id: log.id,
           created_at: log.created_at,
@@ -71,6 +71,12 @@ export default function ReportsPage() {
     }
     loadReports();
   }, []);
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const totalPages = Math.ceil(reports.length / pageSize);
   const paginatedReports = reports.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -148,17 +154,31 @@ export default function ReportsPage() {
                         </div>
                       </td>
                       <td>
-                        {report.protected ? (
-                          <button 
-                            className={styles.passwordBtn}
-                            onClick={() => setShowPasswordId(showPasswordId === report.id ? null : report.id)}
-                          >
-                            {showPasswordId === report.id ? <EyeOff size={16} /> : <Eye size={16} />}
-                            <span>{showPasswordId === report.id ? report.password : 'Ver Senha'}</span>
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)' }}>Nenhuma ação</span>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {report.protected ? (
+                            <>
+                              <button 
+                                className={styles.passwordBtn}
+                                onClick={() => setShowPasswordId(showPasswordId === report.id ? null : report.id)}
+                              >
+                                {showPasswordId === report.id ? <EyeOff size={16} /> : <Eye size={16} />}
+                                <span>{showPasswordId === report.id ? (report.password || 'Indisponível') : 'Ver Senha'}</span>
+                              </button>
+                              
+                              {showPasswordId === report.id && report.password && (
+                                <button 
+                                  className={styles.copyBtn}
+                                  onClick={() => handleCopy(report.password, report.id)}
+                                  title="Copiar Senha"
+                                >
+                                  {copiedId === report.id ? <Check size={14} /> : <Copy size={14} />}
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)' }}>Nenhuma ação</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
