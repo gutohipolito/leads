@@ -78,11 +78,7 @@ export default function Sidebar() {
     { 
       name: 'Clientes', 
       path: '/clients', 
-      icon: Users,
-      submenu: [
-        { name: 'Listagem', path: '/clients' },
-        { name: 'Novo Cadastro', path: '/clients?action=new' },
-      ]
+      icon: Users
     },
     { name: 'Leads', path: '/leads', icon: Database },
     { name: 'Relatórios', path: '/reports', icon: FileText },
