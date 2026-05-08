@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bell, Search, Settings, LogOut, Key } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
@@ -102,6 +102,56 @@ export default function Header({ title }: HeaderProps) {
     }
   };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [updating, setUpdating] = useState(false);
+
+  const passwordRequirements = [
+    { label: 'Mínimo 8 caracteres', test: (p: string) => p.length >= 8 },
+    { label: 'Uma letra maiúscula', test: (p: string) => /[A-Z]/.test(p) },
+    { label: 'Um número', test: (p: string) => /[0-9]/.test(p) },
+    { label: 'Um caractere especial', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  ];
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      alert('As senhas não coincidem!');
+      return;
+    }
+
+    const allPassed = passwordRequirements.every(req => req.test(newPassword));
+    if (!allPassed) {
+      alert('A senha não atende aos requisitos mínimos de segurança!');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      // 1. Atualizar no Auth do Supabase
+      const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
+      if (authError) throw authError;
+
+      // 2. Marcar como trocada na nossa tabela
+      const { error: dbError } = await supabase
+        .from('system_users')
+        .update({ password_changed: true })
+        .eq('email', user.email);
+      
+      if (dbError) throw dbError;
+
+      alert('Senha atualizada com sucesso!');
+      setIsModalOpen(false);
+      setPasswordChanged(true);
+      window.location.reload(); // Refresh para atualizar o estado global
+    } catch (err: any) {
+      alert('Erro ao atualizar: ' + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.left}>
@@ -119,7 +169,7 @@ export default function Header({ title }: HeaderProps) {
             <button 
               className={styles.passwordAlert} 
               title="Troca de senha obrigatória"
-              onClick={() => router.push('/settings')}
+              onClick={() => setIsModalOpen(true)}
             >
               <Key size={20} />
             </button>
@@ -173,6 +223,74 @@ export default function Header({ title }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modal} glass`}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon}>
+                <ShieldAlert size={24} />
+              </div>
+              <h3>Segurança da Conta</h3>
+              <p>Sua senha atual é provisória. Por favor, crie uma nova senha forte para continuar.</p>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className={styles.form}>
+              <div className={styles.inputGroup}>
+                <label>Nova Senha</label>
+                <input 
+                  type="password" 
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>Confirmar Nova Senha</label>
+                <input 
+                  type="password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              <div className={styles.requirements}>
+                {passwordRequirements.map((req, i) => {
+                  const passed = req.test(newPassword);
+                  return (
+                    <div key={i} className={`${styles.reqItem} ${passed ? styles.passed : ''}`}>
+                      <div className={styles.dot} />
+                      <span>{req.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className={styles.modalActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelBtn} 
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={!passwordChanged} // Só pode fechar se já tiver trocado a senha alguma vez
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.submitBtn}
+                  disabled={updating || !passwordRequirements.every(req => req.test(newPassword))}
+                >
+                  {updating ? 'Atualizando...' : 'Definir Nova Senha'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
