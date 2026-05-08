@@ -184,21 +184,15 @@ export default function Home() {
     <DashboardLayout title="">
       <div className={styles.dashboard}>
         
-        {/* Banner Monitor ao Vivo */}
-        <Link href="/admin/live" className={styles.liveBanner}>
-          <div className={styles.liveContent}>
-            <div className={styles.liveIcon}>
-              <Tv size={32} />
-              <div className={styles.liveBadge}>LIVE</div>
-            </div>
-            <div className={styles.liveText}>
-              <h3>Monitor de Operações ao Vivo</h3>
-              <p>Visualize métricas e capturas de leads em tempo real em tela cheia para TVs e monitores.</p>
-            </div>
+        {/* Status Pill Monitor ao Vivo (Versão Sutil) */}
+        <Link href="/admin/live" className={styles.liveStatusPill}>
+          <div className={styles.liveIndicator}>
+            <div className={styles.pulseDot} />
+            <Tv size={16} />
           </div>
-          <div className={styles.liveAction}>
-            <span>Acessar War Room</span>
-            <Zap size={18} fill="currentColor" />
+          <span className={styles.liveLabel}>Monitor ao Vivo</span>
+          <div className={styles.liveArrow}>
+            <Zap size={14} fill="currentColor" />
           </div>
         </Link>
 
