@@ -293,11 +293,12 @@ export default function LeadsPage() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Relatório de Leads', 160, 18);
+    // Alinhamento à direita para os textos do cabeçalho (297 - 15 = 282)
+    doc.text('Relatório de Leads', 282, 16, { align: 'right' });
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 160, 26);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 160, 32);
+    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 282, 24, { align: 'right' });
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 282, 30, { align: 'right' });
 
     // 2. Preparação dos Dados (Agrupamento por Origem)
     const whatsappLeads = leadsToExport.filter(l => l.source === 'whatsapp_tracker');
@@ -306,7 +307,7 @@ export default function LeadsPage() {
     const generateGroupTable = (title: string, groupLeads: any[], startY: number) => {
       if (groupLeads.length === 0) return startY;
 
-      // Identificar colunas com dados neste grupo específico
+      // Identificar colunas com dados...
       const hasEmail = groupLeads.some(l => l.email && l.email !== 'N/A');
       const hasPhone = groupLeads.some(l => l.phone && l.phone !== 'N/A');
       const hasPage = groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
@@ -338,19 +339,19 @@ export default function LeadsPage() {
         return row;
       });
 
-      // Título do Grupo com Fundo Marinho (50% da largura)
+      // Título do Grupo com Fundo Marinho (Centro-Centro Ajustado)
       doc.setFillColor(10, 20, 35);
-      doc.rect(15, startY - 6, 133.5, 8, 'F'); // 148.5mm - 15mm margem = 133.5mm
+      doc.rect(15, startY, 133.5, 10, 'F');
       
       doc.setTextColor(86, 215, 253);
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(title.toUpperCase(), 20, startY);
+      doc.text(title.toUpperCase(), 22, startY + 6.5);
 
       autoTable(doc, {
         head: [headers],
         body: tableRows,
-        startY: startY + 5,
+        startY: startY + 12,
         theme: 'striped',
         headStyles: { 
           fillColor: [10, 20, 35], 
