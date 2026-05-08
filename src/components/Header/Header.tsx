@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bell, Search, Settings, LogOut, Key, ShieldAlert } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
@@ -49,7 +49,6 @@ export default function Header({ title }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    // Pedir permissão para notificações do browser
     if (typeof window !== 'undefined' && 'Notification' in window) {
       Notification.requestPermission();
     }
@@ -61,7 +60,7 @@ export default function Header({ title }: HeaderProps) {
           .from('notifications')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
         
         if (data) {
           setNotifications(data);
@@ -82,18 +81,16 @@ export default function Header({ title }: HeaderProps) {
         },
         (payload) => {
           const newNotif = payload.new;
-          setNotifications(prev => [newNotif, ...prev].slice(0, 5));
+          setNotifications(prev => [newNotif, ...prev].slice(0, 10));
           setUnreadCount(prev => prev + 1);
 
-          // Tocar som de alerta
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
           audio.play().catch(() => {});
 
-          // Notificação do Browser
           if (Notification.permission === 'granted') {
             new Notification(`Asthros: ${newNotif.title}`, {
               body: newNotif.message,
-              icon: '/asthros-leads.png'
+              icon: '/favicon.ico'
             });
           }
         }
@@ -188,35 +185,6 @@ export default function Header({ title }: HeaderProps) {
               <Key size={20} />
             </button>
           )}
-
-          <div className={styles.notifWrapper}>
-            <button className={styles.actionBtn} onClick={() => setIsNotifOpen(!isNotifOpen)}>
-              <Bell size={20} />
-              {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
-            </button>
-
-            {isNotifOpen && (
-              <div className={`${styles.notifPanel} glass`}>
-                <div className={styles.notifHeader}>
-                  <h4>Notificações</h4>
-                  <button onClick={markAllAsRead}>Limpar todas</button>
-                </div>
-                <div className={styles.notifList}>
-                  {notifications.length > 0 ? notifications.map(n => (
-                    <div key={n.id} className={`${styles.notifItem} ${n.read ? '' : styles.unread}`}>
-                      <div className={styles.notifContent}>
-                        <p className={styles.notifTitle}>{n.title}</p>
-                        <p className={styles.notifMsg}>{n.message}</p>
-                        <span className={styles.notifTime}>{new Date(n.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className={styles.emptyNotif}>Nenhuma notificação nova</div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
         
         <div className={styles.profile}>
@@ -233,10 +201,53 @@ export default function Header({ title }: HeaderProps) {
           </div>
         </div>
 
+        <div className={styles.notifWrapper}>
+          <button className={styles.actionBtn} onClick={() => setIsNotifOpen(true)} title="Notificações">
+            <Bell size={20} />
+            {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
+          </button>
+        </div>
+
         <button className={styles.actionBtn} onClick={handleLogout} title="Sair do Sistema">
           <LogOut size={20} />
         </button>
       </div>
+
+      {/* Painel Lateral de Notificações (Drawer) */}
+      {isNotifOpen && (
+        <div className={styles.notifOverlay} onClick={() => setIsNotifOpen(false)}>
+          <div className={styles.notifDrawer} onClick={e => e.stopPropagation()}>
+            <div className={styles.notifHeader}>
+              <div>
+                <h3>Central de Notificações</h3>
+                <p>{unreadCount} novas mensagens</p>
+              </div>
+              <button onClick={markAllAsRead} className={styles.clearBtn}>Marcar tudo como lido</button>
+            </div>
+            
+            <div className={styles.notifList}>
+              {notifications.length > 0 ? notifications.map(n => (
+                <div key={n.id} className={`${styles.notifItem} ${n.read ? '' : styles.unread}`}>
+                  <div className={styles.notifIndicator} />
+                  <div className={styles.notifContent}>
+                    <p className={styles.notifTitle}>{n.title}</p>
+                    <p className={styles.notifMsg}>{n.message}</p>
+                    <span className={styles.notifTime}>
+                      <Clock size={12} />
+                      {new Date(n.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )) : (
+                <div className={styles.emptyNotif}>
+                  <Bell size={48} strokeWidth={1} opacity={0.2} />
+                  <p>Tudo limpo por aqui!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className={styles.modalOverlay}>
