@@ -259,7 +259,7 @@ export default function LeadsPage() {
     setExportOpen(false);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
     if (leadsToExport.length === 0) return;
 
@@ -267,25 +267,37 @@ export default function LeadsPage() {
     
     // Configurações de Cores (Ciano do projeto)
     const primaryColor = [86, 215, 253]; // #56D7FD
-    const darkBg = [10, 20, 35];
     
     // 1. Cabeçalho Personalizado
     doc.setFillColor(10, 20, 35);
     doc.rect(0, 0, 210, 40, 'F');
     
-    // Logo Texto (Simulando o branding se a imagem não carregar)
-    doc.setTextColor(86, 215, 253);
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ASTHROS', 15, 20);
-    doc.setFontSize(10);
-    doc.text('INTELIGÊNCIA EM LEADS', 15, 26);
+    // Tentar Carregar o Logo
+    try {
+      const logoUrl = '/asthros-leads.png';
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = (e) => reject(e);
+        image.src = logoUrl;
+      });
+      // Adicionar Logo (x, y, width, height)
+      doc.addImage(img, 'PNG', 15, 10, 35, 20);
+    } catch (err) {
+      // Fallback para texto se a imagem falhar
+      doc.setTextColor(86, 215, 253);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ASTHROS', 15, 20);
+    }
     
     // Informações do Relatório
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
     doc.text('Relatório de Captura', 120, 20);
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
     doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 120, 28);
     doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 120, 34);
 
