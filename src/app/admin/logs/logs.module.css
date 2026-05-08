@@ -1,39 +1,74 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
   animation: fadeIn 0.3s ease-out;
 }
 
-.header {
+.topActions {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1.5rem;
 }
 
-.stats {
+.tabs {
   display: flex;
-  gap: 2rem;
   background: rgba(255, 255, 255, 0.03);
-  padding: 1rem 2rem;
-  border-radius: 16px;
+  padding: 4px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.statItem {
+.tabBtn {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
   font-size: 0.9rem;
-  font-weight: 700;
-  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.successIcon { color: #10b981; }
-.errorIcon { color: #ef4444; }
+.tabBtn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.activeTab {
+  background: var(--primary) !important;
+  color: #000 !important;
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.3);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0 1rem;
+  height: 44px;
+  border-radius: 12px;
+  width: 320px;
+  color: var(--muted-foreground);
+}
+
+.searchBox input {
+  background: transparent;
+  border: none;
+  color: white;
+  outline: none;
+  width: 100%;
+}
 
 .tableWrapper {
-  border-radius: 20px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -44,21 +79,56 @@
 }
 
 .table th {
-  padding: 1.25rem 1.5rem;
   text-align: left;
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--muted-foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  padding: 1.25rem;
   background: rgba(255, 255, 255, 0.02);
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .table td {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.activityInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconBox {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.iconBox.user { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+.iconBox.client { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.iconBox.lead { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+.entityTag {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  color: var(--muted-foreground);
+}
+
+.idCode {
+  font-family: var(--font-mono);
+  color: var(--primary);
+  opacity: 0.7;
 }
 
 .statusBadge {
@@ -71,38 +141,33 @@
   font-weight: 800;
 }
 
-.statusBadge.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
+.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 
-.statusBadge.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.clientInfo {
+.clientInfo, .eventInfo, .timeInfo {
   display: flex;
   flex-direction: column;
 }
 
-.clientInfo strong {
-  color: white;
-  font-size: 0.9rem;
-}
-
-.clientInfo span {
-  color: var(--muted-foreground);
+.clientInfo strong { color: white; }
+.clientInfo span, .eventInfo span, .timeInfo span {
   font-size: 0.75rem;
+  color: var(--muted-foreground);
 }
 
-.eventInfo, .timeInfo {
-  display: flex;
+.timeInfo {
+  flex-direction: row;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+}
+
+.ipTag {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--muted-foreground);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .detailBtn {
