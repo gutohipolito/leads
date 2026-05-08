@@ -97,10 +97,15 @@ export default function UsersManagementPage() {
     e.preventDefault();
     
     if (isEditMode && editingUserId) {
-      const { password, ...updateData } = newUser;
+      const { password, ...userData } = newUser;
+      const dataToUpdate = {
+        ...userData,
+        client_id: newUser.client_id === '' ? null : newUser.client_id
+      };
+
       const { error } = await supabase
         .from('system_users')
-        .update(updateData)
+        .update(dataToUpdate)
         .eq('id', editingUserId);
 
       if (!error) {
