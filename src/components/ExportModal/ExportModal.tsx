@@ -14,6 +14,36 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
   const [usePassword, setUsePassword] = useState(false);
   const [password, setPassword] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isWarning, setIsWarning] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isWarning && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (isWarning && countdown === 0) {
+      onConfirm(null);
+    }
+    return () => clearInterval(timer);
+  }, [isWarning, countdown, onConfirm]);
+
+  const handleConfirm = () => {
+    if (usePassword) {
+      setIsSuccess(true);
+      setTimeout(() => {
+        onConfirm(password);
+      }, 1500);
+    } else {
+      setIsWarning(true);
+    }
+  };
+
+  const stopExport = () => {
+    setIsWarning(false);
+    setCountdown(10);
+  };
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
@@ -25,13 +55,6 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
     setUsePassword(true);
   };
 
-  const handleConfirm = () => {
-    setIsSuccess(true);
-    setTimeout(() => {
-      onConfirm(usePassword ? password : null);
-    }, 1500);
-  };
-
   if (isSuccess) {
     return (
       <div className={styles.overlay}>
@@ -41,7 +64,41 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
           </div>
           <div className={styles.header}>
             <h3>Proteção Aplicada!</h3>
-            <p>Seu arquivo está sendo gerado com segurança e o download começará em instantes.</p>
+            <p>Seu arquivo está sendo gerado com criptografia e o download começará em instantes.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isWarning) {
+    return (
+      <div className={styles.overlay}>
+        <div className={`${styles.modal} glass`} style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+          <div className={styles.successIcon} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+            <Shield size={60} />
+          </div>
+          <div className={styles.header}>
+            <h3 style={{ color: '#ef4444' }}>Aviso de Segurança</h3>
+            <p style={{ fontSize: '0.9rem' }}>
+              Você optou por exportar dados <strong>sem proteção por senha</strong>. Ao prosseguir, você assume a responsabilidade total pela integridade e confidencialidade destas informações sensíveis em conformidade com as normas de proteção de dados.
+            </p>
+            <div style={{ 
+              marginTop: '1.5rem', 
+              fontSize: '1.2rem', 
+              fontWeight: 'bold', 
+              color: 'white',
+              background: 'rgba(239, 68, 68, 0.1)',
+              padding: '1rem',
+              borderRadius: '12px'
+            }}>
+              Gerando arquivo em: {countdown}s
+            </div>
+          </div>
+          <div className={styles.footer}>
+            <button className={styles.confirmBtn} style={{ background: '#ef4444', color: 'white' }} onClick={stopExport}>
+              Interromper Download
+            </button>
           </div>
         </div>
       </div>
