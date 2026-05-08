@@ -30,6 +30,7 @@ import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ExportModal from '@/components/ExportModal/ExportModal';
 
 export default function LeadsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -56,6 +57,8 @@ export default function LeadsPage() {
     originalKey: '',
     newName: ''
   });
+  
+  const [exportType, setExportType] = useState<{show: boolean, type: string}>({ show: false, type: '' });
   
   const getLeadIcon = (source: string, size = 18) => {
     switch (source) {
@@ -211,61 +214,62 @@ export default function LeadsPage() {
   };
 
   const handleExport = (format: string) => {
-    // Filtramos para não exportar simulações
-    const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
-    if (leadsToExport.length === 0) return;
-
-    if (format === 'json') {
-      const dataStr = JSON.stringify(leadsToExport, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `asthros_leads_${new Date().getTime()}.json`;
-      link.click();
-    } else if (format === 'csv') {
-      // Obter todas as chaves únicas de todos os leads.data para as colunas
-      const dynamicKeys = new Set<string>();
-      leadsToExport.forEach(l => {
-        if (l.data) Object.keys(l.data).forEach(k => dynamicKeys.add(k));
-      });
-      const dynamicKeysArray = Array.from(dynamicKeys);
-
-      const mapping = leadsToExport[0]?.webhooks?.field_mapping || {};
-      const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
-      
-      const rows = leadsToExport.map(l => {
-        const base = [
-          l.id,
-          l.name || '',
-          l.email || '',
-          l.phone || '',
-          new Date(l.created_at).toLocaleString('pt-BR'),
-        ];
-        const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
-        return [...base, ...extra].map(val => `"${val.replace(/"/g, '""')}"`).join(',');
-      });
-
-      const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `asthros_leads_${new Date().getTime()}.csv`;
-      link.click();
-    }
-
-    logAction('Exportação Realizada', 'lead', undefined, { format, count: leadsToExport.length });
+    setExportType({ show: true, type: format });
     setExportOpen(false);
   };
 
-  const handleExportPDF = async () => {
+  const processExport = (password: string | null) => {
+    if (exportType.type === 'pdf') {
+      handleExportPDF(password);
+    } else {
+      const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
+      if (leadsToExport.length === 0) return;
+      
+      const content = exportType.type === 'csv' ? convertToCSV(leadsToExport) : JSON.stringify(leadsToExport, null, 2);
+      const blob = new Blob([content], { type: exportType.type === 'csv' ? 'text/csv' : 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.${exportType.type}`;
+      a.click();
+      logAction('Exportação Realizada', 'lead', undefined, { format: exportType.type, count: leadsToExport.length, protected: !!password });
+    }
+    setExportType({ show: false, type: '' });
+  };
+
+  const convertToCSV = (data: any[]) => {
+    const dynamicKeys = new Set<string>();
+    data.forEach(l => { if (l.data) Object.keys(l.data).forEach(k => dynamicKeys.add(k)); });
+    const dynamicKeysArray = Array.from(dynamicKeys);
+    const mapping = data[0]?.webhooks?.field_mapping || {};
+    const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
+    const rows = data.map(l => {
+      const base = [l.id, l.name || '', l.email || '', l.phone || '', new Date(l.created_at).toLocaleString('pt-BR')];
+      const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
+      return [...base, ...extra].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+    });
+    return "\uFEFF" + [headers.join(','), ...rows].join('\n');
+  };
+
+  const handleExportPDF = async (password: string | null) => {
     const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
     if (leadsToExport.length === 0) return;
 
-    // Usaremos orientação Paisagem (landscape) para caber mais colunas
     const doc = new jsPDF({ orientation: 'landscape' });
     
+    if (password) {
+      doc.setEncryption({
+        userPassword: password,
+        ownerPassword: password,
+        permissions: {
+          printing: 'high-res',
+          modifying: false,
+          copying: false,
+          annotating: true
+        }
+      });
+    }
+
     // 1. Cabeçalho Personalizado (Ajustado para Landscape - 297mm de largura)
     doc.setFillColor(10, 20, 35);
     doc.rect(0, 0, 297, 40, 'F');
@@ -280,7 +284,6 @@ export default function LeadsPage() {
       });
       const logoWidth = 40;
       const logoHeight = (img.height * logoWidth) / img.width;
-      // Alinhamento vertical centralizado (Header tem 40mm)
       const logoY = (40 - logoHeight) / 2;
       doc.addImage(img, 'PNG', 15, logoY, logoWidth, logoHeight);
     } catch (err) {
@@ -293,21 +296,18 @@ export default function LeadsPage() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    // Alinhamento à direita para os textos do cabeçalho (297 - 15 = 282)
     doc.text('Relatório de Leads', 282, 16, { align: 'right' });
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 282, 24, { align: 'right' });
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 282, 30, { align: 'right' });
 
-    // 2. Preparação dos Dados (Agrupamento por Origem)
     const whatsappLeads = leadsToExport.filter(l => l.source === 'whatsapp_tracker');
     const formLeads = leadsToExport.filter(l => l.source !== 'whatsapp_tracker');
 
     const generateGroupTable = (title: string, groupLeads: any[], startY: number) => {
       if (groupLeads.length === 0) return startY;
 
-      // Identificar colunas com dados...
       const hasEmail = groupLeads.some(l => l.email && l.email !== 'N/A');
       const hasPhone = groupLeads.some(l => l.phone && l.phone !== 'N/A');
       const hasPage = groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
@@ -339,7 +339,6 @@ export default function LeadsPage() {
         return row;
       });
 
-      // Título do Grupo com Fundo Marinho (Centro-Centro Ajustado)
       doc.setFillColor(10, 20, 35);
       doc.rect(15, startY, 133.5, 10, 'F');
       
@@ -362,24 +361,25 @@ export default function LeadsPage() {
         styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
         margin: { top: 50, left: 15 },
         didDrawCell: (data) => {
-          // Lógica para links clicáveis
           if (data.section === 'body') {
-            const headerText = data.column.raw;
+            const header = data.table.head[0].cells[data.column.index].raw as string;
             const cellValue = data.cell.raw as string;
             
             if (cellValue && cellValue !== 'N/A') {
-              if (headerText === 'E-mail') {
+              if (header === 'E-mail') {
+                doc.setTextColor(86, 215, 253); 
                 doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: `mailto:${cellValue}` });
-                doc.setTextColor(86, 215, 253); // Destaque para links
               } 
-              else if (headerText === 'Telefone' || headerText === 'Telefone/Whatsapp') {
+              else if (header === 'Telefone' || header === 'Telefone/Whatsapp') {
                 const cleanPhone = cellValue.replace(/\D/g, '');
-                // Se não tem DDI, assume 55 (Brasil)
                 const finalPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+                // Nome está na coluna 1
                 const leadName = data.row.cells[1].raw as string;
                 const message = encodeURIComponent(`Olá ${leadName || ''}, Tudo bem?`);
-                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: `https://wa.me/${finalPhone}?text=${message}` });
-                doc.setTextColor(37, 211, 102); // Verde WhatsApp
+                const url = `https://wa.me/${finalPhone}?text=${message}`;
+                
+                doc.setTextColor(37, 211, 102); 
+                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
               }
             }
           }
@@ -393,7 +393,6 @@ export default function LeadsPage() {
     currentY = generateGroupTable('Whatsapp', whatsappLeads, currentY);
     currentY = generateGroupTable('Formulário', formLeads, currentY);
 
-    // Rodapé em todas as páginas via didDrawPage (configurado na última tabela)
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -403,8 +402,8 @@ export default function LeadsPage() {
       doc.text(`Página ${i} de ${pageCount}`, 260, 200);
     }
 
-    doc.save(`relatorio_leads_estruturado_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
-    logAction('Exportação PDF Estruturada', 'lead', undefined, { count: leadsToExport.length });
+    doc.save(`relatorio_leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
+    logAction('Exportação Realizada', 'lead', undefined, { format: 'pdf', count: leadsToExport.length, protected: !!password });
     setExportOpen(false);
   };
 
@@ -491,7 +490,7 @@ export default function LeadsPage() {
                   <div className={`${styles.dropdownMenu} ${exportOpen ? styles.open : ''}`}>
                     <button className={styles.dropdownItem} onClick={() => handleExport('csv')}><TableIcon size={16} /> <span>CSV</span></button>
                     <button className={styles.dropdownItem} onClick={() => handleExport('json')}><FileJson size={16} /> <span>JSON</span></button>
-                    <button className={styles.dropdownItem} onClick={handleExportPDF}><FileDown size={16} /> <span>PDF</span></button>
+                    <button className={styles.dropdownItem} onClick={() => handleExport('pdf')}><FileDown size={16} /> <span>PDF</span></button>
                   </div>
                 </div>
               </div>
@@ -646,6 +645,14 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+
+      {exportType.show && (
+        <ExportModal 
+          format={exportType.type}
+          onConfirm={processExport}
+          onCancel={() => setExportType({ show: false, type: '' })}
+        />
+      )}
     </DashboardLayout>
   );
 }
