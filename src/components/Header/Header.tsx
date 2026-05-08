@@ -8,7 +8,7 @@ import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
 
 interface HeaderProps {
-  title: string;
+  title: React.ReactNode;
 }
 
 export default function Header({ title }: HeaderProps) {

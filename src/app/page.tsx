@@ -181,21 +181,17 @@ export default function Home() {
   };
 
   return (
-    <DashboardLayout title="">
+    <DashboardLayout title={
+      <Link href="/admin/live" className={styles.liveStatusPill}>
+        <div className={styles.liveIndicator}>
+          <div className={styles.pulseDot} />
+          <Tv size={16} />
+        </div>
+        <span className={styles.liveLabel}>Monitor ao Vivo</span>
+      </Link>
+    }>
       <div className={styles.dashboard}>
         
-        {/* Status Pill Monitor ao Vivo (Versão Sutil) */}
-        <Link href="/admin/live" className={styles.liveStatusPill}>
-          <div className={styles.liveIndicator}>
-            <div className={styles.pulseDot} />
-            <Tv size={16} />
-          </div>
-          <span className={styles.liveLabel}>Monitor ao Vivo</span>
-          <div className={styles.liveArrow}>
-            <Zap size={14} fill="currentColor" />
-          </div>
-        </Link>
-
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} glass`}>
             <div className={styles.statIcon}><TrendingUp size={20} /></div>

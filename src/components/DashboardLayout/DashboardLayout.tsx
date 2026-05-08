@@ -8,7 +8,7 @@ import styles from './DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
 }
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
