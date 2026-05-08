@@ -162,7 +162,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Carregando Inteligência...">
+      <DashboardLayout title="">
         <Loader text="Sincronizando Dashboard" />
       </DashboardLayout>
     );
