@@ -93,14 +93,88 @@
   box-shadow: 0 0 10px var(--primary-glow);
 }
 
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-left: 1.5rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+}
+
+.id {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes avatarBreath {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.08) translateY(-2px); }
+}
+
+.passwordAlert {
+  background: rgba(86, 215, 253, 0.1);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  animation: neonPulse 2s infinite ease-in-out;
+  box-shadow: 0 0 5px var(--primary-glow);
+}
+
+@keyframes neonPulse {
+  0%, 100% { 
+    box-shadow: 0 0 5px var(--primary-glow);
+    transform: scale(1);
+    background: rgba(86, 215, 253, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 20px var(--primary-glow), 0 0 30px var(--primary-glow);
+    transform: scale(1.05);
+    background: rgba(86, 215, 253, 0.2);
+  }
+}
+
 .notifOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
   justify-content: flex-end;
@@ -108,14 +182,14 @@
 }
 
 .notifDrawer {
-  width: 400px;
+  width: 420px;
   height: 100vh;
-  background: #0d1525;
+  background: rgba(13, 21, 37, 0.98);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   animation: slideLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes slideLeft {
@@ -144,32 +218,6 @@
   margin: 4px 0 0 0;
 }
 
-.notifFooter {
-  padding: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(13, 21, 37, 0.8);
-  backdrop-filter: blur(10px);
-}
-
-.clearAllBtn {
-  width: 100%;
-  background: var(--primary);
-  color: #000;
-  border: none;
-  padding: 1rem;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.2);
-}
-
-.clearAllBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(86, 215, 253, 0.4);
-}
-
 .notifList {
   flex: 1;
   overflow-y: auto;
@@ -177,6 +225,25 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Scrollbar Customizada */
+.notifList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notifList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notifList::-webkit-scrollbar-thumb {
+  background: rgba(86, 215, 253, 0.2);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.notifList::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
 .notifItem {
@@ -252,78 +319,30 @@
   font-size: 0.9rem;
 }
 
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-left: 1.5rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+.notifFooter {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(13, 21, 37, 0.8);
+  backdrop-filter: blur(10px);
 }
 
-.profileInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: white;
-}
-
-.id {
-  font-size: 0.7rem;
-  color: var(--muted-foreground);
-  font-family: var(--font-mono);
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.avatar img {
+.clearAllBtn {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-@keyframes avatarBreath {
-  0%, 100% { transform: scale(1) translateY(0); }
-  50% { transform: scale(1.08) translateY(-2px); }
-}
-
-.passwordAlert {
-  background: rgba(86, 215, 253, 0.1);
-  border: 1px solid var(--primary);
-  color: var(--primary);
-  width: 40px;
-  height: 40px;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: var(--primary);
+  color: #000;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
   cursor: pointer;
-  position: relative;
-  animation: neonPulse 2s infinite ease-in-out;
-  box-shadow: 0 0 5px var(--primary-glow);
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.2);
 }
 
-@keyframes neonPulse {
-  0%, 100% { 
-    box-shadow: 0 0 5px var(--primary-glow);
-    transform: scale(1);
-    background: rgba(86, 215, 253, 0.1);
-  }
-  50% { 
-    box-shadow: 0 0 20px var(--primary-glow), 0 0 30px var(--primary-glow);
-    transform: scale(1.05);
-    background: rgba(86, 215, 253, 0.2);
-  }
+.clearAllBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(86, 215, 253, 0.4);
 }
 
 .modalOverlay {
@@ -489,7 +508,7 @@
   cursor: not-allowed;
 }
 
-@keyframes fadeInModal {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
