@@ -49,6 +49,11 @@ export default function Header({ title }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
+    // Pedir permissão para notificações do browser
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      Notification.requestPermission();
+    }
+
     async function loadNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -79,6 +84,18 @@ export default function Header({ title }: HeaderProps) {
           const newNotif = payload.new;
           setNotifications(prev => [newNotif, ...prev].slice(0, 5));
           setUnreadCount(prev => prev + 1);
+
+          // Tocar som de alerta
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.play().catch(() => {});
+
+          // Notificação do Browser
+          if (Notification.permission === 'granted') {
+            new Notification(`Asthros: ${newNotif.title}`, {
+              body: newNotif.message,
+              icon: '/asthros-leads.png'
+            });
+          }
         }
       )
       .subscribe();

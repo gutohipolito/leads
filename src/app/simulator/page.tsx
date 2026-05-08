@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './simulator.module.css';
-import { Play, Copy, CheckCircle2, AlertCircle, Cpu, Zap, Link as LinkIcon, Database, Terminal } from 'lucide-react';
+import { Play, Copy, CheckCircle2, AlertCircle, Cpu, Zap, Link as LinkIcon, Database, Terminal, Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function WebhooksPage() {
@@ -127,43 +127,74 @@ export default function WebhooksPage() {
           </form>
         </section>
 
-        {/* Terminal Response Card */}
-        <section className={`${styles.statusCard} glass`}>
-          <div className={styles.cardHeader}>
-            <div className={styles.headerInfo}>
-              <div className={styles.iconCircle}><Terminal size={20} /></div>
-              <div>
-                <h3>Resposta do Sistema</h3>
-                <p>Logs de uplink e códigos de status do servidor.</p>
+        <div className={styles.sideContent}>
+          {/* Terminal Response Card */}
+          <section className={`${styles.statusCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.headerInfo}>
+                <div className={styles.iconCircle}><Terminal size={20} /></div>
+                <div>
+                  <h3>Resposta do Sistema</h3>
+                  <p>Logs de uplink e códigos de status.</p>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className={styles.terminalContent}>
-            {status === 'idle' && (
-              <div className={styles.idleState}>
-                <Database size={48} strokeWidth={1} />
-                <p>Aguardando execução do comando...</p>
-              </div>
-            )}
             
-            {status !== 'idle' && (
-              <div className={styles.logBox}>
-                <div className={`${styles.statusBadge} ${styles[status]}`}>
-                  {status === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                  <span>SINAL: {status === 'success' ? '201 CRIADO' : '400 REQUISIÇÃO INVÁLIDA'}</span>
+            <div className={styles.terminalContent}>
+              {status === 'idle' && (
+                <div className={styles.idleState}>
+                  <Database size={48} strokeWidth={1} />
+                  <p>Aguardando comando...</p>
                 </div>
-                <div className={styles.jsonWrapper}>
-                  <div className={styles.jsonHeader}>
-                    <span>Detalhes do Payload</span>
-                    <span className={styles.lang}>JSON</span>
+              )}
+              
+              {status !== 'idle' && (
+                <div className={styles.logBox}>
+                  <div className={`${styles.statusBadge} ${styles[status]}`}>
+                    {status === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    <span>{status === 'success' ? '201 CRIADO' : 'ERRO'}</span>
                   </div>
-                  <pre>{response}</pre>
+                  <pre className={styles.jsonOutput}>{response}</pre>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Notification Test Center */}
+          <section className={`${styles.statusCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.headerInfo}>
+                <div className={styles.iconCircle}><Bell size={20} /></div>
+                <div>
+                  <h3>Centro de Alertas</h3>
+                  <p>Teste as notificações e sons.</p>
                 </div>
               </div>
-            )}
-          </div>
-        </section>
+            </div>
+            
+            <div className={styles.testActions}>
+              <p>Simule a chegada de um lead para testar o som e o browser:</p>
+              <button 
+                type="button" 
+                className={styles.testBtn}
+                onClick={async () => {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) return;
+                  
+                  await supabase.from('notifications').insert({
+                    user_id: user.id,
+                    title: '📢 Novo Lead Recebido!',
+                    message: 'Um novo lead acabou de entrar pelo terminal WP-01.',
+                    read: false
+                  });
+                }}
+              >
+                <Zap size={18} />
+                <span>DISPARAR TESTE</span>
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
     </DashboardLayout>
   );
