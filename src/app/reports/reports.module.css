@@ -11,6 +11,51 @@
   margin-bottom: 2.5rem;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.countBadge {
+  background: rgba(86, 215, 253, 0.1);
+  color: #56d7fd;
+  padding: 0.6rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1px solid rgba(86, 215, 253, 0.1);
+}
+
+.generateBtn {
+  background: var(--primary);
+  color: var(--background);
+  padding: 0.75rem 1.5rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.3);
+}
+
+.generateBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(86, 215, 253, 0.4);
+  filter: brightness(1.1);
+}
+
+.generateBtn svg {
+  transition: transform 0.3s ease;
+}
+
+.generateBtn:hover svg {
+  transform: rotate(90deg);
+}
+
 .titleSection h1 {
   font-size: 1.75rem;
   font-weight: 800;

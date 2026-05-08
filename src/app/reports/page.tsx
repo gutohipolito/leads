@@ -18,10 +18,12 @@ import {
   ShieldAlert,
   Search,
   Copy,
-  Check
+  Check,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
+import Link from 'next/link';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -100,10 +102,14 @@ export default function ReportsPage() {
             <h1>Histórico de Exportações</h1>
             <p>Registro completo de todos os relatórios gerados e senhas aplicadas.</p>
           </div>
-          <div className={styles.stats}>
-            <div className={styles.countBadge} style={{ background: 'rgba(86, 215, 253, 0.1)', color: '#56d7fd', padding: '0.5rem 1rem', borderRadius: '12px', fontWeight: 'bold' }}>
+          <div className={styles.headerActions}>
+            <div className={styles.countBadge}>
               {reports.length} Relatórios Totais
             </div>
+            <Link href="/leads" className={styles.generateBtn}>
+              <Plus size={18} />
+              <span>Gerar Relatório</span>
+            </Link>
           </div>
         </div>
 
