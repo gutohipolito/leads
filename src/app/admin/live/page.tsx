@@ -26,11 +26,12 @@ export default function LiveMonitorPage() {
     activeClients: 0
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Relógio em tempo real
+    // Inicializar relógio no cliente
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
 
     // Carregar dados iniciais
@@ -128,7 +129,7 @@ export default function LiveMonitorPage() {
         <div className={styles.right}>
           <div className={styles.clock}>
             <Clock size={20} />
-            <span>{currentTime.toLocaleTimeString('pt-BR')}</span>
+            <span>{currentTime ? currentTime.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
           </div>
           <button className={styles.screenBtn} onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
