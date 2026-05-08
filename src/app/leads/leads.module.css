@@ -55,51 +55,32 @@
   align-items: flex-start;
 }
 
-.iconBox {
-  width: 56px;
-  height: 56px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  transition: all 0.3s ease;
-}
-
 .initials {
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: var(--primary);
+  font-size: 1.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .clientLogoBox {
-  min-width: 56px;
-  max-width: 140px;
-  height: 56px;
-  border-radius: 12px;
+  width: 50px;
+  height: 40px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(0, 209, 255, 0.2);
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
   transition: all 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 209, 255, 0.05);
-}
-
-.clientLogoBox:hover {
-  border-color: rgba(0, 209, 255, 0.4);
-  box-shadow: 0 0 15px rgba(0, 209, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .clientLogo {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  padding: 4px;
 }
 
 .card:hover .iconBox {

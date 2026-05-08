@@ -431,15 +431,16 @@ export default function LeadsPage() {
               {clients.map(client => (
                 <div key={client.id} className={`${styles.card} glass`} onClick={() => setSelectedClientId(client.id)}>
                   <div className={styles.cardTop}>
-                    {client.logo_url ? (
-                      <div className={styles.clientLogoBox}>
+                    <div 
+                      className={styles.clientLogoBox} 
+                      style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
+                    >
+                      {client.logo_url ? (
                         <img src={client.logo_url} alt={client.name} className={styles.clientLogo} />
-                      </div>
-                    ) : (
-                      <div className={styles.iconBox}>
-                        <span className={styles.initials}>{client.name.substring(0, 2).toUpperCase()}</span>
-                      </div>
-                    )}
+                      ) : (
+                        <span className={styles.initials}>{client.name.charAt(0)}</span>
+                      )}
+                    </div>
                     <div className={`${styles.cardBadge} ${client.status === 'active' ? styles.activeNeon : ''}`}>
                       {client.status === 'active' ? '● Ativo' : 'Inativo'}
                     </div>
