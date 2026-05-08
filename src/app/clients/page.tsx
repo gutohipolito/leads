@@ -123,7 +123,7 @@ export default function ClientsPage() {
     setIsLookingUpCnpj(true);
     try {
       const cleanCnpj = newClientCnpj.replace(/\D/g, '');
-      const response = await fetch(`/api/proxy/cnpj/${cleanCnpj}`);
+      const response = await fetch(`/api/cnpj?cnpj=${cleanCnpj}`);
       const data = await response.json();
       
       if (!response.ok) {
