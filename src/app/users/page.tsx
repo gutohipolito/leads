@@ -6,19 +6,14 @@ import styles from './users.module.css';
 import { 
   UserPlus, 
   Search, 
-  Shield, 
-  Mail, 
   UserCheck, 
   UserMinus, 
-  MoreHorizontal,
-  ChevronRight,
-  Filter,
   X,
-  CheckCircle2,
   Trash2,
   Edit2,
   Key,
-  RefreshCw
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -38,10 +33,19 @@ export default function UsersManagementPage() {
     email: '',
     password: '',
     role: 'viewer',
-    client_id: ''
+    client_id: '',
+    avatar_style: 'avataaars'
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  const avatarStyles = [
+    { id: 'avataaars', label: 'Humano' },
+    { id: 'bottts', label: 'Robô' },
+    { id: 'adventurer', label: 'Herói' },
+    { id: 'big-smile', label: 'Alegre' },
+    { id: 'pixel-art', label: 'Pixel' }
+  ];
 
   // Estados para o Modal de Confirmação Customizado
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -66,7 +70,7 @@ export default function UsersManagementPage() {
 
   async function loadData() {
     setLoading(true);
-    const { data: userData } = await supabase.from('system_users').select('*, clients(name)');
+    const { data: userData } = await supabase.from('system_users').select('*, clients(name)').order('name');
     const { data: clientData } = await supabase.from('clients').select('id, name');
     
     if (userData) setUsers(userData);
@@ -87,21 +91,22 @@ export default function UsersManagementPage() {
     e.preventDefault();
     
     if (isEditMode && editingUserId) {
+      // No modo edição, não enviamos a senha se ela estiver vazia
+      const { password, ...updateData } = newUser;
+      
       const { error } = await supabase
         .from('system_users')
-        .update(newUser)
+        .update(updateData)
         .eq('id', editingUserId);
 
       if (!error) {
-        await logAction('Usuário Atualizado', 'user', editingUserId, { email: newUser.email });
+        await logAction('Usuário Atualizado', 'user', editingUserId, { email: newUser.email, avatar: newUser.avatar_style });
         closeModal();
         loadData();
       } else {
         alert('Erro ao atualizar usuário: ' + error.message);
       }
     } else {
-      // Garantir que client_id seja null se estiver vazio para evitar erro de UUID
-      // E removemos o password pois ele não existe na tabela system_users (segurança)
       const { password, ...userDataWithoutPassword } = newUser;
       
       const userToInsert = {
@@ -116,7 +121,7 @@ export default function UsersManagementPage() {
         .single();
 
       if (!error) {
-        await logAction('Usuário Provisionado', 'user', data.id, { email: newUser.email });
+        await logAction('Usuário Provisionado', 'user', data.id, { email: newUser.email, avatar: newUser.avatar_style });
         closeModal();
         loadData();
       } else {
@@ -129,9 +134,10 @@ export default function UsersManagementPage() {
     setNewUser({
       name: user.name,
       email: user.email,
-      password: '', // Não editamos a senha por aqui por segurança
+      password: '',
       role: user.role,
-      client_id: user.client_id || ''
+      client_id: user.client_id || '',
+      avatar_style: user.avatar_style || 'avataaars'
     });
     setEditingUserId(user.id);
     setIsEditMode(true);
@@ -142,7 +148,7 @@ export default function UsersManagementPage() {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingUserId(null);
-    setNewUser({ name: '', email: '', password: '', role: 'viewer', client_id: '' });
+    setNewUser({ name: '', email: '', password: '', role: 'viewer', client_id: '', avatar_style: 'avataaars' });
   };
 
   const toggleUserStatus = async (id: string, currentStatus: string) => {
@@ -225,12 +231,18 @@ export default function UsersManagementPage() {
               <tbody>
                 {filteredUsers.map(user => {
                   const isOnline = user.last_active_at && (new Date().getTime() - new Date(user.last_active_at).getTime() < 300000);
+                  const avatarUrl = `https://api.dicebear.com/7.x/${user.avatar_style || 'avataaars'}/svg?seed=${user.email}`;
                   
                   return (
                     <tr key={user.id}>
                       <td>
                         <div className={styles.userInfo}>
-                          <div className={styles.avatar}>{user.name.charAt(0)}</div>
+                          <div className={styles.avatarContainer}>
+                            <div className={styles.avatar}>
+                              <img src={avatarUrl} alt={user.name} />
+                            </div>
+                            {isOnline && <div className={styles.onlineBadge} />}
+                          </div>
                           <div>
                             <p className={styles.name}>{user.name}</p>
                             <p className={styles.email}>{user.email}</p>
@@ -247,8 +259,13 @@ export default function UsersManagementPage() {
                         <div className={styles.loginInfo}>
                           {user.last_login ? (
                             <>
-                              <span>{new Date(user.last_login).toLocaleDateString('pt-BR')}</span>
-                              <span className={styles.loginTime}>{new Date(user.last_login).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                              <div className={styles.loginRow}>
+                                <span>{new Date(user.last_login).toLocaleDateString('pt-BR')}</span>
+                              </div>
+                              <div className={styles.loginTimeRow}>
+                                <Clock size={12} />
+                                <span>{new Date(user.last_login).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
                             </>
                           ) : (
                             <span className={styles.never}>Nunca acessou</span>
@@ -327,6 +344,23 @@ export default function UsersManagementPage() {
                     onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                   />
                 </div>
+
+                <div className={styles.field}>
+                  <label>Estilo do Avatar (Identidade Visual)</label>
+                  <div className={styles.avatarSelector}>
+                    {avatarStyles.map(style => (
+                      <div 
+                        key={style.id}
+                        className={`${styles.avatarOption} ${newUser.avatar_style === style.id ? styles.active : ''}`}
+                        onClick={() => setNewUser({ ...newUser, avatar_style: style.id })}
+                      >
+                        <img src={`https://api.dicebear.com/7.x/${style.id}/svg?seed=${newUser.email || 'preview'}`} alt={style.id} />
+                        <span>{style.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {!isEditMode && (
                   <div className={styles.field}>
                     <label>Senha de Acesso</label>
