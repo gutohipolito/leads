@@ -162,7 +162,7 @@ export default function Sidebar() {
                 <div className={styles.iconCircle}>
                   <History size={18} />
                 </div>
-                <span className={styles.linkText}>Auditoria de Sinais</span>
+                <span className={styles.linkText}>Auditoria</span>
               </Link>
               <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
                 <div className={styles.iconCircle}>
