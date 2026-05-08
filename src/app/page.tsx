@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
 import { 
@@ -180,9 +181,27 @@ export default function Home() {
   };
 
   return (
-    <DashboardLayout title={dashboardTitle}>
+    <DashboardLayout title="">
       <div className={styles.dashboard}>
         
+        {/* Banner Monitor ao Vivo */}
+        <Link href="/admin/live" className={styles.liveBanner}>
+          <div className={styles.liveContent}>
+            <div className={styles.liveIcon}>
+              <Tv size={32} />
+              <div className={styles.liveBadge}>LIVE</div>
+            </div>
+            <div className={styles.liveText}>
+              <h3>Monitor de Operações ao Vivo</h3>
+              <p>Visualize métricas e capturas de leads em tempo real em tela cheia para TVs e monitores.</p>
+            </div>
+          </div>
+          <div className={styles.liveAction}>
+            <span>Acessar War Room</span>
+            <Zap size={18} fill="currentColor" />
+          </div>
+        </Link>
+
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} glass`}>
             <div className={styles.statIcon}><TrendingUp size={20} /></div>
