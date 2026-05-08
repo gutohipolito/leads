@@ -263,13 +263,13 @@ export default function LeadsPage() {
     const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
     if (leadsToExport.length === 0) return;
 
-    const doc = new jsPDF();
+    // Usaremos orientação Paisagem (landscape) para caber mais colunas
+    const doc = new jsPDF({ orientation: 'landscape' });
     
-    // 1. Cabeçalho Personalizado
+    // 1. Cabeçalho Personalizado (Ajustado para Landscape - 297mm de largura)
     doc.setFillColor(10, 20, 35);
-    doc.rect(0, 0, 210, 40, 'F');
+    doc.rect(0, 0, 297, 40, 'F');
     
-    // Tentar Carregar o Logo com Proporção Fixa
     try {
       const logoUrl = '/asthros-leads.png';
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -278,10 +278,9 @@ export default function LeadsPage() {
         image.onerror = (e) => reject(e);
         image.src = logoUrl;
       });
-      // Calcular altura proporcional à largura fixa de 40mm
       const logoWidth = 40;
       const logoHeight = (img.height * logoWidth) / img.width;
-      doc.addImage(img, 'PNG', 15, 10, logoWidth, logoHeight);
+      doc.addImage(img, 'PNG', 15, 8, logoWidth, logoHeight);
     } catch (err) {
       doc.setTextColor(86, 215, 253);
       doc.setFontSize(22);
@@ -289,32 +288,53 @@ export default function LeadsPage() {
       doc.text('ASTHROS', 15, 20);
     }
     
-    // Informações do Relatório
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('Relatório de Captura', 120, 20);
+    doc.text('Relatório de Inteligência de Leads', 160, 20);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 120, 28);
-    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 120, 34);
+    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 160, 28);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 160, 34);
 
-    // 2. Lógica de Colunas Dinâmicas
+    // 2. Preparação de Colunas (Incluindo Dados de Comportamento)
     const hasEmail = leadsToExport.some(l => l.email && l.email !== 'N/A');
     const hasPhone = leadsToExport.some(l => l.phone && l.phone !== 'N/A');
+    // Checar se existem dados de behavior
+    const hasBehavior = leadsToExport.some(l => l.data?.behavior || l.data?.page_url);
 
     const headers = ['Data/Hora', 'Nome'];
     if (hasEmail) headers.push('E-mail');
     if (hasPhone) headers.push('Telefone');
+    if (hasBehavior) {
+      headers.push('Página');
+      headers.push('Botão');
+      headers.push('Tempo Pág.');
+    }
     headers.push('Origem');
 
     const tableData = leadsToExport.map(l => {
       const row = [
-        new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
         l.name || 'S/ Nome'
       ];
       if (hasEmail) row.push(l.email || 'N/A');
       if (hasPhone) row.push(l.phone || 'N/A');
+      
+      if (hasBehavior) {
+        const behavior = l.data?.behavior || {};
+        const pageUrl = behavior.page_url || l.data?.page_url || 'N/A';
+        const button = behavior.button_text || l.data?.button_text || 'N/A';
+        const time = behavior.time_on_page || l.data?.time_on_page || 'N/A';
+        
+        // Limpar a URL para não ocupar muito espaço (mostrar só o final ou domínio)
+        const displayUrl = pageUrl !== 'N/A' ? (pageUrl.length > 30 ? '...' + pageUrl.substring(pageUrl.length - 27) : pageUrl) : 'N/A';
+        
+        row.push(displayUrl);
+        row.push(button);
+        row.push(time);
+      }
+      
       row.push(l.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Formulário');
       return row;
     });
@@ -327,20 +347,21 @@ export default function LeadsPage() {
       headStyles: { 
         fillColor: [10, 20, 35], 
         textColor: [86, 215, 253],
-        fontSize: 10,
+        fontSize: 9,
         fontStyle: 'bold'
       },
-      styles: { fontSize: 8, cellPadding: 3 },
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
       margin: { top: 50 },
       didDrawPage: (data) => {
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text(`Página ${data.pageNumber} - Asthros Intelligence`, 15, 285);
+        doc.text(`Asthros Leads Intelligence - Relatório Confidencial`, 15, 200);
+        doc.text(`Página ${data.pageNumber}`, 270, 200);
       }
     });
 
-    doc.save(`relatorio_leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
-    logAction('Exportação PDF', 'lead', undefined, { count: leadsToExport.length });
+    doc.save(`relatorio_leads_completo_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
+    logAction('Exportação PDF Completa', 'lead', undefined, { count: leadsToExport.length });
     setExportOpen(false);
   };
 
