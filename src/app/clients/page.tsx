@@ -312,7 +312,11 @@ export default function ClientsPage() {
                     <td>
                       <div className={styles.clientCell}>
                         <div className={styles.clientAvatar}>
-                          <Globe size={18} />
+                          {client.logo ? (
+                            <img src={client.logo} alt={client.name} className={styles.avatarImg} />
+                          ) : (
+                            <Globe size={18} />
+                          )}
                         </div>
                         <div className={styles.clientInfo}>
                           <span className={styles.clientName}>{client.name}</span>
