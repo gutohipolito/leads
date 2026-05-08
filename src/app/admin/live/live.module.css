@@ -50,6 +50,10 @@
   box-shadow: 0 0 30px rgba(0, 209, 255, 0.4);
 }
 
+.logoIcon img {
+  filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
 .logo h1 {
   font-size: 1.5rem;
   font-weight: 900;
