@@ -8,16 +8,14 @@ import {
   Users, 
   Webhook, 
   Settings, 
-  LogOut, 
   Activity,
-  Box,
-  Terminal,
+  History,
   ShieldCheck,
   UserCircle,
   Database,
   ChevronDown,
-  History,
-  FileText
+  FileText,
+  Terminal
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { supabase } from '@/lib/supabase';
@@ -45,7 +43,6 @@ export default function Sidebar() {
     }
     loadUser();
 
-    // Checar se está impersonando
     const impersonated = localStorage.getItem('impersonated_client');
     setIsImpersonating(!!impersonated);
   }, []);
@@ -61,8 +58,8 @@ export default function Sidebar() {
         .eq('email', user.email);
     };
 
-    updateActivity(); // Primeira execução
-    const interval = setInterval(updateActivity, 120000); // A cada 2 min
+    updateActivity();
+    const interval = setInterval(updateActivity, 120000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -73,13 +70,6 @@ export default function Sidebar() {
   }, [pathname]);
 
   const isActive = (path: string) => pathname === path;
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  };
-
   const [isClientsOpen, setIsClientsOpen] = useState(false);
 
   const menuItems = [
@@ -98,7 +88,6 @@ export default function Sidebar() {
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
     { name: 'Simulador', path: '/simulator', icon: Terminal },
   ].filter(item => {
-    // Se estiver impersonando, removemos Clientes, Webhooks (opcional) e Simulador
     if (isImpersonating) {
       return ['Geral', 'Leads'].includes(item.name);
     }
@@ -117,7 +106,6 @@ export default function Sidebar() {
         <div className={styles.group}>
           <span className={styles.groupLabel}>Monitoramento</span>
           {menuItems.map((item) => {
-            // Se o item tiver submenu, tratamos como accordion
             if (item.submenu) {
               const hasActiveSub = item.submenu.some(sub => isActive(sub.path));
               return (
@@ -198,22 +186,6 @@ export default function Sidebar() {
           </Link>
         </div>
       </nav>
-
-      <div className={styles.footer}>
-        <div className={styles.userCard}>
-          <div className={styles.avatar}>
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'default'}`} alt="Avatar" />
-          </div>
-          <div className={styles.userDetails}>
-            <p className={styles.userName}>{user?.email?.split('@')[0] || 'Usuário'}</p>
-            <p className={styles.userRole}>{isAdmin ? 'Acesso Total' : 'Cliente'}</p>
-          </div>
-          <button className={styles.logoutBtn} title="Sair" onClick={handleLogout}>
-            <LogOut size={16} />
-          </button>
-        </div>
-      </div>
     </aside>
   );
 }
-

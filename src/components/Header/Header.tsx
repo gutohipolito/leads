@@ -12,12 +12,24 @@ interface HeaderProps {
 
 export default function Header({ title }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
+  const [avatarStyle, setAvatarStyle] = useState('avataaars');
   const router = useRouter();
 
   useEffect(() => {
     async function getUser() {
       const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      if (user) {
+        setUser(user);
+        const { data: profile } = await supabase
+          .from('system_users')
+          .select('avatar_style')
+          .eq('email', user.email)
+          .single();
+        
+        if (profile?.avatar_style) {
+          setAvatarStyle(profile.avatar_style);
+        }
+      }
     }
     getUser();
   }, []);
@@ -139,7 +151,11 @@ export default function Header({ title }: HeaderProps) {
             <span className={styles.id}>{user?.email || 'Carregando...'}</span>
           </div>
           <div className={styles.avatar}>
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'default'}`} alt="Avatar" />
+            <img 
+              src={`https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${user?.email || 'default'}`} 
+              alt="Avatar" 
+              style={{ animation: 'avatarBreath 4s ease-in-out infinite' }}
+            />
           </div>
         </div>
       </div>
