@@ -299,69 +299,85 @@ export default function LeadsPage() {
     doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 160, 26);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 160, 32);
 
-    // 2. Preparação de Colunas (Incluindo Dados de Comportamento)
-    const hasEmail = leadsToExport.some(l => l.email && l.email !== 'N/A');
-    const hasPhone = leadsToExport.some(l => l.phone && l.phone !== 'N/A');
-    const hasBehavior = leadsToExport.some(l => l.data?.behavior || l.data?.page_url);
+    // 2. Preparação dos Dados (Agrupamento por Origem)
+    const whatsappLeads = leadsToExport.filter(l => l.source === 'whatsapp_tracker');
+    const formLeads = leadsToExport.filter(l => l.source !== 'whatsapp_tracker');
 
-    const headers = ['Data/Hora (captura)', 'Nome'];
-    if (hasEmail) headers.push('E-mail');
-    if (hasPhone) headers.push('Telefone');
-    if (hasBehavior) {
-      headers.push('Página');
-      headers.push('Botão');
-      headers.push('Tempo Pág.');
+    const generateGroupTable = (title: string, groupLeads: any[], startY: number) => {
+      if (groupLeads.length === 0) return startY;
+
+      // Identificar colunas com dados neste grupo específico
+      const hasEmail = groupLeads.some(l => l.email && l.email !== 'N/A');
+      const hasPhone = groupLeads.some(l => l.phone && l.phone !== 'N/A');
+      const hasPage = groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
+      const hasButton = groupLeads.some(l => (l.data?.behavior?.button_text || l.data?.button_text));
+      const hasTime = groupLeads.some(l => (l.data?.behavior?.time_on_page || l.data?.time_on_page));
+
+      const headers = ['Data/Hora (captura)', 'Nome'];
+      if (hasEmail) headers.push('E-mail');
+      if (hasPhone) headers.push('Telefone');
+      if (hasPage) headers.push('Página');
+      if (hasButton) headers.push('Nome Btn');
+      if (hasTime) headers.push('Tempo na Pág.');
+
+      const tableRows = groupLeads.map(l => {
+        const row = [
+          new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+          l.name || 'S/ Nome'
+        ];
+        if (hasEmail) row.push(l.email || 'N/A');
+        if (hasPhone) row.push(l.phone || 'N/A');
+        
+        if (hasPage) {
+          const url = l.data?.behavior?.page_url || l.data?.page_url || 'N/A';
+          row.push(url !== 'N/A' ? (url.length > 30 ? '...' + url.substring(url.length - 27) : url) : 'N/A');
+        }
+        if (hasButton) row.push(l.data?.behavior?.button_text || l.data?.button_text || 'N/A');
+        if (hasTime) row.push(l.data?.behavior?.time_on_page || l.data?.time_on_page || 'N/A');
+        
+        return row;
+      });
+
+      // Título do Grupo
+      doc.setTextColor(86, 215, 253);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 15, startY);
+
+      autoTable(doc, {
+        head: [headers],
+        body: tableRows,
+        startY: startY + 5,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: [10, 20, 35], 
+          textColor: [86, 215, 253],
+          fontSize: 9,
+          fontStyle: 'bold'
+        },
+        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+        margin: { top: 50 },
+      });
+
+      return (doc as any).lastAutoTable.finalY + 15;
+    };
+
+    let currentY = 50;
+    currentY = generateGroupTable('1. INTERCEPÇÕES DE WHATSAPP', whatsappLeads, currentY);
+    currentY = generateGroupTable('2. LEADS VIA FORMULÁRIO', formLeads, currentY);
+
+    // Rodapé em todas as páginas via didDrawPage (configurado na última tabela)
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Asthros | CO-B. - Relatório de Leads - Confidencial`, 15, 200);
+      doc.text(`Página ${i} de ${pageCount}`, 260, 200);
     }
-    headers.push('Origem');
 
-    const tableData = leadsToExport.map(l => {
-      const row = [
-        new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-        l.name || 'S/ Nome'
-      ];
-      if (hasEmail) row.push(l.email || 'N/A');
-      if (hasPhone) row.push(l.phone || 'N/A');
-      
-      if (hasBehavior) {
-        const behavior = l.data?.behavior || {};
-        const pageUrl = behavior.page_url || l.data?.page_url || 'N/A';
-        const button = behavior.button_text || l.data?.button_text || 'N/A';
-        const time = behavior.time_on_page || l.data?.time_on_page || 'N/A';
-        
-        const displayUrl = pageUrl !== 'N/A' ? (pageUrl.length > 30 ? '...' + pageUrl.substring(pageUrl.length - 27) : pageUrl) : 'N/A';
-        
-        row.push(displayUrl);
-        row.push(button);
-        row.push(time);
-      }
-      
-      row.push(l.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Formulário');
-      return row;
-    });
-
-    autoTable(doc, {
-      head: [headers],
-      body: tableData,
-      startY: 50,
-      theme: 'striped',
-      headStyles: { 
-        fillColor: [10, 20, 35], 
-        textColor: [86, 215, 253],
-        fontSize: 9,
-        fontStyle: 'bold'
-      },
-      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-      margin: { top: 50 },
-      didDrawPage: (data) => {
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(`Asthros | CO-B. - Relatório de Leads - Confidencial`, 15, 200);
-        doc.text(`Página ${data.pageNumber}`, 270, 200);
-      }
-    });
-
-    doc.save(`relatorio_leads_completo_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
-    logAction('Exportação PDF Completa', 'lead', undefined, { count: leadsToExport.length });
+    doc.save(`relatorio_leads_estruturado_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
+    logAction('Exportação PDF Estruturada', 'lead', undefined, { count: leadsToExport.length });
     setExportOpen(false);
   };
 
