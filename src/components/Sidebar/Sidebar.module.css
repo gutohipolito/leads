@@ -169,60 +169,12 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.footer {
-  margin-top: auto;
+@keyframes avatarFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
-.userCard {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 0.85rem;
-  border-radius: 1.5rem;
-  border: 1px solid var(--border);
-}
-
-.avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.userDetails {
-  flex: 1;
-}
-
-.userName {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: white;
-}
-
-.userRole {
-  font-size: 0.75rem;
-  color: var(--muted-foreground);
-  font-weight: 500;
-}
-
-.logoutBtn {
-  background: transparent;
-  border: none;
-  color: var(--muted-foreground);
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  transition: color 0.2s;
-}
-
-.logoutBtn:hover {
-  color: #ff4d4d;
+@keyframes avatarFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
