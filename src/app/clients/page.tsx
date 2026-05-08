@@ -21,7 +21,9 @@ import {
   Building2,
   Fingerprint,
   Trash2,
-  Edit2
+  Edit2,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -31,6 +33,7 @@ import StatsDrawer from '@/components/StatsDrawer/StatsDrawer';
 
 export default function ClientsPage() {
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -283,27 +286,49 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        <div className={styles.topBar}>
-          <div className={styles.searchBox}>
-            <Search size={18} />
-            <input 
-              type="text" 
-              placeholder="Pesquisar por nome ou ID..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className={styles.headerActions}>
+            <div className={styles.searchBox}>
+              <Search size={20} />
+              <input 
+                type="text" 
+                placeholder="Buscar clientes por nome..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div className={styles.viewSwitcher}>
+              <button 
+                className={`${styles.viewBtn} ${viewMode === 'table' ? styles.activeView : ''}`}
+                onClick={() => setViewMode('table')}
+                title="Ver Lista"
+              >
+                <List size={20} />
+              </button>
+              <button 
+                className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.activeView : ''}`}
+                onClick={() => setViewMode('grid')}
+                title="Ver Cards"
+              >
+                <LayoutGrid size={20} />
+              </button>
+            </div>
+
+            <button className={styles.addBtn} onClick={() => setIsModalOpen(true)}>
+              <Plus size={20} />
+              <span>Novo Cliente</span>
+            </button>
           </div>
-          <button className={styles.addBtn} onClick={() => setIsModalOpen(true)}>
-            <UserPlus size={18} />
-            <span>Criar Nova Conta</span>
-          </button>
         </div>
 
-        <div className={styles.tableWrapper}>
+        <div className={styles.tableSection}>
           {loading ? (
-            <Loader text="Sincronizando Carteira" />
-          ) : (
-            <table className={styles.adminTable}>
+            <div className={styles.loadingState}>
+              <RefreshCcw size={40} className={styles.spin} />
+              <p>Sincronizando banco de dados...</p>
+            </div>
+          ) : viewMode === 'table' ? (
+            <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Cliente</th>
@@ -412,6 +437,59 @@ export default function ClientsPage() {
                 )}
               </tbody>
             </table>
+          ) : (
+            <div className={styles.clientsGrid}>
+              {filteredClients.map((client) => (
+                <div key={client.id} className={`${styles.clientCard} glass`}>
+                  <div className={styles.cardHeader}>
+                    <div 
+                      className={styles.cardAvatar} 
+                      style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
+                    >
+                      {client.logo_url ? (
+                        <img src={client.logo_url} alt={client.name} className={styles.avatarImg} />
+                      ) : (
+                        <span className={styles.avatarInitial}>{client.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className={`${styles.cardBadge} ${client.status === 'active' ? styles.badgeActive : styles.badgeInactive}`}>
+                      {client.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.cardBody}>
+                    <h3 className={styles.cardName}>{client.name}</h3>
+                    <div className={styles.cardStats}>
+                      <div className={styles.cardStat}>
+                        <span className={styles.statLabel}>Leads</span>
+                        <span className={styles.statValue}>{client.leadsCount}</span>
+                      </div>
+                      <div className={styles.cardStat}>
+                        <span className={styles.statLabel}>Terminais</span>
+                        <span className={styles.statValue}>{client.webhookCount}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.cardActions}>
+                    <button onClick={() => { setEditingClient(client); setIsEditModalOpen(true); }} title="Editar"><Edit2 size={18} /></button>
+                    <button onClick={() => handleImpersonate(client)} title="Impersonar"><UserCog size={18} /></button>
+                    <button onClick={() => { setSelectedClientForStats(client); setIsDrawerOpen(true); }} title="Estatísticas"><BarChart3 size={18} /></button>
+                    <button 
+                      onClick={() => handleToggleStatus(client.id, client.status, client.name)}
+                      className={client.status === 'active' ? styles.colorDanger : styles.colorSuccess}
+                      title={client.status === 'active' ? 'Desativar' : 'Ativar'}
+                    >
+                      {client.status === 'active' ? <Power size={18} /> : <PowerOff size={18} />}
+                    </button>
+                    <button onClick={() => handleDeleteClient(client)} className={styles.colorDanger} title="Excluir"><Trash2 size={18} /></button>
+                  </div>
+                </div>
+              ))}
+              {filteredClients.length === 0 && (
+                <div className={styles.emptyGrid}>Nenhum cliente encontrado.</div>
+              )}
+            </div>
           )}
         </div>
 

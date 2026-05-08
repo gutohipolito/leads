@@ -458,3 +458,184 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.viewSwitcher {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.viewBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewBtn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.activeView {
+  background: var(--primary) !important;
+  color: var(--background) !important;
+  box-shadow: 0 4px 12px rgba(86, 215, 253, 0.3);
+}
+
+/* Grid View Styles */
+.clientsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.clientCard {
+  padding: 1.5rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px !important;
+}
+
+.clientCard:hover {
+  transform: translateY(-5px);
+  border-color: rgba(86, 215, 253, 0.3);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cardAvatar {
+  width: 60px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cardBadge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.badgeActive {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366;
+  border: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.badgeInactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.cardName {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.cardStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.cardStat {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cardActions button {
+  flex: 1;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cardActions button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.colorDanger:hover {
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.colorSuccess:hover {
+  color: #25d366 !important;
+  border-color: #25d366 !important;
+  background: rgba(37, 211, 102, 0.1) !important;
+}
+
+.emptyGrid {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem;
+  opacity: 0.5;
+}
