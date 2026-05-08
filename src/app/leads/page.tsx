@@ -22,11 +22,14 @@ import {
   Save,
   Zap,
   MessageCircle,
-  FlaskConical
+  FlaskConical,
+  FileDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function LeadsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -256,6 +259,74 @@ export default function LeadsPage() {
     setExportOpen(false);
   };
 
+  const handleExportPDF = () => {
+    const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
+    if (leadsToExport.length === 0) return;
+
+    const doc = new jsPDF();
+    
+    // Configurações de Cores (Ciano do projeto)
+    const primaryColor = [86, 215, 253]; // #56D7FD
+    const darkBg = [10, 20, 35];
+    
+    // 1. Cabeçalho Personalizado
+    doc.setFillColor(10, 20, 35);
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    // Logo Texto (Simulando o branding se a imagem não carregar)
+    doc.setTextColor(86, 215, 253);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ASTHROS', 15, 20);
+    doc.setFontSize(10);
+    doc.text('INTELIGÊNCIA EM LEADS', 15, 26);
+    
+    // Informações do Relatório
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text('Relatório de Captura', 120, 20);
+    doc.setFontSize(10);
+    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 120, 28);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 120, 34);
+
+    // 2. Tabela de Dados
+    const tableHeaders = [['Data', 'Nome', 'E-mail', 'Telefone', 'Origem']];
+    const tableData = leadsToExport.map(l => [
+      new Date(l.created_at).toLocaleDateString('pt-BR'),
+      l.name || 'S/ Nome',
+      l.email || 'N/A',
+      l.phone || 'N/A',
+      l.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Formulário'
+    ]);
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableData,
+      startY: 50,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [10, 20, 35], 
+        textColor: [86, 215, 253],
+        fontSize: 11,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      styles: { fontSize: 9, cellPadding: 4 },
+      margin: { top: 50 },
+      didDrawPage: (data) => {
+        // Rodapé
+        const str = `Página ${data.pageNumber}`;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(str, 180, 285);
+      }
+    });
+
+    doc.save(`relatorio_leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
+    logAction('Exportação PDF', 'lead', undefined, { count: leadsToExport.length });
+    setExportOpen(false);
+  };
+
   if (loading) {
     return (
       <DashboardLayout title="Gerenciamento de Leads">
@@ -339,6 +410,7 @@ export default function LeadsPage() {
                   <div className={`${styles.dropdownMenu} ${exportOpen ? styles.open : ''}`}>
                     <button className={styles.dropdownItem} onClick={() => handleExport('csv')}><TableIcon size={16} /> <span>CSV</span></button>
                     <button className={styles.dropdownItem} onClick={() => handleExport('json')}><FileJson size={16} /> <span>JSON</span></button>
+                    <button className={styles.dropdownItem} onClick={handleExportPDF}><FileDown size={16} /> <span>PDF Profissional</span></button>
                   </div>
                 </div>
               </div>
