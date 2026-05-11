@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   icons: {
     icon: "/asthros-favicon.png",
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({
