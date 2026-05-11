@@ -21,6 +21,7 @@ import {
   Check,
   Plus,
   Trash2,
+  X,
   AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -37,6 +38,9 @@ export default function ReportsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<string | null>(null);
+  const [showBanner, setShowBanner] = useState(true);
+  const [expiringReports, setExpiringReports] = useState<any[]>([]);
+  const [isExpiringModalOpen, setIsExpiringModalOpen] = useState(false);
   const pageSize = 10;
 
   const loadReports = async () => {
@@ -45,7 +49,10 @@ export default function ReportsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // 1. Limpeza automática de relatórios com mais de 30 dias
+    // Banner visibility from localStorage
+    const bannerHidden = localStorage.getItem('hide_reports_banner');
+    if (bannerHidden) setShowBanner(false);
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
@@ -55,12 +62,10 @@ export default function ReportsPage() {
       .eq('action', 'Exportação Realizada')
       .lt('created_at', thirtyDaysAgo.toISOString());
 
-    // 2. Carregar perfil para verificar se é admin
     const { data: profile } = await supabase.from('system_users').select('role').eq('email', user.email).single();
     const isUserAdmin = profile?.role === 'admin';
     setIsAdmin(isUserAdmin);
 
-    // 3. Carregar relatórios
     let query = supabase
       .from('system_logs')
       .select('*')
@@ -84,6 +89,20 @@ export default function ReportsPage() {
         user_id: log.user_id
       }));
       setReports(formatted);
+
+      // Check for expiring reports (27-30 days old)
+      const nearExpiryDate = new Date();
+      nearExpiryDate.setDate(nearExpiryDate.getDate() - 27);
+      
+      const expiring = formatted.filter(r => new Date(r.created_at) < nearExpiryDate);
+      if (expiring.length > 0) {
+        setExpiringReports(expiring);
+        const modalShown = sessionStorage.getItem('expiring_modal_shown');
+        if (!modalShown) {
+          setIsExpiringModalOpen(true);
+          sessionStorage.setItem('expiring_modal_shown', 'true');
+        }
+      }
     }
     setLoading(false);
   };
@@ -111,6 +130,11 @@ export default function ReportsPage() {
     }
     setIsConfirmOpen(false);
     setReportToDelete(null);
+  };
+
+  const handleCloseBanner = () => {
+    setShowBanner(false);
+    localStorage.setItem('hide_reports_banner', 'true');
   };
 
   const totalPages = Math.ceil(reports.length / pageSize);
@@ -146,13 +170,18 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Banner de Retenção */}
-        <div className={styles.retentionBanner}>
-          <AlertTriangle size={20} color="#f59e0b" />
-          <p className={styles.retentionText}>
-            <strong>Política de Retenção:</strong> Os registros de exportação são mantidos por no máximo <strong>30 dias</strong>. Após este período, são removidos automaticamente do servidor por segurança.
-          </p>
-        </div>
+        {showBanner && (
+          <div className={styles.retentionBanner}>
+            <AlertTriangle size={20} color="#f59e0b" />
+            <p className={styles.retentionText}>
+              <strong>Política de Retenção:</strong> <br />
+              Os registros de exportação são mantidos por no máximo <strong>30 dias</strong>. Após este período, são removidos automaticamente do servidor por segurança.
+            </p>
+            <button className={styles.closeBanner} onClick={handleCloseBanner} title="Fechar aviso">
+              <X size={18} />
+            </button>
+          </div>
+        )}
 
         <div className={`${styles.tableWrapper} glass`}>
           {reports.length === 0 ? (
@@ -170,7 +199,7 @@ export default function ReportsPage() {
                     <th>Formato</th>
                     <th>Volume Leads</th>
                     <th>Segurança</th>
-                    <th>Ações</th>
+                    <th style={{ textAlign: 'right' }}>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -265,6 +294,16 @@ export default function ReportsPage() {
         type="danger"
         onConfirm={handleDeleteReport}
         onCancel={() => setIsConfirmOpen(false)}
+      />
+
+      <ConfirmModal 
+        isOpen={isExpiringModalOpen}
+        title="Alerta de Expiração de Relatórios"
+        message={`Identificamos que ${expiringReports.length} registro(s) de exportação irão expirar e ser removidos permanentemente em até 3 dias. Recomendamos que salve as senhas caso ainda precise delas.`}
+        confirmLabel="Entendido"
+        type="warning"
+        onConfirm={() => setIsExpiringModalOpen(false)}
+        onCancel={() => setIsExpiringModalOpen(false)}
       />
     </DashboardLayout>
   );
