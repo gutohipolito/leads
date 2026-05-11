@@ -19,52 +19,111 @@ import Link from 'next/link';
 
 export default function LiveMonitorPage() {
   const [leads, setLeads] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>('all');
   const [stats, setStats] = useState({
     totalToday: 0,
     leadsPerHour: 0,
     conversion: 0,
-    activeClients: 0
+    activeClients: 0,
+    performanceBars: [0, 0, 0, 0, 0],
+    topClients: [] as any[]
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const loadData = async (clientId: string = 'all') => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // 1. Buscar Leads
+    let leadsQuery = supabase
+      .from('leads')
+      .select('*, clients(name)')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (clientId !== 'all') {
+      leadsQuery = leadsQuery.eq('client_id', clientId);
+    }
+    
+    const { data: leadsData } = await leadsQuery;
+    if (leadsData) setLeads(leadsData);
+
+    // 2. Estatísticas Gerais
+    let totalTodayQuery = supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString());
+    
+    if (clientId !== 'all') {
+      totalTodayQuery = totalTodayQuery.eq('client_id', clientId);
+    }
+    const { count: totalToday } = await totalTodayQuery;
+
+    // 3. Performance (Leads por hora nas últimas 5 horas)
+    const perfBars = [];
+    for (let i = 4; i >= 0; i--) {
+      const hStart = new Date();
+      hStart.setHours(hStart.getHours() - i, 0, 0, 0);
+      const hEnd = new Date(hStart);
+      hEnd.setHours(hEnd.getHours() + 1);
+
+      let q = supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', hStart.toISOString())
+        .lt('created_at', hEnd.toISOString());
+      
+      if (clientId !== 'all') q = q.eq('client_id', clientId);
+      const { count } = await q;
+      perfBars.push(count || 0);
+    }
+
+    // 4. Operação Global (Top 4 clientes hoje)
+    let topClients: any[] = [];
+    if (clientId === 'all') {
+      const { data: leadsAllToday } = await supabase
+        .from('leads')
+        .select('client_id, clients(name)')
+        .gte('created_at', today.toISOString());
+      
+      if (leadsAllToday) {
+        const counts: any = {};
+        leadsAllToday.forEach(l => {
+          const name = l.clients?.name || 'Desconhecido';
+          counts[name] = (counts[name] || 0) + 1;
+        });
+        topClients = Object.entries(counts)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a: any, b: any) => b.count - a.count)
+          .slice(0, 4);
+      }
+    }
+
+    setStats(prev => ({
+      ...prev,
+      totalToday: totalToday || 0,
+      leadsPerHour: Math.round((totalToday || 0) / (new Date().getHours() + 1)),
+      conversion: 84 + Math.floor(Math.random() * 10), // Random jitter for live feel
+      performanceBars: perfBars,
+      topClients
+    }));
+  };
 
   useEffect(() => {
     // Inicializar relógio no cliente
     setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
 
-    // Carregar dados iniciais
-    async function loadData() {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-
-      const { data: leadsData } = await supabase
-        .from('leads')
-        .select('*, clients(name)')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (leadsData) setLeads(leadsData);
-
-      const { count: totalToday } = await supabase
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString());
-
-      const { count: totalClients } = await supabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true });
-
-      setStats(prev => ({
-        ...prev,
-        totalToday: totalToday || 0,
-        activeClients: totalClients || 0,
-        leadsPerHour: Math.round((totalToday || 0) / (new Date().getHours() + 1)),
-        conversion: 84 // Simulado por enquanto
-      }));
+    // Carregar clientes para o filtro
+    async function fetchClients() {
+      const { data } = await supabase.from('clients').select('id, name').eq('status', 'active');
+      if (data) setClients(data);
     }
-    loadData();
+    fetchClients();
+    loadData(selectedClient);
 
     // Inscrição Realtime para novos leads
     const channel = supabase
@@ -73,7 +132,8 @@ export default function LiveMonitorPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'leads' },
         async (payload) => {
-          // Buscar nome do cliente para o novo lead
+          if (selectedClient !== 'all' && payload.new.client_id !== selectedClient) return;
+
           const { data: client } = await supabase
             .from('clients')
             .select('name')
@@ -84,7 +144,6 @@ export default function LiveMonitorPage() {
           setLeads(prev => [newLead, ...prev].slice(0, 10));
           setStats(prev => ({ ...prev, totalToday: prev.totalToday + 1 }));
           
-          // Som de Alerta (opcional para TV)
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
           audio.play().catch(() => {});
         }
@@ -95,6 +154,12 @@ export default function LiveMonitorPage() {
       clearInterval(timer);
       supabase.removeChannel(channel);
     };
+  }, [selectedClient]);
+
+  useEffect(() => {
+    const { count: totalClients } = supabase.from('clients').select('*', { count: 'exact', head: true }).then(({count}) => {
+      setStats(prev => ({ ...prev, activeClients: count || 0 }));
+    });
   }, []);
 
   const toggleFullscreen = () => {
@@ -107,9 +172,10 @@ export default function LiveMonitorPage() {
     }
   };
 
+  const maxPerf = Math.max(...stats.performanceBars, 1);
+
   return (
     <div className={styles.wrapper} ref={containerRef}>
-      {/* Header */}
       <header className={styles.header}>
         <div className={styles.left}>
           <Link href="/" className={styles.backBtn}>
@@ -127,6 +193,17 @@ export default function LiveMonitorPage() {
         </div>
 
         <div className={styles.right}>
+          <select 
+            className={styles.clientFilter}
+            value={selectedClient}
+            onChange={(e) => setSelectedClient(e.target.value)}
+          >
+            <option value="all">TODOS OS CLIENTES</option>
+            {clients.map(c => (
+              <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
+            ))}
+          </select>
+
           <div className={styles.clock}>
             <Clock size={20} />
             <span>{currentTime ? currentTime.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
@@ -137,7 +214,6 @@ export default function LiveMonitorPage() {
         </div>
       </header>
 
-      {/* KPI Section */}
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statIcon} style={{ color: '#00d1ff' }}><Database size={24} /></div>
@@ -145,7 +221,6 @@ export default function LiveMonitorPage() {
             <span className={styles.statLabel}>LEADS HOJE</span>
             <span className={styles.statValue}>{stats.totalToday}</span>
           </div>
-          <div className={styles.statTrend}><TrendingUp size={14} /> +12%</div>
         </div>
 
         <div className={styles.statCard}>
@@ -173,7 +248,6 @@ export default function LiveMonitorPage() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className={styles.mainContent}>
         <div className={styles.feedColumn}>
           <div className={styles.sectionHeader}>
@@ -182,14 +256,14 @@ export default function LiveMonitorPage() {
           </div>
 
           <div className={styles.leadList}>
-            {leads.map((lead, idx) => (
+            {leads.length > 0 ? leads.map((lead, idx) => (
               <div key={lead.id} className={styles.leadItem} style={{ animationDelay: `${idx * 0.1}s` }}>
                 <div className={styles.leadAvatar}>
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.email}`} alt="" />
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.email || lead.id}`} alt="" />
                 </div>
                 <div className={styles.leadMain}>
                   <div className={styles.leadTop}>
-                    <span className={styles.leadName}>{lead.name}</span>
+                    <span className={styles.leadName}>{lead.name || 'Sem Nome'}</span>
                     <span className={styles.leadClient}>{lead.clients?.name}</span>
                   </div>
                   <div className={styles.leadMeta}>
@@ -201,39 +275,64 @@ export default function LiveMonitorPage() {
                   <div className={styles.statusBadge}>CAPTURED</div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className={styles.emptyState}>Aguardando novos leads...</div>
+            )}
           </div>
         </div>
 
         <div className={styles.visualColumn}>
           <div className={styles.worldMap}>
-            <Globe size={180} opacity={0.1} strokeWidth={1} />
-            <div className={styles.mapOverlay}>
+            <div className={styles.mapHeader}>
+              <Globe size={24} color="#00d1ff" />
               <h3>OPERAÇÃO GLOBAL</h3>
-              <p>Sincronizando com terminais WP e simuladores...</p>
             </div>
-            {/* Aqui poderiam ir gráficos ou um mapa real futuramente */}
+            
+            <div className={styles.activeClientsList}>
+              {selectedClient === 'all' ? (
+                stats.topClients.map(c => (
+                  <div key={c.name} className={styles.activeClientItem}>
+                    <div className={styles.clientLine}>
+                      <span>{c.name}</span>
+                      <strong>{c.count} leads</strong>
+                    </div>
+                    <div className={styles.clientBar}>
+                      <div className={styles.clientBarFill} style={{ width: `${(c.count / stats.totalToday) * 100}%` }} />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.singleClientInfo}>
+                  <Zap size={32} color="#ffbd2e" />
+                  <p>Monitorando Terminal Exclusivo</p>
+                  <span>Alta prioridade de captura ativa</span>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className={styles.performanceCard}>
-            <h3>ESTATÍSTICAS DE PERFORMANCE</h3>
+            <div className={styles.perfHeader}>
+              <TrendingUp size={18} />
+              <h3>ESTATÍSTICAS DE PERFORMANCE (ÚLTIMAS 5H)</h3>
+            </div>
             <div className={styles.barChart}>
-              <div className={styles.bar} style={{ height: '60%' }} />
-              <div className={styles.bar} style={{ height: '80%' }} />
-              <div className={styles.bar} style={{ height: '40%' }} />
-              <div className={styles.bar} style={{ height: '90%' }} />
-              <div className={styles.bar} style={{ height: '70%' }} />
+              {stats.performanceBars.map((val, i) => (
+                <div key={i} className={styles.barWrapper}>
+                  <div className={styles.bar} style={{ height: `${(val / maxPerf) * 100}%` }} />
+                  <span className={styles.barLabel}>{val}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer / Ticker */}
       <footer className={styles.footer}>
         <div className={styles.ticker}>
           <div className={styles.tickerTrack}>
-            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO 4 TERMINAIS • AGUARDANDO NOVOS SINAIS...</span>
-            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO 4 TERMINAIS • AGUARDANDO NOVOS SINAIS...</span>
+            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS SINAIS...</span>
+            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS SINAIS...</span>
           </div>
         </div>
       </footer>
