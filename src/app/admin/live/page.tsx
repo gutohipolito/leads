@@ -29,9 +29,18 @@ export default function LiveMonitorPage() {
     performanceBars: [0, 0, 0, 0, 0],
     topClients: [] as any[]
   });
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
+  const [isCelebration, setIsCelebration] = useState(false);
+  const [celebrationLead, setCelebrationLead] = useState<any>(null);
+
+  const triggerCelebration = (lead: any) => {
+    setCelebrationLead(lead);
+    setIsCelebration(true);
+    setTimeout(() => {
+      setIsCelebration(false);
+      setCelebrationLead(null);
+    }, 3500);
+  };
 
   const loadData = async (clientId: string = 'all') => {
     const today = new Date();
@@ -106,7 +115,7 @@ export default function LiveMonitorPage() {
       ...prev,
       totalToday: totalToday || 0,
       leadsPerHour: Math.round((totalToday || 0) / (new Date().getHours() + 1)),
-      conversion: 84 + Math.floor(Math.random() * 10), // Random jitter for live feel
+      conversion: 84 + Math.floor(Math.random() * 10),
       performanceBars: perfBars,
       topClients
     }));
@@ -119,6 +128,10 @@ export default function LiveMonitorPage() {
 
     // Carregar clientes para o filtro
     async function fetchClients() {
+      const impersonated = localStorage.getItem('impersonated_client');
+      if (impersonated) {
+        setImpersonatedName(JSON.parse(impersonated).name);
+      }
       const { data } = await supabase.from('clients').select('id, name').eq('status', 'active');
       if (data) setClients(data);
     }
@@ -143,6 +156,8 @@ export default function LiveMonitorPage() {
           const newLead = { ...payload.new, clients: client };
           setLeads(prev => [newLead, ...prev].slice(0, 10));
           setStats(prev => ({ ...prev, totalToday: prev.totalToday + 1 }));
+          
+          triggerCelebration(newLead);
           
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
           audio.play().catch(() => {});
@@ -172,10 +187,33 @@ export default function LiveMonitorPage() {
     }
   };
 
+  const handleTestCelebration = () => {
+    triggerCelebration({
+      name: 'Cliente de Teste',
+      clients: { name: impersonatedName || 'Asthros Demo' }
+    });
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   const maxPerf = Math.max(...stats.performanceBars, 1);
 
   return (
     <div className={styles.wrapper} ref={containerRef}>
+      {isCelebration && celebrationLead && (
+        <div className={styles.celebrationOverlay}>
+          <div className={styles.flashEffect} />
+          <div className={styles.newLeadCard}>
+            <div className={styles.celebrationIcon}>
+              <Zap size={40} />
+            </div>
+            <h2>NOVA CAPTURA DETECTADA</h2>
+            <h3>{celebrationLead.name || 'Novo Lead'}</h3>
+            <p>CONECTADO VIA {celebrationLead.clients?.name?.toUpperCase()}</p>
+          </div>
+        </div>
+      )}
+
       <header className={styles.header}>
         <div className={styles.left}>
           <Link href="/" className={styles.backBtn}>
@@ -193,16 +231,23 @@ export default function LiveMonitorPage() {
         </div>
 
         <div className={styles.right}>
-          <select 
-            className={styles.clientFilter}
-            value={selectedClient}
-            onChange={(e) => setSelectedClient(e.target.value)}
-          >
-            <option value="all">TODOS OS CLIENTES</option>
-            {clients.map(c => (
-              <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
-            ))}
-          </select>
+          <button className={styles.testBtn} onClick={handleTestCelebration}>
+            TESTAR ANIMAÇÃO
+          </button>
+
+          <div className={styles.clientFilterWrapper}>
+            <span className={styles.filterLabel}>Filtrar:</span>
+            <select 
+              className={styles.clientFilter}
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+            >
+              <option value="all">TODOS OS CLIENTES</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
 
           <div className={styles.clock}>
             <Clock size={20} />
