@@ -19,11 +19,14 @@ import {
   Search,
   Copy,
   Check,
-  Plus
+  Plus,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
 import Link from 'next/link';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -32,45 +35,60 @@ export default function ReportsPage() {
   const [showPasswordId, setShowPasswordId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<string | null>(null);
   const pageSize = 10;
 
-  useEffect(() => {
-    async function loadReports() {
-      setLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const loadReports = async () => {
+    setLoading(true);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      const { data: profile } = await supabase.from('system_users').select('role').eq('email', user.email).single();
-      const isUserAdmin = profile?.role === 'admin';
-      setIsAdmin(isUserAdmin);
+    // 1. Limpeza automática de relatórios com mais de 30 dias
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    await supabase
+      .from('system_logs')
+      .delete()
+      .eq('action', 'Exportação Realizada')
+      .lt('created_at', thirtyDaysAgo.toISOString());
 
-      let query = supabase
-        .from('system_logs')
-        .select('*')
-        .eq('action', 'Exportação Realizada')
-        .order('created_at', { ascending: false });
+    // 2. Carregar perfil para verificar se é admin
+    const { data: profile } = await supabase.from('system_users').select('role').eq('email', user.email).single();
+    const isUserAdmin = profile?.role === 'admin';
+    setIsAdmin(isUserAdmin);
 
-      if (!isUserAdmin) {
-        query = query.eq('user_id', user.id);
-      }
+    // 3. Carregar relatórios
+    let query = supabase
+      .from('system_logs')
+      .select('*')
+      .eq('action', 'Exportação Realizada')
+      .order('created_at', { ascending: false });
 
-      const { data } = await query;
-
-      if (data) {
-        const formatted = data.map(log => ({
-          id: log.id,
-          created_at: log.created_at,
-          format: log.details?.format || 'unknown',
-          count: log.details?.count || 0,
-          protected: log.details?.protected || false,
-          password: log.details?.password || null,
-          user_id: log.user_id
-        }));
-        setReports(formatted);
-      }
-      setLoading(false);
+    if (!isUserAdmin) {
+      query = query.eq('user_id', user.id);
     }
+
+    const { data } = await query;
+
+    if (data) {
+      const formatted = data.map(log => ({
+        id: log.id,
+        created_at: log.created_at,
+        format: log.details?.format || 'unknown',
+        count: log.details?.count || 0,
+        protected: log.details?.protected || false,
+        password: log.details?.password || null,
+        user_id: log.user_id
+      }));
+      setReports(formatted);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     loadReports();
   }, []);
 
@@ -78,6 +96,21 @@ export default function ReportsPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDeleteReport = async () => {
+    if (!reportToDelete) return;
+
+    const { error } = await supabase
+      .from('system_logs')
+      .delete()
+      .eq('id', reportToDelete);
+
+    if (!error) {
+      setReports(prev => prev.filter(r => r.id !== reportToDelete));
+    }
+    setIsConfirmOpen(false);
+    setReportToDelete(null);
   };
 
   const totalPages = Math.ceil(reports.length / pageSize);
@@ -111,6 +144,14 @@ export default function ReportsPage() {
               <span>Gerar Relatório</span>
             </Link>
           </div>
+        </div>
+
+        {/* Banner de Retenção */}
+        <div className={styles.retentionBanner}>
+          <AlertTriangle size={20} color="#f59e0b" />
+          <p className={styles.retentionText}>
+            <strong>Política de Retenção:</strong> Os registros de exportação são mantidos por no máximo <strong>30 dias</strong>. Após este período, são removidos automaticamente do servidor por segurança.
+          </p>
         </div>
 
         <div className={`${styles.tableWrapper} glass`}>
@@ -160,15 +201,15 @@ export default function ReportsPage() {
                         </div>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          {report.protected ? (
+                        <div className={styles.actionsCell}>
+                          {report.protected && (
                             <>
                               <button 
                                 className={styles.passwordBtn}
                                 onClick={() => setShowPasswordId(showPasswordId === report.id ? null : report.id)}
                               >
                                 {showPasswordId === report.id ? <EyeOff size={16} /> : <Eye size={16} />}
-                                <span>{showPasswordId === report.id ? (report.password || 'Indisponível') : 'Ver Senha'}</span>
+                                <span>{showPasswordId === report.id ? (report.password || 'Indisponível') : 'Senha'}</span>
                               </button>
                               
                               {showPasswordId === report.id && report.password && (
@@ -181,9 +222,18 @@ export default function ReportsPage() {
                                 </button>
                               )}
                             </>
-                          ) : (
-                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)' }}>Nenhuma ação</span>
                           )}
+                          
+                          <button 
+                            className={styles.deleteBtn}
+                            onClick={() => {
+                              setReportToDelete(report.id);
+                              setIsConfirmOpen(true);
+                            }}
+                            title="Excluir Registro"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -206,6 +256,16 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={isConfirmOpen}
+        title="Excluir Registro de Relatório"
+        message="Tem certeza que deseja remover este registro do histórico? Esta ação é irreversível."
+        confirmLabel="Excluir Agora"
+        type="danger"
+        onConfirm={handleDeleteReport}
+        onCancel={() => setIsConfirmOpen(false)}
+      />
     </DashboardLayout>
   );
 }
