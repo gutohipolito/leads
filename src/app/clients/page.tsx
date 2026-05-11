@@ -457,7 +457,7 @@ export default function ClientsPage() {
                   </div>
                   
                   <div className={styles.cardBody}>
-                    <h3 className={styles.cardName}>{client.name}</h3>
+                    <h3 className={styles.cardName} title={client.name}>{client.name}</h3>
                     <div className={styles.cardStats}>
                       <div className={styles.cardStat}>
                         <span className={styles.statLabel}>Leads</span>
