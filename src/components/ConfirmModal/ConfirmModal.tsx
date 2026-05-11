@@ -10,7 +10,8 @@ interface ConfirmModalProps {
   message: string;
   type?: 'info' | 'warning' | 'danger' | 'success';
   confirmLabel?: string;
-  cancelLabel?: string;
+  cancelLabel?: string | null;
+  countdown?: number;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -22,9 +23,27 @@ export default function ConfirmModal({
   type = 'info',
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
+  countdown = 0,
   onConfirm,
   onCancel
 }: ConfirmModalProps) {
+  const [timeLeft, setTimeLeft] = React.useState(countdown);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setTimeLeft(countdown);
+    }
+  }, [isOpen, countdown]);
+
+  React.useEffect(() => {
+    if (isOpen && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isOpen, timeLeft]);
+
   if (!isOpen) return null;
 
   const getIcon = () => {
@@ -52,17 +71,21 @@ export default function ConfirmModal({
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.cancelBtn} onClick={onCancel}>
-            {cancelLabel}
-          </button>
+          {cancelLabel !== null && (
+            <button className={styles.cancelBtn} onClick={onCancel}>
+              {cancelLabel}
+            </button>
+          )}
           <button 
-            className={`${styles.confirmBtn} ${styles[type]}`} 
+            className={`${styles.confirmBtn} ${styles[type]} ${timeLeft > 0 ? styles.disabled : ''}`} 
             onClick={() => {
+              if (timeLeft > 0) return;
               onConfirm();
               onCancel();
             }}
+            disabled={timeLeft > 0}
           >
-            {confirmLabel}
+            {timeLeft > 0 ? `${confirmLabel} (${timeLeft}s)` : confirmLabel}
           </button>
         </div>
       </div>

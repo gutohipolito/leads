@@ -100,10 +100,17 @@
 .confirmBtn.danger { background: #ef4444; color: white; }
 .confirmBtn.success { background: #10b981; color: var(--background); }
 
-.confirmBtn:hover {
+.confirmBtn:hover:not(.disabled) {
   opacity: 0.9;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.confirmBtn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 @keyframes fadeIn {

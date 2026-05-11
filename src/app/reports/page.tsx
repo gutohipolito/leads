@@ -312,7 +312,9 @@ export default function ReportsPage() {
         title="Alerta de Expiração de Relatórios"
         message={`Identificamos que ${expiringReports.length} registro(s) de exportação irão expirar e ser removidos permanentemente em até 3 dias. Recomendamos que salve as senhas caso ainda precise delas.`}
         confirmLabel="Entendido"
+        cancelLabel={null}
         type="warning"
+        countdown={5}
         onConfirm={() => setIsExpiringModalOpen(false)}
         onCancel={() => setIsExpiringModalOpen(false)}
       />
