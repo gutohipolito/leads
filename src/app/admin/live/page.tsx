@@ -275,7 +275,7 @@ export default function LiveMonitorPage() {
         <div className={styles.statCard}>
           <div className={styles.statIcon} style={{ color: '#ffbd2e' }}><Zap size={24} /></div>
           <div className={styles.statInfo}>
-            <span className={styles.statLabel}>SINAIS / HORA</span>
+            <span className={styles.statLabel}>LEADS / HORA</span>
             <span className={styles.statValue}>{stats.leadsPerHour}</span>
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function LiveMonitorPage() {
         <div className={styles.feedColumn}>
           <div className={styles.sectionHeader}>
             <div className={styles.pulseDot} />
-            <h2>ÚLTIMOS SINAIS DETECTADOS</h2>
+            <h2>ÚLTIMOS LEADS DETECTADOS</h2>
           </div>
 
           <div className={styles.leadList}>
@@ -380,8 +380,8 @@ export default function LiveMonitorPage() {
       <footer className={styles.footer}>
         <div className={styles.ticker}>
           <div className={styles.tickerTrack}>
-            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS SINAIS...</span>
-            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS SINAIS...</span>
+            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS LEADS...</span>
+            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS LEADS...</span>
           </div>
         </div>
       </footer>
