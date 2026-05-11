@@ -49,7 +49,6 @@ export default function Home() {
         const clientId = profile?.client_id;
         setIsAdmin(isUserAdmin);
 
-        // Checar Impersonação
         const impersonated = localStorage.getItem('impersonated_client');
         let activeClientId = clientId;
         
@@ -61,14 +60,12 @@ export default function Home() {
           setImpersonatedName(null);
         }
 
-        // 1. Total Leads (Filtrando simulações)
         const { count: totalLeads } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
           .neq('source', 'test_simulation')
           .match(isUserAdmin && !impersonated ? {} : { client_id: activeClientId });
 
-        // 2. Todos os Leads para Analytics (Filtrando simulações)
         let analyticsQuery = supabase
           .from('leads')
           .select('created_at, source, data')
@@ -81,14 +78,12 @@ export default function Home() {
         const { data: allLeadsRaw } = await analyticsQuery;
         const allLeads = allLeadsRaw || [];
 
-        // 3. Buscar Clientes Ativos (apenas para Admin real, não no modo impersonação)
         let activeClientsCount = 0;
         if (isUserAdmin && !impersonated) {
           const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active');
           activeClientsCount = count || 0;
         }
 
-        // 4. Buscar Últimos Leads
         let recentLeadsQuery = supabase
           .from('leads')
           .select('*, clients (name)')
@@ -100,12 +95,10 @@ export default function Home() {
         }
         const { data: recentLeads } = await recentLeadsQuery;
 
-        // 4. Cálculos e Gráfico
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        // Dados de Origem (WhatsApp vs Form)
         const wppCount = allLeads?.filter(l => l.source === 'whatsapp_tracker').length || 0;
         const formCount = (allLeads?.length || 0) - wppCount;
         const sourceData = [
@@ -113,7 +106,6 @@ export default function Home() {
           { name: 'Formulários', value: formCount, color: '#56d7fd' }
         ];
 
-        // Dados de UTMs
         const utmMap: any = {};
         allLeads?.forEach(l => {
           const utm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';

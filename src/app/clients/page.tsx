@@ -66,7 +66,6 @@ export default function ClientsPage() {
     onConfirm: () => {}
   });
 
-  // Carregar Clientes do Supabase
   const loadClients = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -78,7 +77,6 @@ export default function ClientsPage() {
       `);
     
     if (data) {
-      // Normalizar os dados para garantir que a contagem seja acessível
       const normalizedData = data.map(client => ({
         ...client,
         webhookCount: client.webhooks?.[0]?.count || 0,

@@ -25,14 +25,12 @@ export async function POST(
       });
     }
     
-    // 1. Validar Autenticação (Secret Key)
     const secret = request.headers.get('x-asthros-secret') || request.nextUrl.searchParams.get('secret');
 
     if (!secret) {
       return NextResponse.json({ error: 'Chave secreta ausente. Use ?secret= no final da URL ou o header X-Asthros-Secret.' }, { status: 401 });
     }
 
-    // 2. Verificar se o segredo pertence a um webhook ativo do cliente
     const { data: webhook, error: authError } = await supabase
       .from('webhooks')
       .select('id, status, name, outbound_url, notification_email')
@@ -45,7 +43,6 @@ export async function POST(
       return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
     }
 
-    // 3. Normalização de dados (Mapeamento Inteligente)
     const isWppTracker = body.source === 'whatsapp_tracker';
     const fields = body.fields || {};
     
@@ -57,7 +54,6 @@ export async function POST(
       name = `Click Wpp: ${body.marketing?.source || 'Direto'}`;
     }
 
-    // 4. Salvar o Lead
     const source = body.source === 'test_simulation' 
       ? 'test_simulation' 
       : (isWppTracker ? 'whatsapp_tracker' : 'form');
@@ -80,7 +76,6 @@ export async function POST(
 
     if (insertError) throw insertError;
 
-    // 5. Integração Externa (Outbound Webhook)
     let outboundStatus = null;
     let outboundResponse = null;
     let outboundError = null;
@@ -108,7 +103,6 @@ export async function POST(
       }
     }
 
-    // 6. Auditoria (Logs)
     await supabase.from('webhook_logs').insert([{
       webhook_id: webhook.id,
       client_id: clientId,
@@ -118,14 +112,11 @@ export async function POST(
       error_message: outboundError
     }]);
 
-    // 7. Notificação por E-mail (Placeholder para Resend/SendGrid)
     if (webhook.notification_email) {
       console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);
-      // Aqui entrará a chamada da biblioteca Resend:
       // resend.emails.send({ from: 'Asthros <leads@asthros.com.br>', to: webhook.notification_email, ... });
     }
 
-    // 8. Notificação Interna (Painel)
     const { data: userData } = await supabase
       .from('system_users')
       .select('id')
