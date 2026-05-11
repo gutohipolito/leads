@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
@@ -113,6 +113,21 @@ export default function Header({ title }: HeaderProps) {
       
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
+    }
+  };
+
+  const clearNotifications = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (!error) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
     }
   };
 
@@ -250,10 +265,15 @@ export default function Header({ title }: HeaderProps) {
               )}
             </div>
 
-            {unreadCount > 0 && (
+            {notifications.length > 0 && (
               <div className={styles.notifFooter}>
-                <button onClick={markAllAsRead} className={styles.clearAllBtn}>
-                  Marcar tudo como lido
+                <button onClick={markAllAsRead} className={styles.markReadBtn} title="Marcar todas como lidas">
+                  <CheckCheck size={18} />
+                  <span>Marcar tudo</span>
+                </button>
+                <button onClick={clearNotifications} className={styles.clearAllBtn} title="Limpar todas as notificações">
+                  <Trash2 size={18} />
+                  <span>Limpar</span>
                 </button>
               </div>
             )}
