@@ -66,21 +66,29 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // Lógica de proteção de rotas
-    const isLoginPage = request.nextUrl.pathname.startsWith('/login')
-    const isApiRoute = request.nextUrl.pathname.startsWith('/api')
-    const isPublicAsset = request.nextUrl.pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
-    const isTracker = request.nextUrl.pathname === '/tracker.js' || request.nextUrl.pathname === '/tracker.min.js'
+    const pathname = request.nextUrl.pathname
+    const isLoginPage = pathname.startsWith('/login')
+    const isPublicApi = pathname.startsWith('/api/leads') // Webhooks externos
+    const isInternalApi = pathname.startsWith('/api') && !isPublicApi
+    const isPublicAsset = pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
+    const isTracker = pathname === '/tracker.js' || pathname === '/tracker.min.js'
+    const isPing = pathname === '/ping'
 
-    if (isPublicAsset || isApiRoute || isTracker) {
+    // 1. Assets públicos, Tracker e Endpoint de Leads (Webhooks) são liberados
+    if (isPublicAsset || isPublicApi || isTracker || isPing) {
       return response
     }
 
-    // Se NÃO tem usuário e NÃO está na login -> Vai para login
+    // 2. Se NÃO tem usuário e NÃO está na login -> Bloqueia acesso (incluindo APIs internas)
     if (!user && !isLoginPage) {
+      // Se for uma tentativa de acesso a API interna, retorna 401 em vez de redirect
+      if (isInternalApi) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      }
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Se TEM usuário e ESTÁ na login -> Vai para a home
+    // 3. Se TEM usuário e ESTÁ na login -> Vai para a home
     if (user && isLoginPage) {
       return NextResponse.redirect(new URL('/', request.url))
     }
