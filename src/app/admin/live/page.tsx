@@ -33,6 +33,7 @@ export default function LiveMonitorPage() {
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   const [isCelebration, setIsCelebration] = useState(false);
   const [celebrationLead, setCelebrationLead] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const triggerCelebration = (lead: any) => {
     setCelebrationLead(lead);
