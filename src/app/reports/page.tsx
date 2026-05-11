@@ -111,11 +111,6 @@ export default function ReportsPage() {
     loadReports();
   }, []);
 
-  const triggerTestModal = () => {
-    setExpiringReports([{}, {}, {}]); // Dummy data para o contador
-    setIsExpiringModalOpen(true);
-  };
-
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -165,12 +160,6 @@ export default function ReportsPage() {
             <p>Registro completo de todos os relatórios gerados e senhas aplicadas.</p>
           </div>
           <div className={styles.headerActions}>
-            <button 
-              onClick={triggerTestModal}
-              style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              TESTAR ALERTA
-            </button>
             <div className={styles.countBadge}>
               {reports.length} Relatórios Totais
             </div>
