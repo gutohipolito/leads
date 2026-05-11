@@ -1,4 +1,5 @@
 'use client';
+// Trigger re-deploy due to Vercel/GitHub clone error 500
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
