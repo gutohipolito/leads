@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
+import styles from './security.module.css';
 import { 
   ShieldCheck, 
   Key, 
