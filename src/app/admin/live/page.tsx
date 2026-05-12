@@ -406,7 +406,7 @@ export default function LiveMonitorPage() {
           </div>
 
           <div className={styles.leadList}>
-            {leads.length > 0 ? leads.map((lead, idx) => (
+            {leads.length > 0 ? leads.slice(0, 5).map((lead, idx) => (
               <div key={lead.id} className={styles.leadItem} style={{ animationDelay: `${idx * 0.1}s` }}>
                 <div className={styles.leadAvatar}>
                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.email || lead.id}`} alt="" />
