@@ -567,13 +567,36 @@ export default function LeadsPage() {
             <div className={styles.listHeader}>
               <button className={styles.backBtn} onClick={resetSelection}><ArrowLeft size={18} /><span>Voltar</span></button>
               <div className={styles.actions}>
-                <div className={styles.totalStatsCard}>
-                  <div className={styles.totalIcon}><Database size={16} /></div>
-                  <div className={styles.totalInfo}>
-                    <span className={styles.totalLabel}>Total de Leads</span>
-                    <strong className={styles.totalValue}>{filteredLeads.filter(l => l.source !== 'test_simulation').length}</strong>
+                <div className={styles.statsRow}>
+                  <div className={styles.totalStatsCard}>
+                    <div className={styles.totalIcon}><Database size={14} /></div>
+                    <div className={styles.totalInfo}>
+                      <span className={styles.totalLabel}>Total</span>
+                      <strong className={styles.totalValue}>{filteredLeads.filter(l => l.source !== 'test_simulation').length}</strong>
+                    </div>
+                  </div>
+                  
+                  <div className={`${styles.totalStatsCard} ${styles.cardForms}`}>
+                    <div className={styles.totalIcon}><FileText size={14} /></div>
+                    <div className={styles.totalInfo}>
+                      <span className={styles.totalLabel}>Forms</span>
+                      <strong className={styles.totalValue}>
+                        {filteredLeads.filter(l => l.source !== 'whatsapp_tracker' && l.source !== 'test_simulation').length}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className={`${styles.totalStatsCard} ${styles.cardWhatsApp}`}>
+                    <div className={styles.totalIcon}><MessageCircle size={14} /></div>
+                    <div className={styles.totalInfo}>
+                      <span className={styles.totalLabel}>WhatsApp</span>
+                      <strong className={styles.totalValue}>
+                        {filteredLeads.filter(l => l.source === 'whatsapp_tracker').length}
+                      </strong>
+                    </div>
                   </div>
                 </div>
+
                 <div className={styles.exportDropdown}>
                   <button className={styles.primaryBtn} onClick={() => setExportOpen(!exportOpen)}><Download size={18} /><span>Exportar Leads</span></button>
                   <div className={`${styles.dropdownMenu} ${exportOpen ? styles.open : ''}`}>
