@@ -109,6 +109,20 @@ export default function UsersManagementPage() {
         .eq('id', editingUserId);
 
       if (!error) {
+        // Se uma nova senha foi digitada, atualizamos via API Admin
+        if (newUser.password && newUser.password.length >= 6) {
+          console.log('Solicitando atualização de senha administrativa...');
+          const response = await fetch('/api/admin/users/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: editingUserId, password: newUser.password })
+          });
+          const result = await response.json();
+          if (result.error) {
+            alert('Perfil atualizado, mas houve erro na senha: ' + result.error + '\nCertifique-se de que a SUPABASE_SERVICE_ROLE_KEY está configurada.');
+          }
+        }
+
         await logAction('Usuário Atualizado', 'user', editingUserId, { email: newUser.email, avatar: newUser.avatar_style });
         closeModal();
         loadData();
@@ -398,29 +412,26 @@ export default function UsersManagementPage() {
                   </div>
                 </div>
 
-                {!isEditMode && (
-                  <div className={styles.field}>
-                    <label>Senha de Acesso</label>
-                    <div className={styles.passwordInputWrapper}>
-                      <Key size={16} className={styles.inputIcon} />
-                      <input 
-                        required
-                        type="text" 
-                        placeholder="Mínimo 8 caracteres"
-                        value={newUser.password}
-                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                      />
-                      <button 
-                        type="button" 
-                        className={styles.generateBtn} 
-                        onClick={generatePassword}
-                        title="Gerar senha forte"
-                      >
-                        <RefreshCw size={16} />
-                      </button>
-                    </div>
+                <div className={styles.field}>
+                  <label>{isEditMode ? 'Alterar Senha (deixe em branco para manter)' : 'Senha de Acesso'}</label>
+                  <div className={styles.passwordInputWrapper}>
+                    <Key size={16} className={styles.inputIcon} />
+                    <input 
+                      type="text" 
+                      placeholder={isEditMode ? "Nova senha forte..." : "Mínimo 8 caracteres"}
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                    />
+                    <button 
+                      type="button" 
+                      className={styles.generateBtn} 
+                      onClick={generatePassword}
+                      title="Gerar senha forte"
+                    >
+                      <RefreshCw size={16} />
+                    </button>
                   </div>
-                )}
+                </div>
                 <div className={styles.gridFields}>
                   <div className={styles.field}>
                     <label>Cargo / Permissão</label>
