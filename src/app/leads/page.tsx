@@ -26,7 +26,8 @@ import {
   FileDown,
   CheckCircle2,
   Clock,
-  Slash
+  Slash,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -123,6 +124,26 @@ export default function LeadsPage() {
       });
     } else {
       alert('Erro ao renomear campo: ' + error.message);
+    }
+  };
+  
+  const handleDeleteLead = async (leadId: string) => {
+    if (!isAdmin) return;
+    
+    const confirmDelete = window.confirm('Tem certeza que deseja excluir este lead permanentemente? Esta ação não pode ser desfeita.');
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', leadId);
+
+    if (!error) {
+      setLeads(prev => prev.filter(l => l.id !== leadId));
+      setSelectedLead(null);
+      logAction('Lead Excluído', 'lead', leadId, { deleted_by: 'admin' });
+    } else {
+      alert('Erro ao excluir lead: ' + error.message);
     }
   };
 
@@ -606,7 +627,32 @@ export default function LeadsPage() {
                         )}
                       </td>
                       <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
-                      <td><button className={styles.secondaryBtn} style={{ padding: '0.4rem' }}><MoreHorizontal size={18} /></button></td>
+                      <td>
+                        <div className={styles.actionsCell}>
+                          <button 
+                            className={styles.secondaryBtn} 
+                            style={{ padding: '0.4rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLead(lead);
+                            }}
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+                          {isAdmin && (
+                            <button 
+                              className={styles.deleteBtnMini} 
+                              title="Excluir Lead"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteLead(lead.id);
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -672,7 +718,18 @@ export default function LeadsPage() {
                 </div>
               </div>
               <div className={styles.drawerFooter}>
-                <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>Exportar para CRM</button>
+                <div className={styles.drawerActionsLeft}>
+                  <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>Exportar para CRM</button>
+                  {isAdmin && (
+                    <button 
+                      className={styles.deleteBtn} 
+                      onClick={() => handleDeleteLead(selectedLead.id)}
+                    >
+                      <Trash2 size={18} />
+                      <span>Excluir Lead</span>
+                    </button>
+                  )}
+                </div>
                 <button className={styles.secondaryBtn} onClick={() => setSelectedLead(null)}>Fechar</button>
               </div>
             </div>

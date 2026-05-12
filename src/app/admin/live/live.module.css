@@ -333,6 +333,12 @@
   gap: 6px;
 }
 
+.leadStatus {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .statusBadge {
   font-size: 0.7rem;
   font-weight: 900;
@@ -341,6 +347,28 @@
   padding: 4px 12px;
   border-radius: 50px;
   letter-spacing: 0.1em;
+}
+
+.deleteBtn {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.deleteBtn:hover {
+  background: #ff4757;
+  color: white;
+  border-color: #ff4757;
+  box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
 }
 
 .visualColumn {

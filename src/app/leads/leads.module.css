@@ -719,9 +719,51 @@
 .drawerFooter {
   padding: 2.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
+}
+
+.drawerActionsLeft {
+  display: flex;
+  gap: 1rem;
+}
+
+.actionsCell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.deleteBtn, .deleteBtnMini {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 50, 50, 0.2);
+  background: rgba(255, 50, 50, 0.05);
+  color: #ff4d4d;
+}
+
+.deleteBtn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.deleteBtnMini {
+  padding: 0.4rem;
+  border-radius: 8px;
+}
+
+.deleteBtn:hover, .deleteBtnMini:hover {
+  background: #ff4d4d;
+  color: white;
+  border-color: #ff4d4d;
+  box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
 }
 
 .exportDropdown {
