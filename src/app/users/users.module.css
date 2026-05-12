@@ -374,6 +374,8 @@
   color: white;
   outline: none;
   transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .field input:focus, .field select:focus {
