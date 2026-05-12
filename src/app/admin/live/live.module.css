@@ -581,6 +581,8 @@
   position: relative;
   padding: 2px;
   overflow: hidden;
+  flex: 1;
+  max-width: 900px;
 }
 
 .sliderArrow {
@@ -623,7 +625,7 @@
 .clientSlider {
   display: flex;
   gap: 0.75rem;
-  max-width: 480px;
+  width: 100%;
   overflow-x: auto;
   padding: 4px 45px;
   scrollbar-width: none;
