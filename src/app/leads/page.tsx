@@ -23,7 +23,10 @@ import {
   Zap,
   MessageCircle,
   FlaskConical,
-  FileDown
+  FileDown,
+  CheckCircle2,
+  Clock,
+  Slash
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -59,6 +62,9 @@ export default function LeadsPage() {
   });
   
   const [exportType, setExportType] = useState<{show: boolean, type: string}>({ show: false, type: '' });
+  
+  // Filtro de Status do Cliente
+  const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'waiting' | 'disabled'>('all');
   
   const getLeadIcon = (source: string, size = 18) => {
     switch (source) {
@@ -162,6 +168,19 @@ export default function LeadsPage() {
     if (!isAdmin) return clients.find(c => c.id === userClientId);
     return clients.find(c => c.id === selectedClientId);
   }, [selectedClientId, isAdmin, clients, userClientId]);
+
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      const isActive = client.status === 'active' && (client.webhooks?.length || 0) > 0;
+      const isWaiting = client.status === 'active' && (client.webhooks?.length || 0) === 0;
+      const isDisabled = client.status !== 'active';
+
+      if (clientStatusFilter === 'active') return isActive;
+      if (clientStatusFilter === 'waiting') return isWaiting;
+      if (clientStatusFilter === 'disabled') return isDisabled;
+      return true;
+    });
+  }, [clients, clientStatusFilter]);
 
   const showClientSelection = isAdmin && !selectedClientId;
   const showWebhookSelection = currentClient && currentClient.webhooks?.length > 1 && !selectedWebhookId;
@@ -426,9 +445,41 @@ export default function LeadsPage() {
         
         {showClientSelection && (
           <div className={styles.selectionSection}>
-            <div className={styles.listHeader}><h3>Selecione um Cliente</h3></div>
+            <div className={styles.listHeader}>
+              <h3>Selecione um Cliente</h3>
+              <div className={styles.clientFilters}>
+                <button 
+                  className={`${styles.filterTab} ${clientStatusFilter === 'all' ? styles.active : ''}`}
+                  onClick={() => setClientStatusFilter('all')}
+                >
+                  <Users size={16} />
+                  Todos <span>{clients.length}</span>
+                </button>
+                <button 
+                  className={`${styles.filterTab} ${clientStatusFilter === 'active' ? styles.active : ''}`}
+                  onClick={() => setClientStatusFilter('active')}
+                >
+                  <CheckCircle2 size={16} />
+                  Ativos <span>{clients.filter(c => c.status === 'active' && (c.webhooks?.length || 0) > 0).length}</span>
+                </button>
+                <button 
+                  className={`${styles.filterTab} ${clientStatusFilter === 'waiting' ? styles.active : ''}`}
+                  onClick={() => setClientStatusFilter('waiting')}
+                >
+                  <Clock size={16} />
+                  Aguardando <span>{clients.filter(c => c.status === 'active' && (c.webhooks?.length || 0) === 0).length}</span>
+                </button>
+                <button 
+                  className={`${styles.filterTab} ${clientStatusFilter === 'disabled' ? styles.active : ''}`}
+                  onClick={() => setClientStatusFilter('disabled')}
+                >
+                  <Slash size={16} />
+                  Desativados <span>{clients.filter(c => c.status !== 'active').length}</span>
+                </button>
+              </div>
+            </div>
             <div className={styles.selectionGrid}>
-              {clients.map(client => (
+              {filteredClients.map(client => (
                 <div key={client.id} className={`${styles.card} glass`} onClick={() => setSelectedClientId(client.id)}>
                   <div className={styles.cardTop}>
                     <div 
