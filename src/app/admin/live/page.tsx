@@ -166,41 +166,55 @@ export default function LiveMonitorPage() {
         },
         async (payload) => {
           const eventType = payload.eventType || (payload as any).event;
-          console.log('Realtime Event Received:', eventType, payload);
+          console.log('--- NOVO EVENTO DETECTADO ---');
+          console.log('Tipo:', eventType);
+          console.log('Payload:', payload);
           
           if (eventType === 'INSERT') {
             const newLeadData = payload.new;
+            console.log('Lead ID:', newLeadData.id);
+            console.log('Client ID do Lead:', newLeadData.client_id);
+            console.log('Filtro Atual (selectedClient):', selectedClient);
             
-            // Garantir comparação de strings para os IDs
-            if (selectedClient !== 'all' && String(newLeadData.client_id) !== String(selectedClient)) {
-              console.log('Lead ignorado (filtro de cliente):', newLeadData.client_id, 'vs', selectedClient);
+            // Comparação ultra-flexível
+            const isMatch = selectedClient === 'all' || String(newLeadData.client_id) === String(selectedClient);
+            
+            if (!isMatch) {
+              console.log('❌ Lead ignorado pelo filtro de cliente');
               return;
             }
 
-            // Buscar detalhes do cliente
-            const { data: client } = await supabase
-              .from('clients')
-              .select('name')
-              .eq('id', newLeadData.client_id)
-              .single();
+            console.log('✅ Lead passou no filtro. Atualizando UI...');
 
-            const newLead = { ...newLeadData, clients: client };
-            
-            // Atualização imediata da lista
+            // Primeiro, atualizamos a lista com o que já temos (para ser instantâneo)
+            const tempLead = { ...newLeadData, clients: { name: 'Carregando...' } };
             setLeads(prev => {
-              const exists = prev.find(l => l.id === newLead.id);
+              const exists = prev.find(l => l.id === tempLead.id);
               if (exists) return prev;
-              return [newLead, ...prev].slice(0, 10);
+              return [tempLead, ...prev].slice(0, 10);
             });
-            
-            // Atualizar estatísticas (silenciosamente)
-            loadData(selectedClient);
-            
-            // Efeito visual
-            triggerCelebration(newLead);
-            
-            // Áudio (opcional/catch-all)
+
+            // Disparamos a animação e o som imediatamente
+            triggerCelebration(tempLead);
             new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {});
+
+            // Agora buscamos o nome real do cliente e atualizamos as estatísticas
+            try {
+              const { data: client } = await supabase
+                .from('clients')
+                .select('name')
+                .eq('id', newLeadData.client_id)
+                .single();
+
+              if (client) {
+                console.log('Nome do cliente encontrado:', client.name);
+                setLeads(prev => prev.map(l => l.id === newLeadData.id ? { ...l, clients: client } : l));
+              }
+              
+              loadData(selectedClient);
+            } catch (err) {
+              console.error('Erro ao buscar detalhes do cliente:', err);
+            }
           }
         }
       )
