@@ -113,28 +113,51 @@ export default function UsersManagementPage() {
         closeModal();
         loadData();
       } else {
-        alert('Erro ao atualizar usuário: ' + error.message);
+        alert('Erro ao atualizar perfil: ' + error.message);
       }
     } else {
-      const { password, ...userDataWithoutPassword } = newUser;
-      
-      const userToInsert = {
-        ...userDataWithoutPassword,
-        client_id: newUser.client_id === '' ? null : newUser.client_id
-      };
+      try {
+        setLoading(true);
+        // 1. Criar o usuário no Supabase Auth (Sistema de Acesso)
+        console.log('Provisionando acesso para:', newUser.email);
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: newUser.email,
+          password: newUser.password,
+          options: {
+            data: {
+              display_name: newUser.name,
+              role: newUser.role
+            }
+          }
+        });
 
-      const { data, error } = await supabase
-        .from('system_users')
-        .insert([userToInsert])
-        .select()
-        .single();
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('Falha ao gerar UID de autenticação');
 
-      if (!error) {
-        await logAction('Usuário Provisionado', 'user', data.id, { email: newUser.email, avatar: newUser.avatar_style });
+        // 2. Criar o perfil na tabela system_users (Vinculado ao Auth)
+        const { password, ...userDataWithoutPassword } = newUser;
+        const userToInsert = {
+          ...userDataWithoutPassword,
+          id: authData.user.id, // Usa o mesmo ID do Auth
+          client_id: newUser.client_id === '' ? null : newUser.client_id,
+          status: 'active'
+        };
+
+        const { error: profileError } = await supabase
+          .from('system_users')
+          .insert([userToInsert]);
+
+        if (profileError) throw profileError;
+
+        await logAction('Usuário Provisionado', 'user', authData.user.id, { email: newUser.email });
+        alert('Usuário criado com sucesso! Se a confirmação de e-mail estiver ativa no seu Supabase, o usuário precisará confirmar o e-mail antes do primeiro login.');
         closeModal();
         loadData();
-      } else {
-        alert('Erro ao criar usuário: ' + error.message);
+      } catch (error: any) {
+        console.error('Erro no provisionamento:', error);
+        alert('Erro ao provisionar usuário: ' + error.message);
+      } finally {
+        setLoading(false);
       }
     }
   };
