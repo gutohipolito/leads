@@ -132,39 +132,20 @@ export default function UsersManagementPage() {
     } else {
       try {
         setLoading(true);
-        // 1. Criar o usuário no Supabase Auth (Sistema de Acesso)
-        console.log('Provisionando acesso para:', newUser.email);
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: newUser.email,
-          password: newUser.password,
-          options: {
-            data: {
-              display_name: newUser.name,
-              role: newUser.role
-            }
-          }
+        console.log('Solicitando provisionamento administrativo para:', newUser.email);
+        
+        const response = await fetch('/api/admin/users/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUser)
         });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error('Falha ao gerar UID de autenticação');
+        const result = await response.json();
 
-        // 2. Criar o perfil na tabela system_users (Vinculado ao Auth)
-        const { password, ...userDataWithoutPassword } = newUser;
-        const userToInsert = {
-          ...userDataWithoutPassword,
-          id: authData.user.id, // Usa o mesmo ID do Auth
-          client_id: newUser.client_id === '' ? null : newUser.client_id,
-          status: 'active'
-        };
+        if (result.error) throw new Error(result.error);
 
-        const { error: profileError } = await supabase
-          .from('system_users')
-          .insert([userToInsert]);
-
-        if (profileError) throw profileError;
-
-        await logAction('Usuário Provisionado', 'user', authData.user.id, { email: newUser.email });
-        alert('Usuário criado com sucesso! Se a confirmação de e-mail estiver ativa no seu Supabase, o usuário precisará confirmar o e-mail antes do primeiro login.');
+        await logAction('Usuário Provisionado', 'user', result.userId, { email: newUser.email });
+        alert('Usuário criado com sucesso e acesso liberado!');
         closeModal();
         loadData();
       } catch (error: any) {
