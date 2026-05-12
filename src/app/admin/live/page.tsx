@@ -165,9 +165,10 @@ export default function LiveMonitorPage() {
           table: 'leads' 
         },
         async (payload) => {
-          console.log('Realtime Event Received:', payload.event, payload);
+          const eventType = payload.eventType || (payload as any).event;
+          console.log('Realtime Event Received:', eventType, payload);
           
-          if (payload.event === 'INSERT') {
+          if (eventType === 'INSERT') {
             const newLeadData = payload.new;
             
             // Garantir comparação de strings para os IDs
