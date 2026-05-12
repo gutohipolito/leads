@@ -102,6 +102,52 @@
   transform: scale(1.1);
 }
 
+.statusPill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  transition: all 0.3s;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connecting .statusDot {
+  background: #ffbd2e;
+  box-shadow: 0 0 10px #ffbd2e;
+  animation: pulse 1s infinite;
+}
+
+.online .statusDot {
+  background: #2ecc71;
+  box-shadow: 0 0 10px #2ecc71;
+}
+
+.online {
+  border-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.error .statusDot {
+  background: #ff4757;
+  box-shadow: 0 0 10px #ff4757;
+}
+
+.error {
+  border-color: rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+}
+
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

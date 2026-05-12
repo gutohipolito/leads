@@ -35,15 +35,22 @@ export default function LiveMonitorPage() {
   const [celebrationLead, setCelebrationLead] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
   const containerRef = useRef<HTMLDivElement>(null);
+  const celebrationTimeoutRef = useRef<any>(null);
 
   const triggerCelebration = (lead: any) => {
+    // Limpar timeout anterior se houver
+    if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+    
     setCelebrationLead(lead);
     setIsCelebration(true);
-    setTimeout(() => {
+    
+    celebrationTimeoutRef.current = setTimeout(() => {
       setIsCelebration(false);
       setCelebrationLead(null);
-    }, 3500);
+      celebrationTimeoutRef.current = null;
+    }, 4000); // Um pouco mais longo para garantir que a animação termine
   };
 
   const loadData = async (clientId: string = 'all') => {
@@ -143,14 +150,18 @@ export default function LiveMonitorPage() {
     loadData(selectedClient);
 
     // Inscrição Realtime para novos leads
+    setConnectionStatus('connecting');
     const channel = supabase
-      .channel('live-monitor')
+      .channel(`live-monitor-${selectedClient}-${Math.random().toString(36).substring(7)}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'leads' },
         async (payload) => {
+          console.log('Realtime INSERT:', payload);
+          
           if (selectedClient !== 'all' && payload.new.client_id !== selectedClient) return;
 
+          // Buscar detalhes do cliente
           const { data: client } = await supabase
             .from('clients')
             .select('name')
@@ -158,16 +169,31 @@ export default function LiveMonitorPage() {
             .single();
 
           const newLead = { ...payload.new, clients: client };
-          setLeads(prev => [newLead, ...prev].slice(0, 10));
-          setStats(prev => ({ ...prev, totalToday: prev.totalToday + 1 }));
           
+          // Atualização otimista da lista
+          setLeads(prev => [newLead, ...prev].slice(0, 10));
+          
+          // Forçar atualização de todas as estatísticas da tela
+          loadData(selectedClient);
+          
+          // Disparar efeito visual e sonoro
           triggerCelebration(newLead);
           
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-          audio.play().catch(() => {});
+          try {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.volume = 0.4;
+            audio.play().catch(() => {});
+          } catch (e) {}
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('online');
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setConnectionStatus('error');
+        }
+      });
 
     return () => {
       clearInterval(timer);
@@ -176,9 +202,15 @@ export default function LiveMonitorPage() {
   }, [selectedClient]);
 
   useEffect(() => {
-    const { count: totalClients } = supabase.from('clients').select('*', { count: 'exact', head: true }).then(({count}) => {
+    async function fetchActiveClients() {
+      const { count } = await supabase
+        .from('clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      
       setStats(prev => ({ ...prev, activeClients: count || 0 }));
-    });
+    }
+    fetchActiveClients();
   }, []);
 
   const toggleFullscreen = () => {
@@ -253,12 +285,17 @@ export default function LiveMonitorPage() {
             </select>
           </div>
 
+          <div className={`${styles.statusPill} ${styles[connectionStatus]}`}>
+            <div className={styles.statusDot} />
+            <span>{connectionStatus.toUpperCase()}</span>
+          </div>
+
           <div className={styles.clock}>
-            <Clock size={20} />
+            <Clock size={18} />
             <span>{currentTime ? currentTime.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
           </div>
           <button className={styles.screenBtn} onClick={toggleFullscreen}>
-            {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
           </button>
         </div>
       </header>
