@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
         role,
         client_id: client_id || null,
         avatar_style: avatar_style || 'avataaars',
-        status: 'active'
+        status: 'active',
+        password_changed: false
       }]);
 
     if (profileError) {
