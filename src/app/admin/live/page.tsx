@@ -239,6 +239,9 @@ export default function LiveMonitorPage() {
         }
       });
 
+    return () => {
+      clearInterval(timer);
+      supabase.removeChannel(channel);
     };
   }, [selectedClient]);
 
