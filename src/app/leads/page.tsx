@@ -500,8 +500,19 @@ export default function LeadsPage() {
               </div>
             </div>
             <div className={styles.selectionGrid}>
-              {filteredClients.map(client => (
-                <div key={client.id} className={`${styles.card} glass`} onClick={() => setSelectedClientId(client.id)}>
+              {filteredClients.map(client => {
+                const isActive = client.status === 'active' && (client.webhooks?.length || 0) > 0;
+                const isWaiting = client.status === 'active' && (client.webhooks?.length || 0) === 0;
+                const isDisabled = client.status !== 'active';
+                
+                const statusClass = isActive ? styles.cardActive : isWaiting ? styles.cardWaiting : styles.cardDisabled;
+
+                return (
+                  <div 
+                    key={client.id} 
+                    className={`${styles.card} ${statusClass} glass`} 
+                    onClick={() => setSelectedClientId(client.id)}
+                  >
                   <div className={styles.cardTop}>
                     <div 
                       className={styles.clientLogoBox} 

@@ -45,6 +45,31 @@
   box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 209, 255, 0.1) !important;
 }
 
+/* Hover Variations */
+.cardActive:hover {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.1) !important;
+}
+.cardActive:hover::before {
+  background: linear-gradient(90deg, transparent, #10b981, transparent);
+}
+
+.cardWaiting:hover {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.1) !important;
+}
+.cardWaiting:hover::before {
+  background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+}
+
+.cardDisabled:hover {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(239, 68, 68, 0.1) !important;
+}
+.cardDisabled:hover::before {
+  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+}
+
 .card:hover::before {
   opacity: 1;
 }
