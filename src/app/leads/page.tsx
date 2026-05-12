@@ -477,21 +477,21 @@ export default function LeadsPage() {
                   Todos <span>{clients.length}</span>
                 </button>
                 <button 
-                  className={`${styles.filterTab} ${clientStatusFilter === 'active' ? styles.active : ''}`}
+                  className={`${styles.filterTab} ${clientStatusFilter === 'active' ? `${styles.active} ${styles.activeTab}` : ''}`}
                   onClick={() => setClientStatusFilter('active')}
                 >
                   <CheckCircle2 size={16} />
                   Ativos <span>{clients.filter(c => c.status === 'active' && (c.webhooks?.length || 0) > 0).length}</span>
                 </button>
                 <button 
-                  className={`${styles.filterTab} ${clientStatusFilter === 'waiting' ? styles.active : ''}`}
+                  className={`${styles.filterTab} ${clientStatusFilter === 'waiting' ? `${styles.active} ${styles.waitingTab}` : ''}`}
                   onClick={() => setClientStatusFilter('waiting')}
                 >
                   <Clock size={16} />
                   Aguardando <span>{clients.filter(c => c.status === 'active' && (c.webhooks?.length || 0) === 0).length}</span>
                 </button>
                 <button 
-                  className={`${styles.filterTab} ${clientStatusFilter === 'disabled' ? styles.active : ''}`}
+                  className={`${styles.filterTab} ${clientStatusFilter === 'disabled' ? `${styles.active} ${styles.disabledTab}` : ''}`}
                   onClick={() => setClientStatusFilter('disabled')}
                 >
                   <Slash size={16} />

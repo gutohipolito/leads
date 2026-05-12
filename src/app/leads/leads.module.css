@@ -244,9 +244,33 @@
   box-shadow: 0 4px 15px rgba(86, 215, 253, 0.2);
 }
 
+.filterTab.active.activeTab {
+  background: #065f46;
+  color: #d1fae5;
+  box-shadow: 0 4px 15px rgba(6, 95, 70, 0.3);
+}
+
+.filterTab.active.waitingTab {
+  background: #92400e;
+  color: #fef3c7;
+  box-shadow: 0 4px 15px rgba(146, 64, 14, 0.3);
+}
+
+.filterTab.active.disabledTab {
+  background: #991b1b;
+  color: #fee2e2;
+  box-shadow: 0 4px 15px rgba(153, 27, 27, 0.3);
+}
+
 .filterTab.active span {
   background: rgba(0, 0, 0, 0.1);
   opacity: 1;
+}
+
+.filterTab.active.activeTab span,
+.filterTab.active.waitingTab span,
+.filterTab.active.disabledTab span {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .backBtn {
