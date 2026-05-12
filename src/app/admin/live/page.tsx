@@ -151,43 +151,62 @@ export default function LiveMonitorPage() {
 
     // Inscrição Realtime para novos leads
     setConnectionStatus('connecting');
+    
+    // Usamos um nome de canal estável para evitar excesso de conexões
+    const channelName = selectedClient === 'all' ? 'live-monitor-all' : `live-monitor-${selectedClient}`;
+    
     const channel = supabase
-      .channel(`live-monitor-${selectedClient}-${Math.random().toString(36).substring(7)}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'leads' },
+        { 
+          event: '*', // Ouvir todos os eventos para diagnóstico
+          schema: 'public', 
+          table: 'leads' 
+        },
         async (payload) => {
-          console.log('Realtime INSERT:', payload);
+          console.log('Realtime Event Received:', payload.event, payload);
           
-          if (selectedClient !== 'all' && payload.new.client_id !== selectedClient) return;
+          if (payload.event === 'INSERT') {
+            const newLeadData = payload.new;
+            
+            // Garantir comparação de strings para os IDs
+            if (selectedClient !== 'all' && String(newLeadData.client_id) !== String(selectedClient)) {
+              console.log('Lead ignorado (filtro de cliente):', newLeadData.client_id, 'vs', selectedClient);
+              return;
+            }
 
-          // Buscar detalhes do cliente
-          const { data: client } = await supabase
-            .from('clients')
-            .select('name')
-            .eq('id', payload.new.client_id)
-            .single();
+            // Buscar detalhes do cliente
+            const { data: client } = await supabase
+              .from('clients')
+              .select('name')
+              .eq('id', newLeadData.client_id)
+              .single();
 
-          const newLead = { ...payload.new, clients: client };
-          
-          // Atualização otimista da lista
-          setLeads(prev => [newLead, ...prev].slice(0, 10));
-          
-          // Forçar atualização de todas as estatísticas da tela
-          loadData(selectedClient);
-          
-          // Disparar efeito visual e sonoro
-          triggerCelebration(newLead);
-          
-          try {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.volume = 0.4;
-            audio.play().catch(() => {});
-          } catch (e) {}
+            const newLead = { ...newLeadData, clients: client };
+            
+            // Atualização imediata da lista
+            setLeads(prev => {
+              const exists = prev.find(l => l.id === newLead.id);
+              if (exists) return prev;
+              return [newLead, ...prev].slice(0, 10);
+            });
+            
+            // Atualizar estatísticas (silenciosamente)
+            loadData(selectedClient);
+            
+            // Efeito visual
+            triggerCelebration(newLead);
+            
+            // Áudio (opcional/catch-all)
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {});
+          }
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
+      .subscribe((status, err) => {
+        console.log(`Subscription Status (${channelName}):`, status);
+        if (err) console.error('Subscription Error:', err);
+        
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('online');
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
@@ -267,10 +286,6 @@ export default function LiveMonitorPage() {
         </div>
 
         <div className={styles.right}>
-          <button className={styles.testBtn} onClick={handleTestCelebration}>
-            TESTAR ANIMAÇÃO
-          </button>
-
           <div className={styles.clientFilterWrapper}>
             <span className={styles.filterLabel}>Filtrar:</span>
             <select 
