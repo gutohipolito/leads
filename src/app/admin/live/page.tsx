@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   Clock,
   MapPin,
-  Globe
+  Globe,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { logAction } from '@/utils/logger';
@@ -38,6 +40,7 @@ export default function LiveMonitorPage() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
   const containerRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
 
   const triggerCelebration = (lead: any) => {
@@ -236,11 +239,18 @@ export default function LiveMonitorPage() {
         }
       });
 
-    return () => {
-      clearInterval(timer);
-      supabase.removeChannel(channel);
     };
   }, [selectedClient]);
+
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (sliderRef.current) {
+      const scrollAmount = 200;
+      sliderRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     async function fetchActiveClients() {
@@ -308,37 +318,41 @@ export default function LiveMonitorPage() {
         </div>
 
         <div className={styles.right}>
-          <div className={styles.clientSlider}>
-            <button 
-              className={`${styles.sliderItem} ${selectedClient === 'all' ? styles.active : ''}`}
-              onClick={() => setSelectedClient('all')}
-            >
-              <div className={styles.sliderLogo}><Users size={16} /></div>
-              <div className={styles.sliderInfo}>
-                <span>TODOS</span>
-                <small>VISÃO GLOBAL</small>
-              </div>
-            </button>
-            {clients.map(c => (
+          <div className={styles.sliderContainer}>
+            <button className={styles.sliderArrow} onClick={() => scrollSlider('left')}><ChevronLeft size={16} /></button>
+            <div className={styles.clientSlider} ref={sliderRef}>
               <button 
-                key={c.id} 
-                className={`${styles.sliderItem} ${selectedClient === c.id ? styles.active : ''}`}
-                onClick={() => setSelectedClient(c.id)}
+                className={`${styles.sliderItem} ${selectedClient === 'all' ? styles.active : ''}`}
+                onClick={() => setSelectedClient('all')}
               >
-                <div className={styles.sliderLogo}>
-                  {c.logo_url ? (
-                    <img src={c.logo_url} alt={c.name} />
-                  ) : (
-                    <span>{c.name.charAt(0)}</span>
-                  )}
-                  <div className={styles.miniStatus} />
-                </div>
+                <div className={styles.sliderLogo}><Users size={16} /></div>
                 <div className={styles.sliderInfo}>
-                  <span>{c.name.toUpperCase()}</span>
-                  <small>OPERACIONAL</small>
+                  <span>TODOS</span>
+                  <small>VISÃO GLOBAL</small>
                 </div>
               </button>
-            ))}
+              {clients.map(c => (
+                <button 
+                  key={c.id} 
+                  className={`${styles.sliderItem} ${selectedClient === c.id ? styles.active : ''}`}
+                  onClick={() => setSelectedClient(c.id)}
+                >
+                  <div className={styles.sliderLogo}>
+                    {c.logo_url ? (
+                      <img src={c.logo_url} alt={c.name} />
+                    ) : (
+                      <span>{c.name.charAt(0)}</span>
+                    )}
+                    <div className={styles.miniStatus} />
+                  </div>
+                  <div className={styles.sliderInfo}>
+                    <span>{c.name.toUpperCase()}</span>
+                    <small>OPERACIONAL</small>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button className={styles.sliderArrow} onClick={() => scrollSlider('right')}><ChevronRight size={16} /></button>
           </div>
 
           <div className={`${styles.statusPill} ${styles[connectionStatus]}`}>
