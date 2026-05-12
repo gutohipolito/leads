@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { logAction } from '@/utils/logger';
+import DeleteModal from '@/components/DeleteModal/DeleteModal';
 
 export default function LiveMonitorPage() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -38,6 +39,7 @@ export default function LiveMonitorPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{show: boolean, leadId: string}>({ show: false, leadId: '' });
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
   const containerRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
@@ -282,9 +284,6 @@ export default function LiveMonitorPage() {
   const handleDeleteLead = async (leadId: string) => {
     if (!isAdmin) return;
     
-    const confirmDelete = window.confirm('Tem certeza que deseja excluir este lead permanentemente?');
-    if (!confirmDelete) return;
-
     const { error } = await supabase
       .from('leads')
       .delete()
@@ -292,6 +291,7 @@ export default function LiveMonitorPage() {
 
     if (!error) {
       setLeads(prev => prev.filter(l => l.id !== leadId));
+      setDeleteModal({ show: false, leadId: '' });
       logAction('Lead Excluído (Live)', 'lead', leadId, { deleted_by: 'admin' });
       // Atualizar estatísticas após exclusão
       loadData(selectedClient);
@@ -428,7 +428,7 @@ export default function LiveMonitorPage() {
                       className={styles.deleteBtn} 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteLead(lead.id);
+                        setDeleteModal({ show: true, leadId: lead.id });
                       }}
                       title="Excluir Lead"
                     >
@@ -498,6 +498,15 @@ export default function LiveMonitorPage() {
           </div>
         </div>
       </footer>
+
+      {deleteModal.show && (
+        <DeleteModal 
+          title="Excluir do Monitor"
+          message={`Confirmar a exclusão do lead "${leads.find(l => l.id === deleteModal.leadId)?.name || 'Sem Nome'}"?`}
+          onConfirm={() => handleDeleteLead(deleteModal.leadId)}
+          onCancel={() => setDeleteModal({ show: false, leadId: '' })}
+        />
+      )}
     </div>
   );
 }

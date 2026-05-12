@@ -35,6 +35,7 @@ import Loader from '@/components/Loader/Loader';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ExportModal from '@/components/ExportModal/ExportModal';
+import DeleteModal from '@/components/DeleteModal/DeleteModal';
 
 export default function LeadsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -63,6 +64,7 @@ export default function LeadsPage() {
   });
   
   const [exportType, setExportType] = useState<{show: boolean, type: string}>({ show: false, type: '' });
+  const [deleteModal, setDeleteModal] = useState<{show: boolean, leadId: string}>({ show: false, leadId: '' });
   
   // Filtro de Status do Cliente
   const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'waiting' | 'disabled'>('all');
@@ -130,9 +132,6 @@ export default function LeadsPage() {
   const handleDeleteLead = async (leadId: string) => {
     if (!isAdmin) return;
     
-    const confirmDelete = window.confirm('Tem certeza que deseja excluir este lead permanentemente? Esta ação não pode ser desfeita.');
-    if (!confirmDelete) return;
-
     const { error } = await supabase
       .from('leads')
       .delete()
@@ -141,6 +140,7 @@ export default function LeadsPage() {
     if (!error) {
       setLeads(prev => prev.filter(l => l.id !== leadId));
       setSelectedLead(null);
+      setDeleteModal({ show: false, leadId: '' });
       logAction('Lead Excluído', 'lead', leadId, { deleted_by: 'admin' });
     } else {
       alert('Erro ao excluir lead: ' + error.message);
@@ -645,7 +645,7 @@ export default function LeadsPage() {
                               title="Excluir Lead"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteLead(lead.id);
+                                setDeleteModal({ show: true, leadId: lead.id });
                               }}
                             >
                               <Trash2 size={16} />
@@ -723,7 +723,7 @@ export default function LeadsPage() {
                   {isAdmin && (
                     <button 
                       className={styles.deleteBtn} 
-                      onClick={() => handleDeleteLead(selectedLead.id)}
+                      onClick={() => setDeleteModal({ show: true, leadId: selectedLead.id })}
                     >
                       <Trash2 size={18} />
                       <span>Excluir Lead</span>
@@ -772,6 +772,15 @@ export default function LeadsPage() {
           format={exportType.type}
           onConfirm={processExport}
           onCancel={() => setExportType({ show: false, type: '' })}
+        />
+      )}
+
+      {deleteModal.show && (
+        <DeleteModal 
+          title="Excluir Lead"
+          message={`Você está prestes a excluir o lead "${leads.find(l => l.id === deleteModal.leadId)?.name || 'Sem Nome'}".`}
+          onConfirm={() => handleDeleteLead(deleteModal.leadId)}
+          onCancel={() => setDeleteModal({ show: false, leadId: '' })}
         />
       )}
     </DashboardLayout>
