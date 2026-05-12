@@ -319,7 +319,7 @@ export default function LiveMonitorPage() {
 
         <div className={styles.right}>
           <div className={styles.sliderContainer}>
-            <button className={styles.sliderArrow} onClick={() => scrollSlider('left')}><ChevronLeft size={16} /></button>
+            <button className={`${styles.sliderArrow} ${styles.left}`} onClick={() => scrollSlider('left')}><ChevronLeft size={18} /></button>
             <div className={styles.clientSlider} ref={sliderRef}>
               <button 
                 className={`${styles.sliderItem} ${selectedClient === 'all' ? styles.active : ''}`}
@@ -352,7 +352,7 @@ export default function LiveMonitorPage() {
                 </button>
               ))}
             </div>
-            <button className={styles.sliderArrow} onClick={() => scrollSlider('right')}><ChevronRight size={16} /></button>
+            <button className={`${styles.sliderArrow} ${styles.right}`} onClick={() => scrollSlider('right')}><ChevronRight size={18} /></button>
           </div>
 
           <div className={`${styles.statusPill} ${styles[connectionStatus]}`}>
