@@ -316,7 +316,58 @@
 
 .actions {
   display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.totalStatsCard {
+  display: flex;
+  align-items: center;
   gap: 1rem;
+  background: rgba(86, 215, 253, 0.05);
+  border: 1px solid rgba(86, 215, 253, 0.1);
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.totalStatsCard:hover {
+  background: rgba(86, 215, 253, 0.08);
+  border-color: rgba(86, 215, 253, 0.2);
+  transform: translateY(-2px);
+}
+
+.totalIcon {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: var(--background);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(86, 215, 253, 0.3);
+}
+
+.totalInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.totalLabel {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.totalValue {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1.2;
 }
 
 .primaryBtn, .secondaryBtn {

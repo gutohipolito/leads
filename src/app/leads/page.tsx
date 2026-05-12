@@ -567,6 +567,13 @@ export default function LeadsPage() {
             <div className={styles.listHeader}>
               <button className={styles.backBtn} onClick={resetSelection}><ArrowLeft size={18} /><span>Voltar</span></button>
               <div className={styles.actions}>
+                <div className={styles.totalStatsCard}>
+                  <div className={styles.totalIcon}><Database size={16} /></div>
+                  <div className={styles.totalInfo}>
+                    <span className={styles.totalLabel}>Total de Leads</span>
+                    <strong className={styles.totalValue}>{filteredLeads.filter(l => l.source !== 'test_simulation').length}</strong>
+                  </div>
+                </div>
                 <div className={styles.exportDropdown}>
                   <button className={styles.primaryBtn} onClick={() => setExportOpen(!exportOpen)}><Download size={18} /><span>Exportar Leads</span></button>
                   <div className={`${styles.dropdownMenu} ${exportOpen ? styles.open : ''}`}>
@@ -591,11 +598,6 @@ export default function LeadsPage() {
                 </button>
               </div>
 
-              <div className={styles.filtersBar}>
-                <div className={styles.filterField}><label>Nome</label><input type="text" className={styles.filterInput} value={filterName} onChange={(e) => setFilterName(e.target.value)}/></div>
-                <div className={styles.filterField}><label>E-mail</label><input type="text" className={styles.filterInput} value={filterEmail} onChange={(e) => setFilterEmail(e.target.value)}/></div>
-                <div className={styles.filterField}><label>Total Real</label><div className={styles.countBadge}>{filteredLeads.filter(l => l.source !== 'test_simulation').length}</div></div>
-              </div>
 
               <table className={styles.table}>
                 <thead><tr><th>Lead</th><th>Contato</th><th>Origem</th><th>Data</th><th>Ações</th></tr></thead>
