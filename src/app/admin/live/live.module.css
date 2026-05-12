@@ -456,8 +456,45 @@
 .tickerTrack {
   display: flex;
   white-space: nowrap;
-  gap: 4rem;
-  animation: ticker 30s linear infinite;
+  animation: ticker 60s linear infinite;
+  width: max-content;
+}
+
+.tickerContent {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  padding-right: 3rem;
+}
+
+.tickerItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.miniLogo {
+  width: 20px;
+  height: 20px;
+  background: var(--primary);
+  color: #000;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 900;
+}
+
+.tickerItem span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.05em;
+}
+
+.tickerDivider {
+  color: rgba(255, 255, 255, 0.1);
 }
 
 .tickerTrack span {
@@ -465,6 +502,72 @@
   font-weight: 700;
   color: rgba(255, 255, 255, 0.2);
   letter-spacing: 0.2em;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.performanceCard {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.perfHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.perfHeader h3 {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.barChart {
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+
+.bar {
+  flex: 1;
+  background: linear-gradient(to top, rgba(0, 209, 255, 0.4), #00d1ff);
+  border-radius: 4px 4px 0 0;
+  animation: growBar 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: bottom;
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.2);
+}
+
+.barWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.barLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #00d1ff;
+  opacity: 0;
+  animation: fadeIn 0.5s ease 1s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
 }
 
 .clientFilterWrapper {

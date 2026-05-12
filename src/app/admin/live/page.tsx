@@ -501,8 +501,31 @@ export default function LiveMonitorPage() {
       <footer className={styles.footer}>
         <div className={styles.ticker}>
           <div className={styles.tickerTrack}>
-            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS LEADS...</span>
-            <span>SISTEMA OPERACIONAL • CONEXÃO ESTÁVEL • MONITORANDO {stats.activeClients} TERMINAIS • AGUARDANDO NOVOS LEADS...</span>
+            <div className={styles.tickerContent}>
+              {clients.map(c => (
+                <div key={c.id} className={styles.tickerItem}>
+                  <div className={styles.miniLogo}>
+                    {c.name.charAt(0)}
+                  </div>
+                  <span>{c.name.toUpperCase()} • OPERACIONAL</span>
+                </div>
+              ))}
+              <div className={styles.tickerDivider}>•</div>
+              <span>SISTEMA ASTHROS MONITORING • CONEXÃO CRIPTOGRAFADA • STATUS: GLOBAL OK</span>
+            </div>
+            {/* Duplicata para loop infinito */}
+            <div className={styles.tickerContent}>
+              {clients.map(c => (
+                <div key={`${c.id}-dup`} className={styles.tickerItem}>
+                  <div className={styles.miniLogo}>
+                    {c.name.charAt(0)}
+                  </div>
+                  <span>{c.name.toUpperCase()} • OPERACIONAL</span>
+                </div>
+              ))}
+              <div className={styles.tickerDivider}>•</div>
+              <span>SISTEMA ASTHROS MONITORING • CONEXÃO CRIPTOGRAFADA • STATUS: GLOBAL OK</span>
+            </div>
           </div>
         </div>
       </footer>
