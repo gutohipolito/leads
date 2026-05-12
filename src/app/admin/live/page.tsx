@@ -14,12 +14,10 @@ import {
   ArrowLeft,
   Clock,
   MapPin,
-  Globe,
-  Trash2
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { logAction } from '@/utils/logger';
-import DeleteModal from '@/components/DeleteModal/DeleteModal';
 
 export default function LiveMonitorPage() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -38,8 +36,6 @@ export default function LiveMonitorPage() {
   const [celebrationLead, setCelebrationLead] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{show: boolean, leadId: string}>({ show: false, leadId: '' });
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
   const containerRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
@@ -145,10 +141,6 @@ export default function LiveMonitorPage() {
     // Carregar clientes para o filtro
     async function fetchClients() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase.from('system_users').select('role').eq('email', user.email).single();
-        setIsAdmin(profile?.role === 'admin');
-      }
 
       const impersonated = localStorage.getItem('impersonated_client');
       if (impersonated) {
@@ -279,25 +271,6 @@ export default function LiveMonitorPage() {
     });
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     audio.play().catch(() => {});
-  };
-
-  const handleDeleteLead = async (leadId: string) => {
-    if (!isAdmin) return;
-    
-    const { error } = await supabase
-      .from('leads')
-      .delete()
-      .eq('id', leadId);
-
-    if (!error) {
-      setLeads(prev => prev.filter(l => l.id !== leadId));
-      setDeleteModal({ show: false, leadId: '' });
-      logAction('Lead Excluído (Live)', 'lead', leadId, { deleted_by: 'admin' });
-      // Atualizar estatísticas após exclusão
-      loadData(selectedClient);
-    } else {
-      alert('Erro ao excluir lead: ' + error.message);
-    }
   };
 
   const maxPerf = Math.max(...stats.performanceBars, 1);
@@ -442,18 +415,6 @@ export default function LiveMonitorPage() {
                 </div>
                 <div className={styles.leadStatus}>
                   <div className={styles.statusBadge}>CAPTURED</div>
-                  {isAdmin && (
-                    <button 
-                      className={styles.deleteBtn} 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteModal({ show: true, leadId: lead.id });
-                      }}
-                      title="Excluir Lead"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
                 </div>
               </div>
             )) : (
@@ -548,15 +509,6 @@ export default function LiveMonitorPage() {
           </div>
         </div>
       </footer>
-
-      {deleteModal.show && (
-        <DeleteModal 
-          title="Excluir do Monitor"
-          message={`Confirmar a exclusão do lead "${leads.find(l => l.id === deleteModal.leadId)?.name || 'Sem Nome'}"?`}
-          onConfirm={() => handleDeleteLead(deleteModal.leadId)}
-          onCancel={() => setDeleteModal({ show: false, leadId: '' })}
-        />
-      )}
     </div>
   );
 }
