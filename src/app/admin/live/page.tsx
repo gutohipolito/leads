@@ -50,7 +50,7 @@ export default function LiveMonitorPage() {
       setIsCelebration(false);
       setCelebrationLead(null);
       celebrationTimeoutRef.current = null;
-    }, 4000); // Um pouco mais longo para garantir que a animação termine
+    }, 8000); // 8 segundos de celebração
   };
 
   const loadData = async (clientId: string = 'all') => {
@@ -208,7 +208,11 @@ export default function LiveMonitorPage() {
 
               if (client) {
                 console.log('Nome do cliente encontrado:', client.name);
+                // Atualiza na lista de leads
                 setLeads(prev => prev.map(l => l.id === newLeadData.id ? { ...l, clients: client } : l));
+                
+                // Atualiza no aviso de celebração (caso ainda esteja na tela)
+                setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? { ...prev, clients: client } : prev);
               }
               
               loadData(selectedClient);

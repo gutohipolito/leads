@@ -486,7 +486,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  animation: overlayFade 3s forwards;
+  animation: overlayFade 8s forwards;
 }
 
 .flashEffect {
@@ -509,7 +509,7 @@
   gap: 1.5rem;
   transform: scale(0.5);
   opacity: 0;
-  animation: cardPop 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cardPop 8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .celebrationIcon {
@@ -561,10 +561,10 @@
 
 @keyframes cardPop {
   0% { transform: scale(0.5); opacity: 0; }
-  15% { transform: scale(1.1); opacity: 1; }
-  20% { transform: scale(1); }
-  85% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1.2); opacity: 0; }
+  10% { transform: scale(1.1); opacity: 1; }
+  15% { transform: scale(1); }
+  90% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.05); opacity: 0; }
 }
 
 @keyframes iconPulse {
