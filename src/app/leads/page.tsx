@@ -26,7 +26,7 @@ import {
   FileDown,
   CheckCircle2,
   Clock,
-  Slash,
+  XCircle,
   Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -494,7 +494,7 @@ export default function LeadsPage() {
                   className={`${styles.filterTab} ${clientStatusFilter === 'disabled' ? `${styles.active} ${styles.disabledTab}` : ''}`}
                   onClick={() => setClientStatusFilter('disabled')}
                 >
-                  <Slash size={16} />
+                  <XCircle size={16} />
                   Desativados <span>{clients.filter(c => c.status !== 'active').length}</span>
                 </button>
               </div>
