@@ -149,7 +149,11 @@ export default function LiveMonitorPage() {
       if (impersonated) {
         setImpersonatedName(JSON.parse(impersonated).name);
       }
-      const { data } = await supabase.from('clients').select('id, name').eq('status', 'active');
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, logo_url')
+        .eq('status', 'active')
+        .order('name');
       if (data) setClients(data);
     }
     fetchClients();
