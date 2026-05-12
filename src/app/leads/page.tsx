@@ -53,7 +53,7 @@ export default function LeadsPage() {
   const [filterName, setFilterName] = useState('');
   const [filterEmail, setFilterEmail] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
+  const [pageSize, setPageSize] = useState(20);
   
   // Renomeação de campos
   const [isRenaming, setIsRenaming] = useState(false);
@@ -656,9 +656,46 @@ export default function LeadsPage() {
               </table>
 
               <div className={styles.pagination}>
+                <div className={styles.pageSizeSelector}>
+                  <span>Exibir:</span>
+                  <select 
+                    className={styles.pageSizeSelect}
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={30}>30</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span>leads por página</span>
+                </div>
+
+                <div className={styles.pageInfo}>
+                  Página <strong>{currentPage}</strong> de <strong>{totalPages || 1}</strong>
+                </div>
+
                 <div className={styles.pageControls}>
-                  <button className={styles.pageBtn} disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={18} /></button>
-                  <button className={styles.pageBtn} disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight size={18} /></button>
+                  <button 
+                    className={styles.pageBtn} 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    title="Anterior"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button 
+                    className={styles.pageBtn} 
+                    disabled={currentPage === totalPages || totalPages === 0} 
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    title="Próxima"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
               </div>
             </div>
