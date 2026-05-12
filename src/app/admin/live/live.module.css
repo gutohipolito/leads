@@ -663,21 +663,101 @@
 .activeClientItem {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.25rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+  animation: slideInRight 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.activeClientItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(0, 209, 255, 0.2);
+  transform: translateX(5px);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .clientLine {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.9rem;
 }
 
+.clientNameGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.liveIndicator {
+  width: 6px;
+  height: 6px;
+  background: #2ecc71;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+  animation: liveBlink 1.5s infinite;
+}
+
+@keyframes liveBlink {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.3; transform: scale(0.8); }
+}
+
 .clientLine span {
-  font-weight: 600;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.02em;
 }
 
 .clientLine strong {
   color: #00d1ff;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.clientLine strong span {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  margin-left: 4px;
+  font-weight: 800;
+}
+
+.bigTotal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  width: 100%;
+}
+
+.bigTotal p {
+  font-size: 4rem;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(to bottom, #fff, #00d1ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bigTotal span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .clientBar {

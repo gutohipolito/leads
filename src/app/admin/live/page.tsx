@@ -452,22 +452,30 @@ export default function LiveMonitorPage() {
             
             <div className={styles.activeClientsList}>
               {selectedClient === 'all' ? (
-                stats.topClients.map(c => (
-                  <div key={c.name} className={styles.activeClientItem}>
+                stats.topClients.map((c, idx) => (
+                  <div key={c.name} className={styles.activeClientItem} style={{ animationDelay: `${idx * 0.1}s` }}>
                     <div className={styles.clientLine}>
-                      <span>{c.name}</span>
-                      <strong>{c.count} leads</strong>
+                      <div className={styles.clientNameGroup}>
+                        <div className={styles.liveIndicator} />
+                        <span>{c.name}</span>
+                      </div>
+                      <strong>{c.count} <span>leads</span></strong>
                     </div>
                     <div className={styles.clientBar}>
-                      <div className={styles.clientBarFill} style={{ width: `${(c.count / stats.totalToday) * 100}%` }} />
+                      <div 
+                        className={styles.clientBarFill} 
+                        style={{ width: `${Math.min((c.count / (stats.totalToday || 1)) * 100 * 2, 100)}%` }} 
+                      />
                     </div>
                   </div>
                 ))
               ) : (
                 <div className={styles.singleClientInfo}>
-                  <Zap size={32} color="#ffbd2e" />
-                  <p>Monitorando Terminal Exclusivo</p>
-                  <span>Alta prioridade de captura ativa</span>
+                  <div className={styles.bigTotal}>
+                    <TrendingUp size={32} color="#00d1ff" />
+                    <p>{stats.totalToday}</p>
+                    <span>Leads capturados hoje</span>
+                  </div>
                 </div>
               )}
             </div>
