@@ -25,13 +25,12 @@ export default function Header({ title }: HeaderProps) {
         setUser(user);
         const { data: profile } = await supabase
           .from('system_users')
-          .select('avatar_style, password_changed, role')
+          .select('avatar_style, role')
           .eq('email', user.email)
           .single();
         
         if (profile) {
           setAvatarStyle(profile.avatar_style || 'avataaars');
-          setPasswordChanged(profile.password_changed ?? true);
           setIsAdmin(profile.role === 'admin');
         }
       }
@@ -160,13 +159,6 @@ export default function Header({ title }: HeaderProps) {
     try {
       const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
       if (authError) throw authError;
-
-      const { error: dbError } = await supabase
-        .from('system_users')
-        .update({ password_changed: true })
-        .eq('email', user.email);
-      
-      if (dbError) throw dbError;
 
       alert('Senha atualizada com sucesso!');
       setIsModalOpen(false);
