@@ -504,56 +504,42 @@ export default function LeadsPage() {
                 const isActive = client.status === 'active' && (client.webhooks?.length || 0) > 0;
                 const isWaiting = client.status === 'active' && (client.webhooks?.length || 0) === 0;
                 const isDisabled = client.status !== 'active';
-                
                 const statusClass = isActive ? styles.cardActive : isWaiting ? styles.cardWaiting : styles.cardDisabled;
 
                 return (
-                  <div 
-                    key={client.id} 
-                    className={`${styles.card} ${statusClass} glass`} 
-                    onClick={() => setSelectedClientId(client.id)}
-                  >
-                  <div className={styles.cardTop}>
-                    <div 
-                      className={styles.clientLogoBox} 
-                      style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
-                    >
-                      {client.logo_url ? (
-                        <img src={client.logo_url} alt={client.name} className={styles.clientLogo} />
-                      ) : (
-                        <span className={styles.initials}>{client.name.charAt(0)}</span>
-                      )}
-                    </div>
-                    <div className={`
-                      ${styles.cardBadge} 
-                      ${client.status === 'active' && (client.webhooks?.length || 0) > 0 ? styles.activeNeon : ''}
-                      ${client.status === 'active' && (client.webhooks?.length || 0) === 0 ? styles.pendingNeon : ''}
-                    `}>
-                      {client.status === 'active' 
-                        ? ((client.webhooks?.length || 0) > 0 ? '● Ativo' : '● Aguardando') 
-                        : 'Inativo'
-                      }
-                    </div>
-                  </div>
-                  <div className={styles.cardBody}>
-                    <h3>{client.name}</h3>
-                    <div className={styles.cardStats}>
-                      <div className={styles.statItem}>
-                        <span className={styles.statLabel}>Terminais</span>
-                        <span className={styles.statValue}>{client.webhooks?.length || 0}</span>
+                  <div key={client.id} className={`${styles.card} ${statusClass} glass`} onClick={() => setSelectedClientId(client.id)}>
+                    <div className={styles.cardTop}>
+                      <div className={styles.clientLogoBox} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}>
+                        {client.logo_url ? (
+                          <img src={client.logo_url} alt={client.name} className={styles.clientLogo} />
+                        ) : (
+                          <span className={styles.initials}>{client.name.charAt(0)}</span>
+                        )}
                       </div>
-                      <div className={styles.statItem}>
-                        <span className={styles.statLabel}>Volume Leads</span>
-                        <span className={styles.statValue}>{client.leads?.[0]?.count || 0}</span>
+                      <div className={`${styles.cardBadge} ${isActive ? styles.activeNeon : isWaiting ? styles.pendingNeon : ''}`}>
+                        {isActive ? '● Ativo' : isWaiting ? '● Aguardando' : 'Inativo'}
                       </div>
                     </div>
+                    <div className={styles.cardBody}>
+                      <h3>{client.name}</h3>
+                      <div className={styles.cardStats}>
+                        <div className={styles.statItem}>
+                          <span className={styles.statLabel}>Terminais</span>
+                          <span className={styles.statValue}>{client.webhooks?.length || 0}</span>
+                        </div>
+                        <div className={styles.statItem}>
+                          <span className={styles.statLabel}>Volume Leads</span>
+                          <span className={styles.statValue}>{client.leads?.[0]?.count || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={styles.cardFooter}>
+                      <span className={styles.enterLabel}>Ver Detalhes</span>
+                      <div className={styles.arrowCircle}><ChevronRight size={18} /></div>
+                    </div>
                   </div>
-                  <div className={styles.cardFooter}>
-                    <span className={styles.enterLabel}>Ver Detalhes</span>
-                    <div className={styles.arrowCircle}><ChevronRight size={18} /></div>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
