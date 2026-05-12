@@ -335,18 +335,37 @@ export default function LiveMonitorPage() {
         </div>
 
         <div className={styles.right}>
-          <div className={styles.clientFilterWrapper}>
-            <span className={styles.filterLabel}>Filtrar:</span>
-            <select 
-              className={styles.clientFilter}
-              value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
+          <div className={styles.clientSlider}>
+            <button 
+              className={`${styles.sliderItem} ${selectedClient === 'all' ? styles.active : ''}`}
+              onClick={() => setSelectedClient('all')}
             >
-              <option value="all">TODOS OS CLIENTES</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
-              ))}
-            </select>
+              <div className={styles.sliderLogo}><Users size={16} /></div>
+              <div className={styles.sliderInfo}>
+                <span>TODOS</span>
+                <small>VISÃO GLOBAL</small>
+              </div>
+            </button>
+            {clients.map(c => (
+              <button 
+                key={c.id} 
+                className={`${styles.sliderItem} ${selectedClient === c.id ? styles.active : ''}`}
+                onClick={() => setSelectedClient(c.id)}
+              >
+                <div className={styles.sliderLogo}>
+                  {c.logo_url ? (
+                    <img src={c.logo_url} alt={c.name} />
+                  ) : (
+                    <span>{c.name.charAt(0)}</span>
+                  )}
+                  <div className={styles.miniStatus} />
+                </div>
+                <div className={styles.sliderInfo}>
+                  <span>{c.name.toUpperCase()}</span>
+                  <small>OPERACIONAL</small>
+                </div>
+              </button>
+            ))}
           </div>
 
           <div className={`${styles.statusPill} ${styles[connectionStatus]}`}>

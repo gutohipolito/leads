@@ -571,42 +571,102 @@
   to { opacity: 1; }
 }
 
-.clientFilterWrapper {
-  position: relative;
+.clientSlider {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 600px;
+  overflow-x: auto;
+  padding: 4px;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.clientSlider::-webkit-scrollbar {
+  display: none;
+}
+
+.sliderItem {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.25rem 0.5rem 0.25rem 1rem;
-  border-radius: 14px;
   gap: 0.75rem;
-  transition: all 0.3s;
-}
-
-.clientFilterWrapper:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--primary);
-  box-shadow: 0 0 20px rgba(0, 209, 255, 0.1);
-}
-
-.filterLabel {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: var(--primary);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.clientFilter {
-  background: transparent;
-  border: none;
-  color: white;
-  padding: 0.5rem 2rem 0.5rem 0;
-  outline: none;
-  font-weight: 700;
-  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.4rem 1rem;
+  border-radius: 14px;
   cursor: pointer;
-  appearance: none;
+  transition: all 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.sliderItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sliderItem.active {
+  background: rgba(0, 209, 255, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.15);
+}
+
+.sliderLogo {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.sliderLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.miniStatus {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #2ecc71;
+  border: 2px solid #020408;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #2ecc71;
+}
+
+.sliderInfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.sliderInfo span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: white;
+}
+
+.sliderInfo small {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.sliderItem.active .sliderInfo small {
+  opacity: 1;
+  color: white;
 }
 
 /* Celebration Overlay */
