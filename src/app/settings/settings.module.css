@@ -777,3 +777,48 @@
   color: var(--muted-foreground);
   margin: 0;
 }
+
+/* Added Security Logic Styles */
+.btnDanger {
+  background: #ef4444 !important;
+}
+
+.ipList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.ipItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(var(--foreground-rgb), 0.05);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.ipItem span {
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--foreground);
+}
+
+.ipItem button {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ipItem button:hover {
+  color: #ef4444;
+  transform: scale(1.1);
+}

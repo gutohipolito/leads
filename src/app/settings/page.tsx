@@ -47,6 +47,9 @@ export default function SettingsPage() {
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [securityLogs, setSecurityLogs] = useState<any[]>([]);
   const [loadingSecurity, setLoadingSecurity] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [ipInput, setIpInput] = useState('');
+  const [whitelist, setWhitelist] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -92,8 +95,19 @@ export default function SettingsPage() {
     
     setSecurityLogs(logs || []);
 
-    // 2. Simulação de Sessões Ativas (Supabase client não expõe todas as sessões de outros devices facilmente via JS SDK sem Admin)
-    // Vamos mostrar a sessão atual e uma entrada "placeholder" premium para o usuário saber que a feature existe
+    // 2. Dados reais de Segurança do Perfil
+    const { data: profile } = await supabase
+      .from('system_users')
+      .select('mfa_enabled, ip_whitelist')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profile) {
+      setMfaEnabled(profile.mfa_enabled || false);
+      setWhitelist(profile.ip_whitelist || []);
+    }
+
+    // 3. Simulação de Sessões Ativas
     setActiveSessions([
       { 
         id: 'current', 
@@ -106,6 +120,49 @@ export default function SettingsPage() {
     ]);
 
     setLoadingSecurity(false);
+  };
+
+  const toggleMfa = async (type: 'email' | 'app') => {
+    const newValue = !mfaEnabled;
+    const { error } = await supabase
+      .from('system_users')
+      .update({ mfa_enabled: newValue })
+      .eq('id', profile.id);
+
+    if (!error) {
+      setMfaEnabled(newValue);
+      await logAction('Segurança: 2FA ' + (newValue ? 'Ativado' : 'Desativado'), 'user', profile.id, { type });
+      alert(`Autenticação de dois fatores ${newValue ? 'ativada' : 'desativada'} com sucesso!`);
+    }
+  };
+
+  const handleAddIp = async () => {
+    if (!ipInput || whitelist.includes(ipInput)) return;
+    const newWhitelist = [...whitelist, ipInput];
+    
+    const { error } = await supabase
+      .from('system_users')
+      .update({ ip_whitelist: newWhitelist })
+      .eq('id', profile.id);
+
+    if (!error) {
+      setWhitelist(newWhitelist);
+      setIpInput('');
+      await logAction('Segurança: IP Adicionado à Whitelist', 'user', profile.id, { ip: ipInput });
+    }
+  };
+
+  const handleRemoveIp = async (ipToRemove: string) => {
+    const newWhitelist = whitelist.filter(ip => ip !== ipToRemove);
+    const { error } = await supabase
+      .from('system_users')
+      .update({ ip_whitelist: newWhitelist })
+      .eq('id', profile.id);
+
+    if (!error) {
+      setWhitelist(newWhitelist);
+      await logAction('Segurança: IP Removido da Whitelist', 'user', profile.id, { ip: ipToRemove });
+    }
   };
 
   const handleOpenSecurity = () => {
@@ -436,25 +493,49 @@ export default function SettingsPage() {
                             <p>Autenticação por App</p>
                             <span>Google Authenticator ou Authy</span>
                           </div>
-                          <button className={styles.setupBtn}>Ativar</button>
+                          <button 
+                            className={`${styles.setupBtn} ${mfaEnabled ? styles.btnDanger : ''}`}
+                            onClick={() => toggleMfa('app')}
+                          >
+                            {mfaEnabled ? 'Desativar' : 'Ativar'}
+                          </button>
                         </div>
                         <div className={styles.mfaOption}>
                           <div className={styles.optionText}>
                             <p>Código por E-mail</p>
                             <span>Receber código no e-mail cadastrado</span>
                           </div>
-                          <button className={styles.setupBtn}>Ativar</button>
+                          <button 
+                            className={`${styles.setupBtn} ${mfaEnabled ? styles.btnDanger : ''}`}
+                            onClick={() => toggleMfa('email')}
+                          >
+                            {mfaEnabled ? 'Desativar' : 'Ativar'}
+                          </button>
                         </div>
                       </div>
 
                       <div className={styles.ipWhitelist}>
                         <div className={styles.ipHeader}>
-                          <Globe size={16} />
-                          <p>Restrição por IP</p>
+                          <ShieldCheck size={16} />
+                          <p>Whitelist de IPs Autorizados</p>
                         </div>
                         <div className={styles.ipField}>
-                          <input type="text" placeholder="Adicionar IP autorizado (ex: 187.64...)" />
-                          <button>Adicionar</button>
+                          <input 
+                            type="text" 
+                            placeholder="Adicionar IP (ex: 187.64...)" 
+                            value={ipInput}
+                            onChange={(e) => setIpInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleAddIp()}
+                          />
+                          <button onClick={handleAddIp}>Adicionar</button>
+                        </div>
+                        <div className={styles.ipList}>
+                          {whitelist.map(ip => (
+                            <div key={ip} className={styles.ipItem}>
+                              <span>{ip}</span>
+                              <button onClick={() => handleRemoveIp(ip)}><X size={14} /></button>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
