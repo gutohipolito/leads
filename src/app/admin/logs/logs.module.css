@@ -1,8 +1,9 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeIn 0.3s ease-out;
+  gap: 1rem;
+  height: calc(100vh - 140px);
+  width: 100%;
 }
 
 .topActions {
@@ -68,9 +69,20 @@
 }
 
 .tableWrapper {
+  flex: 1;
   border-radius: 16px;
-  overflow: hidden;
+  overflow-y: auto;
   border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.tableWrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb {
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-radius: 10px;
 }
 
 .table {
@@ -80,19 +92,22 @@
 
 .table th {
   text-align: left;
-  padding: 1.25rem;
-  background: rgba(var(--foreground-rgb), 0.02);
+  padding: 0.85rem 1.25rem;
+  background: rgba(var(--foreground-rgb), 0.05);
   color: var(--muted-foreground);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .table td {
-  padding: 1rem 1.25rem;
+  padding: 0.65rem 1.25rem;
   border-bottom: 1px solid rgba(var(--foreground-rgb), 0.03);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .activityInfo {
@@ -191,11 +206,12 @@
 }
 
 .pagination {
-  padding: 1.5rem;
+  padding: 0.75rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(var(--foreground-rgb), 0.01);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border-top: 1px solid var(--border);
   font-size: 0.8rem;
   color: var(--muted-foreground);
 }

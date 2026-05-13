@@ -27,7 +27,7 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 15;
+  const pageSize = 12;
 
   useEffect(() => {
     async function loadAllLogs() {
