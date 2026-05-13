@@ -429,7 +429,6 @@ export default function WebhooksManagePage() {
                           <Terminal size={14} />
                           <span>Abrir Laboratório</span>
                         </button>
-                      </div>
                       
                       <button 
                         className={`${styles.testBtn} ${styles[testStatus.status]}`}

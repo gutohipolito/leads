@@ -254,21 +254,23 @@ export default function Home() {
 
   return (
     <DashboardLayout title={
-      <Link href="/admin/live" className={styles.liveStatusPill}>
-        <div className={styles.liveIndicator}>
-          <div className={styles.pulseDot} />
-          <Tv size={16} />
-        </div>
-        <span className={styles.liveLabel}>Monitor ao Vivo</span>
-      </Link>
-      <button 
-        className={`${styles.notificationBtn} ${notificationsEnabled ? styles.enabled : ''}`} 
-        onClick={requestNotificationPermission}
-        title={notificationsEnabled ? "Notificações Ativas" : "Ativar Notificações no Navegador"}
-        style={{ marginLeft: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-      >
-        {notificationsEnabled ? <Bell size={18} color="#2ecc71" /> : <BellOff size={18} color="rgba(255,255,255,0.3)" />}
-      </button>
+      <>
+        <Link href="/admin/live" className={styles.liveStatusPill}>
+          <div className={styles.liveIndicator}>
+            <div className={styles.pulseDot} />
+            <Tv size={16} />
+          </div>
+          <span className={styles.liveLabel}>Monitor ao Vivo</span>
+        </Link>
+        <button 
+          className={`${styles.notificationBtn} ${notificationsEnabled ? styles.enabled : ''}`} 
+          onClick={requestNotificationPermission}
+          title={notificationsEnabled ? "Notificações Ativas" : "Ativar Notificações no Navegador"}
+          style={{ marginLeft: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+        >
+          {notificationsEnabled ? <Bell size={18} color="#2ecc71" /> : <BellOff size={18} color="rgba(255,255,255,0.3)" />}
+        </button>
+      </>
     }>
       <div className={styles.dashboard}>
         
