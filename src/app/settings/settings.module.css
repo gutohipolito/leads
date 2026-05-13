@@ -405,9 +405,10 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Security Center Modal */
+/* Security Center Modal Refinements */
 .securityModal {
-  max-width: 600px !important;
+  max-width: 580px !important;
+  max-height: 85vh !important;
   padding: 0 !important;
   overflow: hidden;
   display: flex;
@@ -415,7 +416,7 @@
 }
 
 .securityHeader {
-  padding: 2rem;
+  padding: 1.25rem 2rem;
   background: rgba(var(--foreground-rgb), 0.02);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -444,20 +445,20 @@
 
 .securityTabs {
   display: flex;
-  padding: 0.5rem 2rem;
-  gap: 2rem;
+  padding: 0 2rem;
+  gap: 1.5rem;
   border-bottom: 1px solid var(--border);
 }
 
 .tabBtn {
   background: transparent;
   border: none;
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   display: flex;
   align-items: center;
   gap: 0.6rem;
   color: var(--muted-foreground);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   position: relative;
@@ -484,10 +485,49 @@
 }
 
 .securityContent {
-  padding: 2rem;
-  min-height: 400px;
-  max-height: 60vh;
+  padding: 1.25rem 2rem;
+  min-height: 380px;
+  max-height: 55vh;
   overflow-y: auto;
+}
+
+/* Security Pagination */
+.securityPagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.securityPageBtn {
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.securityPageBtn:hover:not(:disabled) {
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-color: var(--primary);
+}
+
+.securityPageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pageIndicator {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--primary);
 }
 
 /* Sessions List */

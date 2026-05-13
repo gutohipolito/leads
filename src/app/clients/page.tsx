@@ -48,6 +48,10 @@ export default function ClientsPage() {
   const [newClientLogo, setNewClientLogo] = useState('');
   const [newClientLogoBg, setNewClientLogoBg] = useState('#ffffff');
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
+  
+  // Paginação
+  const ITEMS_PER_PAGE = 8;
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Estados para o Modal de Confirmação Customizado
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -100,6 +104,15 @@ export default function ClientsPage() {
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedClients = filteredClients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Resetar para página 1 ao buscar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleToggleStatus = async (id: string, currentStatus: string, clientName: string) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
@@ -336,7 +349,7 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredClients.map((client) => (
+                {paginatedClients.map((client) => (
                   <tr key={client.id}>
                     <td>
                       <div className={styles.clientCell}>
@@ -436,7 +449,7 @@ export default function ClientsPage() {
             </table>
           ) : (
             <div className={styles.clientsGrid}>
-              {filteredClients.map((client) => (
+              {paginatedClients.map((client) => (
                 <div key={client.id} className={`${styles.clientCard} glass`}>
                   <div className={styles.cardHeader}>
                     <div 
@@ -489,6 +502,40 @@ export default function ClientsPage() {
             </div>
           )}
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <div className={styles.pageInfo}>
+              Mostrando <strong>{startIndex + 1}</strong> - <strong>{Math.min(startIndex + ITEMS_PER_PAGE, filteredClients.length)}</strong> de <strong>{filteredClients.length}</strong> clientes
+            </div>
+            <div className={styles.pageControls}>
+              <button 
+                className={styles.pageBtn} 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button 
+                  key={page}
+                  className={`${styles.pageBtn} ${currentPage === page ? styles.activePage : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button 
+                className={styles.pageBtn} 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Modal de Nova Conta */}
         {isModalOpen && (

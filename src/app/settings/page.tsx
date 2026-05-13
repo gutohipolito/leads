@@ -50,6 +50,8 @@ export default function SettingsPage() {
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [ipInput, setIpInput] = useState('');
   const [whitelist, setWhitelist] = useState<string[]>([]);
+  const [securityLogPage, setSecurityLogPage] = useState(1);
+  const LOGS_PER_PAGE = 6;
 
   useEffect(() => {
     async function loadProfile() {
@@ -91,7 +93,7 @@ export default function SettingsPage() {
       .eq('user_id', user.id)
       .in('action', ['Login Realizado', 'Perfil Atualizado', 'Exportação Realizada', 'Troca de Senha'])
       .order('created_at', { ascending: false })
-      .limit(15);
+      .limit(100);
     
     setSecurityLogs(logs || []);
 
@@ -485,16 +487,45 @@ export default function SettingsPage() {
 
                   {securityTab === 'activity' && (
                     <div className={styles.activityList}>
-                      {securityLogs.length > 0 ? securityLogs.map(log => (
-                        <div key={log.id} className={styles.activityItem}>
-                          <div className={styles.activityDot} />
-                          <div className={styles.activityInfo}>
-                            <p className={styles.activityAction}>{log.action}</p>
-                            <span className={styles.activityTime}>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
-                          </div>
-                          <ChevronRight size={16} className={styles.chevron} />
-                        </div>
-                      )) : (
+                      {securityLogs.length > 0 ? (
+                        <>
+                          {securityLogs
+                            .slice((securityLogPage - 1) * LOGS_PER_PAGE, securityLogPage * LOGS_PER_PAGE)
+                            .map(log => (
+                              <div key={log.id} className={styles.activityItem}>
+                                <div className={styles.activityDot} />
+                                <div className={styles.activityInfo}>
+                                  <p className={styles.activityAction}>{log.action}</p>
+                                  <span className={styles.activityTime}>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                                </div>
+                                <ChevronRight size={16} className={styles.chevron} />
+                              </div>
+                            ))
+                          }
+                          
+                          {securityLogs.length > LOGS_PER_PAGE && (
+                            <div className={styles.securityPagination}>
+                              <button 
+                                onClick={() => setSecurityLogPage(p => Math.max(1, p - 1))}
+                                disabled={securityLogPage === 1}
+                                className={styles.securityPageBtn}
+                              >
+                                Anterior
+                              </button>
+                              <span className={styles.pageIndicator}>
+                                {securityLogPage} / {Math.ceil(securityLogs.length / LOGS_PER_PAGE)}
+                              </span>
+                              <button 
+                                onClick={() => setSecurityLogPage(p => Math.min(Math.ceil(securityLogs.length / LOGS_PER_PAGE), p + 1))}
+                                disabled={securityLogPage === Math.ceil(securityLogs.length / LOGS_PER_PAGE)}
+                                className={styles.securityPageBtn}
+                              >
+                                Próximo
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
                         <div className={styles.emptyActivity}>
                           <p>Nenhum log de segurança recente.</p>
                         </div>

@@ -53,7 +53,7 @@ export default function LeadsPage() {
   const [filterName, setFilterName] = useState('');
   const [filterEmail, setFilterEmail] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(12);
   
   // Renomeação de campos
   const [isRenaming, setIsRenaming] = useState(false);
@@ -67,7 +67,7 @@ export default function LeadsPage() {
   const [deleteModal, setDeleteModal] = useState<{show: boolean, leadId: string}>({ show: false, leadId: '' });
   
   // Filtro de Status do Cliente
-  const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'waiting' | 'disabled'>('all');
+  const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'waiting' | 'disabled'>('active');
   
   const getLeadIcon = (source: string, size = 18) => {
     switch (source) {
@@ -694,11 +694,9 @@ export default function LeadsPage() {
                       setCurrentPage(1);
                     }}
                   >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={30}>30</option>
+                    <option value={12}>12</option>
+                    <option value={24}>24</option>
                     <option value={50}>50</option>
-                    <option value={100}>100</option>
                   </select>
                   <span>leads por página</span>
                 </div>
