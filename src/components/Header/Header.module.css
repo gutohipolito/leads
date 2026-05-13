@@ -31,8 +31,8 @@
 }
 
 .searchBar {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
@@ -46,7 +46,7 @@
 .searchBar input {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--foreground);
   width: 100%;
   outline: none;
   font-family: inherit;
@@ -60,7 +60,7 @@
 }
 
 .actionBtn {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--foreground-rgb), 0.03);
   border: 1px solid var(--border);
   color: var(--muted);
   width: 40px;
@@ -75,8 +75,8 @@
 }
 
 .actionBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
+  background: rgba(var(--foreground-rgb), 0.08);
+  color: var(--foreground);
 }
 
 .badge {
@@ -101,7 +101,7 @@
   align-items: center;
   gap: 1rem;
   padding-left: 1.5rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(var(--foreground-rgb), 0.1);
 }
 
 .profileInfo {
@@ -199,12 +199,13 @@
 .notifDrawer {
   width: 420px;
   height: 100vh;
-  background: rgba(13, 21, 37, 0.98);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   animation: slideLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-shadow);
   cursor: default;
 }
 
@@ -215,7 +216,7 @@
 
 .notifHeader {
   padding: 2.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -247,7 +248,7 @@
 }
 
 .closeBtn {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   border: none;
   color: var(--muted-foreground);
   width: 36px;
@@ -305,7 +306,7 @@
 }
 
 .notifItem:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--foreground-rgb), 0.03);
 }
 
 .unread {
@@ -369,7 +370,7 @@
 
 .notifFooter {
   padding: 1.25rem 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--foreground-rgb), 0.05);
   background: var(--card);
   backdrop-filter: blur(10px);
   display: flex;
@@ -392,14 +393,14 @@
 }
 
 .markReadBtn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
+  color: var(--foreground);
 }
 
 .markReadBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-color: rgba(var(--foreground-rgb), 0.2);
 }
 
 .clearAllBtn {
@@ -518,7 +519,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
   padding: 1rem;
   border-radius: 12px;
 }
@@ -554,8 +555,8 @@
 .cancelBtn {
   flex: 1;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  border: 1px solid var(--border);
+  color: var(--foreground);
   padding: 0.85rem;
   border-radius: 12px;
   cursor: pointer;

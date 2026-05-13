@@ -12,8 +12,8 @@
 
 .searchBox {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 0 1.5rem;
   height: 54px;
@@ -75,7 +75,7 @@
 
 .table td {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.02);
 }
 
 .userInfo {
@@ -93,7 +93,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -142,7 +142,7 @@
   gap: 0.75rem;
   margin-top: 0.75rem;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
   border-radius: 12px;
 }
 
@@ -172,7 +172,7 @@
 }
 
 .avatarOption:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
 }
 
 .avatarOption.active {
@@ -206,7 +206,7 @@
 
 .roleTag.admin { background: rgba(0, 209, 255, 0.1); color: var(--primary); }
 .roleTag.manager { background: rgba(99, 102, 241, 0.1); color: #818cf8; }
-.roleTag.viewer { background: rgba(255, 255, 255, 0.05); color: var(--muted-foreground); }
+.roleTag.viewer { background: rgba(var(--foreground-rgb), 0.05); color: var(--muted-foreground); }
 
 .statusDot {
   display: flex;
@@ -226,7 +226,7 @@
 }
 
 .never {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--foreground-rgb), 0.2);
   font-size: 0.8rem;
   font-style: italic;
 }
@@ -260,7 +260,7 @@
 }
 
 .offline .onlineDot {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--foreground-rgb), 0.2);
 }
 
 @keyframes pulse {
@@ -288,8 +288,8 @@
 }
 
 .actionIcon {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   padding: 0.5rem;
   border-radius: 8px;
   color: var(--muted-foreground);
@@ -298,7 +298,7 @@
 }
 
 .actionIcon:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--foreground-rgb), 0.08);
   color: white;
 }
 
@@ -405,7 +405,7 @@
   display: flex;
   align-items: center;
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   overflow: hidden;
   transition: all 0.2s;
@@ -436,7 +436,7 @@
 .generateBtn {
   background: rgba(0, 209, 255, 0.1);
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 1px solid rgba(var(--foreground-rgb), 0.05);
   color: var(--primary);
   width: 48px;
   height: 48px;

@@ -2,6 +2,7 @@
   /* Ultra-Premium DeFi Palette - Asthros V2 (Dark) */
   --background: #020408;
   --foreground: #FCFCFC;
+  --foreground-rgb: 252, 252, 252;
   
   --sidebar-bg: #05080f;
   --header-bg: rgba(2, 4, 8, 0.7);
@@ -33,6 +34,7 @@
 [data-theme='light'] {
   --background: #f1f5f9;
   --foreground: #0f172a;
+  --foreground-rgb: 15, 23, 42;
 
   --sidebar-bg: #ffffff;
   --header-bg: rgba(255, 255, 255, 0.8);

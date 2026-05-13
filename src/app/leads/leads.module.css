@@ -93,7 +93,7 @@
   height: 40px;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,8 +115,8 @@
 
 .cardBadge {
   padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
   border-radius: 20px;
   font-size: 0.7rem;
   font-weight: 800;
@@ -182,7 +182,7 @@
   justify-content: space-between;
   margin-top: auto;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(var(--foreground-rgb), 0.03);
 }
 
 .enterLabel {
@@ -203,7 +203,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -212,9 +212,9 @@
 }
 
 .card:hover .arrowCircle {
-  background: white;
-  color: black;
-  border-color: white;
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
 }
 
 .listHeader {
@@ -229,10 +229,10 @@
 .clientFilters {
   display: flex;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--foreground-rgb), 0.03);
   padding: 0.4rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
 }
 
 .filterTab {
@@ -252,15 +252,15 @@
 
 .filterTab span {
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   padding: 2px 8px;
   border-radius: 6px;
   opacity: 0.7;
 }
 
 .filterTab:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
+  background: rgba(var(--foreground-rgb), 0.03);
 }
 
 .filterTab.active {
@@ -295,7 +295,7 @@
 .filterTab.active.activeTab span,
 .filterTab.active.waitingTab span,
 .filterTab.active.disabledTab span {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
 }
 
 .backBtn {
@@ -311,7 +311,7 @@
 }
 
 .backBtn:hover {
-  color: white;
+  color: var(--foreground);
 }
 
 .actions {
@@ -339,16 +339,16 @@
 }
 
 .totalStatsCard:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--foreground-rgb), 0.05);
+  border-color: rgba(var(--foreground-rgb), 0.2);
   transform: translateY(-2px);
 }
 
 .totalIcon {
   width: 28px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(var(--foreground-rgb), 0.1);
+  color: var(--foreground);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -373,7 +373,7 @@
 .totalValue {
   font-size: 1rem;
   font-weight: 900;
-  color: white;
+  color: var(--foreground);
   line-height: 1;
 }
 
@@ -430,13 +430,13 @@
 }
 
 .secondaryBtn {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.05);
+  color: var(--foreground);
+  border: 1px solid var(--border);
 }
 
 .secondaryBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
 }
 
 /* Leads Table */
@@ -452,7 +452,7 @@
   display: flex;
   gap: 0.5rem;
   padding: 1.5rem 1.5rem 0.5rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
 }
 
 .catTab {
@@ -470,13 +470,13 @@
 }
 
 .catTab:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
+  background: rgba(var(--foreground-rgb), 0.03);
 }
 
 .catTab.active {
   background: rgba(13, 17, 23, 0.6);
-  border-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--foreground-rgb), 0.05);
   color: var(--primary);
 }
 
@@ -496,7 +496,7 @@
   gap: 1rem;
   padding: 1.5rem;
   background: rgba(13, 17, 23, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
 }
 
 /* Source Badges */
@@ -542,11 +542,11 @@
 }
 
 .filterInput {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
-  color: white;
+  color: var(--foreground);
   font-size: 0.85rem;
 }
 
@@ -567,8 +567,8 @@
   font-weight: 800;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.01);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.01);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
 }
 
 .table td {
@@ -585,7 +585,7 @@
 }
 
 .jsonValue {
-  color: white;
+  color: var(--foreground);
   font-family: 'Inter', sans-serif;
   text-align: right;
   flex: 1;
@@ -600,8 +600,8 @@
 .avatar {
   width: 40px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -649,7 +649,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(var(--foreground-rgb), 0.01);
 }
 
 .pageInfo {
@@ -672,10 +672,10 @@
 }
 
 .pageSizeSelect {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  color: white;
+  color: var(--foreground);
   padding: 0.4rem 0.6rem;
   outline: none;
   cursor: pointer;
@@ -684,7 +684,7 @@
 }
 
 .pageSizeSelect:hover {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(var(--foreground-rgb), 0.3);
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -709,10 +709,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  color: white;
+  color: var(--foreground);
   cursor: pointer;
 }
 
@@ -752,8 +752,8 @@
   width: 100%;
   max-width: 500px;
   height: 100%;
-  background: rgba(10, 20, 35, 0.8);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border-left: 1px solid rgba(var(--foreground-rgb), 0.1);
   display: flex;
   flex-direction: column;
   animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -767,7 +767,7 @@
 
 .drawerHeader {
   padding: 2.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center; /* Alinhamento centralizado */
@@ -783,8 +783,8 @@
 .avatarBig {
   width: 64px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 20px;
   display: flex;
   align-items: center;
@@ -796,7 +796,7 @@
 .drawerTitle h3 {
   font-size: 1.25rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -816,7 +816,7 @@
 }
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   color: white;
 }
 
@@ -859,7 +859,7 @@
 
 .jsonView {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1.5rem;
   display: flex;
@@ -874,7 +874,7 @@
   gap: 1.5rem;
   font-size: 0.85rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.03);
   word-break: break-word; /* Evita quebra de layout com textos longos */
 }
 
@@ -895,7 +895,7 @@
 
 .drawerFooter {
   padding: 2.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--foreground-rgb), 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -953,7 +953,7 @@
   right: 0;
   margin-top: 0.5rem;
   background: #1a1f2e;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   z-index: 100;
@@ -1042,7 +1042,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
 }
 
 .modalHeader h3 {
@@ -1072,8 +1072,8 @@
 }
 
 .field input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.75rem 1rem;
   color: white;
@@ -1083,7 +1083,7 @@
 
 .field input:focus {
   border-color: var(--primary);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--foreground-rgb), 0.08);
 }
 
 .modalActions {

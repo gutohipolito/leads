@@ -15,12 +15,12 @@
   width: 100%;
   max-width: 440px;
   padding: 3rem !important;
-  background: linear-gradient(145deg, rgba(15, 25, 45, 0.95), rgba(5, 10, 20, 0.98)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 32px !important;
   text-align: center;
   position: relative;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-shadow) !important;
 }
 
 .iconWrapper {
@@ -40,7 +40,7 @@
 .header h3 {
   font-size: 1.5rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin-bottom: 0.75rem;
   letter-spacing: -0.02em;
 }
@@ -53,8 +53,8 @@
 }
 
 .optionCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -67,8 +67,8 @@
 }
 
 .optionCard:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.06);
+  border-color: rgba(var(--foreground-rgb), 0.1);
 }
 
 .optionCard.selected {
@@ -79,7 +79,7 @@
 .optionInfo h4 {
   font-size: 0.9rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -100,11 +100,11 @@
 
 .inputGroup input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
   padding: 1rem 3.5rem 1rem 1.25rem;
   border-radius: 14px;
-  color: white;
+  color: var(--foreground);
   font-size: 1rem;
   outline: none;
   transition: all 0.2s;
@@ -151,12 +151,12 @@
 }
 
 .cancelBtn {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--foreground);
+  border: 1px solid var(--border);
 }
 
-.cancelBtn:hover { background: rgba(255, 255, 255, 0.1); }
+.cancelBtn:hover { background: rgba(0, 0, 0, 0.05); }
 
 .confirmBtn {
   background: var(--primary);

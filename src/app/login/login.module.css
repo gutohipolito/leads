@@ -46,7 +46,7 @@
   max-width: 420px;
   padding: 3rem 2.5rem;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -96,8 +96,8 @@
 }
 
 .input {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   padding: 0.8rem 1rem;
   border-radius: 8px;
   color: #fff;
@@ -108,7 +108,7 @@
 .input:focus {
   outline: none;
   border-color: #00f2ff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
 }
 

@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
   padding-bottom: 1rem;
 }
 
@@ -52,8 +52,8 @@
 }
 
 .field input {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   padding: 0.85rem 1rem;
   border-radius: 0.75rem;
   color: var(--foreground);
@@ -63,12 +63,12 @@
 
 .field input:focus {
   border-color: var(--primary);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--foreground-rgb), 0.06);
 }
 
 .inputDisabled {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid var(--border);
   padding: 0.85rem 1rem;
   border-radius: 0.75rem;
   color: var(--muted-foreground);
@@ -130,9 +130,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
 }
 
 .optionInfo {

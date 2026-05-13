@@ -43,8 +43,8 @@
 .searchBox {
   flex: 1;
   max-width: 400px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -65,10 +65,10 @@
 
 .viewSwitcher {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   padding: 4px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
 }
 
 .viewBtn {
@@ -86,8 +86,8 @@
 }
 
 .viewBtn:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+  background: rgba(var(--foreground-rgb), 0.05);
 }
 
 .activeView {
@@ -139,13 +139,13 @@
   font-weight: 800;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.02);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
 }
 
 .table td {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.02);
 }
 
 .clientCell {
@@ -230,7 +230,7 @@
 
 .usageBar {
   height: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -256,8 +256,8 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  background: rgba(var(--foreground-rgb), 0.03);
   color: var(--muted-foreground);
   display: flex;
   align-items: center;
@@ -267,9 +267,9 @@
 }
 
 .iconAction:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
   color: white;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(var(--foreground-rgb), 0.2);
 }
 
 .btnPowerOn:hover {
@@ -329,7 +329,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -368,10 +368,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
   padding: 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -406,8 +406,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
   border-radius: 8px;
   color: white;
   cursor: pointer;
@@ -415,7 +415,7 @@
 }
 
 .cardActions button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
   color: var(--primary);
   border-color: var(--primary);
 }
@@ -449,7 +449,7 @@
   width: 100%;
   max-width: 500px;
   padding: 2.5rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--border) !important;
 }
 
 .modalHeader {
@@ -459,7 +459,7 @@
 .modalHeader h3 {
   font-size: 1.5rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin-bottom: 0.5rem;
 }
 
@@ -488,11 +488,11 @@
 }
 
 .inputGroup input {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.75rem 1rem;
-  color: white;
+  color: var(--foreground);
   outline: none;
 }
 
@@ -518,7 +518,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(var(--foreground-rgb), 0.1);
   cursor: pointer;
   transition: all 0.2s;
   position: relative;

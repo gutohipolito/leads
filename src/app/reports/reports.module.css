@@ -85,13 +85,13 @@
 .table th {
   text-align: left;
   padding: 1.25rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
   color: var(--muted-foreground);
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
 }
 
 .table td {
@@ -118,7 +118,7 @@
 
 .pdf { background: rgba(86, 215, 253, 0.1); color: #56d7fd; }
 .csv { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-.json { background: rgba(255, 255, 255, 0.05); color: #fff; }
+.json { background: rgba(var(--foreground-rgb), 0.05); color: #fff; }
 
 .copyBtn {
   background: rgba(34, 197, 94, 0.15);
@@ -259,8 +259,8 @@
 }
 
 .passwordBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-color: rgba(var(--foreground-rgb), 0.2);
 }
 
 .pagination {
@@ -268,8 +268,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.01);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.01);
+  border-top: 1px solid rgba(var(--foreground-rgb), 0.05);
 }
 
 .pageActions {

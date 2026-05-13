@@ -126,14 +126,14 @@
   gap: 1.5rem;
   padding: 1rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid var(--border);
   transition: all 0.2s;
 }
 
 .eventItem:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--foreground-rgb), 0.04);
+  border-color: rgba(var(--foreground-rgb), 0.08);
 }
 
 .severityIndicator {
@@ -181,12 +181,12 @@
   color: var(--muted-foreground);
   font-size: 0.85rem;
   font-weight: 600;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
 }
 
 .keysTable td {
   padding: 1.25rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.03);
   font-size: 0.95rem;
 }
 
@@ -199,7 +199,7 @@
   font-family: 'JetBrains Mono', monospace;
   color: var(--muted-foreground);
   font-size: 0.85rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--foreground-rgb), 0.03);
   padding: 0.4rem 0.75rem;
   border-radius: 0.5rem;
 }
@@ -226,7 +226,7 @@
 
 .actionBtn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   color: var(--muted-foreground);
   padding: 0.5rem;
   border-radius: 0.5rem;
@@ -235,9 +235,9 @@
 }
 
 .actionBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   color: white;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(var(--foreground-rgb), 0.2);
 }
 
 .addKeyBtn {
@@ -286,15 +286,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--foreground-rgb), 0.02);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
 }
 
 .toggle {
   width: 44px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
   border-radius: 12px;
   position: relative;
   cursor: pointer;
@@ -358,8 +358,8 @@
 }
 
 .iconBtn {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
   color: var(--muted-foreground);
   padding: 0.5rem;
   border-radius: 8px;
@@ -371,9 +371,9 @@
 }
 
 .iconBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--foreground-rgb), 0.08);
   color: white;
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(var(--foreground-rgb), 0.1);
   transform: translateY(-2px);
 }
 
@@ -394,7 +394,7 @@
   text-transform: uppercase;
   font-weight: 700;
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--foreground-rgb), 0.05);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
 }

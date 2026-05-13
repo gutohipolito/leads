@@ -15,9 +15,11 @@
   width: 100%;
   max-width: 400px;
   padding: 2.5rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--border) !important;
   text-align: center;
   position: relative;
+  background: var(--card) !important;
+  box-shadow: var(--glass-shadow) !important;
   animation: scaleUp 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -33,7 +35,7 @@
 }
 
 .closeBtn:hover {
-  color: white;
+  color: var(--foreground);
 }
 
 .header {
@@ -54,7 +56,7 @@
 .header h3 {
   font-size: 1.25rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin-bottom: 0.75rem;
 }
 
@@ -71,9 +73,9 @@
 
 .cancelBtn {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
+  color: var(--foreground);
   padding: 0.75rem;
   border-radius: 12px;
   font-weight: 700;
@@ -82,7 +84,7 @@
 }
 
 .cancelBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--foreground-rgb), 0.1);
 }
 
 .confirmBtn {
