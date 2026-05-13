@@ -39,8 +39,8 @@
 }
 
 .tabBtn:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: white;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--foreground);
 }
 
 .tabBtn.activeTab {
@@ -62,7 +62,8 @@
   flex-direction: column;
   gap: 1.25rem;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card) !important;
+  border: 1px solid var(--border);
   transition: all 0.2s ease-out;
 }
 
@@ -97,7 +98,7 @@
 .mainInfo h4 {
   font-size: 1rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -156,7 +157,7 @@
 
 .trackerCard { padding: 2rem !important; display: flex; flex-direction: column; gap: 1.5rem; }
 .cardHeader { display: flex; align-items: center; gap: 0.75rem; color: var(--primary); }
-.cardHeader h4 { font-size: 1rem; font-weight: 700; color: white; margin: 0; }
+.cardHeader h4 { font-size: 1rem; font-weight: 700; color: var(--foreground); margin: 0; }
 
 .trackerSelectionArea { 
   display: flex; 
@@ -278,9 +279,9 @@
 }
 
 .installGuide strong {
-  color: white;
+  color: var(--foreground);
   font-family: monospace;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   padding: 2px 4px;
   border-radius: 4px;
 }
@@ -324,7 +325,7 @@
 .inputWithIcon input {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--foreground);
   font-size: 0.9rem;
   width: 100%;
   outline: none;
@@ -423,7 +424,7 @@
 .stepsList { display: flex; flex-direction: column; gap: 1.25rem; }
 .stepItem { display: flex; gap: 1rem; }
 .stepNum { width: 32px; height: 32px; background: rgba(86, 215, 253, 0.05); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; flex-shrink: 0; }
-.stepContent strong { display: block; font-size: 0.85rem; color: white; margin-bottom: 2px; }
+.stepContent strong { display: block; font-size: 0.85rem; color: var(--foreground); margin-bottom: 2px; }
 .stepContent p { font-size: 0.8rem; color: var(--muted-foreground); line-height: 1.4; margin: 0; }
 
 /* Premium Modal - Correção Definitiva de Layout */
@@ -431,13 +432,13 @@
   position: relative;
   width: 95%;
   max-width: 850px;
-  background: #0a1423;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--background);
+  border: 1px solid var(--border);
   border-radius: 24px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--glass-shadow);
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -453,7 +454,7 @@
 .titleSection h3 {
   font-size: 1.25rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin: 0.25rem 0 0 0;
 }
 
@@ -528,7 +529,7 @@
 .inputWithIcon input {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--foreground);
   font-size: 0.85rem;
   width: 100%;
   outline: none;

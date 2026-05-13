@@ -29,7 +29,7 @@
 .miniValue {
   font-size: 1.75rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
 }
 
 .headerActions {
@@ -51,13 +51,13 @@
   padding: 0 1rem;
   height: 48px;
   gap: 0.75rem;
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 
 .searchBox input {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--foreground);
   width: 100%;
   outline: none;
   font-size: 0.9rem;
@@ -122,7 +122,7 @@
 }
 
 .tableSectionVisible {
-  background: rgba(10, 20, 35, 0.4);
+  background: var(--card);
   border: 1px solid var(--border);
   backdrop-filter: blur(20px);
 }
@@ -161,8 +161,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+  border: 1px solid var(--border);
   flex-shrink: 0;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -190,7 +190,7 @@
 
 .clientName {
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   font-size: 0.95rem;
 }
 
@@ -224,7 +224,7 @@
 
 .usageValue {
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   font-size: 0.9rem;
 }
 
@@ -304,7 +304,8 @@
   flex-direction: column;
   gap: 1.25rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card) !important;
+  border: 1px solid var(--border);
   border-radius: 20px !important;
 }
 
@@ -355,7 +356,7 @@
 .cardName {
   font-size: 1.15rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   letter-spacing: -0.02em;
   white-space: nowrap;
   overflow: hidden;
@@ -390,7 +391,7 @@
 .statValue {
   font-size: 1.1rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
 }
 
 .cardActions {

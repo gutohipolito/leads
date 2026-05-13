@@ -73,10 +73,10 @@
 }
 
 .select, .input, .textarea {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border);
   padding: 1rem;
-  color: white;
+  color: var(--foreground);
   border-radius: 0.75rem;
   font-family: inherit;
   font-size: 0.95rem;
@@ -90,7 +90,8 @@
 }
 
 .select option {
-  background: #030303;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 .activeEndpoint {
@@ -255,7 +256,7 @@
 
 .jsonWrapper pre {
   padding: 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--foreground);
   font-family: var(--font-mono);
   font-size: 0.85rem;
   overflow-x: auto;

@@ -26,7 +26,7 @@
 .searchBox input {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--foreground);
   width: 100%;
   outline: none;
   font-size: 1rem;
@@ -52,7 +52,7 @@
 }
 
 .tableWrapper {
-  background: rgba(10, 20, 35, 0.2);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 1.5rem;
   overflow: hidden;
@@ -124,7 +124,7 @@
 
 .loginRow {
   font-weight: 600;
-  color: white;
+  color: var(--foreground);
   font-size: 0.85rem;
 }
 
@@ -187,7 +187,7 @@
 
 .name {
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   font-size: 0.95rem;
 }
 
@@ -327,6 +327,10 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 24px;
 }
 
 .modalHeader {
@@ -338,7 +342,7 @@
 .modalHeader h3 {
   font-size: 1.25rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
 }
 
 .modalHeader button {
@@ -367,11 +371,11 @@
 }
 
 .field input, .field select {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border);
   padding: 0.85rem 1rem;
   border-radius: 0.75rem;
-  color: white;
+  color: var(--foreground);
   outline: none;
   transition: all 0.2s;
   width: 100%;
@@ -385,8 +389,8 @@
 }
 
 .field select option {
-  background: #0f172a; /* Azul muito escuro para contraste */
-  color: white;
+  background: var(--background);
+  color: var(--foreground);
   padding: 10px;
 }
 

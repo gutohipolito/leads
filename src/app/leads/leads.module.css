@@ -19,8 +19,8 @@
   gap: 1.5rem;
   cursor: pointer;
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-  background: linear-gradient(145deg, rgba(10, 20, 35, 0.6), rgba(5, 10, 20, 0.8)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 24px !important;
   overflow: hidden;
   text-align: left;
@@ -40,9 +40,9 @@
 
 .card:hover {
   transform: translateY(-10px) scale(1.02);
-  border-color: rgba(0, 209, 255, 0.3) !important;
-  background: linear-gradient(145deg, rgba(15, 30, 50, 0.8), rgba(10, 20, 40, 0.9)) !important;
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 209, 255, 0.1) !important;
+  border-color: var(--primary) !important;
+  background: var(--card) !important;
+  box-shadow: var(--glass-shadow), 0 0 20px var(--primary-glow) !important;
 }
 
 /* Hover Variations */
@@ -84,8 +84,8 @@
   font-size: 1.2rem;
   font-weight: 900;
   text-transform: uppercase;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: var(--foreground);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .clientLogoBox {
@@ -147,7 +147,7 @@
 .cardBody h3 {
   font-size: 1.4rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
@@ -172,7 +172,7 @@
 
 .statValue {
   font-size: 1rem;
-  color: white;
+  color: var(--foreground);
   font-weight: 700;
 }
 
@@ -441,9 +441,9 @@
 
 /* Leads Table */
 .leadsTableWrapper {
-  background: rgba(13, 17, 23, 0.4);
+  background: var(--card);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   overflow: hidden;
 }
 
@@ -574,8 +574,8 @@
 .table td {
   padding: 1.25rem 1.5rem;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
 }
 
 .leadMain {
@@ -616,7 +616,7 @@
 
 .name {
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
 }
 
 .id {

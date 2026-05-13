@@ -51,7 +51,7 @@
 .liveLabel {
   font-size: 0.85rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
 }
 
 .statsGrid {
@@ -96,7 +96,7 @@
 .statValue {
   font-size: 1.5rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin: 0.1rem 0;
 }
 
@@ -191,7 +191,7 @@
 .utmName {
   font-size: 0.85rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -261,7 +261,7 @@
 .cardHeader h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
 }
 
 .textBtn {
@@ -333,8 +333,8 @@
 .table td {
   padding: 1rem 0.75rem;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
 }
 
 .statusBadge {
@@ -407,7 +407,7 @@
 
 .leadName {
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   font-size: 0.9rem;
 }
 
@@ -446,7 +446,7 @@
 .perfName {
   font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--foreground);
 }
 
 .perfValue {

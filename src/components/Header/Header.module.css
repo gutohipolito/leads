@@ -8,7 +8,7 @@
   position: sticky;
   top: 0;
   z-index: 90;
-  background: rgba(2, 4, 8, 0.7);
+  background: var(--header-bg);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
@@ -16,7 +16,7 @@
 .title {
   font-size: 2rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--foreground);
   letter-spacing: -0.04em;
   margin: 0;
   display: flex;
@@ -113,7 +113,7 @@
 .name {
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: var(--foreground);
 }
 
 .id {
@@ -230,7 +230,7 @@
 .notifHeader h3 {
   font-size: 1.25rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -336,7 +336,7 @@
 .notifTitle {
   font-size: 0.9rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -370,7 +370,7 @@
 .notifFooter {
   padding: 1.25rem 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(13, 21, 37, 0.95);
+  background: var(--card);
   backdrop-filter: blur(10px);
   display: flex;
   gap: 1rem;
@@ -433,11 +433,11 @@
   transform: translate(-50%, -50%);
   width: 90%;
   max-width: 480px;
-  background: #0d1525;
+  background: var(--background);
   padding: 3rem;
   border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -478,7 +478,7 @@
 .modalHeader h3 {
   font-size: 1.5rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
 }
 
 .modalHeader p {
@@ -506,11 +506,11 @@
 }
 
 .inputGroup input {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
   padding: 0.85rem 1rem;
   border-radius: 12px;
-  color: white;
+  color: var(--foreground);
   outline: none;
 }
 

@@ -1,8 +1,8 @@
 .sidebar {
   width: 280px;
   height: 100vh;
-  background: #030303;
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   padding: 3rem 1.25rem 2rem;
@@ -36,7 +36,7 @@
 .logoText {
   font-size: 1.75rem;
   font-weight: 800;
-  color: white;
+  color: var(--foreground);
   letter-spacing: -0.05em;
 }
 
@@ -82,8 +82,8 @@
 }
 
 .navLink:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .iconCircle {
@@ -101,13 +101,13 @@
 
 .active {
   background: rgba(86, 215, 253, 0.1) !important;
-  color: white !important;
+  color: var(--foreground) !important;
 }
 
 .active .iconCircle {
   background: var(--primary);
-  color: #030303;
-  box-shadow: 0 0 15px rgba(86, 215, 253, 0.3);
+  color: var(--primary-foreground);
+  box-shadow: 0 0 15px var(--primary-glow);
   border-color: var(--primary);
 }
 
@@ -143,7 +143,7 @@
   top: 0;
   bottom: 0.75rem;
   width: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border);
 }
 
 .subLink {
@@ -161,8 +161,8 @@
 }
 
 .subLink:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .subLink::after {

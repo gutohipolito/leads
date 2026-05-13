@@ -3,6 +3,9 @@
   --background: #020408;
   --foreground: #FCFCFC;
   
+  --sidebar-bg: #05080f;
+  --header-bg: rgba(2, 4, 8, 0.7);
+  
   --card: rgba(10, 20, 35, 0.4);
   --card-foreground: #FCFCFC;
   
@@ -30,6 +33,9 @@
 [data-theme='light'] {
   --background: #f1f5f9;
   --foreground: #0f172a;
+
+  --sidebar-bg: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.8);
   
   --card: rgba(255, 255, 255, 0.7);
   --card-foreground: #0f172a;
