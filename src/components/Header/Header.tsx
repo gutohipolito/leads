@@ -59,8 +59,20 @@ export default function Header({ title }: HeaderProps) {
 
   const requestNotificationPermission = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'denied') {
+        alert('As notificações estão bloqueadas. Clique no ícone de cadeado ao lado da URL para permitir.');
+        return;
+      }
+      
       const permission = await Notification.requestPermission();
       setNotificationsEnabled(permission === 'granted');
+      
+      if (permission === 'granted') {
+        new Notification('Asthros: Alertas Ativos!', {
+          body: 'Você receberá notificações em tempo real agora.',
+          icon: '/asthros-favicon.png'
+        });
+      }
     }
   };
 

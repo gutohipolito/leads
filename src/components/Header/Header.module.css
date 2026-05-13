@@ -220,6 +220,12 @@
   align-items: flex-end;
 }
 
+.notifWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .notifHeader h3 {
   font-size: 1.25rem;
   font-weight: 800;
