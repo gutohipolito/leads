@@ -114,7 +114,7 @@
 
 .bottomGrid {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 1fr 2fr;
   gap: 2rem;
   margin-top: 2rem;
 }
@@ -218,9 +218,34 @@
 
 .iconSuccess { color: #25d366; }
 .iconWarning { color: #f59e0b; }
+.iconInfo { color: #56d7fd; }
+
+.locationBar {
+  height: 6px;
+  background: #2ecc71;
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+  transition: width 1s ease-out;
+}
+
+.emptyLocations {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 0;
+  opacity: 0.4;
+  text-align: center;
+}
+
+.emptyLocations p {
+  font-size: 0.8rem;
+  font-style: italic;
+}
 
 @media (max-width: 1100px) {
-  .mainGrid {
+  .mainGrid, .bottomGrid {
     grid-template-columns: 1fr;
   }
 }
@@ -394,4 +419,73 @@
   text-align: center;
   color: var(--muted-foreground);
   font-style: italic;
+}
+
+/* Performance de Parceiros Styles */
+.performanceList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.perfItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.perfInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.perfName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.perfValue {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #56d7fd;
+  background: rgba(86, 215, 253, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.perfBarContainer {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.perfBarFill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 15px rgba(86, 215, 253, 0.2);
+}
+
+/* Ajuste no layout para acomodar o novo gráfico */
+@media (min-width: 1400px) {
+  .mainGrid {
+    grid-template-columns: 1.5fr 1.5fr 1fr;
+  }
+}
+
+.notificationBtn {
+  transition: all 0.2s ease;
+}
+
+.notificationBtn:hover {
+  transform: scale(1.1);
+}
+
+.notificationBtn.enabled {
+  filter: drop-shadow(0 0 5px rgba(46, 204, 113, 0.4));
 }

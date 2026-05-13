@@ -50,6 +50,8 @@ export default function WebhooksManagePage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedWebhook, setSelectedWebhook] = useState<any>(null);
   const [selectedDocsWebhook, setSelectedDocsWebhook] = useState<any>(null);
+  const [isLabOpen, setIsLabOpen] = useState(false);
+  const [labPayload, setLabPayload] = useState<string>('');
 
   const [newWebhook, setNewWebhook] = useState({
     name: '',
@@ -104,20 +106,22 @@ export default function WebhooksManagePage() {
     message?: string;
   }>({ status: 'idle' });
 
-  const handleTestWebhook = async () => {
+  const handleTestWebhook = async (customPayload?: any) => {
     if (!selectedWebhook) return;
     setTestStatus({ status: 'loading' });
+
+    const payload = customPayload || {
+      source: 'test_simulation',
+      name: 'Teste de Conexão Asthros',
+      email: 'teste@asthros.com.br',
+      timestamp: new Date().toISOString()
+    };
 
     try {
       const response = await fetch(`/api/leads/${selectedWebhook.client_id}?secret=${selectedWebhook.secret}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: 'test_simulation',
-          name: 'Teste de Conexão Asthros',
-          email: 'teste@asthros.com.br',
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();
@@ -136,6 +140,22 @@ export default function WebhooksManagePage() {
     } catch (err: any) {
       setTestStatus({ status: 'error', message: 'Falha na requisição: ' + err.message });
     }
+  };
+
+  const openLab = () => {
+    const defaultPayload = {
+      name: "João Silva",
+      email: "joao@exemplo.com",
+      phone: "11999999999",
+      source: "form",
+      custom_field: "valor_extra",
+      marketing: {
+        source: "google",
+        campaign: "verao_2024"
+      }
+    };
+    setLabPayload(JSON.stringify(defaultPayload, null, 2));
+    setIsLabOpen(true);
   };
 
   const handleUpdateWebhook = async () => {
@@ -402,14 +422,18 @@ export default function WebhooksManagePage() {
 
                   <div className={styles.testArea}>
                     <div className={styles.testSection}>
-                      <div className={styles.testHeader}>
-                        <label>Teste de Conexão</label>
-                        <p>Simule um disparo para verificar a integração.</p>
+                        <button 
+                          className={styles.labBtn} 
+                          onClick={openLab}
+                        >
+                          <Terminal size={14} />
+                          <span>Abrir Laboratório</span>
+                        </button>
                       </div>
                       
                       <button 
                         className={`${styles.testBtn} ${styles[testStatus.status]}`}
-                        onClick={handleTestWebhook}
+                        onClick={() => handleTestWebhook()}
                         disabled={testStatus.status === 'loading'}
                       >
                         {testStatus.status === 'loading' ? <RefreshCcw size={16} className={styles.spin} /> : <Play size={16} />}
@@ -522,6 +546,101 @@ export default function WebhooksManagePage() {
                 <div className={styles.docsSafetyTip}>
                   <ShieldCheck size={18} />
                   <p>Sinal transmitido via canal criptografado SSL 256-bit.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Laboratório de Webhooks (Debugger) */}
+        {isLabOpen && selectedWebhook && (
+          <div className={styles.modalOverlay} onClick={() => setIsLabOpen(false)}>
+            <div className={`${styles.labModal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.labHeader}>
+                <div className={styles.labTitle}>
+                  <Terminal size={24} className={styles.labIcon} />
+                  <div>
+                    <h3>Laboratório de Webhooks</h3>
+                    <p>Simule payloads complexos e teste o mapeamento de campos.</p>
+                  </div>
+                </div>
+                <button className={styles.closeBtn} onClick={() => setIsLabOpen(false)}><X size={20} /></button>
+              </div>
+
+              <div className={styles.labBody}>
+                <div className={styles.labGrid}>
+                  <div className={styles.labEditor}>
+                    <div className={styles.editorHeader}>
+                      <span>Corpo da Requisição (JSON)</span>
+                      <Lightbulb size={14} className={styles.hintIcon} title="Campos suportados: name, email, phone, etc." />
+                    </div>
+                    <textarea 
+                      className={styles.labTextarea}
+                      value={labPayload}
+                      onChange={(e) => setLabPayload(e.target.value)}
+                      placeholder='{ "name": "..." }'
+                    />
+                  </div>
+
+                  <div className={styles.labPreview}>
+                    <div className={styles.previewHeader}>Simulação de Mapeamento</div>
+                    <div className={styles.previewContent}>
+                      {(() => {
+                        try {
+                          const parsed = JSON.parse(labPayload);
+                          return (
+                            <div className={styles.previewData}>
+                              <div className={styles.previewItem}>
+                                <label>Identificado como:</label>
+                                <strong>{parsed.name || parsed.nome || "Sem nome"}</strong>
+                              </div>
+                              <div className={styles.previewItem}>
+                                <label>E-mail:</label>
+                                <span>{parsed.email || parsed.e_mail || "N/A"}</span>
+                              </div>
+                              <div className={styles.previewItem}>
+                                <label>Telefone:</label>
+                                <span>{parsed.phone || parsed.telefone || parsed.whatsapp || "N/A"}</span>
+                              </div>
+                              <div className={styles.previewStatus}>
+                                <CheckCircle2 size={14} />
+                                <span>Sintaxe JSON Válida</span>
+                              </div>
+                            </div>
+                          );
+                        } catch (e) {
+                          return (
+                            <div className={styles.previewError}>
+                              <AlertTriangle size={18} />
+                              <span>Erro de Sintaxe JSON</span>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                    
+                    <button 
+                      className={`${styles.labFireBtn} ${testStatus.status === 'loading' ? styles.loading : ''}`}
+                      onClick={() => {
+                        try {
+                          handleTestWebhook(JSON.parse(labPayload));
+                        } catch(e) {
+                          alert('JSON Inválido');
+                        }
+                      }}
+                      disabled={testStatus.status === 'loading'}
+                    >
+                      <Play size={16} />
+                      <span>{testStatus.status === 'loading' ? 'Enviando...' : 'Disparar Sinal Real'}</span>
+                    </button>
+                    
+                    {testStatus.status === 'success' && (
+                      <div className={styles.labSuccess}>
+                        <Zap size={14} />
+                        <span>Sinal enviado! Verifique a lista de leads.</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

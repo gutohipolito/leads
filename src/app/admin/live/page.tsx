@@ -16,7 +16,9 @@ import {
   MapPin,
   Globe,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import Link from 'next/link';
 import { logAction } from '@/utils/logger';
@@ -43,6 +45,34 @@ export default function LiveMonitorPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+  }, []);
+
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationsEnabled(permission === 'granted');
+    }
+  };
+
+  const showBrowserNotification = (lead: any) => {
+    if (notificationsEnabled) {
+      const clientName = lead.clients?.name || 'Novo Parceiro';
+      const notification = new Notification('NOVA CAPTURA ASTHROS', {
+        body: `Lead: ${lead.name || 'Novo Lead'}\nOrigem: ${clientName}`,
+        icon: '/asthros-favicon.png'
+      });
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+  };
 
   useEffect(() => {
     const checkNightMode = () => {
@@ -227,11 +257,14 @@ export default function LiveMonitorPage() {
 
             triggerCelebration(tempLead);
             playNotificationSound(newLeadData.client_id);
+            showBrowserNotification(tempLead);
 
             const { data: client } = await supabase.from('clients').select('name').eq('id', newLeadData.client_id).single();
             if (client) {
-              setLeads(prev => prev.map(l => l.id === newLeadData.id ? { ...l, clients: client } : l));
-              setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? { ...prev, clients: client } : prev);
+              const updatedLead = { ...tempLead, clients: client };
+              setLeads(prev => prev.map(l => l.id === newLeadData.id ? updatedLead : l));
+              setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? updatedLead : prev);
+              showBrowserNotification(updatedLead);
             }
             loadData(selectedClient);
           }
@@ -386,6 +419,15 @@ export default function LiveMonitorPage() {
             <Clock size={18} />
             <span>{currentTime ? currentTime.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
           </div>
+
+          <button 
+            className={`${styles.notificationBtn} ${notificationsEnabled ? styles.enabled : ''}`} 
+            onClick={requestNotificationPermission}
+            title={notificationsEnabled ? "Notificações Ativas" : "Ativar Notificações no Navegador"}
+          >
+            {notificationsEnabled ? <Bell size={20} /> : <BellOff size={20} />}
+          </button>
+
           <button className={styles.screenBtn} onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
           </button>

@@ -1011,3 +1011,37 @@
 .nightMode .header {
   opacity: 0.8;
 }
+
+/* Estilos de Notificações */
+.notificationBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 0.5rem;
+}
+
+.notificationBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: scale(1.05);
+}
+
+.notificationBtn.enabled {
+  background: rgba(46, 204, 113, 0.1);
+  border-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+}
+
+.notificationBtn.enabled:hover {
+  background: #2ecc71;
+  color: white;
+}

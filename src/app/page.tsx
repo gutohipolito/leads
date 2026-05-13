@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
@@ -29,9 +29,39 @@ export default function Home() {
     sourceData: [] as any[],
     topUtms: [] as any[],
     recentLeads: [] as any[],
-    lastSignalTime: null as number | null
+    lastSignalTime: null as number | null,
+    performanceData: [] as any[],
+    locationData: [] as any[]
   });
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+  }, []);
+
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationsEnabled(permission === 'granted');
+    }
+  };
+
+  const showBrowserNotification = (lead: any, clientName?: string) => {
+    if (notificationsEnabled) {
+      const name = clientName || 'Novo Parceiro';
+      const notification = new Notification('NOVA CAPTURA ASTHROS', {
+        body: `Lead: ${lead.name || 'Novo Lead'}\nOrigem: ${name}`,
+        icon: '/asthros-favicon.png'
+      });
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+  };
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -95,6 +125,20 @@ export default function Home() {
         }
         const { data: recentLeads } = await recentLeadsQuery;
 
+        // Inscrição Realtime para Notificações na Home
+        const channel = supabase
+          .channel('dashboard-notifications')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, async (payload: any) => {
+            const newLead = payload.new;
+            
+            const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
+            if (!canSee) return;
+
+            const { data: client } = await supabase.from('clients').select('name').eq('id', newLead.client_id).single();
+            showBrowserNotification(newLead, client?.name);
+          })
+          .subscribe();
+
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -143,10 +187,46 @@ export default function Home() {
           sourceData,
           topUtms,
           recentLeads: recentLeads || [],
-          lastSignalTime
+          lastSignalTime,
+          performanceData: isUserAdmin && !impersonated ? await fetchPerformanceData() : [],
+          locationData: calculateLocationData(allLeads)
         });
       }
       setLoading(false);
+    }
+
+    function calculateLocationData(leads: any[]) {
+      const map: any = {};
+      leads.forEach(l => {
+        const city = l.data?.location?.city;
+        if (city && city !== 'Desconhecida') {
+          map[city] = (map[city] || 0) + 1;
+        }
+      });
+      return Object.entries(map)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+        .slice(0, 5);
+    }
+
+    async function fetchPerformanceData() {
+      const { data } = await supabase
+        .from('leads')
+        .select('client_id, clients(name)')
+        .neq('source', 'test_simulation');
+      
+      if (!data) return [];
+      
+      const counts: any = {};
+      data.forEach(l => {
+        const name = l.clients?.name || 'Desconhecido';
+        counts[name] = (counts[name] || 0) + 1;
+      });
+      
+      return Object.entries(counts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a: any, b: any) => (b.count as number) - (a.count as number))
+        .slice(0, 5);
     }
 
     loadDashboardData();
@@ -181,6 +261,14 @@ export default function Home() {
         </div>
         <span className={styles.liveLabel}>Monitor ao Vivo</span>
       </Link>
+      <button 
+        className={`${styles.notificationBtn} ${notificationsEnabled ? styles.enabled : ''}`} 
+        onClick={requestNotificationPermission}
+        title={notificationsEnabled ? "Notificações Ativas" : "Ativar Notificações no Navegador"}
+        style={{ marginLeft: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+      >
+        {notificationsEnabled ? <Bell size={18} color="#2ecc71" /> : <BellOff size={18} color="rgba(255,255,255,0.3)" />}
+      </button>
     }>
       <div className={styles.dashboard}>
         
@@ -249,6 +337,36 @@ export default function Home() {
             </div>
           </div>
 
+          {isAdmin && !impersonatedName && stats.performanceData.length > 0 && (
+            <div className={`${styles.chartCard} glass`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.titleWithIcon}>
+                  <Users size={18} className={styles.iconPrimary} />
+                  <h3>Performance por Parceiro (Top 5)</h3>
+                </div>
+              </div>
+              <div className={styles.performanceList}>
+                {stats.performanceData.map((p: any, i: number) => (
+                  <div key={p.name} className={styles.perfItem}>
+                    <div className={styles.perfInfo}>
+                      <span className={styles.perfName}>{p.name}</span>
+                      <span className={styles.perfValue}>{p.count} leads</span>
+                    </div>
+                    <div className={styles.perfBarContainer}>
+                      <div 
+                        className={styles.perfBarFill} 
+                        style={{ 
+                          width: `${(p.count / stats.performanceData[0].count) * 100}%`,
+                          background: `linear-gradient(90deg, #56d7fd, #2ecc71)`
+                        }} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className={`${styles.sideCharts} glass`}>
             <div className={styles.cardHeader}>
               <div className={styles.titleWithIcon}>
@@ -309,6 +427,34 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className={`${styles.utmCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <Globe size={18} className={styles.iconInfo} />
+                <h3>Distribuição Geográfica</h3>
+              </div>
+            </div>
+            <div className={styles.utmList}>
+              {stats.locationData.length > 0 ? stats.locationData.map((loc: any, i: number) => (
+                <div key={loc.name} className={styles.utmItem}>
+                  <div className={styles.utmInfo}>
+                    <span className={styles.utmRank}>#{i + 1}</span>
+                    <span className={styles.utmName}>{loc.name}</span>
+                  </div>
+                  <div className={styles.utmBarWrapper}>
+                    <div className={styles.locationBar} style={{ width: `${(loc.value / (stats.locationData[0]?.value || 1)) * 100}%` }} />
+                    <span className={styles.utmValue}>{loc.value} capturas</span>
+                  </div>
+                </div>
+              )) : (
+                <div className={styles.emptyLocations}>
+                  <MapPin size={24} />
+                  <p>Aguardando capturas geográficas...</p>
+                </div>
+              )}
             </div>
           </div>
 

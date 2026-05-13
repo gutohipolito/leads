@@ -43,6 +43,15 @@ export async function POST(
       return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
     }
 
+    // Captura de Localização baseada em IP (Vercel Headers)
+    const city = request.headers.get('x-vercel-ip-city') || 'Desconhecida';
+    const region = request.headers.get('x-vercel-ip-country-region') || 'N/A';
+    const country = request.headers.get('x-vercel-ip-country') || 'BR';
+    
+    if (!body.location) {
+      body.location = { city, region, country, ip: request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1' };
+    }
+
     const isWppTracker = body.source === 'whatsapp_tracker';
     const fields = body.fields || {};
     

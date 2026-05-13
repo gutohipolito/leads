@@ -842,3 +842,215 @@
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Laboratório de Webhooks Styles */
+.labBtn {
+  background: rgba(86, 215, 253, 0.1);
+  border: 1px solid rgba(86, 215, 253, 0.2);
+  color: #56d7fd;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+.labBtn:hover {
+  background: #56d7fd;
+  color: #020408;
+}
+
+.labModal {
+  width: 100%;
+  max-width: 850px;
+  background: #0a1423 !important;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.labHeader {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.labTitle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.labIcon {
+  color: #56d7fd;
+}
+
+.labBody {
+  padding: 2rem;
+}
+
+.labGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 2rem;
+}
+
+.labEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.editorHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  letter-spacing: 0.05em;
+}
+
+.labTextarea {
+  background: #020408;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: #34d399;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85rem;
+  height: 350px;
+  resize: none;
+  line-height: 1.6;
+}
+
+.labTextarea:focus {
+  outline: none;
+  border-color: #56d7fd;
+}
+
+.labPreview {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.previewHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+}
+
+.previewData {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.previewItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.previewItem label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+
+.previewItem strong {
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.previewStatus {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #34d399;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.previewError {
+  color: #ff4757;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  background: rgba(255, 71, 87, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.labFireBtn {
+  background: #56d7fd;
+  border: none;
+  color: #020408;
+  padding: 1.1rem;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.labFireBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(86, 215, 253, 0.4);
+}
+
+.labFireBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.labSuccess {
+  color: #2ecc71;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 800px) {
+  .labGrid { grid-template-columns: 1fr; }
+}
