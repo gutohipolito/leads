@@ -390,13 +390,7 @@ export default function LiveMonitorPage() {
             <span>{currentTime ? currentTime.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
           </div>
 
-          <button 
-            className={`${styles.notificationBtn} ${notificationsEnabled ? styles.enabled : ''}`} 
-            onClick={requestNotificationPermission}
-            title={notificationsEnabled ? "Notificações Ativas" : "Ativar Notificações no Navegador"}
-          >
-            {notificationsEnabled ? <Bell size={20} /> : <BellOff size={20} />}
-          </button>
+
 
           <button className={styles.screenBtn} onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
