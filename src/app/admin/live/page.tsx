@@ -151,10 +151,17 @@ export default function LiveMonitorPage() {
       }
       const { data } = await supabase
         .from('clients')
-        .select('id, name, logo_url')
+        .select('id, name, logo_url, webhooks(status)')
         .eq('status', 'active')
         .order('name');
-      if (data) setClients(data);
+      
+      if (data) {
+        // Filtrar apenas clientes que possuem webhooks ativos
+        const filteredClients = data.filter(client => 
+          client.webhooks && client.webhooks.some((wh: any) => wh.status === 'active')
+        );
+        setClients(filteredClients);
+      }
     }
     fetchClients();
     loadData(selectedClient);
