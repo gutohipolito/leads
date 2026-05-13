@@ -353,8 +353,13 @@ export default function Home() {
                     ))}
                   </Pie>
                   <RechartsTooltip 
-                    contentStyle={{ background: '#0a1423', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff', fontSize: '12px' }}
+                    contentStyle={{ 
+                      background: 'var(--card)', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: '8px',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                    itemStyle={{ color: 'var(--foreground)', fontSize: '12px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>

@@ -105,3 +105,28 @@ button {
   font-family: var(--font-main) !important;
   font-weight: 600;
 }
+
+/* Recharts Theme Overrides */
+.recharts-cartesian-axis-tick text {
+  fill: var(--muted-foreground) !important;
+}
+
+.recharts-legend-item-text {
+  color: var(--foreground) !important;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-default-tooltip {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--glass-shadow) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--foreground) !important;
+}

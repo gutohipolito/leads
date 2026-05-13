@@ -32,28 +32,29 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
           <CartesianGrid 
             strokeDasharray="3 3" 
             vertical={false} 
-            stroke="rgba(255,255,255,0.05)" 
+            stroke="rgba(var(--foreground-rgb), 0.05)" 
           />
           <XAxis 
             dataKey="date" 
             axisLine={false}
             tickLine={false}
-            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 12 }}
+            tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
             dy={10}
           />
           <YAxis 
             axisLine={false}
             tickLine={false}
-            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 12 }}
+            tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
           />
           <Tooltip 
             contentStyle={{ 
-              backgroundColor: '#0a1423', 
-              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'var(--card)', 
+              border: '1px solid var(--border)',
               borderRadius: '12px',
-              color: '#fff'
+              color: 'var(--foreground)',
+              backdropFilter: 'blur(10px)'
             }}
-            itemStyle={{ color: '#00D1FF' }}
+            itemStyle={{ color: 'var(--primary)' }}
           />
           <Area 
             type="monotone" 
