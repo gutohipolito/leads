@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './settings.module.css';
 import { 
@@ -13,7 +14,9 @@ import {
   Save, 
   CheckCircle2,
   Settings as SettingsIcon,
-  LogOut
+  LogOut,
+  X,
+  Volume2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -28,6 +31,8 @@ export default function SettingsPage() {
   
   const [newName, setNewName] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isSoundModalOpen, setIsSoundModalOpen] = useState(false);
+  const [pendingSound, setPendingSound] = useState(true);
 
   useEffect(() => {
     async function loadProfile() {
@@ -58,8 +63,20 @@ export default function SettingsPage() {
   }, []);
 
   const toggleSound = (enabled: boolean) => {
-    setSoundEnabled(enabled);
-    localStorage.setItem('asthros-sound-enabled', String(enabled));
+    if (enabled === soundEnabled) return;
+    setPendingSound(enabled);
+    setIsSoundModalOpen(true);
+  };
+
+  const confirmSoundToggle = () => {
+    setSoundEnabled(pendingSound);
+    localStorage.setItem('asthros-sound-enabled', String(pendingSound));
+    setIsSoundModalOpen(false);
+    
+    if (pendingSound) {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(() => {});
+    }
   };
 
   const toggleTheme = (newTheme: string) => {
@@ -221,6 +238,39 @@ export default function SettingsPage() {
 
         </div>
       </div>
+
+      {isSoundModalOpen && typeof window !== 'undefined' && createPortal(
+        <div className={styles.modalOverlay} onClick={() => setIsSoundModalOpen(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <button className={styles.closeModal} onClick={() => setIsSoundModalOpen(false)}>
+                <X size={20} />
+              </button>
+              <div className={`${styles.modalIcon} ${pendingSound ? styles.iconSuccess : styles.iconDanger}`}>
+                <Volume2 size={32} />
+              </div>
+              <h3>{pendingSound ? 'Ativar Alertas Sonoros?' : 'Desativar Alertas Sonoros?'}</h3>
+              <p>
+                {pendingSound 
+                  ? 'O sistema emitirá um sinal sonoro premium sempre que um novo lead for detectado ou uma notificação chegar.' 
+                  : 'Você deixará de ouvir os alertas sonoros, mas continuará recebendo as notificações visuais normalmente.'}
+              </p>
+            </div>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setIsSoundModalOpen(false)}>
+                Cancelar
+              </button>
+              <button 
+                className={`${styles.confirmBtn} ${pendingSound ? styles.confirmSuccess : styles.confirmDanger}`}
+                onClick={confirmSoundToggle}
+              >
+                {pendingSound ? 'Sim, Ativar' : 'Sim, Desativar'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </DashboardLayout>
   );
 }
