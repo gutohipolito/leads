@@ -5,14 +5,14 @@
 .settingsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .card {
-  padding: 2rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .cardHeader {
@@ -20,7 +20,7 @@
   align-items: center;
   gap: 1rem;
   border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
-  padding-bottom: 1rem;
+  padding-bottom: 0.75rem;
 }
 
 .cardHeader h3 {
@@ -36,7 +36,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .field {
@@ -94,11 +94,11 @@
 }
 
 .saveBtn {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   background: var(--primary);
   color: #000;
   border: none;
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 0.75rem;
   font-weight: 800;
   cursor: pointer;
@@ -129,7 +129,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   background: rgba(var(--foreground-rgb), 0.02);
   border-radius: 0.75rem;
   border: 1px solid var(--border);

@@ -1,7 +1,7 @@
 .header {
-  height: 90px;
+  height: 70px;
   width: 100%;
-  padding: 0 4rem;
+  padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -14,14 +14,14 @@
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--foreground);
   letter-spacing: -0.04em;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .right {
@@ -123,8 +123,8 @@
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
   border: 1px solid var(--border);
