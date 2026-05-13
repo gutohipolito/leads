@@ -50,30 +50,46 @@ export default function Header({ title }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [pushPreference, setPushPreference] = useState(true);
+  const [isPushModalOpen, setIsPushModalOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotificationsEnabled(Notification.permission === 'granted');
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('push_notifications_enabled');
+      setPushPreference(saved === null ? true : saved === 'true');
+      
+      if ('Notification' in window) {
+        setNotificationsEnabled(Notification.permission === 'granted');
+      }
     }
   }, []);
 
-  const requestNotificationPermission = async () => {
+  const handleTogglePush = () => {
+    setIsPushModalOpen(true);
+  };
+
+  const confirmPushToggle = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'denied') {
-        alert('As notificações estão bloqueadas. Clique no ícone de cadeado ao lado da URL para permitir.');
-        return;
-      }
-      
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === 'granted');
-      
-      if (permission === 'granted') {
-        new Notification('Asthros: Alertas Ativos!', {
-          body: 'Você receberá notificações em tempo real agora.',
-          icon: '/asthros-favicon.png'
-        });
+      if (!pushPreference) {
+        // Ativando
+        const permission = await Notification.requestPermission();
+        if (permission === 'denied') {
+          alert('As notificações estão bloqueadas no navegador. Por favor, libere no ícone de cadeado.');
+        } else {
+          setNotificationsEnabled(permission === 'granted');
+          setPushPreference(true);
+          localStorage.setItem('push_notifications_enabled', 'true');
+          if (permission === 'granted') {
+            new Notification('Asthros: Alertas Live Ativados!');
+          }
+        }
+      } else {
+        // Desativando
+        setPushPreference(false);
+        localStorage.setItem('push_notifications_enabled', 'false');
       }
     }
+    setIsPushModalOpen(false);
   };
 
   useEffect(() => {
@@ -111,7 +127,7 @@ export default function Header({ title }: HeaderProps) {
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
           audio.play().catch(() => {});
 
-          if (Notification.permission === 'granted') {
+          if (Notification.permission === 'granted' && pushPreference) {
             new Notification(`Asthros: ${newNotif.title}`, {
               body: newNotif.message,
               icon: '/asthros-favicon.png'
@@ -242,12 +258,12 @@ export default function Header({ title }: HeaderProps) {
 
         <div className={styles.notifWrapper}>
           <button 
-            className={`${styles.actionBtn} ${notificationsEnabled ? styles.pushEnabled : ''}`} 
-            onClick={requestNotificationPermission}
-            title={notificationsEnabled ? "Alertas Live Ativos" : "Ativar Alertas Live no Navegador"}
+            className={`${styles.actionBtn} ${pushPreference ? styles.pushEnabled : ''}`} 
+            onClick={handleTogglePush}
+            title={pushPreference ? "Alertas Live Ativos" : "Alertas Live Desativados"}
             style={{ marginRight: '0.5rem' }}
           >
-            <Radio size={20} color={notificationsEnabled ? "#2ecc71" : "rgba(255,255,255,0.4)"} />
+            <Radio size={20} color={pushPreference ? "#2ecc71" : "rgba(255,255,255,0.2)"} />
           </button>
           <button className={styles.actionBtn} onClick={() => setIsNotifOpen(true)} title="Notificações">
             <Bell size={20} />
@@ -308,6 +324,35 @@ export default function Header({ title }: HeaderProps) {
                 </button>
               </div>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isPushModalOpen && typeof window !== 'undefined' && createPortal(
+        <div className={styles.modalOverlay} onClick={() => setIsPushModalOpen(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon} style={{ background: pushPreference ? 'rgba(239, 68, 68, 0.1)' : 'rgba(46, 204, 113, 0.1)', color: pushPreference ? '#ef4444' : '#2ecc71' }}>
+                <Radio size={32} />
+              </div>
+              <h3>{pushPreference ? 'Desativar Alertas Live?' : 'Ativar Alertas Live?'}</h3>
+              <p>
+                {pushPreference 
+                  ? 'Você deixará de receber notificações instantâneas no seu navegador quando novos leads entrarem no sistema.' 
+                  : 'Receba notificações instantâneas no seu navegador sempre que uma nova captura for detectada, mesmo fora desta aba.'}
+              </p>
+            </div>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setIsPushModalOpen(false)}>Agora não</button>
+              <button 
+                className={styles.submitBtn} 
+                style={{ background: pushPreference ? '#ef4444' : '#2ecc71', color: pushPreference ? 'white' : 'black' }}
+                onClick={confirmPushToggle}
+              >
+                {pushPreference ? 'Sim, Desativar' : 'Sim, Ativar'}
+              </button>
+            </div>
           </div>
         </div>,
         document.body
