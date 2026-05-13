@@ -1,5 +1,5 @@
 :root {
-  /* Ultra-Premium DeFi Palette - Asthros V2 */
+  /* Ultra-Premium DeFi Palette - Asthros V2 (Dark) */
   --background: #020408;
   --foreground: #FCFCFC;
   
@@ -16,6 +16,8 @@
   
   --border: rgba(255, 255, 255, 0.08);
   --accent: #00D1FF;
+
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   
   --radius-xl: 2rem;
   --radius-lg: 1.25rem;
@@ -23,6 +25,27 @@
   
   --font-main: var(--font-montserrat), var(--font-outfit), sans-serif;
   --font-data: var(--font-montserrat), sans-serif;
+}
+
+[data-theme='light'] {
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+  
+  --card: rgba(255, 255, 255, 0.7);
+  --card-foreground: #0f172a;
+  
+  --primary: #0ea5e9;
+  --primary-glow: rgba(14, 165, 233, 0.15);
+  --primary-foreground: #ffffff;
+  
+  --secondary: #4f46e5;
+  --muted: #64748b;
+  --muted-foreground: #475569;
+  
+  --border: rgba(0, 0, 0, 0.08);
+  --accent: #0ea5e9;
+
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05);
 }
 
 * {
@@ -60,7 +83,7 @@ body::before {
   backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-lg) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
 h1, h2, h3, h4 {

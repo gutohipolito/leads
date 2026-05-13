@@ -26,6 +26,23 @@ export const metadata: Metadata = {
   },
 };
 
+function ThemeInitializer() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            try {
+              const theme = localStorage.getItem('asthros-theme') || 'dark';
+              document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+          })();
+        `,
+      }}
+    />
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,6 +50,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${outfit.variable}`}>
+      <head>
+        <ThemeInitializer />
+      </head>
       <body style={{ fontFamily: 'var(--font-montserrat), var(--font-outfit), sans-serif' }}>
         {children}
       </body>

@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [theme, setTheme] = useState('dark');
   
   const [newName, setNewName] = useState('');
 
@@ -45,7 +46,18 @@ export default function SettingsPage() {
       setLoading(false);
     }
     loadProfile();
+
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('asthros-theme') || 'dark';
+      setTheme(savedTheme);
+    }
   }, []);
+
+  const toggleTheme = (newTheme: string) => {
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('asthros-theme', newTheme);
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,10 +140,23 @@ export default function SettingsPage() {
                   <Monitor size={18} />
                   <div>
                     <p>Tema do Dashboard</p>
-                    <span>Padrão Ultra-Premium Dark</span>
+                    <span>{theme === 'dark' ? 'Ultra-Premium Dark' : 'Aura Light Mode'}</span>
                   </div>
                 </div>
-                <div className={styles.toggleActive}>Ativo</div>
+                <div className={styles.themeToggleGroup}>
+                  <button 
+                    className={`${styles.themeBtn} ${theme === 'dark' ? styles.activeTheme : ''}`}
+                    onClick={() => toggleTheme('dark')}
+                  >
+                    Escuro
+                  </button>
+                  <button 
+                    className={`${styles.themeBtn} ${theme === 'light' ? styles.activeTheme : ''}`}
+                    onClick={() => toggleTheme('light')}
+                  >
+                    Claro
+                  </button>
+                </div>
               </div>
               
               <div className={styles.optionItem}>
