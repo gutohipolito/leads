@@ -65,6 +65,7 @@ export default function Header({ title }: HeaderProps) {
   };
 
   useEffect(() => {
+    async function loadNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
