@@ -107,15 +107,40 @@ export default function SettingsPage() {
       setWhitelist(profile.ip_whitelist || []);
     }
 
-    // 3. Simulação de Sessões Ativas
+    // 3. Dados Reais da Sessão Atual
+    let userIp = 'Detectando...';
+    let userLoc = 'Localizando...';
+    
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipRes.json();
+      userIp = ipData.ip;
+      
+      // Opcional: Buscar localização aproximada via IP (Serviço gratuito limitado)
+      const locRes = await fetch(`https://ipapi.co/${userIp}/json/`);
+      const locData = await locRes.json();
+      userLoc = locData.city ? `${locData.city}, ${locData.country_code}` : 'Localização Desconhecida';
+    } catch (e) {
+      userIp = 'IP Protegido';
+      userLoc = 'Localização Indisponível';
+    }
+
+    const browserInfo = () => {
+      const ua = navigator.userAgent;
+      if (ua.includes('Chrome')) return 'Chrome no ' + (ua.includes('Windows') ? 'Windows' : 'Mac/Linux');
+      if (ua.includes('Firefox')) return 'Firefox';
+      if (ua.includes('Safari')) return 'Safari';
+      return 'Navegador Web';
+    };
+
     setActiveSessions([
       { 
         id: 'current', 
-        device: 'Chrome no Windows (Atual)', 
-        location: 'São Paulo, BR', 
+        device: browserInfo() + ' (Atual)', 
+        location: userLoc, 
         last_active: 'Agora mesmo',
         is_current: true,
-        ip: '187.64.XXX.XX'
+        ip: userIp
       }
     ]);
 
