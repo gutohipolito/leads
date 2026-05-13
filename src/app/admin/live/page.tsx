@@ -158,11 +158,22 @@ export default function LiveMonitorPage() {
       }
     }
 
+    // 5. Índice de Performance (Crescimento hoje vs média 7 dias)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const { count: last7DaysCount } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', sevenDaysAgo.toISOString());
+    
+    const avgPerDay = (last7DaysCount || 0) / 7;
+    const growthIndex = avgPerDay > 0 ? Math.round(((totalToday || 0) / avgPerDay) * 100) : 100;
+
     setStats(prev => ({
       ...prev,
       totalToday: totalToday || 0,
       leadsPerHour: Math.round((totalToday || 0) / (new Date().getHours() + 1)),
-      conversion: 84 + Math.floor(Math.random() * 10),
+      conversion: growthIndex, // Agora representa o índice de performance real
       performanceBars: perfBars,
       topClients
     }));
@@ -421,7 +432,7 @@ export default function LiveMonitorPage() {
         <div className={styles.statCard}>
           <div className={styles.statIcon} style={{ color: '#2ecc71' }}><TrendingUp size={24} /></div>
           <div className={styles.statInfo}>
-            <span className={styles.statLabel}>CONVERSÃO</span>
+            <span className={styles.statLabel}>PERFORMANCE</span>
             <span className={styles.statValue}>{stats.conversion}%</span>
           </div>
         </div>
