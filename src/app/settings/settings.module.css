@@ -489,9 +489,22 @@
 
 .securityContent {
   padding: 1rem 1.5rem;
-  min-height: 350px;
-  max-height: 52vh;
+  min-height: 320px;
+  max-height: 45vh;
   overflow-y: auto;
+}
+
+.securityContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.securityContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.securityContent::-webkit-scrollbar-thumb {
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-radius: 10px;
 }
 
 /* Security Pagination */
