@@ -51,7 +51,7 @@ export default function SettingsPage() {
   const [ipInput, setIpInput] = useState('');
   const [whitelist, setWhitelist] = useState<string[]>([]);
   const [securityLogPage, setSecurityLogPage] = useState(1);
-  const LOGS_PER_PAGE = 4;
+  const LOGS_PER_PAGE = 12;
 
   useEffect(() => {
     async function loadProfile() {

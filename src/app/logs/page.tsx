@@ -22,6 +22,8 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     async function fetchLogs() {
@@ -61,6 +63,17 @@ export default function LogsPage() {
     (log.entity || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Resetar página ao buscar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const getEntityIcon = (entity: string) => {
     switch(entity) {
       case 'client': return <UserIcon size={16} />;
@@ -93,7 +106,7 @@ export default function LogsPage() {
           <Loader text="Auditando Registros" />
         ) : (
           <div className={styles.logsList}>
-            {filteredLogs.length > 0 ? filteredLogs.map(log => (
+            {paginatedLogs.length > 0 ? paginatedLogs.map(log => (
               <div key={log.id} className={`${styles.logItem} glass`}>
                 <div className={styles.logLeft}>
                   <div className={`${styles.iconBox} ${styles[log.entity] || ''}`}>
@@ -122,6 +135,31 @@ export default function LogsPage() {
                 <p>Nenhum log de auditoria encontrado.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Paginação */}
+        {!loading && totalPages > 1 && (
+          <div className={styles.pagination}>
+            <div className={styles.pageInfo}>
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </div>
+            <div className={styles.pageControls}>
+              <button 
+                className={styles.pageBtn} 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </button>
+              <button 
+                className={styles.pageBtn} 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Próximo
+              </button>
+            </div>
           </div>
         )}
       </div>
