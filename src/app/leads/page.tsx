@@ -73,6 +73,8 @@ export default function LeadsPage() {
     switch (source) {
       case 'whatsapp_tracker':
         return <MessageCircle size={size} className={styles.wppIcon} />;
+      case 'custom_tracker':
+        return <Zap size={size} className={styles.zapIcon} />;
       case 'test_simulation':
         return <FlaskConical size={size} className={styles.testIcon} />;
       default:
@@ -227,9 +229,9 @@ export default function LeadsPage() {
 
     // Filtro por Categoria (Abas)
     if (activeCategory === 'whatsapp') {
-      result = result.filter(l => l.source === 'whatsapp_tracker');
+      result = result.filter(l => l.source === 'whatsapp_tracker' || l.source === 'custom_tracker');
     } else if (activeCategory === 'forms') {
-      result = result.filter(l => l.source !== 'whatsapp_tracker');
+      result = result.filter(l => l.source !== 'whatsapp_tracker' && l.source !== 'custom_tracker');
     }
 
     // Busca por Texto
@@ -590,11 +592,11 @@ export default function LeadsPage() {
                   </div>
 
                   <div className={`${styles.totalStatsCard} ${styles.cardWhatsApp}`}>
-                    <div className={styles.totalIcon}><MessageCircle size={14} /></div>
+                    <div className={styles.totalIcon}><Zap size={14} /></div>
                     <div className={styles.totalInfo}>
-                      <span className={styles.totalLabel}>WhatsApp</span>
+                      <span className={styles.totalLabel}>Interações</span>
                       <strong className={styles.totalValue}>
-                        {filteredLeads.filter(l => l.source === 'whatsapp_tracker').length}
+                        {filteredLeads.filter(l => l.source === 'whatsapp_tracker' || l.source === 'custom_tracker').length}
                       </strong>
                     </div>
                   </div>
@@ -620,7 +622,7 @@ export default function LeadsPage() {
                   Formulários
                 </button>
                 <button className={`${styles.catTab} ${activeCategory === 'whatsapp' ? styles.active : ''}`} onClick={() => setActiveCategory('whatsapp')}>
-                  WhatsApp
+                  Botões & Whats
                 </button>
               </div>
 
@@ -645,8 +647,8 @@ export default function LeadsPage() {
                       <td>
                         {lead.source === 'test_simulation' ? (
                           <div className={styles.sourceBadgeTest}><Database size={12} /> <span>Simulação</span></div>
-                        ) : lead.source === 'whatsapp_tracker' ? (
-                          <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>WhatsApp</span></div>
+                        ) : (lead.source === 'whatsapp_tracker' || lead.source === 'custom_tracker') ? (
+                          <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>{lead.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Botão'}</span></div>
                         ) : (
                           <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
                         )}

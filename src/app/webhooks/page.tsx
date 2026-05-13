@@ -59,6 +59,9 @@ export default function WebhooksManagePage() {
     validation_type: 'header' as 'header' | 'query'
   });
 
+  const [trackerKeywords, setTrackerKeywords] = useState('');
+  const [trackerSelectors, setTrackerSelectors] = useState('');
+
   useEffect(() => {
     loadWebhooksData();
   }, []);
@@ -315,6 +318,33 @@ export default function WebhooksManagePage() {
                 </div>
                 {selectedDocsWebhook ? (
                   <div className={styles.codeWrapper}>
+                    <div className={styles.customizationArea}>
+                      <div className={styles.customizationHeader}>
+                        <Zap size={16} />
+                        <span>Personalizar Rastreamento</span>
+                      </div>
+                      <div className={styles.customizationGrid}>
+                        <div className={styles.inputGroupMini}>
+                          <label>Palavras-chave na URL (ex: checkout, pagar)</label>
+                          <input 
+                            type="text" 
+                            placeholder="checkout, cart, sucesso" 
+                            value={trackerKeywords}
+                            onChange={(e) => setTrackerKeywords(e.target.value)}
+                          />
+                        </div>
+                        <div className={styles.inputGroupMini}>
+                          <label>Seletores CSS (ex: .btn-buy, #finalizar)</label>
+                          <input 
+                            type="text" 
+                            placeholder=".btn-primary, #checkout-button" 
+                            value={trackerSelectors}
+                            onChange={(e) => setTrackerSelectors(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className={styles.codeHeader}>
                       <div className={styles.titleWithHelp}>
                         <span>Código de Integração (HTML/JS)</span>
@@ -323,18 +353,35 @@ export default function WebhooksManagePage() {
                           <span className={styles.tooltipText}>Instalação Global</span>
                         </div>
                       </div>
-                      <button className={styles.copyCodeBtn} onClick={() => handleCopy(`<script>\n  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    secret: "${selectedDocsWebhook.secret}",\n    apiUrl: "${window.location.origin}"\n  };\n</script>\n<script src="${window.location.origin}/tracker.js" async></script>`)}>
+                      <button 
+                        className={styles.copyCodeBtn} 
+                        onClick={() => {
+                          const keywordsArr = trackerKeywords.split(',').map(k => k.trim()).filter(k => k);
+                          const selectorsArr = trackerSelectors.split(',').map(s => s.trim()).filter(s => s);
+                          
+                          let configStr = `  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    secret: "${selectedDocsWebhook.secret}",\n    apiUrl: "${window.location.origin}"`;
+                          
+                          if (keywordsArr.length > 0) configStr += `,\n    trackKeywords: ${JSON.stringify(keywordsArr)}`;
+                          if (selectorsArr.length > 0) configStr += `,\n    trackSelectors: ${JSON.stringify(selectorsArr)}`;
+                          
+                          configStr += `\n  };`;
+
+                          handleCopy(`<script>\n${configStr}\n</script>\n<script src="${window.location.origin}/tracker.js" async></script>`);
+                        }}
+                      >
                         <Copy size={14} /><span>Copiar Script Completo</span>
                       </button>
                     </div>
-                    <pre className={styles.codeBlock}>{`<script>
+                    <pre className={styles.codeBlock}>
+{`<script>
   window.AsthrosConfig = {
     clientId: "${selectedDocsWebhook.client_id}",
     secret: "${selectedDocsWebhook.secret}",
-    apiUrl: "${window.location.origin}"
+    apiUrl: "${window.location.origin}"${trackerKeywords ? `,\n    trackKeywords: ${JSON.stringify(trackerKeywords.split(',').map(k => k.trim()).filter(k => k))}` : ''}${trackerSelectors ? `,\n    trackSelectors: ${JSON.stringify(trackerSelectors.split(',').map(s => s.trim()).filter(s => s))}` : ''}
   };
 </script>
-<script src="${window.location.origin}/tracker.js" async></script>`}</pre>
+<script src="${window.location.origin}/tracker.js" async></script>`}
+                    </pre>
 
                     <div className={styles.installGuide}>
                       <div className={styles.guideHeader}>

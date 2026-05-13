@@ -595,6 +595,7 @@
 }
 
 .wppIcon { color: #25d366; }
+.zapIcon { color: var(--primary); }
 .formIcon { color: #56d7fd; }
 .testIcon { color: #a855f7; }
 

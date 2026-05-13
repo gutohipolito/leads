@@ -13,7 +13,9 @@
             config = {
                 clientId: script.getAttribute('data-client-id'),
                 secret: script.getAttribute('data-secret'),
-                apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br'
+                apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br',
+                trackKeywords: script.getAttribute('data-keywords') ? script.getAttribute('data-keywords').split(',') : [],
+                trackSelectors: script.getAttribute('data-selectors') ? script.getAttribute('data-selectors').split(',') : []
             };
         }
     }
@@ -26,6 +28,8 @@
     console.log('[Asthros] Configuração Carregada:', {
         clientId: config.clientId,
         apiUrl: config.apiUrl,
+        keywords: config.trackKeywords || [],
+        selectors: config.trackSelectors || [],
         // Ocultamos parte do secret por segurança no log
         secret: config.secret.substring(0, 10) + '...'
     });
@@ -54,27 +58,61 @@
         return matches;
     }
 
+    function getTrackingMatch(link) {
+        if (!link) return null;
+        const url = link.href || '';
+        
+        // 1. WhatsApp (Sempre ativo por padrão)
+        if (isWhatsAppLink(url)) {
+            return { source: 'whatsapp_tracker', label: 'WhatsApp' };
+        }
+
+        // 2. Custom Keywords (ex: 'checkout', 'comprar')
+        if (config.trackKeywords && Array.isArray(config.trackKeywords)) {
+            for (const keyword of config.trackKeywords) {
+                if (keyword && url.toLowerCase().includes(keyword.toLowerCase())) {
+                    return { source: 'custom_tracker', label: `Keyword: ${keyword}` };
+                }
+            }
+        }
+
+        // 3. Custom Selectors (ex: '.btn-checkout', '#buy-now')
+        if (config.trackSelectors && Array.isArray(config.trackSelectors)) {
+            for (const selector of config.trackSelectors) {
+                if (selector && link.matches(selector)) {
+                    return { source: 'custom_tracker', label: `Selector: ${selector}` };
+                }
+            }
+        }
+
+        return null;
+    }
+
     async function trackLead(e) {
-        const link = e.target.closest('a');
+        const link = e.target.closest('a') || e.target.closest('button');
         if (!link) return;
 
-        console.log('[Asthros] Clique detectado em link:', link.href);
-
-        if (!isWhatsAppLink(link.href)) {
-            console.log('[Asthros] Link ignorado (não é WhatsApp).');
+        const match = getTrackingMatch(link);
+        if (!match) {
+            // Se for link mas não deu match, ignoramos
+            if (link.tagName === 'A') {
+                // console.log('[Asthros] Link ignorado.');
+            }
             return;
         }
 
-        console.log('%c[Asthros] CAPTURANDO LEAD WHATSAPP!', 'color: #25d366; font-weight: bold;');
+        console.log(`%c[Asthros] CAPTURANDO LEAD (${match.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
-            source: 'whatsapp_tracker',
+            source: match.source,
+            name: 'Lead Identificado via ' + match.label,
             marketing: { ...getUtms(), referrer: document.referrer || 'direto' },
             behavior: {
                 time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
                 scroll_depth: maxScroll + '%',
                 page_url: window.location.href,
-                button_text: link.innerText.trim() || 'Botão WhatsApp'
+                button_text: link.innerText.trim() || link.getAttribute('aria-label') || match.label,
+                match_type: match.label
             },
             url: window.location.href,
             timestamp: new Date().toISOString()
@@ -108,3 +146,4 @@
     document.addEventListener('click', trackLead, { capture: true });
     console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
 })();
+
