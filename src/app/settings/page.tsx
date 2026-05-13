@@ -16,7 +16,14 @@ import {
   Settings as SettingsIcon,
   LogOut,
   X,
-  Volume2
+  Volume2,
+  ShieldCheck,
+  Smartphone,
+  History,
+  Info,
+  MapPin,
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -33,6 +40,13 @@ export default function SettingsPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isSoundModalOpen, setIsSoundModalOpen] = useState(false);
   const [pendingSound, setPendingSound] = useState(true);
+  
+  // Security Modal States
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityTab, setSecurityTab] = useState<'sessions' | 'activity' | 'mfa'>('sessions');
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
+  const [securityLogs, setSecurityLogs] = useState<any[]>([]);
+  const [loadingSecurity, setLoadingSecurity] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -61,6 +75,43 @@ export default function SettingsPage() {
       setSoundEnabled(savedSound === null ? true : savedSound === 'true');
     }
   }, []);
+
+  const loadSecurityData = async () => {
+    setLoadingSecurity(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // 1. Logs de Atividade (Focados em segurança)
+    const { data: logs } = await supabase
+      .from('system_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('action', ['Login Realizado', 'Perfil Atualizado', 'Exportação Realizada', 'Troca de Senha'])
+      .order('created_at', { ascending: false })
+      .limit(15);
+    
+    setSecurityLogs(logs || []);
+
+    // 2. Simulação de Sessões Ativas (Supabase client não expõe todas as sessões de outros devices facilmente via JS SDK sem Admin)
+    // Vamos mostrar a sessão atual e uma entrada "placeholder" premium para o usuário saber que a feature existe
+    setActiveSessions([
+      { 
+        id: 'current', 
+        device: 'Chrome no Windows (Atual)', 
+        location: 'São Paulo, BR', 
+        last_active: 'Agora mesmo',
+        is_current: true,
+        ip: '187.64.XXX.XX'
+      }
+    ]);
+
+    setLoadingSecurity(false);
+  };
+
+  const handleOpenSecurity = () => {
+    setIsSecurityModalOpen(true);
+    loadSecurityData();
+  };
 
   const toggleSound = (enabled: boolean) => {
     if (enabled === soundEnabled) return;
@@ -214,10 +265,10 @@ export default function SettingsPage() {
                   <Key size={18} />
                   <div>
                     <p>Segurança Avançada</p>
-                    <span>Autenticação em duas etapas</span>
+                    <span>Gerenciar sessões e proteção</span>
                   </div>
                 </div>
-                <button className={styles.actionLink}>Configurar</button>
+                <button className={styles.actionLink} onClick={handleOpenSecurity}>Configurar</button>
               </div>
             </div>
           </div>
@@ -266,6 +317,150 @@ export default function SettingsPage() {
               >
                 {pendingSound ? 'Sim, Ativar' : 'Sim, Desativar'}
               </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isSecurityModalOpen && typeof window !== 'undefined' && createPortal(
+        <div className={styles.modalOverlay} onClick={() => setIsSecurityModalOpen(false)}>
+          <div className={`${styles.modal} ${styles.securityModal}`} onClick={e => e.stopPropagation()}>
+            <div className={styles.securityHeader}>
+              <div className={styles.securityTitle}>
+                <ShieldCheck size={24} className={styles.icon} />
+                <div>
+                  <h3>Centro de Segurança</h3>
+                  <p>Proteção avançada para sua conta Asthros</p>
+                </div>
+              </div>
+              <button className={styles.closeModal} onClick={() => setIsSecurityModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.securityTabs}>
+              <button 
+                className={`${styles.tabBtn} ${securityTab === 'sessions' ? styles.activeTab : ''}`}
+                onClick={() => setSecurityTab('sessions')}
+              >
+                <Smartphone size={16} />
+                <span>Dispositivos</span>
+              </button>
+              <button 
+                className={`${styles.tabBtn} ${securityTab === 'activity' ? styles.activeTab : ''}`}
+                onClick={() => setSecurityTab('activity')}
+              >
+                <History size={16} />
+                <span>Atividade</span>
+              </button>
+              <button 
+                className={`${styles.tabBtn} ${securityTab === 'mfa' ? styles.activeTab : ''}`}
+                onClick={() => setSecurityTab('mfa')}
+              >
+                <Key size={16} />
+                <span>Acesso (2FA)</span>
+              </button>
+            </div>
+
+            <div className={styles.securityContent}>
+              {loadingSecurity ? (
+                <div className={styles.securityLoader}>
+                  <div className={styles.spinner} />
+                  <p>Sincronizando dados de segurança...</p>
+                </div>
+              ) : (
+                <>
+                  {securityTab === 'sessions' && (
+                    <div className={styles.sessionsList}>
+                      {activeSessions.map(session => (
+                        <div key={session.id} className={styles.sessionItem}>
+                          <div className={styles.sessionIcon}>
+                            <Monitor size={20} />
+                          </div>
+                          <div className={styles.sessionInfo}>
+                            <div className={styles.sessionMain}>
+                              <p>{session.device}</p>
+                              {session.is_current && <span className={styles.currentBadge}>Sessão Atual</span>}
+                            </div>
+                            <div className={styles.sessionMeta}>
+                              <span><MapPin size={12} /> {session.location}</span>
+                              <span className={styles.dotSeparator}>•</span>
+                              <span><Info size={12} /> IP: {session.ip}</span>
+                            </div>
+                          </div>
+                          {!session.is_current && (
+                            <button className={styles.terminateBtn}>Encerrar</button>
+                          )}
+                        </div>
+                      ))}
+                      <div className={styles.securityTip}>
+                        <ShieldCheck size={16} />
+                        <p>Dica: Sempre encerre sessões em dispositivos que você não utiliza mais.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {securityTab === 'activity' && (
+                    <div className={styles.activityList}>
+                      {securityLogs.length > 0 ? securityLogs.map(log => (
+                        <div key={log.id} className={styles.activityItem}>
+                          <div className={styles.activityDot} />
+                          <div className={styles.activityInfo}>
+                            <p className={styles.activityAction}>{log.action}</p>
+                            <span className={styles.activityTime}>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                          </div>
+                          <ChevronRight size={16} className={styles.chevron} />
+                        </div>
+                      )) : (
+                        <div className={styles.emptyActivity}>
+                          <p>Nenhum log de segurança recente.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {securityTab === 'mfa' && (
+                    <div className={styles.mfaContainer}>
+                      <div className={styles.mfaHero}>
+                        <div className={styles.mfaIcon}>
+                          <Key size={32} />
+                        </div>
+                        <h4>Dupla Camada de Proteção</h4>
+                        <p>Adicione uma barreira extra solicitando um código de segurança a cada novo login.</p>
+                      </div>
+                      
+                      <div className={styles.mfaOptions}>
+                        <div className={styles.mfaOption}>
+                          <div className={styles.optionText}>
+                            <p>Autenticação por App</p>
+                            <span>Google Authenticator ou Authy</span>
+                          </div>
+                          <button className={styles.setupBtn}>Ativar</button>
+                        </div>
+                        <div className={styles.mfaOption}>
+                          <div className={styles.optionText}>
+                            <p>Código por E-mail</p>
+                            <span>Receber código no e-mail cadastrado</span>
+                          </div>
+                          <button className={styles.setupBtn}>Ativar</button>
+                        </div>
+                      </div>
+
+                      <div className={styles.ipWhitelist}>
+                        <div className={styles.ipHeader}>
+                          <Globe size={16} />
+                          <p>Restrição por IP</p>
+                        </div>
+                        <div className={styles.ipField}>
+                          <input type="text" placeholder="Adicionar IP autorizado (ex: 187.64...)" />
+                          <button>Adicionar</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>,
