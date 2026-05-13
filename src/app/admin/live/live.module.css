@@ -983,3 +983,31 @@
   .statsGrid { grid-template-columns: repeat(2, 1fr); }
   .mainContent { grid-template-columns: 1fr; }
 }
+
+/* Modo Noturno Automático */
+.nightMode {
+  background: radial-gradient(circle at top, #020408, #000000);
+}
+
+.nightMode .statCard, 
+.nightMode .leadItem,
+.nightMode .performanceCard,
+.nightMode .worldMap,
+.nightMode .footerInfo,
+.nightMode .sliderItem {
+  background: rgba(255, 255, 255, 0.01);
+  border-color: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+}
+
+.nightMode .statValue {
+  text-shadow: 0 0 20px rgba(0, 209, 255, 0.2);
+}
+
+.nightMode .leadName {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nightMode .header {
+  opacity: 0.8;
+}

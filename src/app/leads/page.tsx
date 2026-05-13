@@ -192,8 +192,11 @@ export default function LeadsPage() {
 
   const filteredClients = useMemo(() => {
     return clients.filter(client => {
-      const isActive = client.status === 'active' && (client.webhooks?.length || 0) > 0;
-      const isWaiting = client.status === 'active' && (client.webhooks?.length || 0) === 0;
+      const hasActiveWebhook = client.webhooks?.some((wh: any) => wh.status === 'active');
+      const hasAnyWebhook = (client.webhooks?.length || 0) > 0;
+      
+      const isActive = client.status === 'active' && hasActiveWebhook;
+      const isWaiting = client.status === 'active' && !hasActiveWebhook;
       const isDisabled = client.status !== 'active';
 
       if (clientStatusFilter === 'active') return isActive;
@@ -481,14 +484,14 @@ export default function LeadsPage() {
                   onClick={() => setClientStatusFilter('active')}
                 >
                   <CheckCircle2 size={16} />
-                  Ativos <span>{clients.filter(c => c.status === 'active' && (c.webhooks?.length || 0) > 0).length}</span>
+                  Ativos <span>{clients.filter(c => c.status === 'active' && c.webhooks?.some((wh: any) => wh.status === 'active')).length}</span>
                 </button>
                 <button 
                   className={`${styles.filterTab} ${clientStatusFilter === 'waiting' ? `${styles.active} ${styles.waitingTab}` : ''}`}
                   onClick={() => setClientStatusFilter('waiting')}
                 >
                   <Clock size={16} />
-                  Aguardando <span>{clients.filter(c => c.status === 'active' && (c.webhooks?.length || 0) === 0).length}</span>
+                  Aguardando <span>{clients.filter(c => c.status === 'active' && !c.webhooks?.some((wh: any) => wh.status === 'active')).length}</span>
                 </button>
                 <button 
                   className={`${styles.filterTab} ${clientStatusFilter === 'disabled' ? `${styles.active} ${styles.disabledTab}` : ''}`}
@@ -501,8 +504,8 @@ export default function LeadsPage() {
             </div>
             <div className={styles.selectionGrid}>
               {filteredClients.map(client => {
-                const isActive = client.status === 'active' && (client.webhooks?.length || 0) > 0;
-                const isWaiting = client.status === 'active' && (client.webhooks?.length || 0) === 0;
+                const isActive = client.status === 'active' && client.webhooks?.some((wh: any) => wh.status === 'active');
+                const isWaiting = client.status === 'active' && !isActive;
                 const isDisabled = client.status !== 'active';
                 const statusClass = isActive ? styles.cardActive : isWaiting ? styles.cardWaiting : styles.cardDisabled;
 

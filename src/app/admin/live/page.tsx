@@ -39,9 +39,36 @@ export default function LiveMonitorPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
+  const [isNightMode, setIsNightMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    const checkNightMode = () => {
+      const hour = new Date().getHours();
+      setIsNightMode(hour >= 19 || hour < 7);
+    };
+    checkNightMode();
+    const interval = setInterval(checkNightMode, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const playNotificationSound = (clientId: string) => {
+    const sounds = [
+      'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
+      'https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3',
+      'https://assets.mixkit.co/active_storage/sfx/2867/2867-preview.mp3',
+      'https://assets.mixkit.co/active_storage/sfx/2866/2866-preview.mp3',
+      'https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3'
+    ];
+    let hash = 0;
+    for (let i = 0; i < clientId.length; i++) {
+      hash = clientId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % sounds.length;
+    new Audio(sounds[index]).play().catch(() => {});
+  };
 
   const triggerCelebration = (lead: any) => {
     // Limpar timeout anterior se houver
@@ -161,6 +188,14 @@ export default function LiveMonitorPage() {
           client.webhooks && client.webhooks.some((wh: any) => wh.status === 'active')
         );
         setClients(filteredClients);
+
+        // Pré-carregamento (cache) de logos para performance
+        filteredClients.forEach(client => {
+          if (client.logo_url) {
+            const img = new globalThis.Image();
+            img.src = client.logo_url;
+          }
+        });
       }
     }
     fetchClients();
@@ -176,68 +211,41 @@ export default function LiveMonitorPage() {
       .channel(channelName)
       .on(
         'postgres_changes',
-        { 
-          event: '*', // Ouvir todos os eventos para diagnóstico
-          schema: 'public', 
-          table: 'leads' 
-        },
+        { event: '*', schema: 'public', table: 'leads' },
         async (payload) => {
           const eventType = payload.eventType || (payload as any).event;
-          console.log('--- NOVO EVENTO DETECTADO ---');
-          console.log('Tipo:', eventType);
-          console.log('Payload:', payload);
-          
           if (eventType === 'INSERT') {
             const newLeadData = payload.new;
-            console.log('Lead ID:', newLeadData.id);
-            console.log('Client ID do Lead:', newLeadData.client_id);
-            console.log('Filtro Atual (selectedClient):', selectedClient);
-            
-            // Comparação ultra-flexível
             const isMatch = selectedClient === 'all' || String(newLeadData.client_id) === String(selectedClient);
-            
-            if (!isMatch) {
-              console.log('❌ Lead ignorado pelo filtro de cliente');
-              return;
-            }
+            if (!isMatch) return;
 
-            console.log('✅ Lead passou no filtro. Atualizando UI...');
-
-            // Primeiro, atualizamos a lista com o que já temos (para ser instantâneo)
             const tempLead = { ...newLeadData, clients: { name: 'Carregando...' } };
             setLeads(prev => {
-              const exists = prev.find(l => l.id === tempLead.id);
-              if (exists) return prev;
+              if (prev.find(l => l.id === tempLead.id)) return prev;
               return [tempLead, ...prev].slice(0, 10);
             });
 
-            // Disparamos a animação e o som imediatamente
             triggerCelebration(tempLead);
-            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {});
+            playNotificationSound(newLeadData.client_id);
 
-            // Agora buscamos o nome real do cliente e atualizamos as estatísticas
-            try {
-              const { data: client } = await supabase
-                .from('clients')
-                .select('name')
-                .eq('id', newLeadData.client_id)
-                .single();
-
-              if (client) {
-                console.log('Nome do cliente encontrado:', client.name);
-                // Atualiza na lista de leads
-                setLeads(prev => prev.map(l => l.id === newLeadData.id ? { ...l, clients: client } : l));
-                
-                // Atualiza no aviso de celebração (caso ainda esteja na tela)
-                setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? { ...prev, clients: client } : prev);
-              }
-              
-              loadData(selectedClient);
-            } catch (err) {
-              console.error('Erro ao buscar detalhes do cliente:', err);
+            const { data: client } = await supabase.from('clients').select('name').eq('id', newLeadData.client_id).single();
+            if (client) {
+              setLeads(prev => prev.map(l => l.id === newLeadData.id ? { ...l, clients: client } : l));
+              setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? { ...prev, clients: client } : prev);
             }
+            loadData(selectedClient);
           }
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'clients' },
+        () => fetchClients()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'webhooks' },
+        () => fetchClients()
       )
       .subscribe((status, err) => {
         console.log(`Subscription Status (${channelName}):`, status);
@@ -300,7 +308,7 @@ export default function LiveMonitorPage() {
   const maxPerf = Math.max(...stats.performanceBars, 1);
 
   return (
-    <div className={styles.wrapper} ref={containerRef}>
+    <div className={`${styles.wrapper} ${isNightMode ? styles.nightMode : ''}`} ref={containerRef}>
       {isCelebration && celebrationLead && (
         <div className={styles.celebrationOverlay}>
           <div className={styles.flashEffect} />
