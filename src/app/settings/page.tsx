@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState('dark');
   
   const [newName, setNewName] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     async function loadProfile() {
@@ -50,8 +51,16 @@ export default function SettingsPage() {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('asthros-theme') || 'dark';
       setTheme(savedTheme);
+      
+      const savedSound = localStorage.getItem('asthros-sound-enabled');
+      setSoundEnabled(savedSound === null ? true : savedSound === 'true');
     }
   }, []);
+
+  const toggleSound = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    localStorage.setItem('asthros-sound-enabled', String(enabled));
+  };
 
   const toggleTheme = (newTheme: string) => {
     setTheme(newTheme);
@@ -167,7 +176,20 @@ export default function SettingsPage() {
                     <span>Alertas sonoros para novos leads</span>
                   </div>
                 </div>
-                <div className={styles.toggleOff}>Desativado</div>
+                <div className={styles.toggleGroup}>
+                  <button 
+                    className={`${styles.toggleBtn} ${soundEnabled ? styles.toggleActive : ''}`}
+                    onClick={() => toggleSound(true)}
+                  >
+                    Ativado
+                  </button>
+                  <button 
+                    className={`${styles.toggleBtn} ${!soundEnabled ? styles.toggleActiveDanger : ''}`}
+                    onClick={() => toggleSound(false)}
+                  >
+                    Desativado
+                  </button>
+                </div>
               </div>
 
               <div className={styles.optionItem}>

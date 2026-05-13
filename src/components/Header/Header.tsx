@@ -123,9 +123,11 @@ export default function Header({ title }: HeaderProps) {
           const newNotif = payload.new;
           setNotifications(prev => [newNotif, ...prev].slice(0, 10));
           setUnreadCount(prev => prev + 1);
-
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-          audio.play().catch(() => {});
+          const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
+          if (isSoundEnabled) {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(() => {});
+          }
 
           if (Notification.permission === 'granted' && pushPreference) {
             new Notification(`Asthros: ${newNotif.title}`, {
