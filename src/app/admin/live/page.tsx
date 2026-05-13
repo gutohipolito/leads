@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
-  BellOff
+  BellOff,
+  MessageCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { logAction } from '@/utils/logger';
@@ -335,6 +336,15 @@ export default function LiveMonitorPage() {
             </div>
             <h2>NOVA CAPTURA DETECTADA</h2>
             <h3>{celebrationLead.name || 'Novo Lead'}</h3>
+            <div className={styles.celebrationSource}>
+              {celebrationLead.source === 'whatsapp_tracker' ? (
+                <><MessageCircle size={16} /> <span>VIA WHATSAPP</span></>
+              ) : celebrationLead.source === 'custom_tracker' ? (
+                <><Zap size={16} /> <span>VIA BOTÃO CUSTOM</span></>
+              ) : (
+                <><Database size={16} /> <span>VIA FORMULÁRIO</span></>
+              )}
+            </div>
             <p>CONECTADO VIA {celebrationLead.clients?.name?.toUpperCase()}</p>
           </div>
         </div>
@@ -470,7 +480,13 @@ export default function LiveMonitorPage() {
                   </div>
                 </div>
                 <div className={styles.leadStatus}>
-                  <div className={styles.statusBadge}>CAPTURED</div>
+                  {lead.source === 'whatsapp_tracker' ? (
+                    <div className={`${styles.statusBadge} ${styles.whatsapp}`}>WHATSAPP</div>
+                  ) : lead.source === 'custom_tracker' ? (
+                    <div className={`${styles.statusBadge} ${styles.button}`}>BOTÃO</div>
+                  ) : (
+                    <div className={`${styles.statusBadge} ${styles.form}`}>FORM</div>
+                  )}
                 </div>
               </div>
             )) : (

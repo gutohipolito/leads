@@ -351,6 +351,21 @@
   letter-spacing: 0.1em;
 }
 
+.statusBadge.whatsapp {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366;
+}
+
+.statusBadge.button {
+  background: rgba(86, 215, 253, 0.1);
+  color: #56d7fd;
+}
+
+.statusBadge.form {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
 .deleteBtn {
   background: rgba(255, 71, 87, 0.1);
   border: 1px solid rgba(255, 71, 87, 0.2);
@@ -737,6 +752,25 @@
   font-size: 1rem;
   color: rgba(var(--foreground-rgb), 0.5);
   margin: 0;
+}
+
+.celebrationSource {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid rgba(var(--foreground-rgb), 0.1);
+  border-radius: 50px;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.celebrationSource svg {
+  color: var(--primary);
 }
 
 @keyframes overlayFade {
