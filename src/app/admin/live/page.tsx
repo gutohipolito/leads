@@ -45,34 +45,6 @@ export default function LiveMonitorPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotificationsEnabled(Notification.permission === 'granted');
-    }
-  }, []);
-
-  const requestNotificationPermission = async () => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === 'granted');
-    }
-  };
-
-  const showBrowserNotification = (lead: any) => {
-    if (notificationsEnabled) {
-      const clientName = lead.clients?.name || 'Novo Parceiro';
-      const notification = new Notification('NOVA CAPTURA ASTHROS', {
-        body: `Lead: ${lead.name || 'Novo Lead'}\nOrigem: ${clientName}`,
-        icon: '/asthros-favicon.png'
-      });
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-    }
-  };
 
   useEffect(() => {
     const checkNightMode = () => {
@@ -257,14 +229,12 @@ export default function LiveMonitorPage() {
 
             triggerCelebration(tempLead);
             playNotificationSound(newLeadData.client_id);
-            showBrowserNotification(tempLead);
 
             const { data: client } = await supabase.from('clients').select('name').eq('id', newLeadData.client_id).single();
             if (client) {
               const updatedLead = { ...tempLead, clients: client };
               setLeads(prev => prev.map(l => l.id === newLeadData.id ? updatedLead : l));
               setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? updatedLead : prev);
-              showBrowserNotification(updatedLead);
             }
             loadData(selectedClient);
           }

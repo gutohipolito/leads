@@ -19,6 +19,9 @@
   color: #ffffff;
   letter-spacing: -0.04em;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .right {
@@ -165,6 +168,18 @@
     transform: scale(1.05);
     background: rgba(86, 215, 253, 0.2);
   }
+}
+
+.pushEnabled {
+  background: rgba(46, 204, 113, 0.1) !important;
+  border-color: rgba(46, 204, 113, 0.2) !important;
+  color: #2ecc71 !important;
+  box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+}
+
+.pushEnabled:hover {
+  background: #2ecc71 !important;
+  color: #000 !important;
 }
 
 .notifOverlay {

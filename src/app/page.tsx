@@ -34,34 +34,6 @@ export default function Home() {
     locationData: [] as any[]
   });
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotificationsEnabled(Notification.permission === 'granted');
-    }
-  }, []);
-
-  const requestNotificationPermission = async () => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === 'granted');
-    }
-  };
-
-  const showBrowserNotification = (lead: any, clientName?: string) => {
-    if (notificationsEnabled) {
-      const name = clientName || 'Novo Parceiro';
-      const notification = new Notification('NOVA CAPTURA ASTHROS', {
-        body: `Lead: ${lead.name || 'Novo Lead'}\nOrigem: ${name}`,
-        icon: '/asthros-favicon.png'
-      });
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-    }
-  };
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -135,7 +107,7 @@ export default function Home() {
             if (!canSee) return;
 
             const { data: client } = await supabase.from('clients').select('name').eq('id', newLead.client_id).single();
-            showBrowserNotification(newLead, client?.name);
+            // Notificação agora é tratada globalmente pelo Header ouvindo a tabela notifications
           })
           .subscribe();
 
@@ -254,23 +226,13 @@ export default function Home() {
 
   return (
     <DashboardLayout title={
-      <>
-        <Link href="/admin/live" className={styles.liveStatusPill}>
-          <div className={styles.liveIndicator}>
-            <div className={styles.pulseDot} />
-            <Tv size={16} />
-          </div>
-          <span className={styles.liveLabel}>Monitor ao Vivo</span>
-        </Link>
-        <button 
-          className={`${styles.notificationBtn} ${notificationsEnabled ? styles.enabled : ''}`} 
-          onClick={requestNotificationPermission}
-          title={notificationsEnabled ? "Notificações Ativas" : "Ativar Notificações no Navegador"}
-          style={{ marginLeft: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-        >
-          {notificationsEnabled ? <Bell size={18} color="#2ecc71" /> : <BellOff size={18} color="rgba(255,255,255,0.3)" />}
-        </button>
-      </>
+      <Link href="/admin/live" className={styles.liveStatusPill}>
+        <div className={styles.liveIndicator}>
+          <div className={styles.pulseDot} />
+          <Tv size={16} />
+        </div>
+        <span className={styles.liveLabel}>Monitor ao Vivo</span>
+      </Link>
     }>
       <div className={styles.dashboard}>
         

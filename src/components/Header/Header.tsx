@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck, Radio } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
@@ -49,12 +49,22 @@ export default function Header({ title }: HeaderProps) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission();
+      setNotificationsEnabled(Notification.permission === 'granted');
     }
+  }, []);
 
-    async function loadNotifications() {
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationsEnabled(permission === 'granted');
+    }
+  };
+
+  useEffect(() => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -218,6 +228,14 @@ export default function Header({ title }: HeaderProps) {
         </div>
 
         <div className={styles.notifWrapper}>
+          <button 
+            className={`${styles.actionBtn} ${notificationsEnabled ? styles.pushEnabled : ''}`} 
+            onClick={requestNotificationPermission}
+            title={notificationsEnabled ? "Alertas Live Ativos" : "Ativar Alertas Live no Navegador"}
+            style={{ marginRight: '0.5rem' }}
+          >
+            <Radio size={20} color={notificationsEnabled ? "#2ecc71" : "rgba(255,255,255,0.4)"} />
+          </button>
           <button className={styles.actionBtn} onClick={() => setIsNotifOpen(true)} title="Notificações">
             <Bell size={20} />
             {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}

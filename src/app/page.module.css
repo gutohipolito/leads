@@ -17,6 +17,8 @@
   text-decoration: none;
   transition: all 0.2s ease;
   margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .liveStatusPill:hover {
