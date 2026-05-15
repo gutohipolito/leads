@@ -746,6 +746,7 @@ export default function LeadsPage() {
                 </div>
                 <button className={styles.closeBtn} onClick={() => setSelectedLead(null)}><X size={24} /></button>
               </div>
+              <div className={styles.drawerBody}>
                 <div className={styles.detailSection}>
                   <h4>Captura & Contexto</h4>
                   <div className={styles.detailGrid}>
