@@ -47,6 +47,7 @@ export default function ClientsPage() {
   const [newClientCnpj, setNewClientCnpj] = useState('');
   const [newClientLogo, setNewClientLogo] = useState('');
   const [newClientLogoBg, setNewClientLogoBg] = useState('#ffffff');
+  const [newClientPrimaryColor, setNewClientPrimaryColor] = useState('#56d7fd');
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
   
   // Paginação
@@ -167,7 +168,8 @@ export default function ClientsPage() {
       .insert([{ 
         name: newClientName,
         logo_url: newClientLogo,
-        logo_bg: newClientLogoBg
+        logo_bg: newClientLogoBg,
+        primary_color: newClientPrimaryColor
       }])
       .select()
       .single();
@@ -196,7 +198,8 @@ export default function ClientsPage() {
       .update({ 
         name: editingClient.name,
         logo_url: editingClient.logo_url,
-        logo_bg: editingClient.logo_bg
+        logo_bg: editingClient.logo_bg,
+        primary_color: editingClient.primary_color
       })
       .eq('id', editingClient.id);
 
@@ -607,6 +610,19 @@ export default function ClientsPage() {
                   />
                 </div>
 
+                <div className={styles.inputGroup}>
+                  <label>Cor Primária (Identidade Visual)</label>
+                  <div className={styles.colorPickerWrapper}>
+                    <input 
+                      type="color" 
+                      value={newClientPrimaryColor}
+                      onChange={(e) => setNewClientPrimaryColor(e.target.value)}
+                      className={styles.colorInput}
+                    />
+                    <span className={styles.colorValue}>{newClientPrimaryColor.toUpperCase()}</span>
+                  </div>
+                </div>
+
                 <div className={styles.colorSelector}>
                   <label>Cor de Fundo do Quadro</label>
                   <div className={styles.colorOptions}>
@@ -661,6 +677,19 @@ export default function ClientsPage() {
                     value={editingClient.logo_url || ''}
                     onChange={(e) => setEditingClient({...editingClient, logo_url: e.target.value})}
                   />
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label>Cor Primária (Identidade Visual)</label>
+                  <div className={styles.colorPickerWrapper}>
+                    <input 
+                      type="color" 
+                      value={editingClient.primary_color || '#56d7fd'}
+                      onChange={(e) => setEditingClient({...editingClient, primary_color: e.target.value})}
+                      className={styles.colorInput}
+                    />
+                    <span className={styles.colorValue}>{(editingClient.primary_color || '#56d7fd').toUpperCase()}</span>
+                  </div>
                 </div>
 
                 <div className={styles.colorSelector}>

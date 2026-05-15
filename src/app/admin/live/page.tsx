@@ -97,7 +97,7 @@ export default function LiveMonitorPage() {
     // 1. Buscar Leads
     let leadsQuery = supabase
       .from('leads')
-      .select('*, clients(name)')
+      .select('*, clients(name, primary_color)')
       .order('created_at', { ascending: false })
       .limit(10);
     
@@ -245,7 +245,7 @@ export default function LiveMonitorPage() {
             triggerCelebration(tempLead);
             playNotificationSound(newLeadData.client_id);
 
-            const { data: client } = await supabase.from('clients').select('name').eq('id', newLeadData.client_id).single();
+            const { data: client } = await supabase.from('clients').select('name, primary_color').eq('id', newLeadData.client_id).single();
             if (client) {
               const updatedLead = { ...tempLead, clients: client };
               setLeads(prev => prev.map(l => l.id === newLeadData.id ? updatedLead : l));
@@ -472,7 +472,16 @@ export default function LiveMonitorPage() {
                 <div className={styles.leadMain}>
                   <div className={styles.leadTop}>
                     <span className={styles.leadName}>{lead.name || 'Sem Nome'}</span>
-                    <span className={styles.leadClient}>{lead.clients?.name}</span>
+                    <span 
+                      className={styles.leadClient}
+                      style={{ 
+                        backgroundColor: lead.clients?.primary_color || '#56d7fd',
+                        color: '#000',
+                        fontWeight: 800
+                      }}
+                    >
+                      {lead.clients?.name}
+                    </span>
                   </div>
                   <div className={styles.leadMeta}>
                     <span><MapPin size={12} /> {lead.data?.location?.region ? `${lead.data.location.region}, ` : ''}Brasil</span>
