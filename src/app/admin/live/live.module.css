@@ -199,18 +199,38 @@
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, transparent, currentColor, transparent);
-  opacity: 0.5;
+  background: linear-gradient(90deg, transparent, var(--card-color), transparent);
+  opacity: 0.8;
+  filter: blur(1px);
+}
+
+.statCard.blue { --card-color: #00d1ff; }
+.statCard.green { --card-color: #2ecc71; }
+.statCard.yellow { --card-color: #f1c40f; }
+.statCard.purple { --card-color: #a29bfe; }
+
+.statCard.blue::before { background: radial-gradient(circle at top left, rgba(0, 209, 255, 0.08), transparent 70%); }
+.statCard.green::before { background: radial-gradient(circle at top left, rgba(46, 204, 113, 0.08), transparent 70%); }
+.statCard.yellow::before { background: radial-gradient(circle at top left, rgba(241, 196, 15, 0.08), transparent 70%); }
+.statCard.purple::before { background: radial-gradient(circle at top left, rgba(162, 155, 254, 0.08), transparent 70%); }
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
 }
 
 .statIcon {
-  width: 48px;
-  height: 48px;
-  background: rgba(var(--foreground-rgb), 0.02);
-  border-radius: 12px;
+  width: 54px;
+  height: 54px;
+  background: rgba(var(--foreground-rgb), 0.05);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .statInfo {
@@ -220,16 +240,19 @@
 
 .statLabel {
   font-size: 0.8rem;
-  font-weight: 700;
-  color: rgba(var(--foreground-rgb), 0.4);
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .statValue {
-  font-size: 1.8rem;
-  font-weight: 900;
+  font-size: 2rem;
+  font-weight: 950;
   line-height: 1;
-  margin-top: 2px;
+  margin-top: 4px;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 .statTrend {

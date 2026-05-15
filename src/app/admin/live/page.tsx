@@ -404,34 +404,34 @@ export default function LiveMonitorPage() {
       </header>
 
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
+        <div className={`${styles.statCard} ${styles.blue}`}>
           <div className={styles.statIcon} style={{ color: '#00d1ff' }}><Database size={24} /></div>
           <div className={styles.statInfo}>
-            <span className={styles.statLabel}>LEADS HOJE</span>
+            <span className={styles.statLabel}>TOTAL HOJE</span>
             <span className={styles.statValue}>{stats.totalToday}</span>
           </div>
         </div>
 
-        <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ color: '#ffbd2e' }}><Zap size={24} /></div>
+        <div className={`${styles.statCard} ${styles.green}`}>
+          <div className={styles.statIcon} style={{ color: '#2ecc71' }}><Zap size={24} /></div>
           <div className={styles.statInfo}>
             <span className={styles.statLabel}>LEADS / HORA</span>
             <span className={styles.statValue}>{stats.leadsPerHour}</span>
           </div>
         </div>
 
-        <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ color: '#2ecc71' }}><TrendingUp size={24} /></div>
+        <div className={`${styles.statCard} ${styles.yellow}`}>
+          <div className={styles.statIcon} style={{ color: '#f1c40f' }}><TrendingUp size={24} /></div>
           <div className={styles.statInfo}>
-            <span className={styles.statLabel}>PERFORMANCE</span>
+            <span className={styles.statLabel}>ÍNDICE PERF.</span>
             <span className={styles.statValue}>{stats.conversion}%</span>
           </div>
         </div>
 
-        <div className={styles.statCard}>
+        <div className={`${styles.statCard} ${styles.purple}`}>
           <div className={styles.statIcon} style={{ color: '#a29bfe' }}><Users size={24} /></div>
           <div className={styles.statInfo}>
-            <span className={styles.statLabel}>CLIENTES ATIVOS</span>
+            <span className={styles.statLabel}>PARCEIROS</span>
             <span className={styles.statValue}>{stats.activeClients}</span>
           </div>
         </div>
