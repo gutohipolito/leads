@@ -119,26 +119,7 @@ export default function LiveMonitorPage() {
     }
     const { count: totalToday } = await totalTodayQuery;
 
-    // 3. Performance (Leads por hora nas últimas 5 horas)
-    const perfBars = [];
-    for (let i = 4; i >= 0; i--) {
-      const hStart = new Date();
-      hStart.setHours(hStart.getHours() - i, 0, 0, 0);
-      const hEnd = new Date(hStart);
-      hEnd.setHours(hEnd.getHours() + 1);
-
-      let q = supabase
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', hStart.toISOString())
-        .lt('created_at', hEnd.toISOString());
-      
-      if (clientId !== 'all') q = q.eq('client_id', clientId);
-      const { count } = await q;
-      perfBars.push(count || 0);
-    }
-
-    // 4. Operação Global (Top 4 clientes hoje)
+    // 3. Operação Global (Top 4 clientes hoje)
     let topClients: any[] = [];
     if (clientId === 'all') {
       const { data: leadsAllToday } = await supabase
@@ -175,7 +156,7 @@ export default function LiveMonitorPage() {
       totalToday: totalToday || 0,
       leadsPerHour: Math.round((totalToday || 0) / (new Date().getHours() + 1)),
       conversion: growthIndex, // Agora representa o índice de performance real
-      performanceBars: perfBars,
+      performanceBars: [],
       topClients
     }));
   };
@@ -463,7 +444,7 @@ export default function LiveMonitorPage() {
           </div>
 
           <div className={styles.leadList}>
-            {leads.length > 0 ? leads.slice(0, 5).map((lead, idx) => (
+            {leads.length > 0 ? leads.slice(0, 8).map((lead, idx) => (
               <div key={lead.id} className={styles.leadItem} style={{ animationDelay: `${idx * 0.1}s` }}>
                 <div className={styles.leadAvatar}>
                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.email || lead.id}`} alt="" />
@@ -541,20 +522,6 @@ export default function LiveMonitorPage() {
             </div>
           </div>
           
-          <div className={styles.performanceCard}>
-            <div className={styles.perfHeader}>
-              <TrendingUp size={18} />
-              <h3>ESTATÍSTICAS DE PERFORMANCE (ÚLTIMAS 5H)</h3>
-            </div>
-            <div className={styles.barChart}>
-              {stats.performanceBars.map((val, i) => (
-                <div key={i} className={styles.barWrapper}>
-                  <div className={styles.bar} style={{ height: `${(val / maxPerf) * 100}%` }} />
-                  <span className={styles.barLabel}>{val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
