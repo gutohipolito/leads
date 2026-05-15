@@ -49,7 +49,7 @@ export default function LogsPage() {
 
       const { data } = await supabase
         .from('system_logs')
-        .select('*')
+        .select('*, system_users!user_id(name)')
         .order('created_at', { ascending: false });
       
       if (data) setLogs(data);
@@ -118,6 +118,8 @@ export default function LogsPage() {
                       <span>{log.entity ? `Entidade: ${log.entity}` : 'Sistema'}</span>
                       <span className={styles.dot}>•</span>
                       <span>ID: {log.entity_id || 'N/A'}</span>
+                      <span className={styles.dot}>•</span>
+                      <span className={styles.userTag}>Por: {log.system_users?.name || 'Sistema'}</span>
                     </div>
                   </div>
                 </div>

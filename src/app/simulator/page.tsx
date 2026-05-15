@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 export default function WebhooksPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
+  const [selectedSecret, setSelectedSecret] = useState('');
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [response, setResponse] = useState<string | null>(null);
@@ -16,25 +17,40 @@ export default function WebhooksPage() {
   useEffect(() => {
     async function loadClients() {
       setLoading(true);
-      const { data } = await supabase.from('clients').select('*').order('name');
+      const { data } = await supabase.from('clients').select('*, webhooks(*)').order('name');
       if (data && data.length > 0) {
         setClients(data);
-        setSelectedClient(data[0].id);
+        const firstClient = data[0];
+        setSelectedClient(firstClient.id);
+        const activeWebhook = firstClient.webhooks?.find((w: any) => w.status === 'active');
+        setSelectedSecret(activeWebhook?.secret || '');
       }
       setLoading(false);
     }
     loadClients();
   }, []);
 
+  const handleClientChange = (clientId: string) => {
+    setSelectedClient(clientId);
+    const client = clients.find(c => c.id === clientId);
+    const activeWebhook = client?.webhooks?.find((w: any) => w.status === 'active');
+    setSelectedSecret(activeWebhook?.secret || '');
+  };
+
   const simulateWebhook = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!selectedSecret) {
+      setStatus('error');
+      setResponse('Erro: Este cliente não possui um terminal (webhook) ativo para teste.');
+      return;
+    }
     setStatus('loading');
     
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
     try {
-      const res = await fetch(`/api/leads/${selectedClient}`, {
+      const res = await fetch(`/api/leads/${selectedClient}?secret=${selectedSecret}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -74,7 +90,7 @@ export default function WebhooksPage() {
               <label>Selecionar Cliente Alvo</label>
               <select 
                 value={selectedClient} 
-                onChange={(e) => setSelectedClient(e.target.value)}
+                onChange={(e) => handleClientChange(e.target.value)}
                 className={styles.select}
                 disabled={loading}
               >

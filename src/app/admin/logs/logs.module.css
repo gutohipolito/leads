@@ -164,10 +164,15 @@
   flex-direction: column;
 }
 
-.clientInfo strong { color: white; }
-.clientInfo span, .eventInfo span, .timeInfo span {
+.clientInfo strong, .userInfo strong { color: white; }
+.clientInfo span, .eventInfo span, .timeInfo span, .userInfo span {
   font-size: 0.75rem;
   color: var(--muted-foreground);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
 }
 
 .timeInfo {

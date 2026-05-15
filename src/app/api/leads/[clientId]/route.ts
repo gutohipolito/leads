@@ -59,13 +59,17 @@ export async function POST(
     const email = body.email || body.e_mail || fields.email || fields.e_mail || null;
     const phone = body.phone || body.telefone || body.whatsapp || fields.phone || fields.telefone || null;
 
+    const isCustomTracker = body.source === 'custom_tracker';
+
     if (isWppTracker) {
       name = `Click Wpp: ${body.marketing?.source || 'Direto'}`;
+    } else if (isCustomTracker) {
+      name = `Interação: ${body.marketing?.source || 'Botão'}`;
     }
 
     const source = body.source === 'test_simulation' 
       ? 'test_simulation' 
-      : (isWppTracker ? 'whatsapp_tracker' : 'form');
+      : (isWppTracker ? 'whatsapp_tracker' : (isCustomTracker ? 'custom_tracker' : 'form'));
 
     const { data: lead, error: insertError } = await supabase
       .from('leads')
@@ -155,6 +159,19 @@ export async function POST(
         type: isWppTracker ? 'info' : 'success'
       }]);
     }
+
+    // [NOVO] Log de Auditoria para o Sinal de Entrada
+    await supabase.from('system_logs').insert([{
+      action: isWppTracker ? 'Intercepção de WhatsApp' : (isCustomTracker ? 'Interação de Botão' : 'Captura de Lead'),
+      entity: 'lead',
+      entity_id: lead.id,
+      details: { 
+        name: name, 
+        source: source,
+        webhook_name: webhook.name
+      },
+      ip_address: request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1'
+    }]);
 
     return NextResponse.json(
       { 

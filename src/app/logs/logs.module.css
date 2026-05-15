@@ -135,6 +135,11 @@
 
 .dot { opacity: 0.3; }
 
+.userTag {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .logRight {
   display: flex;
   flex-direction: column;

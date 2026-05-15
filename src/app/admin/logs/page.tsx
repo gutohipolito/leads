@@ -33,17 +33,20 @@ export default function LogsPage() {
     async function loadAllLogs() {
       setLoading(true);
       
-      // Carregar Sinais (Webhooks)
-      const { data: signalData } = await supabase
+      const { data: signalData, error: signalError } = await supabase
         .from('webhook_logs')
         .select('*, webhooks (name), clients (name)')
         .order('created_at', { ascending: false });
 
+      if (signalError) console.error('Erro ao carregar sinais:', signalError);
+
       // Carregar Atividade (Sistema)
-      const { data: activityData } = await supabase
+      const { data: activityData, error: activityError } = await supabase
         .from('system_logs')
-        .select('*')
+        .select('*, system_users!user_id(name, email)')
         .order('created_at', { ascending: false });
+
+      if (activityError) console.error('Erro ao carregar atividade:', activityError);
 
       if (signalData) setSignals(signalData);
       if (activityData) setActivity(activityData);
@@ -126,6 +129,7 @@ export default function LogsPage() {
                   <th>Evento</th>
                   <th>Tipo</th>
                   <th>ID Afetado</th>
+                  <th>Responsável</th>
                   <th>Data / Hora</th>
                   <th>Origem</th>
                 </tr>
@@ -167,6 +171,12 @@ export default function LogsPage() {
                       </td>
                       <td><span className={styles.entityTag}>{log.entity || 'Sistema'}</span></td>
                       <td><code className={styles.idCode}>{log.entity_id?.substring(0, 8) || 'N/A'}</code></td>
+                      <td>
+                        <div className={styles.userInfo}>
+                          <strong>{log.system_users?.name || 'Sistema'}</strong>
+                          {log.system_users?.email && <span>{log.system_users.email}</span>}
+                        </div>
+                      </td>
                     </>
                   )}
                   
