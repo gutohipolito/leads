@@ -360,7 +360,7 @@ export default function LiveMonitorPage() {
               <img src="/asthros-favicon.png" alt="Asthros" style={{ width: '32px', height: '32px' }} />
             </div>
             <div>
-              <h1>ASTHROS<span>LIVE</span></h1>
+              <h1><span>live</span></h1>
               <p>Monitoramento de Operações em Tempo Real</p>
             </div>
           </div>
@@ -476,7 +476,7 @@ export default function LiveMonitorPage() {
                   </div>
                   <div className={styles.leadMeta}>
                     <span><MapPin size={12} /> Brazil</span>
-                    <span><Clock size={12} /> {new Date(lead.created_at).toLocaleTimeString()}</span>
+                    <span><Clock size={12} /> {new Date(lead.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} • {new Date(lead.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
                 <div className={styles.leadStatus}>
