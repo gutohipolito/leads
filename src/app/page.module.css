@@ -216,6 +216,12 @@
   font-size: 0.75rem;
   font-weight: 800;
   color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.separator {
+  color: rgba(var(--foreground-rgb), 0.2);
+  margin: 0 4px;
 }
 
 .iconSuccess { color: #25d366; }

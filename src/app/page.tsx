@@ -392,7 +392,9 @@ export default function Home() {
                   </div>
                   <div className={styles.utmBarWrapper}>
                     <div className={styles.utmBar} style={{ width: `${(utm.value / stats.totalLeads) * 100}%` }} />
-                    <span className={styles.utmValue}>{utm.value}</span>
+                    <span className={styles.utmValue}>
+                      {utm.value} <span className={styles.separator}>•</span> {((utm.value / stats.totalLeads) * 100).toFixed(1)}%
+                    </span>
                   </div>
                 </div>
               ))}
@@ -415,7 +417,9 @@ export default function Home() {
                   </div>
                   <div className={styles.utmBarWrapper}>
                     <div className={styles.locationBar} style={{ width: `${(loc.value / (stats.locationData[0]?.value || 1)) * 100}%` }} />
-                    <span className={styles.utmValue}>{loc.value} capturas</span>
+                    <span className={styles.utmValue}>
+                      {loc.value} <span className={styles.separator}>•</span> {((loc.value / stats.totalLeads) * 100).toFixed(1)}%
+                    </span>
                   </div>
                 </div>
               )) : (
