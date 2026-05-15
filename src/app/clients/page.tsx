@@ -72,24 +72,28 @@ export default function ClientsPage() {
   });
 
   const loadClients = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('clients')
-      .select(`
-        *,
-        webhooks(count),
-        leads(count)
-      `);
-    
-    if (data) {
-      const normalizedData = data.map(client => ({
-        ...client,
-        webhookCount: client.webhooks?.[0]?.count || 0,
-        leadsCount: client.leads?.[0]?.count || 0
-      }));
-      setClients(normalizedData);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select(`
+          *,
+          webhooks(count),
+          leads(count)
+        `);
+      
+      if (data) {
+        const normalizedData = data.map(client => ({
+          ...client,
+          webhookCount: client.webhooks?.[0]?.count || 0,
+          leadsCount: client.leads?.[0]?.count || 0
+        }));
+        setClients(normalizedData);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -335,12 +339,7 @@ export default function ClientsPage() {
           </div>
 
         <div className={`${styles.tableSection} ${viewMode === 'table' ? styles.tableSectionVisible : ''}`}>
-          {loading ? (
-            <div className={styles.loadingState}>
-              <RefreshCcw size={40} className={styles.spin} />
-              <p>Sincronizando banco de dados...</p>
-            </div>
-          ) : viewMode === 'table' ? (
+          {viewMode === 'table' ? (
             <table className={styles.table}>
               <thead>
                 <tr>

@@ -33,26 +33,29 @@ export default function LogsPage() {
 
   useEffect(() => {
     async function loadAllLogs() {
-      setLoading(true);
-      
-      const { data: signalData, error: signalError } = await supabase
-        .from('webhook_logs')
-        .select('*, webhooks (name), clients (name)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data: signalData, error: signalError } = await supabase
+          .from('webhook_logs')
+          .select('*, webhooks (name), clients (name)')
+          .order('created_at', { ascending: false });
 
-      if (signalError) console.error('Erro ao carregar sinais:', signalError);
+        if (signalError) console.error('Erro ao carregar sinais:', signalError);
 
-      // Carregar Atividade (Sistema)
-      const { data: activityData, error: activityError } = await supabase
-        .from('system_logs')
-        .select('*, system_users!user_id(name, email)')
-        .order('created_at', { ascending: false });
+        // Carregar Atividade (Sistema)
+        const { data: activityData, error: activityError } = await supabase
+          .from('system_logs')
+          .select('*, system_users!user_id(name, email)')
+          .order('created_at', { ascending: false });
 
-      if (activityError) console.error('Erro ao carregar atividade:', activityError);
+        if (activityError) console.error('Erro ao carregar atividade:', activityError);
 
-      if (signalData) setSignals(signalData);
-      if (activityData) setActivity(activityData);
-      setLoading(false);
+        if (signalData) setSignals(signalData);
+        if (activityData) setActivity(activityData);
+      } catch (error) {
+        console.error('Erro ao carregar logs:', error);
+      } finally {
+        setLoading(false);
+      }
     }
     loadAllLogs();
   }, []);
@@ -80,7 +83,6 @@ export default function LogsPage() {
     }
   };
 
-  if (loading) return <DashboardLayout title="Auditoria"><Loader text="Sincronizando Registros..." /></DashboardLayout>;
 
   return (
     <DashboardLayout title="Auditoria">

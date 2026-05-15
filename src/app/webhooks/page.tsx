@@ -67,35 +67,39 @@ export default function WebhooksManagePage() {
   }, []);
 
   async function loadWebhooksData() {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
-      const isUserAdmin = profile?.role === 'admin';
-      setIsAdmin(isUserAdmin);
-      const impersonated = localStorage.getItem('impersonated_client');
-      let activeClientId = profile?.client_id;
-      if (isUserAdmin && impersonated) {
-        activeClientId = JSON.parse(impersonated).id;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
+        const isUserAdmin = profile?.role === 'admin';
+        setIsAdmin(isUserAdmin);
+        const impersonated = localStorage.getItem('impersonated_client');
+        let activeClientId = profile?.client_id;
+        if (isUserAdmin && impersonated) {
+          activeClientId = JSON.parse(impersonated).id;
+        }
+        setUserClientId(activeClientId);
+        setNewWebhook(prev => ({ ...prev, client_id: activeClientId || '' }));
+        let query = supabase.from('webhooks').select('*, clients (name)');
+        if (activeClientId) query = query.eq('client_id', activeClientId);
+        const { data: webhooksData } = await query;
+        if (webhooksData) {
+          setWebhooks(webhooksData.map(w => ({
+            ...w,
+            clientName: w.clients?.name || 'N/A',
+            fullUrl: `${window.location.origin}/api/leads/${w.client_id}`
+          })));
+        }
+        if (isUserAdmin && !impersonated) {
+          const { data: clientsData } = await supabase.from('clients').select('id, name').eq('status', 'active');
+          if (clientsData) setClients(clientsData);
+        }
       }
-      setUserClientId(activeClientId);
-      setNewWebhook(prev => ({ ...prev, client_id: activeClientId || '' }));
-      let query = supabase.from('webhooks').select('*, clients (name)');
-      if (activeClientId) query = query.eq('client_id', activeClientId);
-      const { data: webhooksData } = await query;
-      if (webhooksData) {
-        setWebhooks(webhooksData.map(w => ({
-          ...w,
-          clientName: w.clients?.name || 'N/A',
-          fullUrl: `${window.location.origin}/api/leads/${w.client_id}`
-        })));
-      }
-      if (isUserAdmin && !impersonated) {
-        const { data: clientsData } = await supabase.from('clients').select('id, name').eq('status', 'active');
-        if (clientsData) setClients(clientsData);
-      }
+    } catch (error) {
+      console.error('Erro ao carregar webhooks:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const toggleSecret = (id: string) => setShowSecret(prev => ({ ...prev, [id]: !prev[id] }));
@@ -176,7 +180,7 @@ export default function WebhooksManagePage() {
     } else {
       alert('Configurações salvas com sucesso!');
       setIsDetailsModalOpen(false);
-      loadWebhooks();
+      loadWebhooksData();
     }
   };
 
@@ -251,8 +255,6 @@ export default function WebhooksManagePage() {
       alert('Erro ao excluir: ' + error.message);
     }
   };
-
-  if (loading) return <DashboardLayout title="Gerenciamento"><Loader text="Sincronizando Sistema" /></DashboardLayout>;
 
   return (
     <DashboardLayout title="Gerenciamento de Webhooks">

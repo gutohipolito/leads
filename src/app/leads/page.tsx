@@ -155,37 +155,41 @@ export default function LeadsPage() {
   // Carregar Sessão e Dados
   useEffect(() => {
     async function loadAllData() {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
-        const isUserAdmin = profile?.role === 'admin';
-        const clientId = profile?.client_id;
-        setIsAdmin(isUserAdmin);
-        setUserClientId(clientId);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
+          const isUserAdmin = profile?.role === 'admin';
+          const clientId = profile?.client_id;
+          setIsAdmin(isUserAdmin);
+          setUserClientId(clientId);
 
-        const { data: clientsData } = await supabase.from('clients').select(`*, webhooks (*), leads(count)`);
-        if (clientsData) setClients(clientsData);
+          const { data: clientsData } = await supabase.from('clients').select(`*, webhooks (*), leads(count)`);
+          if (clientsData) setClients(clientsData);
 
-        // Checar Impersonação
-        const impersonated = localStorage.getItem('impersonated_client');
-        let activeClientId = clientId;
-        
-        if (isUserAdmin && impersonated) {
-          const impData = JSON.parse(impersonated);
-          activeClientId = impData.id;
-          setSelectedClientId(impData.id);
+          // Checar Impersonação
+          const impersonated = localStorage.getItem('impersonated_client');
+          let activeClientId = clientId;
+          
+          if (isUserAdmin && impersonated) {
+            const impData = JSON.parse(impersonated);
+            activeClientId = impData.id;
+            setSelectedClientId(impData.id);
+          }
+
+          let leadsQuery = supabase.from('leads').select('*, webhooks(field_mapping)').order('created_at', { ascending: false });
+          if (activeClientId) {
+            leadsQuery = leadsQuery.eq('client_id', activeClientId);
+          }
+          
+          const { data: leadsData } = await leadsQuery;
+          if (leadsData) setLeads(leadsData);
         }
-
-        let leadsQuery = supabase.from('leads').select('*, webhooks(field_mapping)').order('created_at', { ascending: false });
-        if (activeClientId) {
-          leadsQuery = leadsQuery.eq('client_id', activeClientId);
-        }
-        
-        const { data: leadsData } = await leadsQuery;
-        if (leadsData) setLeads(leadsData);
+      } catch (error) {
+        console.error('Erro ao carregar leads:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadAllData();
   }, []);
@@ -460,13 +464,6 @@ export default function LeadsPage() {
     setExportOpen(false);
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout title="Gerenciamento de Leads">
-        <Loader text="Sincronizando Leads" />
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout title="Gerenciamento de Leads">

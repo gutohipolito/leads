@@ -37,135 +37,134 @@ export default function Home() {
 
   useEffect(() => {
     async function loadDashboardData() {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data: profile } = await supabase
-          .from('system_users')
-          .select('*')
-          .eq('email', user.email)
-          .single();
-
-        const isUserAdmin = profile?.role === 'admin';
-        const clientId = profile?.client_id;
-        setIsAdmin(isUserAdmin);
-
-        const impersonated = localStorage.getItem('impersonated_client');
-        let activeClientId = clientId;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (isUserAdmin && impersonated) {
-          const impData = JSON.parse(impersonated);
-          activeClientId = impData.id;
-          setImpersonatedName(impData.name);
-        } else {
-          setImpersonatedName(null);
-        }
+        if (user) {
+          const { data: profile } = await supabase
+            .from('system_users')
+            .select('*')
+            .eq('email', user.email)
+            .single();
 
-        const { count: totalLeads } = await supabase
-          .from('leads')
-          .select('*', { count: 'exact', head: true })
-          .neq('source', 'test_simulation')
-          .match(isUserAdmin && !impersonated ? {} : { client_id: activeClientId });
+          const isUserAdmin = profile?.role === 'admin';
+          const clientId = profile?.client_id;
+          setIsAdmin(isUserAdmin);
 
-        let analyticsQuery = supabase
-          .from('leads')
-          .select('created_at, source, data')
-          .neq('source', 'test_simulation');
-        
-        if (!(isUserAdmin && !impersonated)) {
-          analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
-        }
-        
-        const { data: allLeadsRaw } = await analyticsQuery;
-        const allLeads = allLeadsRaw || [];
-
-        let activeClientsCount = 0;
-        if (isUserAdmin && !impersonated) {
-          const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active');
-          activeClientsCount = count || 0;
-        }
-
-        let recentLeadsQuery = supabase
-          .from('leads')
-          .select('*, clients (name)')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (!(isUserAdmin && !impersonated)) {
-          recentLeadsQuery = recentLeadsQuery.eq('client_id', activeClientId);
-        }
-        const { data: recentLeads } = await recentLeadsQuery;
-
-        // Inscrição Realtime para Notificações na Home
-        const channel = supabase
-          .channel('dashboard-notifications')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, async (payload: any) => {
-            const newLead = payload.new;
-            
-            const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
-            if (!canSee) return;
-
-            const { data: client } = await supabase.from('clients').select('name').eq('id', newLead.client_id).single();
-            // Notificação agora é tratada globalmente pelo Header ouvindo a tabela notifications
-          })
-          .subscribe();
-
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-        const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-        const wppCount = allLeads?.filter(l => l.source === 'whatsapp_tracker').length || 0;
-        const formCount = (allLeads?.length || 0) - wppCount;
-        const sourceData = [
-          { name: 'WhatsApp', value: wppCount, color: '#25d366' },
-          { name: 'Formulários', value: formCount, color: '#56d7fd' }
-        ];
-
-        const utmMap: any = {};
-        allLeads?.forEach(l => {
-          const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
-          const utm = decodeURIComponent(rawUtm);
-          utmMap[utm] = (utmMap[utm] || 0) + 1;
-        });
-        const topUtms = Object.entries(utmMap)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a: any, b: any) => (b.value as number) - (a.value as number))
-          .slice(0, 5);
-
-        const chartData = Array.from({ length: 7 }).map((_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (6 - i));
-          const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-          const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-          const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+          const impersonated = localStorage.getItem('impersonated_client');
+          let activeClientId = clientId;
           
-          const count = allLeads?.filter(l => {
-            const ts = new Date(l.created_at).getTime();
-            return ts >= dayStart && ts < dayEnd;
-          }).length || 0;
+          if (isUserAdmin && impersonated) {
+            const impData = JSON.parse(impersonated);
+            activeClientId = impData.id;
+            setImpersonatedName(impData.name);
+          } else {
+            setImpersonatedName(null);
+          }
 
-          return { date: dateStr, leads: count };
-        });
+          const { count: totalLeads } = await supabase
+            .from('leads')
+            .select('*', { count: 'exact', head: true })
+            .neq('source', 'test_simulation')
+            .match(isUserAdmin && !impersonated ? {} : { client_id: activeClientId });
 
-        const lastLead = recentLeads?.[0];
-        const lastSignalTime = lastLead ? new Date(lastLead.created_at).getTime() : null;
+          let analyticsQuery = supabase
+            .from('leads')
+            .select('created_at, source, data')
+            .neq('source', 'test_simulation');
+          
+          if (!(isUserAdmin && !impersonated)) {
+            analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
+          }
+          
+          const { data: allLeadsRaw } = await analyticsQuery;
+          const allLeads = allLeadsRaw || [];
 
-        setStats({
-          totalLeads: totalLeads || 0,
-          leadsToday: allLeads?.filter(l => l.created_at >= todayStart).length || 0,
-          leads7Days: allLeads?.filter(l => l.created_at >= weekStart).length || 0,
-          activeClientsCount,
-          chartData,
-          sourceData,
-          topUtms,
-          recentLeads: recentLeads || [],
-          lastSignalTime,
-          performanceData: isUserAdmin && !impersonated ? await fetchPerformanceData() : [],
-          locationData: calculateLocationData(allLeads)
-        });
+          let activeClientsCount = 0;
+          if (isUserAdmin && !impersonated) {
+            const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active');
+            activeClientsCount = count || 0;
+          }
+
+          let recentLeadsQuery = supabase
+            .from('leads')
+            .select('*, clients (name)')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+          if (!(isUserAdmin && !impersonated)) {
+            recentLeadsQuery = recentLeadsQuery.eq('client_id', activeClientId);
+          }
+          const { data: recentLeads } = await recentLeadsQuery;
+
+          const now = new Date();
+          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+          const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+          const wppCount = allLeads?.filter(l => l.source === 'whatsapp_tracker').length || 0;
+          const formCount = (allLeads?.length || 0) - wppCount;
+          const sourceData = [
+            { name: 'WhatsApp', value: wppCount, color: '#25d366' },
+            { name: 'Formulários', value: formCount, color: '#56d7fd' }
+          ];
+
+          const utmMap: any = {};
+          allLeads?.forEach(l => {
+            const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
+            const utm = decodeURIComponent(rawUtm);
+            utmMap[utm] = (utmMap[utm] || 0) + 1;
+          });
+          const topUtms = Object.entries(utmMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+            .slice(0, 5);
+
+          const chartData = Array.from({ length: 7 }).map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+            
+            const count = allLeads?.filter(l => {
+              const ts = new Date(l.created_at).getTime();
+              return ts >= dayStart && ts < dayEnd;
+            }).length || 0;
+
+            return { date: dateStr, leads: count };
+          });          const lastLead = recentLeads?.[0];
+          const lastSignalTime = lastLead ? new Date(lastLead.created_at).getTime() : null;
+
+          // Inscrição Realtime para Notificações na Home
+          supabase
+            .channel('dashboard-notifications')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, async (payload: any) => {
+              const newLead = payload.new;
+              const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
+              if (!canSee) return;
+              // Notificação tratada globalmente
+            })
+            .subscribe();
+
+          setStats({
+            totalLeads: totalLeads || 0,
+            leadsToday: allLeads?.filter(l => l.created_at >= todayStart).length || 0,
+            leads7Days: allLeads?.filter(l => l.created_at >= weekStart).length || 0,
+            activeClientsCount,
+            chartData,
+            sourceData,
+            topUtms,
+            recentLeads: recentLeads || [],
+            lastSignalTime,
+            performanceData: isUserAdmin && !impersonated ? await fetchPerformanceData() : [],
+            locationData: calculateLocationData(allLeads)
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dashboard:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     function calculateLocationData(leads: any[]) {
@@ -205,14 +204,6 @@ export default function Home() {
 
     loadDashboardData();
   }, []);
-
-  if (loading) {
-    return (
-      <DashboardLayout title="">
-        <Loader text="Sincronizando Dashboard" />
-      </DashboardLayout>
-    );
-  }
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
 
