@@ -220,10 +220,7 @@ export default function Home() {
   return (
     <DashboardLayout title={
       <Link href="/admin/live" className={styles.liveStatusPill}>
-        <div className={styles.liveIndicator}>
-          <div className={styles.pulseDot} />
-          <Tv size={16} />
-        </div>
+        <Tv size={20} className={styles.liveIconPulse} />
         <span className={styles.liveLabel}>Monitor ao Vivo</span>
       </Link>
     }>

@@ -356,7 +356,7 @@ export default function LiveMonitorPage() {
             <ArrowLeft size={20} />
           </Link>
           <div className={styles.logo}>
-            <div className={styles.logoIcon}>
+            <div className={`${styles.logoIcon} ${styles.logoPulse}`}>
               <img src="/asthros-favicon.png" alt="Asthros" style={{ width: '32px', height: '32px' }} />
             </div>
             <div>
@@ -459,7 +459,6 @@ export default function LiveMonitorPage() {
       <div className={styles.mainContent}>
         <div className={styles.feedColumn}>
           <div className={styles.sectionHeader}>
-            <div className={styles.pulseDot} />
             <h2>ÚLTIMOS LEADS DETECTADOS</h2>
           </div>
 

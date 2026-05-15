@@ -27,25 +27,24 @@
   transform: translateY(-2px);
 }
 
-.liveIndicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--primary);
+.liveStatusPill svg {
+  color: #ff4757 !important;
 }
 
-.pulseDot {
-  width: 6px;
-  height: 6px;
-  background: #ff4757;
-  border-radius: 50%;
-  box-shadow: 0 0 10px #ff4757;
-  animation: sutilPulse 2s infinite;
+.liveIconPulse {
+  animation: iconPulse 1.5s infinite !important;
+  filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.8)) !important;
 }
 
-@keyframes sutilPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
+@keyframes iconPulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 5px rgba(255, 71, 87, 0.4));
+  }
+  50% { 
+    transform: scale(1.25);
+    filter: drop-shadow(0 0 20px rgba(255, 71, 87, 0.9));
+  }
 }
 
 .liveLabel {
