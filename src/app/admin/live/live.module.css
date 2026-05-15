@@ -1019,6 +1019,16 @@
   .mainContent { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 1200px) {
+  .sliderInfo {
+    display: none !important;
+  }
+  .sliderItem {
+    gap: 0 !important;
+    padding: 0.5rem !important;
+  }
+}
+
 /* Modo Noturno Automático */
 .nightMode {
   background: radial-gradient(circle at top, #020408, #000000);
