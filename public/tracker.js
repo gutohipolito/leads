@@ -44,10 +44,32 @@
 
     function getUtms() {
         const urlParams = new URLSearchParams(window.location.search);
+        const utms = {};
+        ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
+            const val = urlParams.get(`utm_${key}`);
+            if (val) utms[key] = val;
+        });
+        
+        // Fallback para tráfego direto/orgânico se não houver UTMs
+        if (Object.keys(utms).length === 0) {
+            const ref = document.referrer;
+            if (!ref) utms.source = 'direto';
+            else if (ref.includes('google.com')) utms.source = 'google';
+            else if (ref.includes('facebook.com')) utms.source = 'facebook';
+            else if (ref.includes('instagram.com')) utms.source = 'instagram';
+            else utms.source = 'referência';
+        }
+        
+        return utms;
+    }
+
+    function getDeviceContext() {
         return {
-            source: urlParams.get('utm_source') || 'direto',
-            medium: urlParams.get('utm_medium') || 'organico',
-            campaign: urlParams.get('utm_campaign') || 'nenhuma'
+            platform: navigator.platform,
+            language: navigator.language,
+            screen: `${window.screen.width}x${window.screen.height}`,
+            viewport: `${window.innerWidth}x${window.innerHeight}`,
+            user_agent: navigator.userAgent
         };
     }
 
@@ -106,15 +128,19 @@
         const payload = {
             source: match.source,
             name: 'Lead Identificado via ' + match.label,
-            marketing: { ...getUtms(), referrer: document.referrer || 'direto' },
+            marketing: { 
+                ...getUtms(), 
+                referrer: document.referrer || 'direto',
+                page_title: document.title,
+                page_url: window.location.href
+            },
             behavior: {
                 time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
                 scroll_depth: maxScroll + '%',
-                page_url: window.location.href,
                 button_text: link.innerText.trim() || link.getAttribute('aria-label') || match.label,
                 match_type: match.label
             },
-            url: window.location.href,
+            device: getDeviceContext(),
             timestamp: new Date().toISOString()
         };
 

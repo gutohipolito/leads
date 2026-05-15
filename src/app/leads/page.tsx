@@ -27,7 +27,10 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  Trash2
+  Trash2,
+  Globe,
+  Monitor,
+  Cpu
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -743,13 +746,84 @@ export default function LeadsPage() {
                 </div>
                 <button className={styles.closeBtn} onClick={() => setSelectedLead(null)}><X size={24} /></button>
               </div>
-              <div className={styles.drawerBody}>
-                <div className={styles.detailSection}><h4>Contato</h4><div className={styles.detailGrid}><div className={styles.detailItem}><label>E-mail</label><p>{selectedLead.email || 'N/A'}</p></div><div className={styles.detailItem}><label>Telefone</label><p>{selectedLead.phone || 'N/A'}</p></div></div></div>
-                <div className={styles.detailSection}><h4>Captura</h4><div className={styles.detailGrid}><div className={styles.detailItem}><label>Data</label><p>{new Date(selectedLead.created_at).toLocaleString('pt-BR')}</p></div></div></div>
                 <div className={styles.detailSection}>
-                  <h4>Dados da Captura</h4>
+                  <h4>Captura & Contexto</h4>
+                  <div className={styles.detailGrid}>
+                    <div className={styles.detailItem}>
+                      <label>Data</label>
+                      <p>{new Date(selectedLead.created_at).toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Página de Origem</label>
+                      <p className={styles.truncateText} title={selectedLead.data?.marketing?.page_title || selectedLead.data?.behavior?.page_url}>
+                        {selectedLead.data?.marketing?.page_title || 'Página do Site'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção de Marketing (UTMs) */}
+                {(selectedLead.data?.marketing || selectedLead.data?.utm_source) && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.sectionHeader}>
+                      <Globe size={16} className={styles.sectionIcon} />
+                      <h4>Inteligência de Marketing</h4>
+                    </div>
+                    <div className={styles.marketingBadges}>
+                      <div className={styles.mktBadge}>
+                        <label>Fonte</label>
+                        <span>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto'}</span>
+                      </div>
+                      <div className={styles.mktBadge}>
+                        <label>Meio</label>
+                        <span>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
+                      </div>
+                      <div className={styles.mktBadge}>
+                        <label>Campanha</label>
+                        <span>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
+                      </div>
+                    </div>
+                    {selectedLead.data?.marketing?.referrer && (
+                      <div className={styles.referrerInfo}>
+                        <label>Vindo de:</label>
+                        <span>{selectedLead.data.marketing.referrer}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Seção de Tecnologia (Device) */}
+                {selectedLead.data?.device && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.sectionHeader}>
+                      <Monitor size={16} className={styles.sectionIcon} />
+                      <h4>Tecnologia e Dispositivo</h4>
+                    </div>
+                    <div className={styles.deviceGrid}>
+                      <div className={styles.deviceItem}>
+                        <Cpu size={14} />
+                        <div>
+                          <label>Sistema / Plataforma</label>
+                          <p>{selectedLead.data.device.platform}</p>
+                        </div>
+                      </div>
+                      <div className={styles.deviceItem}>
+                        <Monitor size={14} />
+                        <div>
+                          <label>Resolução / Viewport</label>
+                          <p>{selectedLead.data.device.screen} ({selectedLead.data.device.viewport})</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.detailSection}>
+                  <h4>Dados Brutos & Personalizados</h4>
                   <div className={styles.jsonView}>
                     {Object.entries(selectedLead.data || {}).map(([key, val]) => {
+                      if (['marketing', 'behavior', 'device', 'timestamp', 'url'].includes(key)) return null;
+                      
                       const isSystemField = ['name', 'email', 'phone', 'nome', 'telefone', 'e_mail', 'form_name', 'page_url'].includes(key.toLowerCase());
                       const displayKey = selectedLead.webhooks?.field_mapping?.[key] || key;
                       
