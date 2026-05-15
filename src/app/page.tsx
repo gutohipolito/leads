@@ -124,7 +124,8 @@ export default function Home() {
 
         const utmMap: any = {};
         allLeads?.forEach(l => {
-          const utm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
+          const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
+          const utm = decodeURIComponent(rawUtm);
           utmMap[utm] = (utmMap[utm] || 0) + 1;
         });
         const topUtms = Object.entries(utmMap)
@@ -170,8 +171,9 @@ export default function Home() {
     function calculateLocationData(leads: any[]) {
       const map: any = {};
       leads.forEach(l => {
-        const city = l.data?.location?.city;
-        if (city && city !== 'Desconhecida') {
+        const cityRaw = l.data?.location?.city;
+        if (cityRaw && cityRaw !== 'Desconhecida') {
+          const city = decodeURIComponent(cityRaw);
           map[city] = (map[city] || 0) + 1;
         }
       });

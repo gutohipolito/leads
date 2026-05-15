@@ -819,6 +819,26 @@ export default function LeadsPage() {
                   </div>
                 )}
 
+                {/* Seção de Localização */}
+                {selectedLead.data?.location?.city && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.sectionHeader}>
+                      <MapPin size={16} className={styles.sectionIcon} style={{ color: '#f59e0b' }} />
+                      <h4>Geolocalização do Lead</h4>
+                    </div>
+                    <div className={styles.detailGrid}>
+                      <div className={styles.detailItem}>
+                        <label>Cidade / Estado</label>
+                        <p>{decodeURIComponent(selectedLead.data.location.city)} {selectedLead.data.location.region ? `/ ${selectedLead.data.location.region}` : ''}</p>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <label>País</label>
+                        <p>{selectedLead.data.location.country || 'Brasil'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className={styles.detailSection}>
                   <h4>Dados Brutos & Personalizados</h4>
                   <div className={styles.jsonView}>
