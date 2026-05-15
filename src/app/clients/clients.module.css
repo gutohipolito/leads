@@ -683,10 +683,15 @@
   border: 1px solid var(--border);
 }
 
-.colorValue {
+.colorTextInput {
+  background: transparent;
+  border: none;
   font-family: monospace;
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--primary);
   letter-spacing: 0.05em;
+  width: 80px;
+  outline: none;
+  text-transform: uppercase;
 }

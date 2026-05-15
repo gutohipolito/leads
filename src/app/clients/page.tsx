@@ -619,7 +619,17 @@ export default function ClientsPage() {
                       onChange={(e) => setNewClientPrimaryColor(e.target.value)}
                       className={styles.colorInput}
                     />
-                    <span className={styles.colorValue}>{newClientPrimaryColor.toUpperCase()}</span>
+                    <input 
+                      type="text"
+                      value={newClientPrimaryColor.toUpperCase()}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (!val.startsWith('#')) val = '#' + val;
+                        if (val.length > 7) val = val.slice(0, 7);
+                        setNewClientPrimaryColor(val);
+                      }}
+                      className={styles.colorTextInput}
+                    />
                   </div>
                 </div>
 
@@ -688,7 +698,17 @@ export default function ClientsPage() {
                       onChange={(e) => setEditingClient({...editingClient, primary_color: e.target.value})}
                       className={styles.colorInput}
                     />
-                    <span className={styles.colorValue}>{(editingClient.primary_color || '#56d7fd').toUpperCase()}</span>
+                    <input 
+                      type="text"
+                      value={(editingClient.primary_color || '#56d7fd').toUpperCase()}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (!val.startsWith('#')) val = '#' + val;
+                        if (val.length > 7) val = val.slice(0, 7);
+                        setEditingClient({...editingClient, primary_color: val});
+                      }}
+                      className={styles.colorTextInput}
+                    />
                   </div>
                 </div>
 
