@@ -15,7 +15,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Search,
-  User as UserIcon
+  User as UserIcon,
+  X
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -27,6 +28,7 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedSignal, setSelectedSignal] = useState<any | null>(null);
   const pageSize = 12;
 
   useEffect(() => {
@@ -189,7 +191,7 @@ export default function LogsPage() {
 
                   <td>
                     {activeTab === 'signals' ? (
-                      <button className={styles.detailBtn} onClick={() => alert(JSON.stringify(log.request_body, null, 2))}>
+                      <button className={styles.detailBtn} onClick={() => setSelectedSignal(log)}>
                         <Terminal size={16} />
                         <span>Ver JSON</span>
                       </button>
@@ -212,6 +214,78 @@ export default function LogsPage() {
             </div>
           )}
         </div>
+
+        {/* Drawer: Detalhes do Sinal JSON */}
+        {selectedSignal && (
+          <div className={styles.drawerOverlay} onClick={() => setSelectedSignal(null)}>
+            <div className={`${styles.drawer} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.drawerHeader}>
+                <div className={styles.drawerTitle}>
+                  <div className={styles.iconCircleBig}>
+                    <Terminal size={24} />
+                  </div>
+                  <div>
+                    <h3>Detalhes do Sinal</h3>
+                    <span>ID: {selectedSignal.id}</span>
+                  </div>
+                </div>
+                <button className={styles.closeBtn} onClick={() => setSelectedSignal(null)}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className={styles.drawerBody}>
+                <div className={styles.detailSection}>
+                  <h4>Informações Gerais</h4>
+                  <div className={styles.detailGrid}>
+                    <div className={styles.detailItem}>
+                      <label>Terminal / Webhook</label>
+                      <p>{selectedSignal.webhooks?.name || 'Uplink Direto'}</p>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Cliente</label>
+                      <p>{selectedSignal.clients?.name || 'N/A'}</p>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Status HTTP</label>
+                      <p className={selectedSignal.status_code < 300 ? styles.textSuccess : styles.textError}>
+                        {selectedSignal.status_code}
+                      </p>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Data/Hora</label>
+                      <p>{new Date(selectedSignal.created_at).toLocaleString('pt-BR')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.detailSection}>
+                  <h4>Payload do Webhook (JSON)</h4>
+                  <div className={styles.jsonWrapper}>
+                    <pre className={styles.jsonContent}>
+                      {JSON.stringify(selectedSignal.request_body, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+
+                {selectedSignal.error_message && (
+                  <div className={styles.detailSection}>
+                    <h4 className={styles.errorTitle}>Mensagem de Erro</h4>
+                    <div className={styles.errorBox}>
+                      {selectedSignal.error_message}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.drawerFooter}>
+                <button className={styles.secondaryBtn} onClick={() => setSelectedSignal(null)}>
+                  Fechar Detalhes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
