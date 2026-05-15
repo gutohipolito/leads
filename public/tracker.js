@@ -1,5 +1,5 @@
 (function() {
-    console.log('%c[Asthros] Iniciando depuração do rastreador...', 'color: #56d7fd; font-weight: bold;');
+    // console.log('%c[Asthros] Iniciando depuração do rastreador...', 'color: #56d7fd; font-weight: bold;');
 
     // 1. Busca de Configuração
     let config = window.AsthrosConfig || null;
@@ -21,10 +21,11 @@
     }
 
     if (!config || !config.clientId || !config.secret) {
-        console.error('[Asthros] CONFIGURAÇÃO NÃO ENCONTRADA! Certifique-se de que window.AsthrosConfig está definido ou a tag <script> tem os atributos data-.');
+        // console.error('[Asthros] CONFIGURAÇÃO NÃO ENCONTRADA! Certifique-se de que window.AsthrosConfig está definido ou a tag <script> tem os atributos data-.');
         return;
     }
 
+    /*
     console.log('[Asthros] Configuração Carregada:', {
         clientId: config.clientId,
         apiUrl: config.apiUrl,
@@ -33,6 +34,7 @@
         // Ocultamos parte do secret por segurança no log
         secret: config.secret.substring(0, 10) + '...'
     });
+    */
 
     const startTime = Date.now();
     let maxScroll = 0;
@@ -123,7 +125,7 @@
             return;
         }
 
-        console.log(`%c[Asthros] CAPTURANDO LEAD (${match.label})!`, 'color: #56d7fd; font-weight: bold;');
+        // console.log(`%c[Asthros] CAPTURANDO LEAD (${match.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
             source: match.source,
@@ -150,7 +152,7 @@
             if (navigator.sendBeacon) {
                 const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
                 if (navigator.sendBeacon(endpoint, blob)) {
-                    console.log('[Asthros] Sucesso: Sinal enviado via Beacon API.');
+                    // console.log('[Asthros] Sucesso: Sinal enviado via Beacon API.');
                     return;
                 }
             }
@@ -161,15 +163,15 @@
                 body: JSON.stringify(payload),
                 keepalive: true
             })
-            .then(() => console.log('[Asthros] Sucesso: Sinal enviado via Fetch API.'))
-            .catch(err => console.error('[Asthros] Falha no envio (Fetch):', err));
+            .then(() => { /* console.log('[Asthros] Sucesso: Sinal enviado via Fetch API.') */ })
+            .catch(err => { /* console.error('[Asthros] Falha no envio (Fetch):', err) */ });
 
         } catch (err) {
-            console.error('[Asthros] Erro crítico no processamento:', err);
+            // console.error('[Asthros] Erro crítico no processamento:', err);
         }
     }
 
     document.addEventListener('click', trackLead, { capture: true });
-    console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
+    // console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
 })();
 
