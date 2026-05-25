@@ -16,15 +16,27 @@ import {
   ChevronLeft,
   Search,
   User as UserIcon,
-  X
+  X,
+  ShieldCheck,
+  Key,
+  Plus,
+  RefreshCw,
+  Globe,
+  Lock,
+  ShieldAlert,
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
+import { logAction } from '@/utils/logger';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 export default function LogsPage() {
   const [signals, setSignals] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'activity' | 'signals'>('activity');
+  const [activeTab, setActiveTab] = useState<'activity' | 'signals' | 'security'>('activity');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +45,13 @@ export default function LogsPage() {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const pageSize = 12;
+
+  // Estados específicos de segurança
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [score, setScore] = useState(100);
+  const [showSecretId, setShowSecretId] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [keyToRevoke, setKeyToRevoke] = useState<any>(null);
 
   useEffect(() => {
     async function loadAllLogs() {
@@ -52,6 +71,35 @@ export default function LogsPage() {
 
         if (activityError) console.error('Erro ao carregar atividade:', activityError);
 
+        // Carregar Chaves de API (Segurança)
+        const { data: webhooks, error: webhooksError } = await supabase
+          .from('webhooks')
+          .select('id, name, secret, status, created_at, clients(name)')
+          .order('created_at', { ascending: false });
+
+        if (webhooksError) console.error('Erro ao carregar chaves:', webhooksError);
+
+        if (webhooks) {
+          setApiKeys(webhooks);
+          
+          // Cálculo de Score de Segurança
+          let currentScore = 100;
+          const inactiveCount = webhooks.filter(w => w.status !== 'active').length;
+          currentScore -= (inactiveCount * 5);
+          
+          // Checar falhas de autenticação nas últimas 24h
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const { count: authFailures } = await supabase
+            .from('webhook_logs')
+            .select('*', { count: 'exact', head: true })
+            .eq('status_code', 401)
+            .gt('created_at', yesterday.toISOString());
+          
+          currentScore -= (Math.min(authFailures || 0, 10) * 3);
+          setScore(Math.max(currentScore, 0));
+        }
+
         if (signalData) setSignals(signalData);
         if (activityData) setActivity(activityData);
       } catch (error) {
@@ -62,6 +110,51 @@ export default function LogsPage() {
     }
     loadAllLogs();
   }, []);
+
+  const handleRegenerateSecret = async (id: string, name: string) => {
+    const newSecret = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const { error } = await supabase
+      .from('webhooks')
+      .update({ secret: newSecret })
+      .eq('id', id);
+
+    if (!error) {
+      await logAction('Chave Regenerada', 'webhook', id, { name });
+      
+      // Recarregar chaves
+      const { data: webhooks } = await supabase
+        .from('webhooks')
+        .select('id, name, secret, status, created_at, clients(name)')
+        .order('created_at', { ascending: false });
+      if (webhooks) setApiKeys(webhooks);
+
+      alert('Segredo da API atualizado com sucesso!');
+    }
+  };
+
+  const handleRevokeKey = async () => {
+    if (!keyToRevoke) return;
+
+    const { error } = await supabase
+      .from('webhooks')
+      .update({ status: 'inactive' })
+      .eq('id', keyToRevoke.id);
+
+    if (!error) {
+      await logAction('Chave Revogada', 'webhook', keyToRevoke.id, { name: keyToRevoke.name });
+      
+      // Recarregar chaves
+      const { data: webhooks } = await supabase
+        .from('webhooks')
+        .select('id, name, secret, status, created_at, clients(name)')
+        .order('created_at', { ascending: false });
+      if (webhooks) setApiKeys(webhooks);
+    }
+    setIsConfirmOpen(false);
+  };
 
   const filterByDate = (createdAt: string) => {
     if (dateFilter === 'all') return true;
@@ -141,157 +234,312 @@ export default function LogsPage() {
               <Terminal size={18} />
               <span>Sinais de Entrada</span>
             </button>
-          </div>
-
-          <div className={styles.searchBox}>
-            <Search size={18} />
-            <input 
-              type="text" 
-              placeholder={activeTab === 'signals' ? "Pesquisar sinal..." : "Pesquisar ação..."} 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className={styles.filtersBar}>
-          <div className={styles.filterField}>
-            <label>Período dos Logs</label>
-            <select 
-              className={styles.filterInput}
-              value={dateFilter}
-              onChange={(e) => { setDateFilter(e.target.value as any); setCurrentPage(1); }}
+            <button 
+              className={`${styles.tabBtn} ${activeTab === 'security' ? styles.activeTab : ''}`}
+              onClick={() => { setActiveTab('security'); setCurrentPage(1); }}
             >
-              <option value="all">Sempre</option>
-              <option value="today">Hoje</option>
-              <option value="7days">Últimos 7 dias</option>
-              <option value="month">Este mês</option>
-              <option value="custom">Personalizado</option>
-            </select>
+              <ShieldCheck size={18} />
+              <span>Segurança do Sistema</span>
+            </button>
           </div>
-          {dateFilter === 'custom' && (
-            <>
-              <div className={styles.filterField}>
-                <label>Data Inicial</label>
-                <input 
-                  type="date" 
-                  className={styles.filterInput}
-                  value={customStartDate}
-                  onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
-                />
-              </div>
-              <div className={styles.filterField}>
-                <label>Data Final</label>
-                <input 
-                  type="date" 
-                  className={styles.filterInput}
-                  value={customEndDate}
-                  onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
-                />
-              </div>
-            </>
-          )}
-        </div>
 
-        <div className={`${styles.tableWrapper} glass`}>
-          <table className={styles.table}>
-            <thead>
-              {activeTab === 'signals' ? (
-                <tr>
-                  <th>Status</th>
-                  <th>Cliente / Terminal</th>
-                  <th>Evento</th>
-                  <th>Data / Hora</th>
-                  <th>Ações</th>
-                </tr>
-              ) : (
-                <tr>
-                  <th>Evento</th>
-                  <th>Tipo</th>
-                  <th>ID Afetado</th>
-                  <th>Responsável</th>
-                  <th>Data / Hora</th>
-                  <th>Origem</th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {paginatedLogs.map(log => (
-                <tr key={log.id}>
-                  {activeTab === 'signals' ? (
-                    <>
-                      <td>
-                        <div className={`${styles.statusBadge} ${log.status_code < 300 ? styles.success : styles.error}`}>
-                          {log.status_code < 300 ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                          <span>{log.status_code}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.clientInfo}>
-                          <strong>{log.clients?.name || 'Sistema'}</strong>
-                          <span>{log.webhooks?.name || 'Uplink'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.eventInfo}>
-                          <Database size={14} />
-                          <span>{log.error_message ? 'Erro de Repasse' : 'Lead Processado'}</span>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td>
-                        <div className={styles.activityInfo}>
-                          <div className={`${styles.iconBox} ${styles[log.entity] || ''}`}>
-                            {getEntityIcon(log.entity)}
-                          </div>
-                          <strong>{log.action}</strong>
-                        </div>
-                      </td>
-                      <td><span className={styles.entityTag}>{log.entity || 'Sistema'}</span></td>
-                      <td><code className={styles.idCode}>{log.entity_id?.substring(0, 8) || 'N/A'}</code></td>
-                      <td>
-                        <div className={styles.userInfo}>
-                          <strong>{log.system_users?.name || 'Sistema'}</strong>
-                          {log.system_users?.email && <span>{log.system_users.email}</span>}
-                        </div>
-                      </td>
-                    </>
-                  )}
-                  
-                  <td>
-                    <div className={styles.timeInfo}>
-                      <Clock size={14} />
-                      <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
-                    </div>
-                  </td>
-
-                  <td>
-                    {activeTab === 'signals' ? (
-                      <button className={styles.detailBtn} onClick={() => setSelectedSignal(log)}>
-                        <Terminal size={16} />
-                        <span>Ver JSON</span>
-                      </button>
-                    ) : (
-                      <div className={styles.ipTag}>{log.ip_address || 'Interno'}</div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {totalPages > 1 && (
-            <div className={styles.pagination}>
-              <span>Página {currentPage} de {totalPages}</span>
-              <div className={styles.pageActions}>
-                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={18} /></button>
-                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight size={18} /></button>
-              </div>
+          {activeTab !== 'security' && (
+            <div className={styles.searchBox}>
+              <Search size={18} />
+              <input 
+                type="text" 
+                placeholder={activeTab === 'signals' ? "Pesquisar sinal..." : "Pesquisar ação..."} 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           )}
         </div>
+
+        {activeTab !== 'security' && (
+          <div className={styles.filtersBar}>
+            <div className={styles.filterField}>
+              <label>Período dos Logs</label>
+              <select 
+                className={styles.filterInput}
+                value={dateFilter}
+                onChange={(e) => { setDateFilter(e.target.value as any); setCurrentPage(1); }}
+              >
+                <option value="all">Sempre</option>
+                <option value="today">Hoje</option>
+                <option value="7days">Últimos 7 dias</option>
+                <option value="month">Este mês</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
+            {dateFilter === 'custom' && (
+              <>
+                <div className={styles.filterField}>
+                  <label>Data Inicial</label>
+                  <input 
+                    type="date" 
+                    className={styles.filterInput}
+                    value={customStartDate}
+                    onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
+                <div className={styles.filterField}>
+                  <label>Data Final</label>
+                  <input 
+                    type="date" 
+                    className={styles.filterInput}
+                    value={customEndDate}
+                    onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'security' ? (
+          <div className={styles.securityContainer}>
+            <div className={styles.topSection}>
+              <div className={`${styles.scoreCard} glass`}>
+                <div className={styles.scoreCircle} style={{ borderColor: score > 80 ? '#10b981' : (score > 50 ? '#f59e0b' : '#ef4444') }}>
+                  <span className={styles.scoreValue}>{score}</span>
+                  <span className={styles.scoreLabel}>Health Score</span>
+                </div>
+                <div className={styles.statusInfo}>
+                  <h3>{score > 80 ? 'Sistema Protegido' : (score > 50 ? 'Atenção Necessária' : 'Risco Detectado')}</h3>
+                  <p>
+                    {score === 100 ? 'Todos os protocolos de segurança estão operando perfeitamente.' : `Identificamos ${100 - score} pontos de atenção na infraestrutura.`}
+                  </p>
+                </div>
+              </div>
+              
+              <div className={styles.firewallGrid}>
+                <section className={`${styles.configCard} glass`}>
+                  <div className={styles.configHeader}>
+                    <div className={styles.iconCircle}><Globe size={18} /></div>
+                    <h4>Proteção de Webhook</h4>
+                  </div>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                    Exigência de Header "X-Asthros-Secret" em todas as requisições de entrada.
+                  </p>
+                  <div className={styles.securityStatusTag}>
+                    <ShieldCheck size={12} />
+                    <span>ATIVO E MONITORADO</span>
+                  </div>
+                </section>
+
+                <section className={`${styles.configCard} glass`}>
+                  <div className={styles.configHeader}>
+                    <div className={styles.iconCircle}><Lock size={18} /></div>
+                    <h4>Middleware Global</h4>
+                  </div>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                    Bloqueio automático de indexação e acesso a arquivos sensíveis (.env, logs).
+                  </p>
+                  <div className={styles.securityStatusTag}>
+                    <ShieldCheck size={12} />
+                    <span>ATIVO E MONITORADO</span>
+                  </div>
+                </section>
+
+                <section className={`${styles.configCard} glass`}>
+                  <div className={styles.configHeader}>
+                    <div className={styles.iconCircle}><ShieldAlert size={18} /></div>
+                    <h4>Modo Pânico</h4>
+                  </div>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                    Suspende imediatamente todos os webhooks em caso de ataque coordenado.
+                  </p>
+                  <button type="button" className={styles.actionBtn} style={{ width: '100%', padding: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', fontWeight: 800 }}>
+                    ATIVAR MODO PÂNICO
+                  </button>
+                </section>
+              </div>
+            </div>
+
+            <section className={`${styles.keysSection} glass`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.headerInfo}>
+                  <div className={styles.iconCircle}><Key size={18} /></div>
+                  <div>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Chaves de API (Secrets)</h3>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>Gerenciamento de segredos para captura segura de leads.</p>
+                  </div>
+                </div>
+                <button type="button" className={styles.addKeyBtn} onClick={() => window.location.href='/webhooks?action=new'}>
+                  <Plus size={16} />
+                  <span>Gerar Novo Webhook</span>
+                </button>
+              </div>
+
+              <div className={styles.tableResponsive}>
+                <table className={styles.keysTable}>
+                  <thead>
+                    <tr>
+                      <th>NOME / CLIENTE</th>
+                      <th>CHAVE (SECRET)</th>
+                      <th>STATUS</th>
+                      <th>DATA CRIAÇÃO</th>
+                      <th>AÇÕES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {apiKeys.map(key => (
+                      <tr key={key.id}>
+                        <td>
+                          <div className={styles.keyIdentity}>
+                            <strong className={styles.keyName}>{key.name}</strong>
+                            <span className={styles.clientTag}>{key.clients?.name}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.secretWrapper}>
+                            <code className={styles.keyCode}>
+                              {showSecretId === key.id ? key.secret : '••••••••••••••••'}
+                            </code>
+                            <button type="button" onClick={() => setShowSecretId(showSecretId === key.id ? null : key.id)}>
+                              {showSecretId === key.id ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`${styles.statusBadge} ${key.status === 'active' ? styles.activeStatus : styles.revokedStatus}`}>
+                            {key.status === 'active' ? 'ATIVA' : 'SUSPENSA'}
+                          </span>
+                        </td>
+                        <td>{new Date(key.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td>
+                          <div className={styles.tableActions}>
+                            <button 
+                              type="button"
+                              className={styles.iconBtn} 
+                              onClick={() => handleRegenerateSecret(key.id, key.name)}
+                              title="Regenerar Segredo"
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+                            <button 
+                              type="button"
+                              className={styles.iconBtn} 
+                              style={{ color: '#ef4444' }}
+                              onClick={() => {
+                                setKeyToRevoke(key);
+                                setIsConfirmOpen(true);
+                              }}
+                              title="Revogar Acesso"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        ) : (
+          <div className={`${styles.tableWrapper} glass`}>
+            <table className={styles.table}>
+              <thead>
+                {activeTab === 'signals' ? (
+                  <tr>
+                    <th>Status</th>
+                    <th>Cliente / Terminal</th>
+                    <th>Evento</th>
+                    <th>Data / Hora</th>
+                    <th>Ações</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th>Evento</th>
+                    <th>Tipo</th>
+                    <th>ID Afetado</th>
+                    <th>Responsável</th>
+                    <th>Data / Hora</th>
+                    <th>Origem</th>
+                  </tr>
+                )}
+              </thead>
+              <tbody>
+                {paginatedLogs.map(log => (
+                  <tr key={log.id}>
+                    {activeTab === 'signals' ? (
+                      <>
+                        <td>
+                          <div className={`${styles.statusBadge} ${log.status_code < 300 ? styles.success : styles.error}`}>
+                            {log.status_code < 300 ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                            <span>{log.status_code}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.clientInfo}>
+                            <strong>{log.clients?.name || 'Sistema'}</strong>
+                            <span>{log.webhooks?.name || 'Uplink'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.eventInfo}>
+                            <Database size={14} />
+                            <span>{log.error_message ? 'Erro de Repasse' : 'Lead Processado'}</span>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>
+                          <div className={styles.activityInfo}>
+                            <div className={`${styles.iconBox} ${styles[log.entity] || ''}`}>
+                              {getEntityIcon(log.entity)}
+                            </div>
+                            <strong>{log.action}</strong>
+                          </div>
+                        </td>
+                        <td><span className={styles.entityTag}>{log.entity || 'Sistema'}</span></td>
+                        <td><code className={styles.idCode}>{log.entity_id?.substring(0, 8) || 'N/A'}</code></td>
+                        <td>
+                          <div className={styles.userInfo}>
+                            <strong>{log.system_users?.name || 'Sistema'}</strong>
+                            {log.system_users?.email && <span>{log.system_users.email}</span>}
+                          </div>
+                        </td>
+                      </>
+                    )}
+                    
+                    <td>
+                      <div className={styles.timeInfo}>
+                        <Clock size={14} />
+                        <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      {activeTab === 'signals' ? (
+                        <button type="button" className={styles.detailBtn} onClick={() => setSelectedSignal(log)}>
+                          <Terminal size={16} />
+                          <span>Ver JSON</span>
+                        </button>
+                      ) : (
+                        <div className={styles.ipTag}>{log.ip_address || 'Interno'}</div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <span>Página {currentPage} de {totalPages}</span>
+                <div className={styles.pageActions}>
+                  <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={18} /></button>
+                  <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight size={18} /></button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Drawer: Detalhes do Sinal JSON */}
         {selectedSignal && (
@@ -307,7 +555,7 @@ export default function LogsPage() {
                     <span>ID: {selectedSignal.id}</span>
                   </div>
                 </div>
-                <button className={styles.closeBtn} onClick={() => setSelectedSignal(null)}>
+                <button type="button" className={styles.closeBtn} onClick={() => setSelectedSignal(null)}>
                   <X size={24} />
                 </button>
               </div>
@@ -357,13 +605,23 @@ export default function LogsPage() {
               </div>
 
               <div className={styles.drawerFooter}>
-                <button className={styles.secondaryBtn} onClick={() => setSelectedSignal(null)}>
+                <button type="button" className={styles.secondaryBtn} onClick={() => setSelectedSignal(null)}>
                   Fechar Detalhes
                 </button>
               </div>
             </div>
           </div>
         )}
+
+        <ConfirmModal 
+          isOpen={isConfirmOpen}
+          title="Revogar Chave de API"
+          message={`Tem certeza que deseja suspender a chave "${keyToRevoke?.name}"? Isso interromperá a captura de leads deste webhook imediatamente.`}
+          confirmLabel="Suspender Acesso"
+          type="danger"
+          onConfirm={handleRevokeKey}
+          onCancel={() => setIsConfirmOpen(false)}
+        />
       </div>
     </DashboardLayout>
   );

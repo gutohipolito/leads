@@ -164,19 +164,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                 <div className={styles.iconCircle}>
                   <History size={18} />
                 </div>
-                <span className={styles.linkText}>Auditoria</span>
+                <span className={styles.linkText}>Auditoria & Segurança</span>
               </Link>
               <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
                 <div className={styles.iconCircle}>
                   <UserCircle size={18} />
                 </div>
                 <span className={styles.linkText}>Usuários</span>
-              </Link>
-              <Link href="/security" className={`${styles.navLink} ${isActive('/security') ? styles.active : ''}`}>
-                <div className={styles.iconCircle}>
-                  <ShieldCheck size={18} />
-                </div>
-                <span className={styles.linkText}>Segurança</span>
               </Link>
             </>
           )}

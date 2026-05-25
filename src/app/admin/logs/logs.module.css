@@ -468,3 +468,261 @@
 .filterInput:focus {
   border-color: var(--primary);
 }
+
+/* Estilos unificados do painel de segurança */
+.securityContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.topSection {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .topSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scoreCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.scoreCircle {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid rgba(86, 215, 253, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 30px rgba(86, 215, 253, 0.05);
+}
+
+.scoreCircle::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 4px solid var(--primary);
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  transform: rotate(45deg);
+}
+
+.scoreValue {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+}
+
+.scoreLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.statusInfo h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, #fff, #56D7FD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.statusInfo p {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.iconCircle {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(86, 215, 253, 0.1);
+  border: 1px solid rgba(86, 215, 253, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.keysSection {
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.keysTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.keysTable th {
+  text-align: left;
+  padding: 1rem;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
+}
+
+.keysTable td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(var(--foreground-rgb), 0.03);
+  font-size: 0.85rem;
+}
+
+.keyName {
+  font-weight: 600;
+  color: white;
+}
+
+.keyCode {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  background: rgba(var(--foreground-rgb), 0.03);
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+}
+
+.activeStatus {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.revokedStatus {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.addKeyBtn {
+  background: var(--primary);
+  color: #030303;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.8rem;
+}
+
+.addKeyBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(86, 215, 253, 0.3);
+}
+
+.firewallGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .firewallGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.configCard {
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.configHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.configHeader h4 {
+  font-size: 1rem;
+  color: white;
+  margin: 0;
+}
+
+.keyIdentity {
+  display: flex;
+  flex-direction: column;
+}
+
+.clientTag {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  margin-top: 0.2rem;
+}
+
+.secretWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.secretWrapper button {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.secretWrapper button:hover {
+  color: white;
+}
+
+.securityStatusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  width: fit-content;
+}
+
+.tableResponsive {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
