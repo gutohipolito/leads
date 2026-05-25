@@ -14,6 +14,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, title = '' }: DashboardLayoutProps) {
   const [impersonatedClient, setImpersonatedClient] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     let activeChannel: any = null;
@@ -94,7 +95,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   };
   return (
     <div className={styles.layoutWrapper}>
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className={styles.mainContainer}>
         {impersonatedClient && (
           <div className={styles.impersonationBanner}>
@@ -108,7 +109,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
             </button>
           </div>
         )}
-        <Header title={title} />
+        <Header title={title} onMenuClick={() => setIsSidebarOpen(true)} />
         <main className={styles.pageContent}>
           <div className={styles.innerWrapper}>
             {children}

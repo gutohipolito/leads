@@ -23,6 +23,9 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | 'month' | 'custom'>('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
@@ -58,10 +61,42 @@ export default function LogsPage() {
     fetchLogs();
   }, [router]);
 
-  const filteredLogs = logs.filter(log => 
-    log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (log.entity || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.entity || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+    if (!matchesSearch) return false;
+    if (dateFilter === 'all') return true;
+
+    const createdDate = new Date(log.created_at);
+    const now = new Date();
+
+    if (dateFilter === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return createdDate >= today;
+    }
+    if (dateFilter === '7days') {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return createdDate >= sevenDaysAgo;
+    }
+    if (dateFilter === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return createdDate >= startOfMonth;
+    }
+    if (dateFilter === 'custom') {
+      let match = true;
+      if (customStartDate) {
+        const start = new Date(customStartDate + 'T00:00:00');
+        match = match && createdDate >= start;
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate + 'T23:59:59');
+        match = match && createdDate <= end;
+      }
+      return match;
+    }
+    return true;
+  });
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
   const paginatedLogs = filteredLogs.slice(
@@ -100,6 +135,45 @@ export default function LogsPage() {
             <ShieldAlert size={16} />
             <span>Monitoramento Ativo</span>
           </div>
+        </div>
+
+        <div className={styles.filtersBar}>
+          <div className={styles.filterField}>
+            <label>Período de Ações</label>
+            <select 
+              className={styles.filterInput}
+              value={dateFilter}
+              onChange={(e) => { setDateFilter(e.target.value as any); setCurrentPage(1); }}
+            >
+              <option value="all">Sempre</option>
+              <option value="today">Hoje</option>
+              <option value="7days">Últimos 7 dias</option>
+              <option value="month">Este mês</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+          {dateFilter === 'custom' && (
+            <>
+              <div className={styles.filterField}>
+                <label>Data Inicial</label>
+                <input 
+                  type="date" 
+                  className={styles.filterInput}
+                  value={customStartDate}
+                  onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
+                />
+              </div>
+              <div className={styles.filterField}>
+                <label>Data Final</label>
+                <input 
+                  type="date" 
+                  className={styles.filterInput}
+                  value={customEndDate}
+                  onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {loading ? (

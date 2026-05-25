@@ -879,3 +879,57 @@
   color: #ef4444;
   transform: scale(1.1);
 }
+
+.subOptionItem {
+  margin-top: -0.75rem;
+  border-top: none !important;
+  border-radius: 0 0 0.75rem 0.75rem !important;
+  padding-top: 0.25rem !important;
+  background: rgba(var(--foreground-rgb), 0.01) !important;
+}
+
+.soundSelectorGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.soundSelect {
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--foreground);
+  padding: 0.4rem 0.6rem;
+  outline: none;
+  font-weight: 700;
+  cursor: pointer;
+  height: 36px;
+  font-size: 0.8rem;
+}
+
+.soundSelect:hover {
+  border-color: rgba(var(--foreground-rgb), 0.3);
+}
+
+.soundSelect option {
+  background: #1a1f2e;
+  color: white;
+}
+
+.testSoundBtn {
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(86, 215, 253, 0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 36px;
+}
+
+.testSoundBtn:hover {
+  background: var(--primary);
+  color: black;
+}

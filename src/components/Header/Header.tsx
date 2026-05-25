@@ -2,16 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck, Radio } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck, Radio, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
 
 interface HeaderProps {
   title: React.ReactNode;
+  onMenuClick?: () => void;
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, onMenuClick }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [avatarStyle, setAvatarStyle] = useState('avataaars');
   const [passwordChanged, setPasswordChanged] = useState(true);
@@ -150,7 +151,8 @@ export default function Header({ title }: HeaderProps) {
 
               const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
               if (isSoundEnabled) {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                const savedUrl = localStorage.getItem('asthros-sound-url') || 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+                const audio = new Audio(savedUrl);
                 audio.play().catch(() => {});
               }
 
@@ -256,6 +258,11 @@ export default function Header({ title }: HeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.left}>
+        {onMenuClick && (
+          <button className={styles.menuToggle} onClick={onMenuClick} aria-label="Abrir Menu">
+            <Menu size={20} />
+          </button>
+        )}
         <h1 className={styles.title}>{title}</h1>
       </div>
       

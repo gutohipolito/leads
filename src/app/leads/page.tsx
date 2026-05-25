@@ -113,6 +113,9 @@ export default function LeadsPage() {
   // Filtros
   const [filterName, setFilterName] = useState('');
   const [filterEmail, setFilterEmail] = useState('');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | 'month' | 'custom'>('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   
@@ -299,12 +302,45 @@ export default function LeadsPage() {
       result = result.filter(l => l.source !== 'whatsapp_tracker' && l.source !== 'custom_tracker');
     }
 
+    // Filtro por Período de Data
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      result = result.filter(l => {
+        const createdDate = new Date(l.created_at);
+        if (dateFilter === 'today') {
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return createdDate >= today;
+        }
+        if (dateFilter === '7days') {
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return createdDate >= sevenDaysAgo;
+        }
+        if (dateFilter === 'month') {
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          return createdDate >= startOfMonth;
+        }
+        if (dateFilter === 'custom') {
+          let match = true;
+          if (customStartDate) {
+            const start = new Date(customStartDate + 'T00:00:00');
+            match = match && createdDate >= start;
+          }
+          if (customEndDate) {
+            const end = new Date(customEndDate + 'T23:59:59');
+            match = match && createdDate <= end;
+          }
+          return match;
+        }
+        return true;
+      });
+    }
+
     // Busca por Texto
     if (filterName) result = result.filter(l => (l.name || '').toLowerCase().includes(filterName.toLowerCase()));
     if (filterEmail) result = result.filter(l => (l.email || '').toLowerCase().includes(filterEmail.toLowerCase()));
     
     return result;
-  }, [currentClient, selectedWebhookId, filterName, filterEmail, leads, activeCategory]);
+  }, [currentClient, selectedWebhookId, filterName, filterEmail, leads, activeCategory, dateFilter, customStartDate, customEndDate]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -514,7 +550,29 @@ export default function LeadsPage() {
       return (doc as any).lastAutoTable.finalY + 15;
     };
 
-    let currentY = 48;
+    const drawStatBox = (x: number, y: number, w: number, h: number, title: string, value: string, color: [number, number, number]) => {
+      doc.setFillColor(24, 28, 41);
+      doc.rect(x, y, w, h, 'F');
+      
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.rect(x, y, 3, h, 'F');
+      
+      doc.setTextColor(150, 150, 150);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(title.toUpperCase(), x + 8, y + 6);
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(value, x + 8, y + 13);
+    };
+
+    drawStatBox(15, 46, 80, 18, 'Total de Leads', String(leadsToExport.length), [86, 215, 253]);
+    drawStatBox(108.5, 46, 80, 18, 'WhatsApp & Cliques', String(whatsappLeads.length), [37, 211, 102]);
+    drawStatBox(202, 46, 80, 18, 'Leads de Formulários', String(formLeads.length), [86, 215, 253]);
+
+    let currentY = 72;
     currentY = generateGroupTable('Whatsapp', whatsappLeads, currentY);
     currentY = generateGroupTable('Formulário', formLeads, currentY);
 
@@ -701,6 +759,64 @@ export default function LeadsPage() {
                 </button>
               </div>
 
+              <div className={styles.filtersBar}>
+                <div className={styles.filterField}>
+                  <label>Buscar por Nome</label>
+                  <input 
+                    type="text" 
+                    placeholder="Filtrar por nome..." 
+                    className={styles.filterInput}
+                    value={filterName}
+                    onChange={(e) => { setFilterName(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
+                <div className={styles.filterField}>
+                  <label>Buscar por E-mail</label>
+                  <input 
+                    type="text" 
+                    placeholder="Filtrar por e-mail..." 
+                    className={styles.filterInput}
+                    value={filterEmail}
+                    onChange={(e) => { setFilterEmail(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
+                <div className={styles.filterField}>
+                  <label>Período de Data</label>
+                  <select 
+                    className={styles.filterInput}
+                    value={dateFilter}
+                    onChange={(e) => { setDateFilter(e.target.value as any); setCurrentPage(1); }}
+                  >
+                    <option value="all">Sempre</option>
+                    <option value="today">Hoje</option>
+                    <option value="7days">Últimos 7 dias</option>
+                    <option value="month">Este mês</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+                {dateFilter === 'custom' && (
+                  <>
+                    <div className={styles.filterField}>
+                      <label>Data Inicial</label>
+                      <input 
+                        type="date" 
+                        className={styles.filterInput}
+                        value={customStartDate}
+                        onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
+                      />
+                    </div>
+                    <div className={styles.filterField}>
+                      <label>Data Final</label>
+                      <input 
+                        type="date" 
+                        className={styles.filterInput}
+                        value={customEndDate}
+                        onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
 
               <table className={styles.table}>
                 <thead><tr><th>Lead</th><th>Contato</th><th>Origem</th><th>Data</th><th>Ações</th></tr></thead>

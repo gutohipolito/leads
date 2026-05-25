@@ -582,3 +582,27 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+.menuToggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .menuToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-right: 0.75rem;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .menuToggle:hover {
+    background: rgba(var(--foreground-rgb), 0.03);
+  }
+}

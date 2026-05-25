@@ -29,6 +29,13 @@ import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
 
+const soundsList = [
+  { id: 'bubble', name: 'Sinal Suave (Bubble)', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
+  { id: 'digital', name: 'Bip Digital (Click)', url: 'https://assets.mixkit.co/active_storage/sfx/911/911-preview.mp3' },
+  { id: 'chime', name: 'Sino Moderno (Chime)', url: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3' },
+  { id: 'alert', name: 'Alerta Leve (Chimes)', url: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3' },
+];
+
 export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +45,7 @@ export default function SettingsPage() {
   
   const [newName, setNewName] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundType, setSoundType] = useState('bubble');
   const [isSoundModalOpen, setIsSoundModalOpen] = useState(false);
   const [pendingSound, setPendingSound] = useState(true);
   
@@ -78,6 +86,9 @@ export default function SettingsPage() {
       
       const savedSound = localStorage.getItem('asthros-sound-enabled');
       setSoundEnabled(savedSound === null ? true : savedSound === 'true');
+      
+      const savedSoundType = localStorage.getItem('asthros-sound-type') || 'bubble';
+      setSoundType(savedSoundType);
     }
   }, []);
 
@@ -209,7 +220,8 @@ export default function SettingsPage() {
     setIsSoundModalOpen(false);
     
     if (pendingSound) {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      const savedUrl = localStorage.getItem('asthros-sound-url') || 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+      const audio = new Audio(savedUrl);
       audio.play().catch(() => {});
     }
   };
@@ -343,6 +355,49 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+
+              {soundEnabled && (
+                <div className={`${styles.optionItem} ${styles.subOptionItem}`}>
+                  <div className={styles.optionInfo}>
+                    <Volume2 size={16} style={{ opacity: 0.7 }} />
+                    <div>
+                      <p style={{ fontSize: '0.85rem' }}>Tipo do Sinal Sonoro</p>
+                      <span style={{ fontSize: '0.75rem' }}>Escolha e teste a melodia de aviso</span>
+                    </div>
+                  </div>
+                  <div className={styles.soundSelectorGroup}>
+                    <select 
+                      className={styles.soundSelect}
+                      value={soundType}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setSoundType(newType);
+                        const selected = soundsList.find(s => s.id === newType);
+                        if (selected) {
+                          localStorage.setItem('asthros-sound-type', selected.id);
+                          localStorage.setItem('asthros-sound-url', selected.url);
+                          new Audio(selected.url).play().catch(() => {});
+                        }
+                      }}
+                    >
+                      {soundsList.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <button 
+                      className={styles.testSoundBtn}
+                      onClick={() => {
+                        const selected = soundsList.find(s => s.id === soundType);
+                        if (selected) {
+                          new Audio(selected.url).play().catch(() => {});
+                        }
+                      }}
+                    >
+                      Testar
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className={styles.optionItem}>
                 <div className={styles.optionInfo}>

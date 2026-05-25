@@ -16,12 +16,13 @@ import {
   ChevronDown,
   FileText,
   Terminal,
-  Tv
+  Tv,
+  X
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { supabase } from '@/lib/supabase';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -92,11 +93,16 @@ export default function Sidebar() {
   });
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
       <div className={styles.logoContainer}>
         <div className={styles.logoIcon}>
           <img src="/asthros-leads.png" alt="Asthros Logo" className={styles.logoImg} />
         </div>
+        {onClose && (
+          <button className={styles.sidebarCloseBtn} onClick={onClose} aria-label="Fechar Menu">
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <nav className={styles.nav}>
