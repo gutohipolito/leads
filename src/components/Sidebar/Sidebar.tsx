@@ -84,7 +84,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     { name: 'Leads', path: '/leads', icon: Database },
     { name: 'Relatórios', path: '/reports', icon: FileText },
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
-    { name: 'Simulador', path: '/simulator', icon: Terminal },
   ].filter(item => {
     if (isImpersonating) {
       return ['Geral', 'Leads'].includes(item.name);
