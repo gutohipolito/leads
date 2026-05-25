@@ -730,3 +730,52 @@
   overflow-x: auto;
   margin-top: 1rem;
 }
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(var(--foreground-rgb), 0.03);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconBtn:hover {
+  background: rgba(var(--foreground-rgb), 0.08);
+  color: white;
+  border-color: rgba(var(--foreground-rgb), 0.15);
+  transform: translateY(-1px);
+}
+
+.iconBtn:active {
+  transform: translateY(0);
+}
+

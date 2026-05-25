@@ -314,11 +314,11 @@ export default function LogsPage() {
               </div>
 
               <section className={`${styles.keysSection} glass`} style={{ margin: 0 }}>
-                <div className={styles.cardHeader} style={{ marginBottom: '1rem', borderBottom: 'none', paddingBottom: 0 }}>
+                <div className={styles.cardHeader}>
                   <div className={styles.headerInfo}>
                     <div className={styles.iconCircle}><Key size={18} /></div>
                     <div>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Chaves de API (Secrets)</h3>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>Chaves de API (Secrets)</h3>
                       <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>Gerenciamento de segredos para captura segura de leads.</p>
                     </div>
                   </div>
