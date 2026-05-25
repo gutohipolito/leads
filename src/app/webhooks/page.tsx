@@ -533,6 +533,7 @@ export default function WebhooksManagePage() {
                             type="button" 
                             className={styles.outboundTestBtn}
                             onClick={handleTestOutboundWebhook}
+                            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                           >
                             <Zap size={14} />
                             <span>Testar Envio</span>
@@ -565,6 +566,7 @@ export default function WebhooksManagePage() {
                         type="button"
                         className={styles.testBtn} 
                         onClick={openLab}
+                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                       >
                         <Terminal size={16} />
                         <span>Abrir Laboratório de Teste</span>
