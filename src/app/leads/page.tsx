@@ -44,6 +44,12 @@ import autoTable from 'jspdf-autotable';
 import ExportModal from '@/components/ExportModal/ExportModal';
 import DeleteModal from '@/components/DeleteModal/DeleteModal';
 
+const formatPhone = (phone: string | null | undefined): string => {
+  if (!phone) return 'N/A';
+  const cleaned = phone.replace(/^N\/A\s*/i, '').trim();
+  return cleaned || 'N/A';
+};
+
 export default function LeadsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userClientId, setUserClientId] = useState<string | null>(null);
@@ -360,7 +366,7 @@ export default function LeadsPage() {
     const mapping = data[0]?.webhooks?.field_mapping || {};
     const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Terminal/Webhook', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
     const rows = data.map(l => {
-      const base = [l.id, l.name || '', l.email || '', l.phone || '', l.webhooks?.name || 'N/A', new Date(l.created_at).toLocaleString('pt-BR')];
+      const base = [l.id, l.name || '', l.email || '', formatPhone(l.phone), l.webhooks?.name || 'N/A', new Date(l.created_at).toLocaleString('pt-BR')];
       const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
       return [...base, ...extra].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
     });
@@ -425,7 +431,10 @@ export default function LeadsPage() {
       if (groupLeads.length === 0) return startY;
 
       const hasEmail = groupLeads.some(l => l.email && l.email !== 'N/A');
-      const hasPhone = groupLeads.some(l => l.phone && l.phone !== 'N/A');
+      const hasPhone = groupLeads.some(l => {
+        const p = formatPhone(l.phone);
+        return p && p !== 'N/A';
+      });
       const hasPage = groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
       const hasButton = groupLeads.some(l => (l.data?.behavior?.button_text || l.data?.button_text));
       const hasTime = groupLeads.some(l => (l.data?.behavior?.time_on_page || l.data?.time_on_page));
@@ -443,7 +452,7 @@ export default function LeadsPage() {
           l.name || 'S/ Nome'
         ];
         if (hasEmail) row.push(l.email || 'N/A');
-        if (hasPhone) row.push(l.phone || 'N/A');
+        if (hasPhone) row.push(formatPhone(l.phone));
         
         if (hasPage) {
           const url = l.data?.behavior?.page_url || l.data?.page_url || 'N/A';
@@ -709,7 +718,7 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       </td>
-                      <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{lead.phone || 'N/A'}</span></div></td>
+                       <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{formatPhone(lead.phone)}</span></div></td>
                       <td>
                         {lead.source === 'test_simulation' ? (
                           <div className={styles.sourceBadgeTest}><Database size={12} /> <span>Simulação</span></div>

@@ -57,7 +57,14 @@ export async function POST(
     
     let name = body.name || body.nome || body.full_name || fields.name || fields.nome || 'Lead s/ Nome';
     const email = body.email || body.e_mail || fields.email || fields.e_mail || null;
-    const phone = body.phone || body.telefone || body.whatsapp || fields.phone || fields.telefone || null;
+    let phone = body.phone || body.telefone || body.whatsapp || fields.phone || fields.telefone || null;
+    
+    if (phone && typeof phone === 'string') {
+      phone = phone.replace(/^N\/A\s*/i, '').trim();
+      if (phone.toLowerCase() === 'n/a' || phone === '') {
+        phone = null;
+      }
+    }
 
     const isCustomTracker = body.source === 'custom_tracker';
 
