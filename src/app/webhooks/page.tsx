@@ -754,6 +754,7 @@ export default function WebhooksManagePage() {
                         }
                       }}
                       disabled={testStatus.status === 'loading'}
+                      style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                     >
                       <Play size={16} />
                       <span>{testStatus.status === 'loading' ? 'Enviando...' : 'Disparar Sinal Real'}</span>

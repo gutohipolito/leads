@@ -1078,7 +1078,7 @@
   background: #56d7fd;
   border: none;
   color: #020408;
-  padding: 1.1rem;
+  padding: 0.9rem 1.25rem;
   border-radius: 12px;
   font-weight: 800;
   cursor: pointer;
@@ -1089,6 +1089,7 @@
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .labFireBtn:hover:not(:disabled) {
