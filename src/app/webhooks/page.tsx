@@ -53,11 +53,85 @@ export default function WebhooksManagePage() {
   const [isLabOpen, setIsLabOpen] = useState(false);
   const [labPayload, setLabPayload] = useState<string>('');
 
+  const [outboundTestStatus, setOutboundTestStatus] = useState<{
+    loading: boolean;
+    status: number | null;
+    statusText: string | null;
+    responseBody: string | null;
+    payloadSent: any | null;
+    error: string | null;
+    isOpen: boolean;
+  }>({
+    loading: false,
+    status: null,
+    statusText: null,
+    responseBody: null,
+    payloadSent: null,
+    error: null,
+    isOpen: false
+  });
+
   const [newWebhook, setNewWebhook] = useState({
     name: '',
     client_id: '',
     validation_type: 'header' as 'header' | 'query'
   });
+
+  const handleTestOutboundWebhook = async () => {
+    if (!selectedWebhook?.outbound_url) return;
+    setOutboundTestStatus({
+      loading: true,
+      status: null,
+      statusText: null,
+      responseBody: null,
+      payloadSent: null,
+      error: null,
+      isOpen: true
+    });
+
+    try {
+      const response = await fetch('/api/webhooks/test-outbound', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outboundUrl: selectedWebhook.outbound_url })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setOutboundTestStatus(prev => ({
+          ...prev,
+          loading: false,
+          status: result.status,
+          statusText: result.statusText,
+          responseBody: result.responseBody,
+          payloadSent: result.payloadSent,
+          error: result.error || null
+        }));
+      } else {
+        setOutboundTestStatus(prev => ({
+          ...prev,
+          loading: false,
+          status: result.status || response.status,
+          statusText: result.statusText || response.statusText,
+          responseBody: result.responseBody || null,
+          payloadSent: result.payloadSent || null,
+          error: result.error || 'Erro ao disparar webhook de saída.'
+        }));
+      }
+    } catch (err: any) {
+      setOutboundTestStatus(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Falha na requisição local: ' + err.message,
+        status: null,
+        statusText: null,
+        responseBody: null,
+        payloadSent: null,
+        isOpen: true
+      }));
+    }
+  };
 
   const [trackerKeywords, setTrackerKeywords] = useState('');
   const [trackerSelectors, setTrackerSelectors] = useState('');
@@ -444,14 +518,26 @@ export default function WebhooksManagePage() {
                   <div className={styles.configForm}>
                     <div className={styles.detailGroup}>
                       <label>Webhook de Saída (Integração CRM/Zapier)</label>
-                      <div className={styles.inputWithIcon}>
-                        <Link size={16} />
-                        <input 
-                          type="text" 
-                          placeholder="https://hooks.zapier.com/..." 
-                          value={selectedWebhook.outbound_url || ''}
-                          onChange={(e) => setSelectedWebhook({...selectedWebhook, outbound_url: e.target.value})}
-                        />
+                      <div className={styles.inputWithAction}>
+                        <div className={styles.inputWithIcon} style={{ flex: 1 }}>
+                          <Link size={16} />
+                          <input 
+                            type="text" 
+                            placeholder="https://hooks.zapier.com/..." 
+                            value={selectedWebhook.outbound_url || ''}
+                            onChange={(e) => setSelectedWebhook({...selectedWebhook, outbound_url: e.target.value})}
+                          />
+                        </div>
+                        {selectedWebhook.outbound_url && (
+                          <button 
+                            type="button" 
+                            className={styles.outboundTestBtn}
+                            onClick={handleTestOutboundWebhook}
+                          >
+                            <Zap size={14} />
+                            <span>Testar Envio</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -690,6 +776,77 @@ export default function WebhooksManagePage() {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {outboundTestStatus.isOpen && (
+          <div className={styles.modalOverlay} onClick={() => setOutboundTestStatus(prev => ({ ...prev, isOpen: false }))}>
+            <div className={`${styles.premiumModal} ${styles.outboundTestModal} glass`} onClick={e => e.stopPropagation()}>
+              <div className={styles.premiumModalHeader}>
+                <div className={styles.titleSection}>
+                  <div className={styles.clientBadge}>DEPURAÇÃO DE WEBHOOK</div>
+                  <h3>Teste de Conexão Externa (Outbound)</h3>
+                </div>
+                <button className={styles.closeBtn} onClick={() => setOutboundTestStatus(prev => ({ ...prev, isOpen: false }))}><X size={20} /></button>
+              </div>
+
+              <div className={styles.premiumModalBody} style={{ gap: '1.5rem' }}>
+                <div className={styles.outboundUrlSection}>
+                  <label>URL Enviada:</label>
+                  <code>{selectedWebhook?.outbound_url}</code>
+                </div>
+
+                <div className={styles.outboundResultGrid}>
+                  <div className={styles.outboundDataBox}>
+                    <div className={styles.boxHeader}>Payload JSON Enviado (POST)</div>
+                    <pre className={styles.jsonPreview}>
+                      {outboundTestStatus.payloadSent 
+                        ? JSON.stringify(outboundTestStatus.payloadSent, null, 2)
+                        : '// Preparando dados...'}
+                    </pre>
+                  </div>
+
+                  <div className={styles.outboundDataBox}>
+                    <div className={styles.boxHeader}>Resposta do Servidor</div>
+                    <div className={styles.responseStatusRow}>
+                      {outboundTestStatus.loading ? (
+                        <div className={styles.loadingWrapper}>
+                          <RefreshCcw size={16} className={styles.spin} />
+                          <span>Disparando requisição externa...</span>
+                        </div>
+                      ) : outboundTestStatus.error ? (
+                        <div className={styles.responseErrorBlock}>
+                          <div className={`${styles.statusTag} ${styles.statusDanger}`}>FALHA</div>
+                          <span className={styles.errorText}>{outboundTestStatus.error}</span>
+                        </div>
+                      ) : (
+                        <div className={styles.responseSuccessBlock}>
+                          <div className={`${styles.statusTag} ${outboundTestStatus.status && outboundTestStatus.status < 300 ? styles.statusSuccess : styles.statusWarning}`}>
+                            HTTP {outboundTestStatus.status} {outboundTestStatus.statusText}
+                          </div>
+                          <span className={styles.durationText}>Tempo de resposta: {outboundTestStatus.durationMs}ms</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className={styles.responseBodyTitle}>Corpo da Resposta (Body):</div>
+                    <pre className={styles.responseBodyPreview}>
+                      {outboundTestStatus.loading 
+                        ? '// Aguardando resposta...' 
+                        : outboundTestStatus.responseBody 
+                          ? outboundTestStatus.responseBody 
+                          : outboundTestStatus.error 
+                            ? '// Sem dados de resposta (Erro de Conectividade)'
+                            : '// Resposta vazia'}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.premiumModalFooter}>
+                <button className={styles.primaryBtn} onClick={() => setOutboundTestStatus(prev => ({ ...prev, isOpen: false }))}>Fechar Painel</button>
               </div>
             </div>
           </div>
