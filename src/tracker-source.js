@@ -76,9 +76,13 @@
     function getSourceFromReferrer(ref) {
         if (!ref || ref === 'direto') return 'direto';
         const lowerRef = ref.toLowerCase();
-        if (lowerRef.includes('google.com')) return 'google';
-        if (lowerRef.includes('facebook.com')) return 'facebook';
-        if (lowerRef.includes('instagram.com')) return 'instagram';
+        if (lowerRef.includes('google') || lowerRef.includes('bing') || lowerRef.includes('yahoo')) return 'orgânico';
+        if (lowerRef.includes('facebook') || lowerRef.includes('fb.me')) return 'facebook';
+        if (lowerRef.includes('instagram') || lowerRef.includes('ig.me')) return 'instagram';
+        if (lowerRef.includes('t.co') || lowerRef.includes('twitter.com') || lowerRef.includes('x.com')) return 'twitter';
+        if (lowerRef.includes('linkedin')) return 'linkedin';
+        if (lowerRef.includes('youtube.com') || lowerRef.includes('youtu.be')) return 'youtube';
+        if (lowerRef.includes('whatsapp') || lowerRef.includes('wa.me')) return 'whatsapp';
         return 'referência';
     }
 
@@ -167,7 +171,11 @@
     }
 
     async function trackLead(e) {
-        const link = e.target.closest('a') || e.target.closest('button');
+        const link = e.target.closest('a') || 
+                     e.target.closest('button') || 
+                     e.target.closest('[role="button"]') || 
+                     e.target.closest('.btn') || 
+                     e.target.closest('.button');
         if (!link) return;
 
         const match = getTrackingMatch(link);
