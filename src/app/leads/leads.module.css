@@ -417,6 +417,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .primaryBtn {
@@ -925,7 +926,7 @@
 }
 
 .drawerFooter {
-  padding: 2.5rem;
+  padding: 1.5rem 2rem;
   border-top: 1px solid rgba(var(--foreground-rgb), 0.05);
   display: flex;
   justify-content: space-between;
@@ -946,6 +947,10 @@
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
+}
+
+.sectionHeader h4 {
+  margin: 0;
 }
 
 .sectionIcon {
@@ -1061,6 +1066,7 @@
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .deleteBtnMini {

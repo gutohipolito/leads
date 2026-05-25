@@ -63,6 +63,46 @@ export default function LeadsPage() {
     setCopiedRowKey(key);
     setTimeout(() => setCopiedRowKey(null), 2000);
   };
+
+  const getOSLogo = (platform: string) => {
+    const pf = (platform || '').toLowerCase();
+    
+    // Windows
+    if (pf.includes('win')) {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#0078d7' }}>
+          <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM11.25 1.9L24 0v11.55H11.25V1.9zM11.25 12.45H24v11.55l-12.75-1.9v-9.65z" />
+        </svg>
+      );
+    }
+    // Apple (Mac/iOS/iPhone/iPad)
+    if (pf.includes('mac') || pf.includes('ios') || pf.includes('iphone') || pf.includes('ipad') || pf.includes('ipod')) {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#a2aaad' }}>
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.57 2.95-1.39z" />
+        </svg>
+      );
+    }
+    // Android
+    if (pf.includes('android')) {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#3ddc84' }}>
+          <path d="M17.5 12c-.8 0-1.5-.7-1.5-1.5S16.7 9 17.5 9s1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm-11 0c-.8 0-1.5-.7-1.5-1.5S5.7 9 6.5 9s1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm11.2-5.8l1.7-2.9c.1-.2 0-.5-.2-.6-.2-.1-.5 0-.6.2l-1.8 3C15.4 5.3 13.8 5 12 5s-3.4.3-4.8.9L5.4 2.9c-.1-.2-.4-.3-.6-.2-.2.1-.3.4-.2.6l1.7 2.9C3.7 7.7 2 10.6 2 14h20c0-3.4-1.7-6.3-4.3-7.8z" />
+        </svg>
+      );
+    }
+    // Linux
+    if (pf.includes('linux') || pf.includes('x11')) {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ecc94b' }}>
+          <path d="M12 .007c-.424 0-1.12.213-1.6.48-1.536.853-2.585 2.507-2.88 4.293-.16.96.096 2.373.576 3.12.16.24.16.267.053.48-.32.613-.88 2.053-1.12 2.827-.453 1.493-.826 3.92-.853 5.466-.027.907.026 1.147.293 1.494.347.453.933.72 1.627.72h.426l.4-.507c1.014-1.28 2.214-1.893 3.654-1.893 1.333 0 2.453.533 3.466 1.627l.454.48h.373c1.067 0 1.947-.64 2.213-1.627.187-.667.24-2.827.107-4.133-.107-1.147-.32-2.48-.56-3.467-.213-.827-.72-2.32-.987-2.987-.08-.187-.08-.213.027-.373.48-.693.853-2.027.853-3.147 0-1.573-.773-3.173-1.947-4.053-.613-.48-1.786-.88-2.453-.88zm-2.053 5.387c.667 0 1.2.533 1.2 1.2s-.533 1.2-1.2 1.2-1.2-.533-1.2-1.2.533-1.2 1.2-1.2zm4.106 0c.667 0 1.2.533 1.2 1.2s-.533 1.2-1.2 1.2-1.2-.533-1.2-1.2.533-1.2 1.2-1.2z" />
+        </svg>
+      );
+    }
+    
+    // Fallback: Ícone genérico Cpu
+    return <Cpu size={14} />;
+  };
   
   // Filtros
   const [filterName, setFilterName] = useState('');
@@ -825,7 +865,7 @@ export default function LeadsPage() {
                     </div>
                     <div className={styles.deviceGrid}>
                       <div className={styles.deviceItem}>
-                        <Cpu size={14} />
+                        {getOSLogo(selectedLead.data.device.platform)}
                         <div>
                           <label>Sistema / Plataforma</label>
                           <p>{selectedLead.data.device.platform}</p>
