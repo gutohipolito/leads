@@ -93,54 +93,78 @@ export default function Header({ title }: HeaderProps) {
   };
 
   useEffect(() => {
-    async function loadNotifications() {
+    let channel: any;
+
+    async function initNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Carrega as 10 notificações mais recentes do usuário
         const { data } = await supabase
           .from('notifications')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10);
         
+        // Conta a quantidade exata de notificações não lidas no banco
+        const { count } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+
         if (data) {
           setNotifications(data);
-          setUnreadCount(data.filter(n => !n.read).length);
+          setUnreadCount(count || 0);
         }
+
+        // Registrar o canal do Supabase Realtime filtrando pelo user_id do usuário logado
+        channel = supabase
+          .channel(`notifications-${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              const newNotif = payload.new;
+              
+              setNotifications(prev => {
+                if (prev.some(n => n.id === newNotif.id)) return prev;
+                return [newNotif, ...prev].slice(0, 10);
+              });
+              
+              setUnreadCount(prev => prev + 1);
+
+              const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
+              if (isSoundEnabled) {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play().catch(() => {});
+              }
+
+              const saved = localStorage.getItem('push_notifications_enabled');
+              const pushPref = saved === null ? true : saved === 'true';
+              if (Notification.permission === 'granted' && pushPref) {
+                new Notification(`Asthros: ${newNotif.title}`, {
+                  body: newNotif.message,
+                  icon: '/asthros-favicon.png'
+                });
+              }
+            }
+          )
+          .subscribe();
       }
     }
-    loadNotifications();
 
-    const channel = supabase
-      .channel('notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications'
-        },
-        (payload) => {
-          const newNotif = payload.new;
-          setNotifications(prev => [newNotif, ...prev].slice(0, 10));
-          setUnreadCount(prev => prev + 1);
-          const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
-          if (isSoundEnabled) {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(() => {});
-          }
-
-          if (Notification.permission === 'granted' && pushPreference) {
-            new Notification(`Asthros: ${newNotif.title}`, {
-              body: newNotif.message,
-              icon: '/asthros-favicon.png'
-            });
-          }
-        }
-      )
-      .subscribe();
+    initNotifications();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 

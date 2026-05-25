@@ -130,12 +130,23 @@ export async function POST(
       // resend.emails.send({ from: 'Asthros <leads@asthros.com.br>', to: webhook.notification_email, ... });
     }
 
-    const { data: userData } = await supabase
+    // Buscar todos os usuários ativos do cliente
+    const { data: clientUsers } = await supabase
       .from('system_users')
       .select('id')
       .eq('client_id', clientId)
-      .limit(1)
-      .maybeSingle();
+      .eq('status', 'active');
+
+    // Buscar todos os administradores ativos do sistema
+    const { data: adminUsers } = await supabase
+      .from('system_users')
+      .select('id')
+      .eq('role', 'admin')
+      .eq('status', 'active');
+
+    const userIds = new Set<string>();
+    clientUsers?.forEach(u => userIds.add(u.id));
+    adminUsers?.forEach(u => userIds.add(u.id));
 
     const origin = request.headers.get('origin') || '*';
     const corsHeaders = {
@@ -145,19 +156,21 @@ export async function POST(
       'Access-Control-Allow-Credentials': 'true',
     };
 
-    if (userData) {
+    if (userIds.size > 0) {
       const notificationTitle = isWppTracker ? 'Intercepção de WhatsApp' : 'Novo Lead via Form';
       const notificationMsg = isWppTracker 
         ? `Um usuário de ${body.marketing?.source || 'origem direta'} clicou no WhatsApp.`
         : `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`;
 
-      await supabase.from('notifications').insert([{
-        user_id: userData.id,
+      const notificationInserts = Array.from(userIds).map(uid => ({
+        user_id: uid,
         client_id: clientId,
         title: notificationTitle,
         message: notificationMsg,
         type: isWppTracker ? 'info' : 'success'
-      }]);
+      }));
+
+      await supabase.from('notifications').insert(notificationInserts);
     }
 
     // [NOVO] Log de Auditoria para o Sinal de Entrada
