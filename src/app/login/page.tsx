@@ -33,6 +33,9 @@ export default function LoginPage() {
         .update({ last_login: new Date().toISOString() })
         .eq('email', email);
 
+      // Definir a flag de sessão ativa para evitar o logout imediato no primeiro carregamento do layout
+      sessionStorage.setItem('asthros_session_active', 'true');
+
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Erro ao realizar login');
