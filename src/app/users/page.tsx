@@ -26,6 +26,7 @@ export default function UsersManagementPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [onlineUsers, setOnlineUsers] = useState<Record<string, any>>({});
 
   // Form State
   const [newUser, setNewUser] = useState({
@@ -72,6 +73,29 @@ export default function UsersManagementPage() {
     script.src = "https://cdn.lordicon.com/lordicon.js";
     script.async = true;
     document.body.appendChild(script);
+  }, []);
+
+  // Monitorar presença do Realtime em tempo real
+  useEffect(() => {
+    const channel = supabase.channel('online_users');
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const active: Record<string, any> = {};
+        
+        Object.keys(state).forEach((key) => {
+          if (state[key] && state[key].length > 0) {
+            active[key] = state[key][0];
+          }
+        });
+        setOnlineUsers(active);
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   async function loadData() {
@@ -257,7 +281,7 @@ export default function UsersManagementPage() {
               </thead>
               <tbody>
                 {filteredUsers.map(user => {
-                  const isOnline = user.last_active_at && (new Date().getTime() - new Date(user.last_active_at).getTime() < 300000);
+                  const isOnline = !!onlineUsers[user.email] || (user.last_active_at && (new Date().getTime() - new Date(user.last_active_at).getTime() < 120000));
                   const avatarUrl = `https://api.dicebear.com/7.x/${user.avatar_style || 'avataaars'}/svg?seed=${user.email}`;
                   
                   return (

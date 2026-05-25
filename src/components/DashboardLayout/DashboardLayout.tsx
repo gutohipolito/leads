@@ -16,11 +16,14 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   const [impersonatedClient, setImpersonatedClient] = useState<any>(null);
 
   useEffect(() => {
-    // 1. Verificação de sessão assíncrona para novas abas/janelas
-    const checkSession = async () => {
+    let activeChannel: any = null;
+
+    // 1. Verificação de sessão assíncrona para novas abas/janelas e setup de Presence
+    const checkSessionAndSetupPresence = async () => {
       const hasActiveSession = sessionStorage.getItem('asthros_session_active');
+      const { data: { user } } = await supabase.auth.getUser();
+
       if (!hasActiveSession) {
-        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           // Marca o usuário como offline no banco de dados imediatamente
           await supabase
@@ -34,8 +37,33 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
         }
         sessionStorage.setItem('asthros_session_active', 'true');
       }
+
+      // Se temos o usuário autenticado, configuramos o canal de presença
+      if (user) {
+        // Criar o canal de Realtime Presence do Supabase
+        const channel = supabase.channel('online_users', {
+          config: {
+            presence: {
+              key: user.email, // Agrupa pela chave única do e-mail do usuário
+            },
+          },
+        });
+
+        channel
+          .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              // Envia o payload de track de presença
+              await channel.track({
+                email: user.email,
+                online_at: new Date().toISOString(),
+              });
+            }
+          });
+
+        activeChannel = channel;
+      }
     };
-    checkSession();
+    checkSessionAndSetupPresence();
 
     // 2. Registro do evento de descarregamento da página para marcar offline
     const handleUnload = () => {
@@ -54,6 +82,9 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
 
     return () => {
       window.removeEventListener('pagehide', handleUnload);
+      if (activeChannel) {
+        activeChannel.unsubscribe();
+      }
     };
   }, []);
 
