@@ -84,7 +84,7 @@ export default function LogsPage() {
   };
 
   return (
-    <DashboardLayout title="Logs Globais de Auditoria">
+    <DashboardLayout>
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.searchBar}>

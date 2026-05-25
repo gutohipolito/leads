@@ -241,13 +241,13 @@ export default function SettingsPage() {
   };
 
   if (loading) return (
-    <DashboardLayout title="Configurações">
+    <DashboardLayout>
       <Loader text="Carregando Preferências" />
     </DashboardLayout>
   );
 
   return (
-    <DashboardLayout title="Configurações do Sistema">
+    <DashboardLayout>
       <div className={styles.container}>
         <div className={styles.settingsGrid}>
           

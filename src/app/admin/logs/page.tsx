@@ -85,7 +85,7 @@ export default function LogsPage() {
 
 
   return (
-    <DashboardLayout title="Auditoria">
+    <DashboardLayout>
       <div className={styles.container}>
         
         <div className={styles.topActions}>

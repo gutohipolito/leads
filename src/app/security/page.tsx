@@ -131,10 +131,10 @@ export default function SecurityPage() {
     setIsConfirmOpen(false);
   };
 
-  if (loading) return <DashboardLayout title="Centro de Segurança"><Loader text="Monitorando Integridade do Sistema..." /></DashboardLayout>;
+  if (loading) return <DashboardLayout><Loader text="Monitorando Integridade do Sistema..." /></DashboardLayout>;
 
   return (
-    <DashboardLayout title="Centro de Segurança">
+    <DashboardLayout>
       <div className={styles.container}>
         
         <div className={styles.topSection}>

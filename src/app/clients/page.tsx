@@ -281,7 +281,7 @@ export default function ClientsPage() {
   };
 
   return (
-    <DashboardLayout title="Painel de Controle Administrativo">
+    <DashboardLayout>
       <div className={styles.container}>
         
         {/* Admin Stats Summary */}

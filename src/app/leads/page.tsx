@@ -532,7 +532,7 @@ export default function LeadsPage() {
 
 
   return (
-    <DashboardLayout title="Gerenciamento de Leads">
+    <DashboardLayout>
       <div className={styles.container}>
         
         {showClientSelection && (

@@ -149,10 +149,10 @@ export default function ReportsPage() {
     }
   };
 
-  if (loading) return <DashboardLayout title="Registro de Relatórios"><Loader text="Recuperando Histórico de Exportações..." /></DashboardLayout>;
+  if (loading) return <DashboardLayout><Loader text="Recuperando Histórico de Exportações..." /></DashboardLayout>;
 
   return (
-    <DashboardLayout title="Registro de Relatórios">
+    <DashboardLayout>
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.titleSection}>

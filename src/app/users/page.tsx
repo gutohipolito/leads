@@ -220,7 +220,7 @@ export default function UsersManagementPage() {
   );
 
   return (
-    <DashboardLayout title="Gestão de Usuários e Permissões">
+    <DashboardLayout>
       <div className={styles.container}>
         
         <div className={styles.topActions}>

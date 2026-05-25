@@ -257,7 +257,7 @@ export default function WebhooksManagePage() {
   };
 
   return (
-    <DashboardLayout title="Gerenciamento de Webhooks">
+    <DashboardLayout>
       <div className={styles.container}>
         <div className={styles.headerActions}>
           <div className={styles.headerText}>

@@ -70,7 +70,7 @@ export default function WebhooksPage() {
   const webhookUrl = selectedClient ? `${window.location.origin}/api/leads/${selectedClient}` : '';
 
   return (
-    <DashboardLayout title="Simulador de Webhook">
+    <DashboardLayout>
       <div className={styles.container}>
         
         {/* Configuration Card */}

@@ -8,10 +8,10 @@ import styles from './DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  title: React.ReactNode;
+  title?: React.ReactNode;
 }
 
-export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title = '' }: DashboardLayoutProps) {
   const [impersonatedClient, setImpersonatedClient] = useState<any>(null);
 
   useEffect(() => {
