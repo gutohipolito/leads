@@ -38,6 +38,8 @@ export default function Home() {
   const [selectedWebhook, setSelectedWebhook] = useState<string>('');
 
   useEffect(() => {
+    let notifChannel: any = null;
+
     async function loadDashboardData() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -169,14 +171,15 @@ export default function Home() {
           const lastSignalTime = lastLead ? new Date(lastLead.created_at).getTime() : null;
 
           // Inscrição Realtime para Notificações na Home
-          supabase
-            .channel('dashboard-notifications')
+          const channel = supabase.channel('dashboard-notifications');
+          channel
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, async (payload: any) => {
               const newLead = payload.new;
               const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
               if (!canSee) return;
             })
             .subscribe();
+          notifChannel = channel;
 
           setStats({
             totalLeads: totalLeads || 0,
@@ -240,6 +243,12 @@ export default function Home() {
     }
 
     loadDashboardData();
+
+    return () => {
+      if (notifChannel) {
+        supabase.removeChannel(notifChannel);
+      }
+    };
   }, [selectedWebhook]);
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
