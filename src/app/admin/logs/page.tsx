@@ -307,83 +307,39 @@ export default function LogsPage() {
                 </div>
                 <div className={styles.statusInfo}>
                   <h3>{score > 80 ? 'Sistema Protegido' : (score > 50 ? 'Atenção Necessária' : 'Risco Detectado')}</h3>
-                  <p>
+                  <p style={{ fontSize: '0.8rem' }}>
                     {score === 100 ? 'Todos os protocolos de segurança estão operando perfeitamente.' : `Identificamos ${100 - score} pontos de atenção na infraestrutura.`}
                   </p>
                 </div>
               </div>
-              
-              <div className={styles.firewallGrid}>
-                <section className={`${styles.configCard} glass`}>
-                  <div className={styles.configHeader}>
-                    <div className={styles.iconCircle}><Globe size={18} /></div>
-                    <h4>Proteção de Webhook</h4>
-                  </div>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                    Exigência de Header "X-Asthros-Secret" em todas as requisições de entrada.
-                  </p>
-                  <div className={styles.securityStatusTag}>
-                    <ShieldCheck size={12} />
-                    <span>ATIVO E MONITORADO</span>
-                  </div>
-                </section>
 
-                <section className={`${styles.configCard} glass`}>
-                  <div className={styles.configHeader}>
-                    <div className={styles.iconCircle}><Lock size={18} /></div>
-                    <h4>Middleware Global</h4>
+              <section className={`${styles.keysSection} glass`} style={{ margin: 0 }}>
+                <div className={styles.cardHeader} style={{ marginBottom: '1rem', borderBottom: 'none', paddingBottom: 0 }}>
+                  <div className={styles.headerInfo}>
+                    <div className={styles.iconCircle}><Key size={18} /></div>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Chaves de API (Secrets)</h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>Gerenciamento de segredos para captura segura de leads.</p>
+                    </div>
                   </div>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                    Bloqueio automático de indexação e acesso a arquivos sensíveis (.env, logs).
-                  </p>
-                  <div className={styles.securityStatusTag}>
-                    <ShieldCheck size={12} />
-                    <span>ATIVO E MONITORADO</span>
-                  </div>
-                </section>
-
-                <section className={`${styles.configCard} glass`}>
-                  <div className={styles.configHeader}>
-                    <div className={styles.iconCircle}><ShieldAlert size={18} /></div>
-                    <h4>Modo Pânico</h4>
-                  </div>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                    Suspende imediatamente todos os webhooks em caso de ataque coordenado.
-                  </p>
-                  <button type="button" className={styles.actionBtn} style={{ width: '100%', padding: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', fontWeight: 800 }}>
-                    ATIVAR MODO PÂNICO
+                  <button type="button" className={styles.addKeyBtn} onClick={() => window.location.href='/webhooks?action=new'}>
+                    <Plus size={16} />
+                    <span>Gerar Novo Webhook</span>
                   </button>
-                </section>
-              </div>
-            </div>
-
-            <section className={`${styles.keysSection} glass`}>
-              <div className={styles.cardHeader}>
-                <div className={styles.headerInfo}>
-                  <div className={styles.iconCircle}><Key size={18} /></div>
-                  <div>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Chaves de API (Secrets)</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>Gerenciamento de segredos para captura segura de leads.</p>
-                  </div>
                 </div>
-                <button type="button" className={styles.addKeyBtn} onClick={() => window.location.href='/webhooks?action=new'}>
-                  <Plus size={16} />
-                  <span>Gerar Novo Webhook</span>
-                </button>
-              </div>
 
-              <div className={styles.tableResponsive}>
-                <table className={styles.keysTable}>
-                  <thead>
-                    <tr>
-                      <th>NOME / CLIENTE</th>
-                      <th>CHAVE (SECRET)</th>
-                      <th>STATUS</th>
-                      <th>DATA CRIAÇÃO</th>
-                      <th>AÇÕES</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <div className={styles.tableResponsive}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Nome / Cliente</th>
+                        <th>Chave (Secret)</th>
+                        <th>Status</th>
+                        <th>Data Criação</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                     {apiKeys.map(key => (
                       <tr key={key.id}>
                         <td>
@@ -439,6 +395,50 @@ export default function LogsPage() {
               </div>
             </section>
           </div>
+
+          <div className={styles.firewallGrid}>
+            <section className={`${styles.configCard} glass`}>
+              <div className={styles.configHeader}>
+                <div className={styles.iconCircle}><Globe size={18} /></div>
+                <h4>Proteção de Webhook</h4>
+              </div>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                Exigência de Header "X-Asthros-Secret" em todas as requisições de entrada.
+              </p>
+              <div className={styles.securityStatusTag}>
+                <ShieldCheck size={12} />
+                <span>ATIVO E MONITORADO</span>
+              </div>
+            </section>
+
+            <section className={`${styles.configCard} glass`}>
+              <div className={styles.configHeader}>
+                <div className={styles.iconCircle}><Lock size={18} /></div>
+                <h4>Middleware Global</h4>
+              </div>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                Bloqueio automático de indexação e acesso a arquivos sensíveis (.env, logs).
+              </p>
+              <div className={styles.securityStatusTag}>
+                <ShieldCheck size={12} />
+                <span>ATIVO E MONITORADO</span>
+              </div>
+            </section>
+
+            <section className={`${styles.configCard} glass`}>
+              <div className={styles.configHeader}>
+                <div className={styles.iconCircle}><ShieldAlert size={18} /></div>
+                <h4>Modo Pânico</h4>
+              </div>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                Suspende imediatamente todos os webhooks em caso de ataque coordenado.
+              </p>
+              <button type="button" className={styles.actionBtn} style={{ width: '100%', padding: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', fontWeight: 800 }}>
+                ATIVAR MODO PÂNICO
+              </button>
+            </section>
+          </div>
+        </div>
         ) : (
           <div className={`${styles.tableWrapper} glass`}>
             <table className={styles.table}>
