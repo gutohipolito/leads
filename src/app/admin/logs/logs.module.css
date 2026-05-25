@@ -495,56 +495,170 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 2.5rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: linear-gradient(145deg, #090c10 0%, #0d121a 100%);
+  border: 1px solid rgba(86, 215, 253, 0.15);
+  box-shadow: inset 0 0 20px rgba(86, 215, 253, 0.05), 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Cantos Tech HUD (Sci-Fi corners) */
+.hudCornerTopLeft, .hudCornerTopRight, .hudCornerBottomLeft, .hudCornerBottomRight {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--primary);
+  border-style: solid;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.hudCornerTopLeft {
+  top: 10px;
+  left: 10px;
+  border-width: 2px 0 0 2px;
+}
+
+.hudCornerTopRight {
+  top: 10px;
+  right: 10px;
+  border-width: 2px 2px 0 0;
+}
+
+.hudCornerBottomLeft {
+  bottom: 10px;
+  left: 10px;
+  border-width: 0 0 2px 2px;
+}
+
+.hudCornerBottomRight {
+  bottom: 10px;
+  right: 10px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Linha de Scanner Animada */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(86, 215, 253, 0.5), transparent);
+  box-shadow: 0 0 10px rgba(86, 215, 253, 0.3);
+  opacity: 0.3;
+  pointer-events: none;
+  animation: scanlineAnimation 6s linear infinite;
+}
+
+@keyframes scanlineAnimation {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* Container do círculo com radar */
+.scoreCircleContainer {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Anel de Radar Rotativo */
+.radarRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed rgba(86, 215, 253, 0.25);
+  animation: rotateRadar 15s linear infinite;
+}
+
+.radarRing::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 12px var(--primary), 0 0 20px var(--primary);
+}
+
+@keyframes rotateRadar {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .scoreCircle {
-  width: 150px;
-  height: 150px;
+  width: 136px;
+  height: 136px;
   border-radius: 50%;
-  border: 4px solid rgba(86, 215, 253, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 1rem;
-  box-shadow: 0 0 30px rgba(86, 215, 253, 0.05);
-}
-
-.scoreCircle::after {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border-radius: 50%;
-  border: 4px solid var(--primary);
-  border-bottom-color: transparent;
-  border-left-color: transparent;
-  transform: rotate(45deg);
+  background: rgba(13, 18, 26, 0.8);
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+  border: 4px solid rgba(86, 215, 253, 0.1);
 }
 
 .scoreValue {
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 800;
-  color: white;
-  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(86, 215, 253, 0.6), 0 0 20px rgba(86, 215, 253, 0.2);
+  line-height: 1.1;
 }
 
 .scoreLabel {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 800;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
+  margin-top: 0.2rem;
+}
+
+/* Tag de Status Cibersegurança */
+.statusBadgeFuturistic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 240, 255, 0.05);
+  border: 1px solid rgba(86, 215, 253, 0.15);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.pulsePoint {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulseDot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.4; transform: scale(0.9); }
 }
 
 .statusInfo h3 {
@@ -560,6 +674,30 @@
   font-size: 0.85rem;
   margin: 0;
 }
+
+/* Painel de Diagnóstico */
+.diagnosticBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 20px;
+  margin-top: 1.5rem;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.diagnosticBars .bar {
+  width: 3px;
+  background: var(--primary);
+  border-radius: 1px 1px 0 0;
+  animation: diagnosticHeight 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes diagnosticHeight {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1); }
+}
+
 
 .iconCircle {
   width: 38px;
@@ -694,10 +832,20 @@
 .secretWrapper {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 330px;
+  min-width: 330px;
+  max-width: 330px;
+}
+
+.secretActions {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.secretWrapper button {
+.secretActions button {
   background: transparent;
   border: none;
   color: var(--muted-foreground);
@@ -708,8 +856,33 @@
   transition: color 0.2s;
 }
 
-.secretWrapper button:hover {
+.secretActions button:hover {
   color: white;
+}
+
+.copyBtn {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.copyBtn:hover {
+  color: white;
+  transform: scale(1.1);
+}
+
+.tableActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .securityStatusTag {

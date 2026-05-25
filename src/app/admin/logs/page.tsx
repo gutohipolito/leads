@@ -26,7 +26,9 @@ import {
   ShieldAlert,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  Copy,
+  Check
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -52,6 +54,15 @@ export default function LogsPage() {
   const [showSecretId, setShowSecretId] = useState<string | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [keyToRevoke, setKeyToRevoke] = useState<any>(null);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
+  const handleCopyKey = (secret: string, keyId: string) => {
+    navigator.clipboard.writeText(secret);
+    setCopiedKeyId(keyId);
+    setTimeout(() => {
+      setCopiedKeyId(null);
+    }, 2000);
+  };
 
   useEffect(() => {
     async function loadAllLogs() {
@@ -301,15 +312,41 @@ export default function LogsPage() {
           <div className={styles.securityContainer}>
             <div className={styles.topSection}>
               <div className={`${styles.scoreCard} glass`}>
-                <div className={styles.scoreCircle} style={{ borderColor: score > 80 ? '#10b981' : (score > 50 ? '#f59e0b' : '#ef4444') }}>
-                  <span className={styles.scoreValue}>{score}</span>
-                  <span className={styles.scoreLabel}>Health Score</span>
+                {/* Cantoneiras HUD Sci-Fi */}
+                <div className={styles.hudCornerTopLeft}></div>
+                <div className={styles.hudCornerTopRight}></div>
+                <div className={styles.hudCornerBottomLeft}></div>
+                <div className={styles.hudCornerBottomRight}></div>
+                
+                {/* Linha de Scanner Animada */}
+                <div className={styles.scanline}></div>
+
+                <div className={styles.scoreCircleContainer}>
+                  <div className={styles.radarRing}></div>
+                  <div className={styles.scoreCircle} style={{ borderColor: score > 80 ? '#10b981' : (score > 50 ? '#f59e0b' : '#ef4444') }}>
+                    <span className={styles.scoreValue}>{score}</span>
+                    <span className={styles.scoreLabel}>Health Score</span>
+                  </div>
                 </div>
+
                 <div className={styles.statusInfo}>
+                  <div className={styles.statusBadgeFuturistic}>
+                    <span className={styles.pulsePoint} style={{ backgroundColor: score > 80 ? '#00ff66' : (score > 50 ? '#ffb700' : '#ff003c') }}></span>
+                    <span>SHIELD STATUS: {score > 80 ? 'ACTIVE & ENCRYPTED' : (score > 50 ? 'WARNING FLAG' : 'BREACH DETECTED')}</span>
+                  </div>
                   <h3>{score > 80 ? 'Sistema Protegido' : (score > 50 ? 'Atenção Necessária' : 'Risco Detectado')}</h3>
                   <p style={{ fontSize: '0.8rem' }}>
-                    {score === 100 ? 'Todos os protocolos de segurança estão operando perfeitamente.' : `Identificamos ${100 - score} pontos de atenção na infraestrutura.`}
+                    {score === 100 ? 'Todos os protocolos de segurança e criptografia estão operando perfeitamente.' : `Identificamos ${100 - score} pontos de atenção na integridade do uplink.`}
                   </p>
+                </div>
+
+                {/* Painel de Diagnóstico Pulsante */}
+                <div className={styles.diagnosticBars}>
+                  <div className={styles.bar} style={{ height: '8px', animationDelay: '0.1s' }}></div>
+                  <div className={styles.bar} style={{ height: '14px', animationDelay: '0.3s' }}></div>
+                  <div className={styles.bar} style={{ height: '5px', animationDelay: '0.2s' }}></div>
+                  <div className={styles.bar} style={{ height: '18px', animationDelay: '0.5s' }}></div>
+                  <div className={styles.bar} style={{ height: '11px', animationDelay: '0.4s' }}></div>
                 </div>
               </div>
 
@@ -341,24 +378,40 @@ export default function LogsPage() {
                     </thead>
                     <tbody>
                     {apiKeys.map(key => (
-                      <tr key={key.id}>
-                        <td>
-                          <div className={styles.keyIdentity}>
-                            <strong className={styles.keyName}>{key.name}</strong>
-                            <span className={styles.clientTag}>{key.clients?.name}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className={styles.secretWrapper}>
-                            <code className={styles.keyCode}>
-                              {showSecretId === key.id ? key.secret : '••••••••••••••••'}
-                            </code>
-                            <button type="button" onClick={() => setShowSecretId(showSecretId === key.id ? null : key.id)}>
-                              {showSecretId === key.id ? <EyeOff size={14} /> : <Eye size={14} />}
-                            </button>
-                          </div>
-                        </td>
-                        <td>
+                       <tr key={key.id}>
+                         <td>
+                           <div className={styles.keyIdentity}>
+                             <strong className={styles.keyName}>{key.name}</strong>
+                             <span className={styles.clientTag}>{key.clients?.name}</span>
+                           </div>
+                         </td>
+                         <td>
+                           <div className={styles.secretWrapper}>
+                             <code className={styles.keyCode}>
+                               {showSecretId === key.id ? key.secret : '••••••••••••••••'}
+                             </code>
+                             <div className={styles.secretActions}>
+                               <button 
+                                 type="button" 
+                                 onClick={() => setShowSecretId(showSecretId === key.id ? null : key.id)}
+                                 title={showSecretId === key.id ? "Ocultar Chave" : "Visualizar Chave"}
+                               >
+                                 {showSecretId === key.id ? <EyeOff size={14} /> : <Eye size={14} />}
+                               </button>
+                               {showSecretId === key.id && (
+                                 <button 
+                                   type="button" 
+                                   className={styles.copyBtn}
+                                   onClick={() => handleCopyKey(key.secret, key.id)}
+                                   title="Copiar Chave"
+                                 >
+                                   {copiedKeyId === key.id ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
+                                 </button>
+                               )}
+                             </div>
+                           </div>
+                         </td>
+                         <td>
                           <span className={`${styles.statusBadge} ${key.status === 'active' ? styles.activeStatus : styles.revokedStatus}`}>
                             {key.status === 'active' ? 'ATIVA' : 'SUSPENSA'}
                           </span>
