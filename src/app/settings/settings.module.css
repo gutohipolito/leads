@@ -880,12 +880,42 @@
   transform: scale(1.1);
 }
 
-.subOptionItem {
-  margin-top: -0.75rem;
-  border-top: none !important;
-  border-radius: 0 0 0.75rem 0.75rem !important;
-  padding-top: 0.25rem !important;
-  background: rgba(var(--foreground-rgb), 0.01) !important;
+.optionItemSound {
+  display: flex;
+  flex-direction: column;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.optionItemSoundHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+}
+
+.soundSelectorRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(var(--foreground-rgb), 0.05);
+  background: rgba(var(--foreground-rgb), 0.01);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .soundSelectorGroup {

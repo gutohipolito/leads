@@ -28,6 +28,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
+import { useRouter } from 'next/navigation';
 
 const soundsList = [
   { id: 'bubble', name: 'Sinal Suave (Bubble)', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
@@ -37,6 +38,7 @@ const soundsList = [
 ];
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,18 +65,32 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('system_users')
-          .select('*')
-          .eq('email', user.email)
-          .single();
-        
-        if (data) {
-          setProfile(data);
-          setNewName(data.name);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
         }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data } = await supabase
+            .from('system_users')
+            .select('*')
+            .eq('email', user.email)
+            .single();
+          
+          if (data) {
+            setProfile(data);
+            setNewName(data.name);
+          }
+        } else {
+          router.push('/login');
+          return;
+        }
+      } catch (err) {
+        router.push('/login');
+        return;
       }
       setLoading(false);
     }
@@ -90,12 +106,21 @@ export default function SettingsPage() {
       const savedSoundType = localStorage.getItem('asthros-sound-type') || 'bubble';
       setSoundType(savedSoundType);
     }
-  }, []);
+  }, [router]);
 
   const loadSecurityData = async () => {
     setLoadingSecurity(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
 
     // 1. Logs de Atividade (Focados em segurança)
     const { data: logs } = await supabase
@@ -332,72 +357,74 @@ export default function SettingsPage() {
                 </div>
               </div>
               
-              <div className={styles.optionItem}>
-                <div className={styles.optionInfo}>
-                  <Bell size={18} />
-                  <div>
-                    <p>Notificações de Som</p>
-                    <span>Alertas sonoros para novos leads</span>
-                  </div>
-                </div>
-                <div className={styles.toggleGroup}>
-                  <button 
-                    className={`${styles.toggleBtn} ${soundEnabled ? styles.toggleActive : ''}`}
-                    onClick={() => toggleSound(true)}
-                  >
-                    Ativado
-                  </button>
-                  <button 
-                    className={`${styles.toggleBtn} ${!soundEnabled ? styles.toggleActiveDanger : ''}`}
-                    onClick={() => toggleSound(false)}
-                  >
-                    Desativado
-                  </button>
-                </div>
-              </div>
-
-              {soundEnabled && (
-                <div className={`${styles.optionItem} ${styles.subOptionItem}`}>
+              <div className={`${styles.optionItemSound} ${soundEnabled ? styles.optionItemSoundExpanded : ''}`}>
+                <div className={styles.optionItemSoundHeader}>
                   <div className={styles.optionInfo}>
-                    <Volume2 size={16} style={{ opacity: 0.7 }} />
+                    <Bell size={18} />
                     <div>
-                      <p style={{ fontSize: '0.85rem' }}>Tipo do Sinal Sonoro</p>
-                      <span style={{ fontSize: '0.75rem' }}>Escolha e teste a melodia de aviso</span>
+                      <p>Notificações de Som</p>
+                      <span>Alertas sonoros para novos leads</span>
                     </div>
                   </div>
-                  <div className={styles.soundSelectorGroup}>
-                    <select 
-                      className={styles.soundSelect}
-                      value={soundType}
-                      onChange={(e) => {
-                        const newType = e.target.value;
-                        setSoundType(newType);
-                        const selected = soundsList.find(s => s.id === newType);
-                        if (selected) {
-                          localStorage.setItem('asthros-sound-type', selected.id);
-                          localStorage.setItem('asthros-sound-url', selected.url);
-                          new Audio(selected.url).play().catch(() => {});
-                        }
-                      }}
-                    >
-                      {soundsList.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
+                  <div className={styles.toggleGroup}>
                     <button 
-                      className={styles.testSoundBtn}
-                      onClick={() => {
-                        const selected = soundsList.find(s => s.id === soundType);
-                        if (selected) {
-                          new Audio(selected.url).play().catch(() => {});
-                        }
-                      }}
+                      className={`${styles.toggleBtn} ${soundEnabled ? styles.toggleActive : ''}`}
+                      onClick={() => toggleSound(true)}
                     >
-                      Testar
+                      Ativado
+                    </button>
+                    <button 
+                      className={`${styles.toggleBtn} ${!soundEnabled ? styles.toggleActiveDanger : ''}`}
+                      onClick={() => toggleSound(false)}
+                    >
+                      Desativado
                     </button>
                   </div>
                 </div>
-              )}
+
+                {soundEnabled && (
+                  <div className={styles.soundSelectorRow}>
+                    <div className={styles.optionInfo}>
+                      <Volume2 size={16} style={{ opacity: 0.7 }} />
+                      <div>
+                        <p style={{ fontSize: '0.85rem' }}>Tipo do Sinal Sonoro</p>
+                        <span style={{ fontSize: '0.75rem' }}>Escolha e teste a melodia de aviso</span>
+                      </div>
+                    </div>
+                    <div className={styles.soundSelectorGroup}>
+                      <select 
+                        className={styles.soundSelect}
+                        value={soundType}
+                        onChange={(e) => {
+                          const newType = e.target.value;
+                          setSoundType(newType);
+                          const selected = soundsList.find(s => s.id === newType);
+                          if (selected) {
+                            localStorage.setItem('asthros-sound-type', selected.id);
+                            localStorage.setItem('asthros-sound-url', selected.url);
+                            new Audio(selected.url).play().catch(() => {});
+                          }
+                        }}
+                      >
+                        {soundsList.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <button 
+                        className={styles.testSoundBtn}
+                        onClick={() => {
+                          const selected = soundsList.find(s => s.id === soundType);
+                          if (selected) {
+                            new Audio(selected.url).play().catch(() => {});
+                          }
+                        }}
+                      >
+                        Testar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className={styles.optionItem}>
                 <div className={styles.optionInfo}>
