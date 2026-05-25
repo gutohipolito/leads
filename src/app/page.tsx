@@ -34,6 +34,8 @@ export default function Home() {
     locationData: [] as any[]
   });
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
+  const [webhooksList, setWebhooksList] = useState<any[]>([]);
+  const [selectedWebhook, setSelectedWebhook] = useState<string>('');
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -62,12 +64,34 @@ export default function Home() {
             setImpersonatedName(null);
           }
 
-          const { count: totalLeads } = await supabase
+          // 1. Buscar a lista de webhooks do cliente/sistema
+          let webhooksQuery = supabase
+            .from('webhooks')
+            .select('id, name');
+          
+          if (!(isUserAdmin && !impersonated)) {
+            webhooksQuery = webhooksQuery.eq('client_id', activeClientId);
+          }
+          const { data: webhooks } = await webhooksQuery;
+          if (webhooks) {
+            setWebhooksList(webhooks);
+          }
+
+          // 2. Query de contagem de leads totais (filtrada por webhook se selecionado)
+          let totalLeadsQuery = supabase
             .from('leads')
             .select('*', { count: 'exact', head: true })
-            .neq('source', 'test_simulation')
-            .match(isUserAdmin && !impersonated ? {} : { client_id: activeClientId });
+            .neq('source', 'test_simulation');
+          
+          if (!(isUserAdmin && !impersonated)) {
+            totalLeadsQuery = totalLeadsQuery.eq('client_id', activeClientId);
+          }
+          if (selectedWebhook) {
+            totalLeadsQuery = totalLeadsQuery.eq('webhook_id', selectedWebhook);
+          }
+          const { count: totalLeads } = await totalLeadsQuery;
 
+          // 3. Query de todos os leads para graficos e analytics (filtrada por webhook se selecionado)
           let analyticsQuery = supabase
             .from('leads')
             .select('created_at, source, data')
@@ -75,6 +99,9 @@ export default function Home() {
           
           if (!(isUserAdmin && !impersonated)) {
             analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
+          }
+          if (selectedWebhook) {
+            analyticsQuery = analyticsQuery.eq('webhook_id', selectedWebhook);
           }
           
           const { data: allLeadsRaw } = await analyticsQuery;
@@ -86,6 +113,7 @@ export default function Home() {
             activeClientsCount = count || 0;
           }
 
+          // 4. Query de leads recentes (filtrada por webhook se selecionado)
           let recentLeadsQuery = supabase
             .from('leads')
             .select('*, clients (name)')
@@ -94,6 +122,9 @@ export default function Home() {
 
           if (!(isUserAdmin && !impersonated)) {
             recentLeadsQuery = recentLeadsQuery.eq('client_id', activeClientId);
+          }
+          if (selectedWebhook) {
+            recentLeadsQuery = recentLeadsQuery.eq('webhook_id', selectedWebhook);
           }
           const { data: recentLeads } = await recentLeadsQuery;
 
@@ -132,7 +163,9 @@ export default function Home() {
             }).length || 0;
 
             return { date: dateStr, leads: count };
-          });          const lastLead = recentLeads?.[0];
+          });
+          
+          const lastLead = recentLeads?.[0];
           const lastSignalTime = lastLead ? new Date(lastLead.created_at).getTime() : null;
 
           // Inscrição Realtime para Notificações na Home
@@ -142,7 +175,6 @@ export default function Home() {
               const newLead = payload.new;
               const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
               if (!canSee) return;
-              // Notificação tratada globalmente
             })
             .subscribe();
 
@@ -167,6 +199,31 @@ export default function Home() {
       }
     }
 
+    async function fetchPerformanceData() {
+      let perfQuery = supabase
+        .from('leads')
+        .select('client_id, clients(name)')
+        .neq('source', 'test_simulation');
+      
+      if (selectedWebhook) {
+        perfQuery = perfQuery.eq('webhook_id', selectedWebhook);
+      }
+      
+      const { data } = await perfQuery;
+      if (!data) return [];
+      
+      const counts: any = {};
+      data.forEach(l => {
+        const name = l.clients?.name || 'Desconhecido';
+        counts[name] = (counts[name] || 0) + 1;
+      });
+      
+      return Object.entries(counts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a: any, b: any) => (b.count as number) - (a.count as number))
+        .slice(0, 5);
+    }
+
     function calculateLocationData(leads: any[]) {
       const map: any = {};
       leads.forEach(l => {
@@ -182,28 +239,8 @@ export default function Home() {
         .slice(0, 5);
     }
 
-    async function fetchPerformanceData() {
-      const { data } = await supabase
-        .from('leads')
-        .select('client_id, clients(name)')
-        .neq('source', 'test_simulation');
-      
-      if (!data) return [];
-      
-      const counts: any = {};
-      data.forEach(l => {
-        const name = l.clients?.name || 'Desconhecido';
-        counts[name] = (counts[name] || 0) + 1;
-      });
-      
-      return Object.entries(counts)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a: any, b: any) => (b.count as number) - (a.count as number))
-        .slice(0, 5);
-    }
-
     loadDashboardData();
-  }, []);
+  }, [selectedWebhook]);
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
 
@@ -226,6 +263,24 @@ export default function Home() {
     }>
       <div className={styles.dashboard}>
         
+        {/* Cabeçalho do Dashboard com Filtro por Webhook */}
+        <div className={styles.dashboardHeader}>
+          <h2>{dashboardTitle}</h2>
+          <div className={styles.webhookFilter}>
+            <span className={styles.filterLabel}>Filtrar Terminal:</span>
+            <select 
+              className={styles.webhookSelect}
+              value={selectedWebhook}
+              onChange={(e) => setSelectedWebhook(e.target.value)}
+            >
+              <option value="">Todos os Terminais</option>
+              {webhooksList.map(wh => (
+                <option key={wh.id} value={wh.id}>{wh.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} glass`}>
             <div className={styles.statIcon}><TrendingUp size={20} /></div>
