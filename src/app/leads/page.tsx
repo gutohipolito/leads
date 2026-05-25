@@ -30,7 +30,8 @@ import {
   Trash2,
   Globe,
   Monitor,
-  Cpu
+  Cpu,
+  MapPin
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
