@@ -98,6 +98,15 @@ export default function Header({ title }: HeaderProps) {
     async function initNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Limpeza automática: Remove notificações lidas com mais de 30 dias
+        const dataLimite = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        await supabase
+          .from('notifications')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('read', true)
+          .lt('created_at', dataLimite);
+
         // Carrega as 10 notificações mais recentes do usuário
         const { data } = await supabase
           .from('notifications')
