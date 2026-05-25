@@ -1262,3 +1262,69 @@
   gap: 1rem;
   margin-top: 1rem;
 }
+
+/* WhatsApp Tracker Destination Alert Styles */
+.trackerWarningSection {
+  border: 1px dashed rgba(37, 211, 102, 0.3) !important;
+  background: rgba(37, 211, 102, 0.02) !important;
+  border-radius: 12px;
+  padding: 1.25rem !important;
+}
+
+.trackerContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.trackerPhoneRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(37, 211, 102, 0.05);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(37, 211, 102, 0.1);
+}
+
+.trackerPhoneLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.trackerPhoneValue {
+  font-size: 1.1rem;
+  color: #25d366;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(37, 211, 102, 0.2);
+}
+
+.trackerNotice {
+  display: flex;
+  gap: 0.75rem;
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.trackerNoticeIcon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trackerNotice p {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #d1d5db;
+  margin: 0;
+}
+
+.trackerNotice strong {
+  color: #f59e0b;
+}

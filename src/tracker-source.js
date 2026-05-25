@@ -140,13 +140,33 @@
         return matches;
     }
 
+    function extractWhatsAppPhone(url) {
+        if (!url) return null;
+        try {
+            const wameMatch = url.match(/wa\.me\/([0-9]+)/i);
+            if (wameMatch && wameMatch[1]) {
+                return wameMatch[1];
+            }
+            const phoneMatch = url.match(/[?&]phone=([0-9]+)/i);
+            if (phoneMatch && phoneMatch[1]) {
+                return phoneMatch[1];
+            }
+        } catch (e) {}
+        return null;
+    }
+
     function getTrackingMatch(link) {
         if (!link) return null;
         const url = link.href || '';
         
         // 1. WhatsApp (Sempre ativo por padrão)
         if (isWhatsAppLink(url)) {
-            return { source: 'whatsapp_tracker', label: 'WhatsApp' };
+            const destPhone = extractWhatsAppPhone(url);
+            return { 
+                source: 'whatsapp_tracker', 
+                label: 'WhatsApp', 
+                whatsapp_destination_phone: destPhone 
+            };
         }
 
         // 2. Custom Keywords (ex: 'checkout', 'comprar')
@@ -178,8 +198,8 @@
                      e.target.closest('.button');
         if (!link) return;
 
-        const match = getTrackingMatch(link);
-        if (!match) {
+        const trackerMatch = getTrackingMatch(link);
+        if (!trackerMatch) {
             // Se for link mas não deu match, ignoramos
             if (link.tagName === 'A') {
                 // console.log('[Asthros] Link ignorado.');
@@ -187,11 +207,11 @@
             return;
         }
 
-        // console.log(`%c[Asthros] CAPTURANDO LEAD (${match.label})!`, 'color: #56d7fd; font-weight: bold;');
+        // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
-            source: match.source,
-            name: 'Lead Identificado via ' + match.label,
+            source: trackerMatch.source,
+            name: 'Lead Identificado via ' + trackerMatch.label,
             marketing: { 
                 ...getUtms(), 
                 referrer: (() => {
@@ -207,8 +227,9 @@
             behavior: {
                 time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
                 scroll_depth: maxScroll + '%',
-                button_text: link.innerText.trim() || link.getAttribute('aria-label') || match.label,
-                match_type: match.label
+                button_text: link.innerText.trim() || link.getAttribute('aria-label') || trackerMatch.label,
+                match_type: trackerMatch.label,
+                ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
             },
             device: getDeviceContext(),
             timestamp: new Date().toISOString()

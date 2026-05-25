@@ -34,7 +34,8 @@ import {
   MapPin,
   Copy,
   Check,
-  Send
+  Send,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -48,6 +49,27 @@ const formatPhone = (phone: string | null | undefined): string => {
   if (!phone) return 'N/A';
   const cleaned = phone.replace(/^N\/A\s*/i, '').trim();
   return cleaned || 'N/A';
+};
+
+const getSanitizedLeads = (rawLeads: any[]): any[] => {
+  return rawLeads
+    .filter(l => l.source !== 'test_simulation')
+    .map(l => {
+      if (l.data?.behavior?.whatsapp_destination_phone) {
+        const clone = {
+          ...l,
+          data: {
+            ...l.data,
+            behavior: {
+              ...l.data.behavior
+            }
+          }
+        };
+        delete clone.data.behavior.whatsapp_destination_phone;
+        return clone;
+      }
+      return l;
+    });
 };
 
 export default function LeadsPage() {
@@ -368,7 +390,7 @@ export default function LeadsPage() {
     if (exportType.type === 'pdf') {
       handleExportPDF(password);
     } else {
-      const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
+      const leadsToExport = getSanitizedLeads(filteredLeads);
       if (leadsToExport.length === 0) return;
 
       const webhookName = selectedWebhookId 
@@ -410,7 +432,7 @@ export default function LeadsPage() {
   };
 
   const handleExportPDF = async (password: string | null) => {
-    const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
+    const leadsToExport = getSanitizedLeads(filteredLeads);
     if (leadsToExport.length === 0) return;
 
     // No jsPDF moderno, a criptografia deve ser passada no construtor
@@ -950,6 +972,32 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Canal/Atendente de Destino Rastreado (Apenas para Rastreio) */}
+                {selectedLead.data?.behavior?.whatsapp_destination_phone && (
+                  <div className={`${styles.detailSection} ${styles.trackerWarningSection}`}>
+                    <div className={styles.sectionHeader}>
+                      <MessageCircle size={16} className={styles.sectionIcon} style={{ color: '#25D366' }} />
+                      <h4>WhatsApp de Destino Rastreado</h4>
+                    </div>
+                    <div className={styles.trackerContainer}>
+                      <div className={styles.trackerPhoneRow}>
+                        <span className={styles.trackerPhoneLabel}>Número Destino:</span>
+                        <strong className={styles.trackerPhoneValue}>
+                          +{selectedLead.data.behavior.whatsapp_destination_phone}
+                        </strong>
+                      </div>
+                      <div className={styles.trackerNotice}>
+                        <AlertTriangle size={14} className={styles.trackerNoticeIcon} />
+                        <p>
+                          <strong>Atenção:</strong> Este número pertence ao atendente/empresa do link clicado no site. 
+                          É utilizado <strong>apenas para rastreamento</strong> (identificação do canal de destino se houver mais de um botão no site) 
+                          e <strong>não</strong> representa o telefone de contato deste lead.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Seção de Marketing (UTMs) */}
                 {(selectedLead.data?.marketing || selectedLead.data?.utm_source) && (
