@@ -177,7 +177,7 @@ export default function LeadsPage() {
             setSelectedClientId(impData.id);
           }
 
-          let leadsQuery = supabase.from('leads').select('*, webhooks(field_mapping)').order('created_at', { ascending: false });
+          let leadsQuery = supabase.from('leads').select('*, webhooks(name, field_mapping)').order('created_at', { ascending: false });
           if (activeClientId) {
             leadsQuery = leadsQuery.eq('client_id', activeClientId);
           }
@@ -276,13 +276,20 @@ export default function LeadsPage() {
     } else {
       const leadsToExport = filteredLeads.filter(l => l.source !== 'test_simulation');
       if (leadsToExport.length === 0) return;
+
+      const webhookName = selectedWebhookId 
+        ? currentClient?.webhooks?.find((w: any) => w.id === selectedWebhookId)?.name 
+        : (currentClient?.webhooks?.length === 1 ? currentClient.webhooks[0].name : 'Todos');
+      
+      const formattedWebhookName = webhookName ? webhookName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'todos';
+      const formattedClientName = (currentClient?.name || 'asthros').toLowerCase().replace(/[^a-z0-9]/g, '_');
       
       const content = exportType.type === 'csv' ? convertToCSV(leadsToExport) : JSON.stringify(leadsToExport, null, 2);
       const blob = new Blob([content], { type: exportType.type === 'csv' ? 'text/csv' : 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.${exportType.type}`;
+      a.download = `leads_${formattedClientName}_${formattedWebhookName}_${new Date().getTime()}.${exportType.type}`;
       a.click();
       logAction('Exportação Realizada', 'lead', undefined, { 
         format: exportType.type, 
@@ -299,9 +306,9 @@ export default function LeadsPage() {
     data.forEach(l => { if (l.data) Object.keys(l.data).forEach(k => dynamicKeys.add(k)); });
     const dynamicKeysArray = Array.from(dynamicKeys);
     const mapping = data[0]?.webhooks?.field_mapping || {};
-    const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
+    const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Terminal/Webhook', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
     const rows = data.map(l => {
-      const base = [l.id, l.name || '', l.email || '', l.phone || '', new Date(l.created_at).toLocaleString('pt-BR')];
+      const base = [l.id, l.name || '', l.email || '', l.phone || '', l.webhooks?.name || 'N/A', new Date(l.created_at).toLocaleString('pt-BR')];
       const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
       return [...base, ...extra].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
     });
@@ -321,6 +328,10 @@ export default function LeadsPage() {
         userPermissions: ["print", "modify", "copy", "annot-forms"]
       } : undefined
     });
+
+    const webhookName = selectedWebhookId 
+      ? currentClient?.webhooks?.find((w: any) => w.id === selectedWebhookId)?.name 
+      : (currentClient?.webhooks?.length === 1 ? currentClient.webhooks[0].name : 'Todos');
 
     // 1. Cabeçalho Personalizado (Ajustado para Landscape - 297mm de largura)
     doc.setFillColor(10, 20, 35);
@@ -351,8 +362,9 @@ export default function LeadsPage() {
     doc.text('Relatório de Leads', 282, 16, { align: 'right' });
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 282, 24, { align: 'right' });
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 282, 30, { align: 'right' });
+    doc.text(`Cliente: ${currentClient?.name || 'Geral'}`, 282, 22, { align: 'right' });
+    doc.text(`Terminal: ${webhookName || 'Todos'}`, 282, 28, { align: 'right' });
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 282, 34, { align: 'right' });
 
     const whatsappLeads = leadsToExport.filter(l => l.source === 'whatsapp_tracker');
     const formLeads = leadsToExport.filter(l => l.source !== 'whatsapp_tracker');
@@ -454,7 +466,9 @@ export default function LeadsPage() {
       doc.text(`Página ${i} de ${pageCount}`, 260, 200);
     }
 
-    doc.save(`relatorio_leads_${currentClient?.name || 'asthros'}_${new Date().getTime()}.pdf`);
+    const formattedWebhookName = webhookName ? webhookName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'todos';
+    const formattedClientName = (currentClient?.name || 'asthros').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    doc.save(`relatorio_leads_${formattedClientName}_${formattedWebhookName}_${new Date().getTime()}.pdf`);
     logAction('Exportação Realizada', 'lead', undefined, { 
       format: 'pdf', 
       count: leadsToExport.length, 
