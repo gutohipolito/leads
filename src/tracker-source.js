@@ -25,6 +25,35 @@
         return;
     }
 
+    function saveUtmsToStorage() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const utmsToSave = {};
+            let hasNewUtms = false;
+
+            ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
+                const val = urlParams.get(`utm_${key}`);
+                if (val) {
+                    utmsToSave[key] = val;
+                    hasNewUtms = true;
+                }
+            });
+
+            if (hasNewUtms) {
+                sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
+                if (!sessionStorage.getItem('asthros_referrer')) {
+                    sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
+                }
+            } else {
+                if (!sessionStorage.getItem('asthros_referrer')) {
+                    sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
+                }
+            }
+        } catch (e) {}
+    }
+
+    saveUtmsToStorage();
+
     /*
     console.log('[Asthros] Configuração Carregada:', {
         clientId: config.clientId,
@@ -44,22 +73,47 @@
         if (scrollPercent > maxScroll) maxScroll = Math.round(scrollPercent);
     }, { passive: true });
 
+    function getSourceFromReferrer(ref) {
+        if (!ref || ref === 'direto') return 'direto';
+        const lowerRef = ref.toLowerCase();
+        if (lowerRef.includes('google.com')) return 'google';
+        if (lowerRef.includes('facebook.com')) return 'facebook';
+        if (lowerRef.includes('instagram.com')) return 'instagram';
+        return 'referência';
+    }
+
     function getUtms() {
+        let utms = {};
+        
+        // 1. Tenta obter da URL atual
         const urlParams = new URLSearchParams(window.location.search);
-        const utms = {};
+        let hasUrlUtms = false;
         ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
             const val = urlParams.get(`utm_${key}`);
-            if (val) utms[key] = val;
+            if (val) {
+                utms[key] = val;
+                hasUrlUtms = true;
+            }
         });
-        
-        // Fallback para tráfego direto/orgânico se não houver UTMs
+
+        // 2. Se não tiver na URL atual, recupera do sessionStorage
+        if (!hasUrlUtms) {
+            try {
+                const stored = sessionStorage.getItem('asthros_utms');
+                if (stored) {
+                    utms = JSON.parse(stored);
+                }
+            } catch (e) {}
+        }
+
+        // 3. Fallback se não houver UTM em lugar nenhum
         if (Object.keys(utms).length === 0) {
-            const ref = document.referrer;
-            if (!ref) utms.source = 'direto';
-            else if (ref.includes('google.com')) utms.source = 'google';
-            else if (ref.includes('facebook.com')) utms.source = 'facebook';
-            else if (ref.includes('instagram.com')) utms.source = 'instagram';
-            else utms.source = 'referência';
+            try {
+                const storedReferrer = sessionStorage.getItem('asthros_referrer');
+                utms.source = getSourceFromReferrer(storedReferrer || document.referrer);
+            } catch (e) {
+                utms.source = getSourceFromReferrer(document.referrer);
+            }
         }
         
         return utms;
@@ -132,7 +186,13 @@
             name: 'Lead Identificado via ' + match.label,
             marketing: { 
                 ...getUtms(), 
-                referrer: document.referrer || 'direto',
+                referrer: (() => {
+                    try {
+                        return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
+                    } catch(e) {
+                        return document.referrer || 'direto';
+                    }
+                })(),
                 page_title: document.title,
                 page_url: window.location.href
             },
