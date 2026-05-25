@@ -329,7 +329,7 @@ export default function LogsPage() {
                 </div>
 
                 <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+                  <table className={styles.keysTable}>
                     <thead>
                       <tr>
                         <th>Nome / Cliente</th>
@@ -423,19 +423,6 @@ export default function LogsPage() {
                 <ShieldCheck size={12} />
                 <span>ATIVO E MONITORADO</span>
               </div>
-            </section>
-
-            <section className={`${styles.configCard} glass`}>
-              <div className={styles.configHeader}>
-                <div className={styles.iconCircle}><ShieldAlert size={18} /></div>
-                <h4>Modo Pânico</h4>
-              </div>
-              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                Suspende imediatamente todos os webhooks em caso de ataque coordenado.
-              </p>
-              <button type="button" className={styles.actionBtn} style={{ width: '100%', padding: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', fontWeight: 800 }}>
-                ATIVAR MODO PÂNICO
-              </button>
             </section>
           </div>
         </div>

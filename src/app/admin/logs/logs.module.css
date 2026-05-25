@@ -588,7 +588,7 @@
 
 .keysTable th {
   text-align: left;
-  padding: 1rem;
+  padding: 1.1rem 1rem;
   color: var(--muted-foreground);
   font-size: 0.8rem;
   font-weight: 600;
@@ -596,7 +596,7 @@
 }
 
 .keysTable td {
-  padding: 1rem;
+  padding: 1.3rem 1rem;
   border-bottom: 1px solid rgba(var(--foreground-rgb), 0.03);
   font-size: 0.85rem;
 }
@@ -647,7 +647,7 @@
 
 .firewallGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
 }
 
