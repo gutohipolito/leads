@@ -748,11 +748,23 @@
   z-index: 1000;
   display: flex;
   justify-content: flex-end;
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+  }
+  to {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+  }
 }
 
 .drawer {
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   height: 100%;
   background: var(--card);
   border-left: 1px solid rgba(var(--foreground-rgb), 0.1);
@@ -829,6 +841,23 @@
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
+}
+
+.drawerBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drawerBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.drawerBody::-webkit-scrollbar-thumb {
+  background: rgba(var(--foreground-rgb), 0.15);
+  border-radius: 10px;
+}
+
+.drawerBody::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
 .detailSection h4 {
@@ -1124,6 +1153,38 @@
 .customField {
   color: var(--primary);
   font-weight: 700;
+}
+
+.copyRowBtn {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.jsonRow:hover .copyRowBtn {
+  opacity: 0.6;
+}
+
+.copyRowBtn:hover {
+  color: var(--primary) !important;
+  opacity: 1 !important;
+}
+
+.jsonValue a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: all 0.2s;
+}
+
+.jsonValue a:hover {
+  color: #3ebef5;
 }
 
 .modalOverlay {

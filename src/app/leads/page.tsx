@@ -31,7 +31,10 @@ import {
   Globe,
   Monitor,
   Cpu,
-  MapPin
+  MapPin,
+  Copy,
+  Check,
+  Send
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -52,6 +55,14 @@ export default function LeadsPage() {
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
+  
+  const handleCopyRowValue = (key: string, value: any) => {
+    const textToCopy = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedRowKey(key);
+    setTimeout(() => setCopiedRowKey(null), 2000);
+  };
   
   // Filtros
   const [filterName, setFilterName] = useState('');
@@ -879,7 +890,25 @@ export default function LeadsPage() {
                               </button>
                             )}
                           </div>
-                          <span className={styles.jsonValue}>{typeof val === 'object' ? JSON.stringify(val) : String(val)}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '60%', justifyContent: 'flex-end' }}>
+                            <span className={styles.jsonValue}>
+                              {typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://')) ? (
+                                <a href={val} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{val}</a>
+                              ) : (
+                                typeof val === 'object' ? JSON.stringify(val) : String(val)
+                              )}
+                            </span>
+                            <button 
+                              className={styles.copyRowBtn} 
+                              title="Copiar valor"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyRowValue(key, val);
+                              }}
+                            >
+                              {copiedRowKey === key ? <Check size={14} color="#2ecc71" /> : <Copy size={14} />}
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -888,18 +917,24 @@ export default function LeadsPage() {
               </div>
               <div className={styles.drawerFooter}>
                 <div className={styles.drawerActionsLeft}>
-                  <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>Exportar para CRM</button>
+                  <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>
+                    <Send size={16} />
+                    <span>Exportar para CRM</span>
+                  </button>
                   {isAdmin && (
                     <button 
                       className={styles.deleteBtn} 
                       onClick={() => setDeleteModal({ show: true, leadId: selectedLead.id })}
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                       <span>Excluir Lead</span>
                     </button>
                   )}
                 </div>
-                <button className={styles.secondaryBtn} onClick={() => setSelectedLead(null)}>Fechar</button>
+                <button className={styles.secondaryBtn} onClick={() => setSelectedLead(null)}>
+                  <Check size={16} />
+                  <span>Fechar</span>
+                </button>
               </div>
             </div>
           </div>
