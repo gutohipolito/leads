@@ -128,7 +128,7 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
           setUnreadCount(count || 0);
         }
 
-        // Registrar o canal do Supabase Realtime filtrando pelo user_id do usuário logado
+        // Registrar o canal do Supabase Realtime e filtrar o user_id no JavaScript
         channel = supabase
           .channel(`notifications-${user.id}`)
           .on(
@@ -136,11 +136,11 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
             {
               event: 'INSERT',
               schema: 'public',
-              table: 'notifications',
-              filter: `user_id=eq.${user.id}`
+              table: 'notifications'
             },
             (payload) => {
               const newNotif = payload.new;
+              if (newNotif.user_id !== user.id) return;
               
               setNotifications(prev => {
                 if (prev.some(n => n.id === newNotif.id)) return prev;
