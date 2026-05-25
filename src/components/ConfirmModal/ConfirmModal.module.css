@@ -81,6 +81,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .cancelBtn:hover {
@@ -95,6 +96,7 @@
   cursor: pointer;
   border: none;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .confirmBtn.info { background: var(--primary); color: var(--background); }

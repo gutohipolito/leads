@@ -55,6 +55,8 @@ export default function LogsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [keyToRevoke, setKeyToRevoke] = useState<any>(null);
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [isRegenerateConfirmOpen, setIsRegenerateConfirmOpen] = useState(false);
+  const [keyToRegenerate, setKeyToRegenerate] = useState<any>(null);
 
   const handleCopyKey = (secret: string, keyId: string) => {
     navigator.clipboard.writeText(secret);
@@ -122,7 +124,10 @@ export default function LogsPage() {
     loadAllLogs();
   }, []);
 
-  const handleRegenerateSecret = async (id: string, name: string) => {
+  const handleRegenerateSecret = async () => {
+    if (!keyToRegenerate) return;
+    const { id, name } = keyToRegenerate;
+
     const newSecret = Array.from(crypto.getRandomValues(new Uint8Array(16)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
@@ -141,9 +146,8 @@ export default function LogsPage() {
         .select('id, name, secret, status, created_at, clients(name)')
         .order('created_at', { ascending: false });
       if (webhooks) setApiKeys(webhooks);
-
-      alert('Segredo da API atualizado com sucesso!');
     }
+    setIsRegenerateConfirmOpen(false);
   };
 
   const handleRevokeKey = async () => {
@@ -312,6 +316,9 @@ export default function LogsPage() {
           <div className={styles.securityContainer}>
             <div className={styles.topSection}>
               <div className={`${styles.scoreCard} glass`}>
+                {/* Imagem de Fundo de IA */}
+                <div className={styles.cardBgImage} style={{ backgroundImage: 'url("/cyber_ai_bg.png")' }}></div>
+
                 {/* Cantoneiras HUD Sci-Fi */}
                 <div className={styles.hudCornerTopLeft}></div>
                 <div className={styles.hudCornerTopRight}></div>
@@ -422,7 +429,10 @@ export default function LogsPage() {
                             <button 
                               type="button"
                               className={styles.iconBtn} 
-                              onClick={() => handleRegenerateSecret(key.id, key.name)}
+                              onClick={() => {
+                                setKeyToRegenerate(key);
+                                setIsRegenerateConfirmOpen(true);
+                              }}
                               title="Regenerar Segredo"
                             >
                               <RefreshCw size={14} />
@@ -661,6 +671,16 @@ export default function LogsPage() {
           type="danger"
           onConfirm={handleRevokeKey}
           onCancel={() => setIsConfirmOpen(false)}
+        />
+
+        <ConfirmModal 
+          isOpen={isRegenerateConfirmOpen}
+          title="Regenerar Chave de API"
+          message={`Tem certeza que deseja regenerar o segredo do webhook "${keyToRegenerate?.name}"? A chave antiga deixará de funcionar imediatamente nas integrações.`}
+          confirmLabel="Regenerar Segredo"
+          type="warning"
+          onConfirm={handleRegenerateSecret}
+          onCancel={() => setIsRegenerateConfirmOpen(false)}
         />
       </div>
     </DashboardLayout>
