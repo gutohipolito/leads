@@ -59,7 +59,7 @@ code = code
   .trim();
 
 // 4. Adicionar a diretiva sourceURL no final
-code += '\n//# sourceURL=site-performance-optimizer.js';
+code += '\n//# sourceURL=analytics-helper.js';
 
 fs.writeFileSync(outputPath, code, 'utf8');
 console.log('Tracker ofuscado e minificado com sucesso em public/tracker.js');
