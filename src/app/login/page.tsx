@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import styles from './login.module.css';
@@ -10,7 +10,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [videoSrc, setVideoSrc] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    // Dispara o carregamento do vídeo apenas após a página estar disponível
+    const timer = setTimeout(() => {
+      setVideoSrc('/3141208-uhd_3840_2160_25fps.mp4');
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,15 +55,17 @@ export default function LoginPage() {
 
   return (
     <div className={styles.container}>
-      <video 
-        autoPlay 
-        muted 
-        loop 
-        playsInline 
-        className={styles.videoBackground}
-      >
-        <source src="/3141208-uhd_3840_2160_25fps.mp4" type="video/mp4" />
-      </video>
+      {videoSrc && (
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline 
+          className={styles.videoBackground}
+        >
+          <source src={videoSrc} type="video/mp4" />
+        </video>
+      )}
       <div className={styles.videoOverlay} />
       <div className={styles.backgroundGlow} />
       

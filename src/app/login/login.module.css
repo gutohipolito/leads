@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #020617;
+  background: radial-gradient(circle at 80% 20%, rgba(0, 242, 255, 0.04) 0%, #020617 60%);
   position: relative;
   overflow: hidden;
 }
