@@ -557,29 +557,18 @@ export default function WebhooksManagePage() {
 
                   <div className={styles.testArea}>
                     <div className={styles.testSection}>
-                        <button 
-                          className={styles.labBtn} 
-                          onClick={openLab}
-                        >
-                          <Terminal size={14} />
-                          <span>Abrir Laboratório</span>
-                        </button>
-                      
+                      <div className={styles.testHeader}>
+                        <label>Simular Entrada de Leads (Uplink)</label>
+                        <p>Injete leads de teste para validar o recebimento de dados e alertas no painel.</p>
+                      </div>
                       <button 
-                        className={`${styles.testBtn} ${styles[testStatus.status]}`}
-                        onClick={() => handleTestWebhook()}
-                        disabled={testStatus.status === 'loading'}
+                        type="button"
+                        className={styles.testBtn} 
+                        onClick={openLab}
                       >
-                        {testStatus.status === 'loading' ? <RefreshCcw size={16} className={styles.spin} /> : <Play size={16} />}
-                        <span>{testStatus.status === 'loading' ? 'Disparando...' : 'Simular Sinal de Teste'}</span>
+                        <Terminal size={16} />
+                        <span>Abrir Laboratório de Teste</span>
                       </button>
-
-                      {testStatus.status !== 'idle' && (
-                        <div className={`${styles.testFeedback} ${styles[testStatus.status]}`}>
-                          {testStatus.status === 'success' ? <CheckCircle2 size={16} /> : <Info size={16} />}
-                          <span>{testStatus.message}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
