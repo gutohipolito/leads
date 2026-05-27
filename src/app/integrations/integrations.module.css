@@ -239,25 +239,25 @@
 .editLogoOverlay {
   position: absolute;
   inset: 0;
-  z-index: 10;
-  background: transparent;
+  z-index: 100;
+  background: rgba(4, 8, 16, 0.75);
+  backdrop-filter: blur(2.5px);
   color: #56d7fd;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  opacity: 0.55;
+  opacity: 0;
+  pointer-events: none;
   transition: all 0.2s ease-in-out;
-  border: none;
+  border: 1px solid rgba(86, 215, 253, 0.35);
+  box-shadow: inset 0 0 8px rgba(86, 215, 253, 0.2);
   cursor: pointer;
 }
 
-.providerLogoContainer:hover .editLogoOverlay {
+.providerCard:hover .editLogoOverlay {
   opacity: 1;
-  background: rgba(4, 8, 16, 0.75);
-  backdrop-filter: blur(2.5px);
-  border: 1px solid rgba(86, 215, 253, 0.35);
-  box-shadow: inset 0 0 8px rgba(86, 215, 253, 0.2);
+  pointer-events: auto;
 }
 
 .customLogoImg {

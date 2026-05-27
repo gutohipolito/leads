@@ -26,11 +26,11 @@ import Loader from '@/components/Loader/Loader';
 
 // Componentes SVG Inline Oficiais com Estilo Premium Geométrico robusto
 const HubSpotLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#FF7A59', filter: 'drop-shadow(0 0 6px rgba(255, 122, 89, 0.4))', display: 'block' }}>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(255, 122, 89, 0.4))', display: 'block' }}>
     <circle cx="12" cy="12" r="3" fill="#FF7A59" />
-    <line x1="12" y1="9" x2="12" y2="4" stroke="#FF7A59" strokeWidth="2.5" />
-    <line x1="9.5" y1="13.5" x2="5" y2="16" stroke="#FF7A59" strokeWidth="2.5" />
-    <line x1="14.5" y1="13.5" x2="19" y2="16" stroke="#FF7A59" strokeWidth="2.5" />
+    <line x1="12" y1="9" x2="12" y2="4" stroke="#FF7A59" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="9.5" y1="13.5" x2="5" y2="16" stroke="#FF7A59" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="14.5" y1="13.5" x2="19" y2="16" stroke="#FF7A59" strokeWidth="2.5" strokeLinecap="round" />
     <circle cx="12" cy="4" r="2.5" fill="#FF7A59" />
     <circle cx="5" cy="16" r="2.5" fill="#FF7A59" />
     <circle cx="19" cy="16" r="2.5" fill="#FF7A59" />
@@ -38,18 +38,18 @@ const HubSpotLogo = () => (
 );
 
 const ActiveCampaignLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3572ef', filter: 'drop-shadow(0 0 6px rgba(53, 114, 239, 0.4))', display: 'block' }}>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(53, 114, 239, 0.4))', display: 'block' }}>
     <circle cx="6" cy="18" r="3" fill="#3572ef" />
     <circle cx="12" cy="12" r="3" fill="#3572ef" />
     <circle cx="18" cy="6" r="3" fill="#3572ef" />
-    <line x1="8.1" y1="15.9" x2="9.9" y2="14.1" stroke="#3572ef" />
-    <line x1="14.1" y1="11.9" x2="15.9" y2="10.1" stroke="#3572ef" />
+    <line x1="8.1" y1="15.9" x2="9.9" y2="14.1" stroke="#3572ef" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="14.1" y1="11.9" x2="15.9" y2="10.1" stroke="#3572ef" strokeWidth="2.5" strokeLinecap="round" />
   </svg>
 );
 
 const WhatsAppLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25D366', filter: 'drop-shadow(0 0 6px rgba(37, 211, 102, 0.4))', display: 'block' }}>
-    <path d="M12.004 2C6.48 2 2 6.48 2 12.004c0 1.76.46 3.42 1.27 4.88L2 22l5.3-.96c1.4.77 3 1.2 4.7 1.2 5.52 0 10-4.48 10-10.004C22.004 6.48 17.524 2 12.004 2zM17.2 16.3c-.2.6-.9 1.1-1.6 1.3-.5.1-1.1.2-3.1-.6-2.5-1.1-4.1-3.7-4.2-3.9 0-.1-.8-1.1-.8-2.1 0-1 .5-1.5.7-1.7.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .5.4.2.5.7 1.7.8 1.9.1.1.1.3 0 .4-.1.2-.2.3-.4.5-.2.2-.3.3-.5.5-.2.2-.1.4.1.7.4.7.9 1.3 1.6 1.9.9.8 1.6 1 1.9 1.2.3.1.5.1.7-.1.2-.2.8-.9.9-1.2.1-.3.3-.3.6-.2.3.1 1.9.9 2 1 .1.1.2.2.2.3 0 .3-.1.9-.3 1.5z" />
+  <svg width="28" height="28" viewBox="0 0 24 24" style={{ filter: 'drop-shadow(0 0 6px rgba(37, 211, 102, 0.4))', display: 'block' }}>
+    <path d="M12.004 2C6.48 2 2 6.48 2 12.004c0 1.76.46 3.42 1.27 4.88L2 22l5.3-.96c1.4.77 3 1.2 4.7 1.2 5.52 0 10-4.48 10-10.004C22.004 6.48 17.524 2 12.004 2zM17.2 16.3c-.2.6-.9 1.1-1.6 1.3-.5.1-1.1.2-3.1-.6-2.5-1.1-4.1-3.7-4.2-3.9 0-.1-.8-1.1-.8-2.1 0-1 .5-1.5.7-1.7.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .5.4.2.5.7 1.7.8 1.9.1.1.1.3 0 .4-.1.2-.2.3-.4.5-.2.2-.3.3-.5.5-.2.2-.1.4.1.7.4.7.9 1.3 1.6 1.9.9.8 1.6 1 1.9 1.2.3.1.5.1.7-.1.2-.2.8-.9.9-1.2.1-.3.3-.3.6-.2.3.1 1.9.9 2 1 .1.1.2.2.2.3 0 .3-.1.9-.3 1.5z" fill="#25D366" />
   </svg>
 );
 
@@ -65,20 +65,20 @@ const RDStationLogo = () => (
 );
 
 const PipedriveLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#17B877', filter: 'drop-shadow(0 0 6px rgba(23, 184, 119, 0.4))', display: 'block' }}>
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" fill="#17B877" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(23, 184, 119, 0.4))', display: 'block' }}>
+    <path d="M2 3h20l-8 9v7l-4 2v-9L2 3z" fill="#17B877" stroke="#17B877" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const PipeRunLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3B82F6', filter: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))', display: 'block' }}>
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3B82F6" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))', display: 'block' }}>
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3B82F6" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const KommoLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#8A2BE2', filter: 'drop-shadow(0 0 6px rgba(138, 43, 226, 0.4))', display: 'block' }}>
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="#8A2BE2" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(138, 43, 226, 0.4))', display: 'block' }}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="#8A2BE2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <circle cx="8" cy="10" r="1.5" fill="#8A2BE2" />
     <circle cx="12" cy="10" r="1.5" fill="#8A2BE2" />
     <circle cx="16" cy="10" r="1.5" fill="#8A2BE2" />
@@ -86,21 +86,10 @@ const KommoLogo = () => (
 );
 
 const LeadloversLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#E11D48', filter: 'drop-shadow(0 0 6px rgba(225, 29, 72, 0.4))', display: 'block' }}>
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#E11D48" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(225, 29, 72, 0.4))', display: 'block' }}>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#E11D48" stroke="#E11D48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
-
-const defaultProviderLogos: Record<string, string> = {
-  hubspot: 'https://logo.clearbit.com/hubspot.com',
-  activecampaign: 'https://logo.clearbit.com/activecampaign.com',
-  zapi: 'https://logo.clearbit.com/whatsapp.com',
-  rdstation: 'https://logo.clearbit.com/rdstation.com',
-  pipedrive: 'https://logo.clearbit.com/pipedrive.com',
-  piperun: 'https://logo.clearbit.com/crmpiperun.com',
-  kommo: 'https://logo.clearbit.com/kommo.com',
-  leadlovers: 'https://logo.clearbit.com/leadlovers.com'
-};
 
 interface Integration {
   id: string;
@@ -177,16 +166,11 @@ export default function IntegrationsPage() {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
   };
 
-  // Estados e Funções para Ícones Customizados nas Integrações
+    // Estados e Funções para Ícones Customizados nas Integrações
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [selectedIntegrationForIcon, setSelectedIntegrationForIcon] = useState<Integration | null>(null);
   const [customIconUrlInput, setCustomIconUrlInput] = useState('');
   const [failedCustomLogos, setFailedCustomLogos] = useState<Record<string, boolean>>({});
-  const [failedDefaultLogos, setFailedDefaultLogos] = useState<Record<string, boolean>>({});
-
-  const handleDefaultLogoError = (type: string) => {
-    setFailedDefaultLogos(prev => ({ ...prev, [type]: true }));
-  };
 
   const handleSaveCustomIcon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,19 +224,6 @@ export default function IntegrationsPage() {
           alt={type} 
           className={styles.customLogoImg} 
           onError={() => handleCustomLogoError(integration.id)} 
-        />
-      );
-    }
-
-    // Tentar renderizar o logotipo colorido oficial da marca via Clearbit
-    const defaultUrl = defaultProviderLogos[type];
-    if (defaultUrl && !failedDefaultLogos[type]) {
-      return (
-        <img 
-          src={defaultUrl} 
-          alt={type} 
-          className={styles.customLogoImg} 
-          onError={() => handleDefaultLogoError(type)} 
         />
       );
     }
