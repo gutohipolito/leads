@@ -189,13 +189,11 @@ export default function IntegrationsPage() {
       alert('Erro ao atualizar ícone: ' + error.message);
     } else {
       setIntegrations(prev => prev.map(item => item.id === selectedIntegrationForIcon.id ? data : item));
-      if (data.type) {
-        setFailedCustomLogos(prev => {
-          const next = { ...prev };
-          delete next[data.type];
-          return next;
-        });
-      }
+      setFailedCustomLogos(prev => {
+        const next = { ...prev };
+        delete next[selectedIntegrationForIcon.id];
+        return next;
+      });
       setIsIconModalOpen(false);
       setSelectedIntegrationForIcon(null);
       setCustomIconUrlInput('');
@@ -209,20 +207,20 @@ export default function IntegrationsPage() {
     setIsIconModalOpen(true);
   };
 
-  const handleCustomLogoError = (providerType: string) => {
-    setFailedCustomLogos(prev => ({ ...prev, [providerType]: true }));
+  const handleCustomLogoError = (integrationId: string) => {
+    setFailedCustomLogos(prev => ({ ...prev, [integrationId]: true }));
   };
 
   // Função para renderizar o logotipo do provedor (oficial ou customizado via imagem com fallback)
   const renderProviderLogo = (type: string, integration?: Integration) => {
     const customIconUrl = integration?.config?.customIconUrl;
-    if (customIconUrl && !failedCustomLogos[type]) {
+    if (customIconUrl && integration?.id && !failedCustomLogos[integration.id]) {
       return (
         <img 
           src={customIconUrl} 
           alt={type} 
           className={styles.customLogoImg} 
-          onError={() => handleCustomLogoError(type)} 
+          onError={() => handleCustomLogoError(integration.id)} 
         />
       );
     }
@@ -511,6 +509,11 @@ export default function IntegrationsPage() {
         sequenceId: configLlSequence.trim(), 
         levelCode: configLlLevel.trim() 
       };
+    }
+
+    // Preservar o ícone customizado se ele já existia no config anterior
+    if (editingIntegration.config?.customIconUrl) {
+      config.customIconUrl = editingIntegration.config.customIconUrl;
     }
 
     const { data, error } = await supabase

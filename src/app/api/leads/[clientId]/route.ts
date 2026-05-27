@@ -181,6 +181,13 @@ export async function POST(
     
     body.lead_score = Math.min(100, leadScore);
 
+    // Salvar memória textual do webhook que originou o lead para persistência histórica
+    body.captured_by = {
+      id: webhook.id,
+      name: webhook.name,
+      url_slug: webhook.url_slug
+    };
+
     const { data: lead, error: insertError } = await supabase
       .from('leads')
       .insert([

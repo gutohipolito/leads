@@ -429,7 +429,8 @@ export default function LeadsPage() {
     const mapping = data[0]?.webhooks?.field_mapping || {};
     const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Terminal/Webhook', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
     const rows = data.map(l => {
-      const base = [l.id, l.name || '', l.email || '', formatPhone(l.phone), l.webhooks?.name || 'N/A', new Date(l.created_at).toLocaleString('pt-BR')];
+      const webhookLabel = l.webhooks?.name || (l.data?.captured_by?.name ? `${l.data.captured_by.name} (Removido)` : 'N/A');
+      const base = [l.id, l.name || '', l.email || '', formatPhone(l.phone), webhookLabel, new Date(l.created_at).toLocaleString('pt-BR')];
       const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
       return [...base, ...extra].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
     });
@@ -873,7 +874,13 @@ export default function LeadsPage() {
                         ) : (lead.source === 'whatsapp_tracker' || lead.source === 'custom_tracker') ? (
                           <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>{lead.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Botão'}</span></div>
                         ) : (
-                          <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', display: 'block', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {lead.webhooks?.name || lead.data?.captured_by?.name || ''}
+                              {(!lead.webhooks?.name && lead.data?.captured_by?.name) ? ' (Removido)' : ''}
+                            </span>
+                          </div>
                         )}
                       </td>
                       <td>
@@ -1011,6 +1018,13 @@ export default function LeadsPage() {
                       <p>{new Date(selectedLead.created_at).toLocaleString('pt-BR')}</p>
                     </div>
                     <div className={styles.detailItem}>
+                      <label>Terminal (Webhook)</label>
+                      <p>
+                        {selectedLead.webhooks?.name || selectedLead.data?.captured_by?.name || 'N/A'}
+                        {(!selectedLead.webhooks?.name && selectedLead.data?.captured_by?.name) ? ' (Removido)' : ''}
+                      </p>
+                    </div>
+                    <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
                       <label>Página de Origem</label>
                       <p className={styles.truncateText} title={selectedLead.data?.marketing?.page_title || selectedLead.data?.behavior?.page_url}>
                         {selectedLead.data?.marketing?.page_title || 'Página do Site'}
