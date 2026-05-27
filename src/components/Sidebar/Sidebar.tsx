@@ -87,6 +87,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
     { name: 'Integrações', path: '/integrations', icon: Plug },
   ].filter(item => {
+    if (item.name === 'Integrações' && !isAdmin) {
+      return false;
+    }
     if (isImpersonating) {
       return ['Geral', 'Leads', 'Integrações'].includes(item.name);
     }

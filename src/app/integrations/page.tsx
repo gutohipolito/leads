@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './integrations.module.css';
 import { 
@@ -15,7 +16,8 @@ import {
   Check,
   Send,
   Save,
-  MessageSquare
+  MessageSquare,
+  Image as ImageIcon
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -99,6 +101,7 @@ interface Integration {
 }
 
 export default function IntegrationsPage() {
+  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userClientId, setUserClientId] = useState<string | null>(null);
   const [clients, setClients] = useState<any[]>([]);
@@ -160,6 +163,84 @@ export default function IntegrationsPage() {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
   };
 
+  // Estados e Funções para Ícones Customizados nas Integrações
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [selectedIntegrationForIcon, setSelectedIntegrationForIcon] = useState<Integration | null>(null);
+  const [customIconUrlInput, setCustomIconUrlInput] = useState('');
+  const [failedCustomLogos, setFailedCustomLogos] = useState<Record<string, boolean>>({});
+
+  const handleSaveCustomIcon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedIntegrationForIcon) return;
+
+    const updatedConfig = {
+      ...(selectedIntegrationForIcon.config || {}),
+      customIconUrl: customIconUrlInput.trim() || null
+    };
+
+    const { data, error } = await supabase
+      .from('integrations')
+      .update({ config: updatedConfig })
+      .eq('id', selectedIntegrationForIcon.id)
+      .select()
+      .single();
+
+    if (error) {
+      alert('Erro ao atualizar ícone: ' + error.message);
+    } else {
+      setIntegrations(prev => prev.map(item => item.id === selectedIntegrationForIcon.id ? data : item));
+      if (data.type) {
+        setFailedCustomLogos(prev => {
+          const next = { ...prev };
+          delete next[data.type];
+          return next;
+        });
+      }
+      setIsIconModalOpen(false);
+      setSelectedIntegrationForIcon(null);
+      setCustomIconUrlInput('');
+      await logAction('Ícone de Integração Customizado', 'webhook', data.id, { name: data.name, type: data.type });
+    }
+  };
+
+  const openIconModal = (integration: Integration) => {
+    setSelectedIntegrationForIcon(integration);
+    setCustomIconUrlInput(integration.config?.customIconUrl || '');
+    setIsIconModalOpen(true);
+  };
+
+  const handleCustomLogoError = (providerType: string) => {
+    setFailedCustomLogos(prev => ({ ...prev, [providerType]: true }));
+  };
+
+  // Função para renderizar o logotipo do provedor (oficial ou customizado via imagem com fallback)
+  const renderProviderLogo = (type: string, integration?: Integration) => {
+    const customIconUrl = integration?.config?.customIconUrl;
+    if (customIconUrl && !failedCustomLogos[type]) {
+      return (
+        <img 
+          src={customIconUrl} 
+          alt={type} 
+          className={styles.customLogoImg} 
+          onError={() => handleCustomLogoError(type)} 
+        />
+      );
+    }
+
+    switch (type) {
+      case 'webhook': return <Webhook size={24} />;
+      case 'hubspot': return <HubSpotLogo />;
+      case 'activecampaign': return <ActiveCampaignLogo />;
+      case 'zapi': return <WhatsAppLogo />;
+      case 'rdstation': return <RDStationLogo />;
+      case 'pipedrive': return <PipedriveLogo />;
+      case 'piperun': return <PipeRunLogo />;
+      case 'kommo': return <KommoLogo />;
+      case 'leadlovers': return <LeadloversLogo />;
+      default: return <Webhook size={24} />;
+    }
+  };
+
   // Controle de Teste de Conexão
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; duration?: number; response?: string } | null>(null);
@@ -177,6 +258,10 @@ export default function IntegrationsPage() {
             .single();
 
           const isUserAdmin = profile?.role === 'admin';
+          if (!isUserAdmin) {
+            router.push('/leads');
+            return;
+          }
           const clientId = profile?.client_id;
           setIsAdmin(isUserAdmin);
           setUserClientId(clientId);
@@ -545,6 +630,16 @@ export default function IntegrationsPage() {
     }
   };
 
+  const webhookIntegration = integrations.find(i => i.type === 'webhook');
+  const hubspotIntegration = integrations.find(i => i.type === 'hubspot');
+  const activecampaignIntegration = integrations.find(i => i.type === 'activecampaign');
+  const zapiIntegration = integrations.find(i => i.type === 'zapi');
+  const rdstationIntegration = integrations.find(i => i.type === 'rdstation');
+  const pipedriveIntegration = integrations.find(i => i.type === 'pipedrive');
+  const piperunIntegration = integrations.find(i => i.type === 'piperun');
+  const kommoIntegration = integrations.find(i => i.type === 'kommo');
+  const leadloversIntegration = integrations.find(i => i.type === 'leadlovers');
+
   if (loading) return <Loader />;
 
   const showClientSelection = isAdmin && !selectedClientId;
@@ -647,20 +742,34 @@ export default function IntegrationsPage() {
               {/* Webhook Customizado */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(86, 215, 253, 0.1)', color: 'var(--primary)', boxShadow: '0 0 10px rgba(86, 215, 253, 0.2)' }}>
-                    <Webhook size={24} />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(86, 215, 253, 0.1)', color: 'var(--primary)', boxShadow: '0 0 10px rgba(86, 215, 253, 0.2)' }}>
+                      {renderProviderLogo('webhook', webhookIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Webhook Customizado</h3>
+                      {webhookIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(webhookIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'webhook' && i.status === 'active') && (
+                  {webhookIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>Webhook Customizado</h3>
                   <p>Dispare um POST HTTP em formato JSON com todos os dados do lead, jornada de touchpoints e pontuação (lead score) para uma URL externa. Perfeito para disparar fluxos e automatizar processos no **Make.com**, **n8n.io**, **Zapier** ou sistemas internos.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'webhook') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'webhook')!)}>
+                  {webhookIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(webhookIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -668,17 +777,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'webhook') && (
+                  {webhookIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'webhook')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{webhookIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'webhook')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'webhook')!.id, 
-                            integrations.find(i => i.type === 'webhook')!.status
-                          )}
+                          checked={webhookIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(webhookIntegration.id, webhookIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -690,20 +796,34 @@ export default function IntegrationsPage() {
               {/* HubSpot CRM */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(255, 122, 89, 0.1)', color: '#FF7A59', border: '1px solid rgba(255, 122, 89, 0.2)' }}>
-                    <HubSpotLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(255, 122, 89, 0.1)', color: '#FF7A59', border: '1px solid rgba(255, 122, 89, 0.2)' }}>
+                      {renderProviderLogo('hubspot', hubspotIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>HubSpot CRM</h3>
+                      {hubspotIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(hubspotIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'hubspot' && i.status === 'active') && (
+                  {hubspotIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>HubSpot CRM</h3>
                   <p>Envie contatos e informações contextuais do lead diretamente para sua conta do HubSpot CRM. Mapeia automaticamente nome, e-mail e telefone do lead utilizando a API oficial de submissão de formulários.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'hubspot') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'hubspot')!)}>
+                  {hubspotIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(hubspotIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -711,17 +831,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'hubspot') && (
+                  {hubspotIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'hubspot')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{hubspotIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'hubspot')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'hubspot')!.id, 
-                            integrations.find(i => i.type === 'hubspot')!.status
-                          )}
+                          checked={hubspotIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(hubspotIntegration.id, hubspotIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -733,20 +850,34 @@ export default function IntegrationsPage() {
               {/* ActiveCampaign */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(53, 114, 239, 0.1)', color: '#3572ef', border: '1px solid rgba(53, 114, 239, 0.2)' }}>
-                    <ActiveCampaignLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(53, 114, 239, 0.1)', color: '#3572ef', border: '1px solid rgba(53, 114, 239, 0.2)' }}>
+                      {renderProviderLogo('activecampaign', activecampaignIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>ActiveCampaign</h3>
+                      {activecampaignIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(activecampaignIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'activecampaign' && i.status === 'active') && (
+                  {activecampaignIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>ActiveCampaign</h3>
                   <p>Adicione automaticamente os leads capturados como contatos na sua base do ActiveCampaign e vincule-os diretamente a uma lista específica. Ideal para iniciar disparos de fluxos automatizados de e-mails instantaneamente.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'activecampaign') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'activecampaign')!)}>
+                  {activecampaignIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(activecampaignIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -754,17 +885,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'activecampaign') && (
+                  {activecampaignIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'activecampaign')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{activecampaignIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'activecampaign')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'activecampaign')!.id, 
-                            integrations.find(i => i.type === 'activecampaign')!.status
-                          )}
+                          checked={activecampaignIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(activecampaignIntegration.id, activecampaignIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -776,20 +904,34 @@ export default function IntegrationsPage() {
               {/* Z-API (WhatsApp notification) */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
-                    <WhatsAppLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
+                      {renderProviderLogo('zapi', zapiIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>WhatsApp (Z-API)</h3>
+                      {zapiIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(zapiIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'zapi' && i.status === 'active') && (
+                  {zapiIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>WhatsApp Direct (Z-API)</h3>
                   <p>Notifique a equipe de vendas em tempo real no WhatsApp. Envia os dados completos e enriquecidos do lead (como sua temperatura/Lead Score e canais de tráfego) direto para o número do celular do vendedor pelo Z-API.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'zapi') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'zapi')!)}>
+                  {zapiIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(zapiIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -797,17 +939,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'zapi') && (
+                  {zapiIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'zapi')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{zapiIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'zapi')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'zapi')!.id, 
-                            integrations.find(i => i.type === 'zapi')!.status
-                          )}
+                          checked={zapiIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(zapiIntegration.id, zapiIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -819,20 +958,34 @@ export default function IntegrationsPage() {
               {/* RD Station */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(249, 95, 98, 0.1)', color: '#F95F62', border: '1px solid rgba(249, 95, 98, 0.2)' }}>
-                    <RDStationLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(249, 95, 98, 0.1)', color: '#F95F62', border: '1px solid rgba(249, 95, 98, 0.2)' }}>
+                      {renderProviderLogo('rdstation', rdstationIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>RD Station Platform</h3>
+                      {rdstationIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(rdstationIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'rdstation' && i.status === 'active') && (
+                  {rdstationIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>RD Station Platform</h3>
                   <p>Envie leads e conversões diretamente para a API de Conversões do RD Station. Mapeia automaticamente nome, e-mail, telefone, cargo, UTMs de tráfego e pontuação (Lead Score) para alimentar sua automação de marketing.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'rdstation') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'rdstation')!)}>
+                  {rdstationIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(rdstationIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -840,17 +993,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'rdstation') && (
+                  {rdstationIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'rdstation')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{rdstationIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'rdstation')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'rdstation')!.id, 
-                            integrations.find(i => i.type === 'rdstation')!.status
-                          )}
+                          checked={rdstationIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(rdstationIntegration.id, rdstationIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -862,20 +1012,34 @@ export default function IntegrationsPage() {
               {/* Pipedrive CRM */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(23, 184, 119, 0.1)', color: '#17B877', border: '1px solid rgba(23, 184, 119, 0.2)' }}>
-                    <PipedriveLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(23, 184, 119, 0.1)', color: '#17B877', border: '1px solid rgba(23, 184, 119, 0.2)' }}>
+                      {renderProviderLogo('pipedrive', pipedriveIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Pipedrive CRM</h3>
+                      {pipedriveIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(pipedriveIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'pipedrive' && i.status === 'active') && (
+                  {pipedriveIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>Pipedrive CRM</h3>
                   <p>Envie contatos (Pessoas) e crie Negócios (Deals) vinculados automaticamente dentro de funis específicos do Pipedrive CRM, estruturando todo o fluxo de negociações comerciais.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'pipedrive') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'pipedrive')!)}>
+                  {pipedriveIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(pipedriveIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -883,17 +1047,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'pipedrive') && (
+                  {pipedriveIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'pipedrive')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{pipedriveIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'pipedrive')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'pipedrive')!.id, 
-                            integrations.find(i => i.type === 'pipedrive')!.status
-                          )}
+                          checked={pipedriveIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(pipedriveIntegration.id, pipedriveIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -905,20 +1066,34 @@ export default function IntegrationsPage() {
               {/* PipeRun CRM */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                    <PipeRunLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                      {renderProviderLogo('piperun', piperunIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>PipeRun CRM</h3>
+                      {piperunIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(piperunIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'piperun' && i.status === 'active') && (
+                  {piperunIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>PipeRun CRM</h3>
                   <p>Repasse seus leads capturados em tempo real para o CRM nacional PipeRun, organizando as informações e disparando as etapas comerciais (Pipelines) dos seus vendedores.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'piperun') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'piperun')!)}>
+                  {piperunIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(piperunIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -926,17 +1101,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'piperun') && (
+                  {piperunIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'piperun')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{piperunIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'piperun')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'piperun')!.id, 
-                            integrations.find(i => i.type === 'piperun')!.status
-                          )}
+                          checked={piperunIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(piperunIntegration.id, piperunIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -948,20 +1120,34 @@ export default function IntegrationsPage() {
               {/* Kommo CRM */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(138, 43, 226, 0.1)', color: '#8A2BE2', border: '1px solid rgba(138, 43, 226, 0.2)' }}>
-                    <KommoLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(138, 43, 226, 0.1)', color: '#8A2BE2', border: '1px solid rgba(138, 43, 226, 0.2)' }}>
+                      {renderProviderLogo('kommo', kommoIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Kommo CRM</h3>
+                      {kommoIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(kommoIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'kommo' && i.status === 'active') && (
+                  {kommoIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>Kommo CRM</h3>
                   <p>Cadastre contatos e negócios complexos integrados de forma direta no Kommo (antigo amoCRM). Perfeito para funis comerciais baseados em conversas e WhatsApp.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'kommo') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'kommo')!)}>
+                  {kommoIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(kommoIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -969,17 +1155,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'kommo') && (
+                  {kommoIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'kommo')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{kommoIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'kommo')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'kommo')!.id, 
-                            integrations.find(i => i.type === 'kommo')!.status
-                          )}
+                          checked={kommoIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(kommoIntegration.id, kommoIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -991,20 +1174,34 @@ export default function IntegrationsPage() {
               {/* Leadlovers */}
               <div className={`${styles.providerCard} glass`}>
                 <div className={styles.providerHeader}>
-                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(225, 29, 72, 0.1)', color: '#E11D48', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
-                    <LeadloversLogo />
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(225, 29, 72, 0.1)', color: '#E11D48', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
+                      {renderProviderLogo('leadlovers', leadloversIntegration)}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Leadlovers</h3>
+                      {leadloversIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.changeIconBtn} 
+                          onClick={() => openIconModal(leadloversIntegration)}
+                          title="Alterar ícone por imagem"
+                        >
+                          <ImageIcon size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {integrations.some(i => i.type === 'leadlovers' && i.status === 'active') && (
+                  {leadloversIntegration?.status === 'active' && (
                     <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
                   )}
                 </div>
                 <div className={styles.providerBody}>
-                  <h3>Leadlovers</h3>
                   <p>Adicione automaticamente seus leads capturados em suas respectivas Máquinas, Sequências e níveis de funil do Leadlovers, iniciando automações e disparos de marketing.</p>
                 </div>
                 <div className={styles.providerFooter}>
-                  {integrations.find(i => i.type === 'leadlovers') ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'leadlovers')!)}>
+                  {leadloversIntegration ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(leadloversIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
@@ -1012,17 +1209,14 @@ export default function IntegrationsPage() {
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
-                  {integrations.find(i => i.type === 'leadlovers') && (
+                  {leadloversIntegration && (
                     <div className={styles.switchContainer}>
-                      <span>{integrations.find(i => i.type === 'leadlovers')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <span>{leadloversIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
                       <label className={styles.switch}>
                         <input 
                           type="checkbox"
-                          checked={integrations.find(i => i.type === 'leadlovers')?.status === 'active'}
-                          onChange={() => handleToggleStatus(
-                            integrations.find(i => i.type === 'leadlovers')!.id, 
-                            integrations.find(i => i.type === 'leadlovers')!.status
-                          )}
+                          checked={leadloversIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(leadloversIntegration.id, leadloversIntegration.status)}
                         />
                         <span className={styles.slider}></span>
                       </label>
@@ -1368,6 +1562,50 @@ export default function IntegrationsPage() {
                 </button>
                 <button type="submit" className={styles.primaryBtn} disabled={testing}>
                   <Save size={16} /> <span>{activeModal === 'create' ? 'Conectar' : 'Salvar'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Modal de Alteração de Ícone Customizado */}
+        {isIconModalOpen && selectedIntegrationForIcon && (
+          <div className={styles.modalOverlay} onClick={() => { setIsIconModalOpen(false); setSelectedIntegrationForIcon(null); }}>
+            <form 
+              onClick={e => e.stopPropagation()} 
+              onSubmit={handleSaveCustomIcon} 
+              className={`${styles.modal} glass`}
+            >
+              <div className={styles.modalHeader}>
+                <h3>Alterar Ícone da Integração</h3>
+                <p>Insira a URL de uma imagem pública para personalizar o ícone deste card.</p>
+              </div>
+
+              <div className={styles.modalBody}>
+                <div className={styles.field}>
+                  <label>URL da Imagem</label>
+                  <input 
+                    type="url" 
+                    value={customIconUrlInput}
+                    onChange={e => setCustomIconUrlInput(e.target.value)}
+                    placeholder="https://exemplo.com/logo.png"
+                  />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.25rem' }}>
+                    Deixe em branco para restaurar o ícone padrão da plataforma.
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button 
+                  type="button" 
+                  className={styles.secondaryBtn} 
+                  onClick={() => { setIsIconModalOpen(false); setSelectedIntegrationForIcon(null); }}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.primaryBtn}>
+                  <Save size={16} /> <span>Salvar Ícone</span>
                 </button>
               </div>
             </form>
