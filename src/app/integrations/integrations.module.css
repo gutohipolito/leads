@@ -641,10 +641,14 @@
   transform: translateY(-4px);
 }
 
+.clientSelectorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .clientSelectorBadge {
-  position: absolute;
-  top: 14px;
-  right: 14px;
   font-family: monospace;
   font-size: 0.6rem;
   font-weight: 800;
@@ -724,5 +728,56 @@
 .clientSelectorCard:hover .clientSelectorFooter {
   color: white;
   text-shadow: 0 0 8px var(--primary);
+}
+
+/* Seção de Testes de Conexão no Corpo do Modal */
+.testSection {
+  margin-top: 1.5rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.testSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.testSectionHeader span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.testBtnInline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.testBtnInline:hover:not(:disabled) {
+  background: #8b5cf6;
+  color: white;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.testBtnInline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 

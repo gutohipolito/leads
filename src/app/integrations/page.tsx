@@ -415,7 +415,10 @@ export default function IntegrationsPage() {
             <div className={styles.clientsGridSelector}>
               {clients.map(client => (
                 <div key={client.id} className={`${styles.clientSelectorCard} glass`} onClick={() => handleSelectClient(client)}>
-                  <div className={styles.clientSelectorBadge}>ATIVO</div>
+                  <div className={styles.clientSelectorHeader}>
+                    <span className={styles.clientSelectorId}>UPLINK_ID: {client.id.substring(0, 8).toUpperCase()}</span>
+                    <div className={styles.clientSelectorBadge}>ATIVO</div>
+                  </div>
                   <div className={styles.clientSelectorBody}>
                     <div className={styles.clientSelectorInitials} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.08)' }}>
                       {client.logo_url ? (
@@ -426,7 +429,6 @@ export default function IntegrationsPage() {
                     </div>
                     <div className={styles.clientSelectorInfo}>
                       <h3>{client.name}</h3>
-                      <span className={styles.clientSelectorId}>UPLINK_ID: {client.id.substring(0, 8).toUpperCase()}</span>
                     </div>
                   </div>
                   <div className={styles.clientSelectorFooter}>
@@ -799,23 +801,37 @@ export default function IntegrationsPage() {
                     </div>
                   </>
                 )}
-              </div>
 
-              {/* Resultado do Teste de Conexão */}
-              {testResult && (
-                <div className={`${styles.testResultBox} ${testResult.success ? styles.testSuccess : styles.testDanger}`}>
-                  <div className={styles.testResultHeader}>
-                    {testResult.success ? <Check size={14} className={styles.testIconSuccess} /> : <AlertTriangle size={14} className={styles.testIconDanger} />}
-                    <strong>{testResult.success ? 'CONEXÃO ESTABELECIDA' : 'FALHA DE INTEGRAÇÃO'}</strong>
+                {/* Seção de Teste de Conexão Integrada no Corpo */}
+                <div className={styles.testSection}>
+                  <div className={styles.testSectionHeader}>
+                    <span>Validação de Conexão</span>
+                    <button 
+                      type="button" 
+                      className={styles.testBtnInline} 
+                      onClick={handleTestConnection}
+                      disabled={testing}
+                    >
+                      <Send size={12} /> <span>{testing ? 'Validando...' : 'Testar Conexão'}</span>
+                    </button>
                   </div>
-                  <p className={styles.testResultMessage}>{testResult.message}</p>
-                  {testResult.response && (
-                    <pre className={styles.testResultResponse}>
-                      {testResult.response}
-                    </pre>
+                  
+                  {testResult && (
+                    <div className={`${styles.testResultBox} ${testResult.success ? styles.testSuccess : styles.testDanger}`}>
+                      <div className={styles.testResultHeader}>
+                        {testResult.success ? <Check size={14} className={styles.testIconSuccess} /> : <AlertTriangle size={14} className={styles.testIconDanger} />}
+                        <strong>{testResult.success ? 'CONEXÃO ESTABELECIDA' : 'FALHA DE INTEGRAÇÃO'}</strong>
+                      </div>
+                      <p className={styles.testResultMessage}>{testResult.message}</p>
+                      {testResult.response && (
+                        <pre className={styles.testResultResponse}>
+                          {testResult.response}
+                        </pre>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
 
               <div className={styles.modalFooter}>
                 {activeModal === 'edit' && editingIntegration && (
@@ -828,15 +844,6 @@ export default function IntegrationsPage() {
                     <Trash2 size={16} /> <span>Excluir</span>
                   </button>
                 )}
-                <button 
-                  type="button" 
-                  className={styles.testBtn} 
-                  onClick={handleTestConnection}
-                  disabled={testing}
-                  style={{ marginRight: activeModal === 'create' ? 'auto' : '0' }}
-                >
-                  <Send size={14} /> <span>{testing ? 'Testando...' : 'Testar Conexão'}</span>
-                </button>
                 <button type="button" className={styles.secondaryBtn} onClick={() => setActiveModal(null)}>
                   Cancelar
                 </button>
