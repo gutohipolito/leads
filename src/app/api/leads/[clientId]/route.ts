@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 
 /**
  * Rota de Webhook para captura de leads ultra-compatível (Elementor, WPForms, etc).
@@ -169,15 +169,20 @@ export async function POST(
         ? `Um usuário de ${body.marketing?.source || 'origem direta'} clicou no WhatsApp.`
         : `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`;
 
-      const notificationInserts = Array.from(userIds).map(uid => ({
-        user_id: uid,
-        client_id: clientId,
-        title: notificationTitle,
-        message: notificationMsg,
-        type: isWppTracker ? 'info' : 'success'
-      }));
+      const notificationPromises = Array.from(userIds).map(async (uid) => {
+        const { error } = await supabase.from('notifications').insert({
+          user_id: uid,
+          client_id: clientId,
+          title: notificationTitle,
+          message: notificationMsg,
+          type: isWppTracker ? 'info' : 'success'
+        });
+        if (error) {
+          console.error(`Erro ao inserir notificação para o usuário ${uid}:`, error);
+        }
+      });
 
-      await supabase.from('notifications').insert(notificationInserts);
+      await Promise.all(notificationPromises);
     }
 
     // [NOVO] Log de Auditoria para o Sinal de Entrada
