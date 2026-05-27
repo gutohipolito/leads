@@ -49,6 +49,11 @@ export default function ClientsPage() {
   const [newClientLogoBg, setNewClientLogoBg] = useState('#ffffff');
   const [newClientPrimaryColor, setNewClientPrimaryColor] = useState('#56d7fd');
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
+
+  const handleLogoError = (clientId: string) => {
+    setFailedLogos(prev => ({ ...prev, [clientId]: true }));
+  };
   
   // Paginação
   const ITEMS_PER_PAGE = 8;
@@ -359,8 +364,13 @@ export default function ClientsPage() {
                           className={styles.clientAvatar} 
                           style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
                         >
-                          {client.logo_url ? (
-                            <img src={client.logo_url} alt={client.name} className={styles.avatarImg} />
+                          {client.logo_url && !failedLogos[client.id] ? (
+                            <img 
+                              src={client.logo_url} 
+                              alt={client.name} 
+                              className={styles.avatarImg} 
+                              onError={() => handleLogoError(client.id)}
+                            />
                           ) : (
                             <span className={styles.avatarInitial}>{client.name.charAt(0)}</span>
                           )}
@@ -458,8 +468,13 @@ export default function ClientsPage() {
                       className={styles.cardAvatar} 
                       style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
                     >
-                      {client.logo_url ? (
-                        <img src={client.logo_url} alt={client.name} className={styles.avatarImg} />
+                      {client.logo_url && !failedLogos[client.id] ? (
+                        <img 
+                          src={client.logo_url} 
+                          alt={client.name} 
+                          className={styles.avatarImg} 
+                          onError={() => handleLogoError(client.id)}
+                        />
                       ) : (
                         <span className={styles.avatarInitial}>{client.name.charAt(0)}</span>
                       )}

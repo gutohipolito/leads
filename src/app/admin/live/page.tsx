@@ -37,6 +37,11 @@ export default function LiveMonitorPage() {
     topClients: [] as any[]
   });
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
+
+  const handleLogoError = (clientId: string) => {
+    setFailedLogos(prev => ({ ...prev, [clientId]: true }));
+  };
   const [isCelebration, setIsCelebration] = useState(false);
   const [celebrationLead, setCelebrationLead] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -375,8 +380,12 @@ export default function LiveMonitorPage() {
                   onClick={() => setSelectedClient(c.id)}
                 >
                   <div className={styles.sliderLogo}>
-                    {c.logo_url ? (
-                      <img src={c.logo_url} alt={c.name} />
+                    {c.logo_url && !failedLogos[c.id] ? (
+                      <img 
+                        src={c.logo_url} 
+                        alt={c.name} 
+                        onError={() => handleLogoError(c.id)}
+                      />
                     ) : (
                       <span>{c.name.charAt(0)}</span>
                     )}

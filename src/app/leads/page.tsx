@@ -84,6 +84,11 @@ export default function LeadsPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
+
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
+  const handleLogoError = (clientId: string) => {
+    setFailedLogos(prev => ({ ...prev, [clientId]: true }));
+  };
   
   const handleCopyRowValue = (key: string, value: any) => {
     const textToCopy = typeof value === 'object' ? JSON.stringify(value) : String(value);
@@ -670,8 +675,13 @@ export default function LeadsPage() {
                   <div key={client.id} className={`${styles.card} ${statusClass} glass`} onClick={() => setSelectedClientId(client.id)}>
                     <div className={styles.cardTop}>
                       <div className={styles.clientLogoBox} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}>
-                        {client.logo_url ? (
-                          <img src={client.logo_url} alt={client.name} className={styles.clientLogo} />
+                        {client.logo_url && !failedLogos[client.id] ? (
+                          <img 
+                            src={client.logo_url} 
+                            alt={client.name} 
+                            className={styles.clientLogo} 
+                            onError={() => handleLogoError(client.id)}
+                          />
                         ) : (
                           <span className={styles.initials}>{client.name.charAt(0)}</span>
                         )}
