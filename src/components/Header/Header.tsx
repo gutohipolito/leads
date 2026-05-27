@@ -129,8 +129,9 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
         }
 
         // Registrar o canal do Supabase Realtime e filtrar o user_id no JavaScript
+        const channelName = `notifications-${user.id}-${Math.random().toString(36).substring(2, 9)}`;
         channel = supabase
-          .channel(`notifications-${user.id}`)
+          .channel(channelName)
           .on(
             'postgres_changes',
             {
