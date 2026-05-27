@@ -607,15 +607,9 @@
   }
 }
 
-.notifHeaderRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  width: 100%;
-}
-
 .clientTag {
+  display: inline-block;
+  width: fit-content;
   font-size: 0.65rem;
   font-weight: 800;
   color: var(--primary);
@@ -626,4 +620,6 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }

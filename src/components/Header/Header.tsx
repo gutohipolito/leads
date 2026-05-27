@@ -350,12 +350,10 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
                 <div key={n.id} className={`${styles.notifItem} ${n.read ? '' : styles.unread}`}>
                   <div className={styles.notifIndicator} />
                   <div className={styles.notifContent} style={{ width: '100%' }}>
-                    <div className={styles.notifHeaderRow}>
-                      <p className={styles.notifTitle}>{n.title}</p>
-                      {n.client?.name && (
-                        <span className={styles.clientTag}>{n.client.name}</span>
-                      )}
-                    </div>
+                    <p className={styles.notifTitle}>{n.title}</p>
+                    {n.client?.name && (
+                      <span className={styles.clientTag}>{n.client.name}</span>
+                    )}
                     <p className={styles.notifMsg}>{n.message}</p>
                     <span className={styles.notifTime}>
                       <Clock size={12} />
