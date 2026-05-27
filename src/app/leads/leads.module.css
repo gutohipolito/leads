@@ -765,7 +765,7 @@
 
 .drawer {
   width: 100%;
-  max-width: 600px;
+  max-width: 760px;
   height: 100%;
   background: var(--card);
   border-left: 1px solid rgba(var(--foreground-rgb), 0.1);
@@ -923,6 +923,18 @@
 .jsonValue {
   color: var(--primary);
   font-family: monospace;
+  word-break: break-all;
+  text-align: right;
+  line-height: 1.4;
+}
+
+.valueContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 75%;
+  justify-content: flex-end;
+  flex: 1;
 }
 
 .drawerFooter {
@@ -1450,8 +1462,8 @@
 }
 
 .scoreHUDRing {
-  width: 90px;
-  height: 90px;
+  width: 105px;
+  height: 105px;
   border-radius: 50%;
   border: 3px solid rgba(var(--foreground-rgb), 0.05);
   display: flex;
@@ -1460,7 +1472,8 @@
   justify-content: center;
   background: rgba(13, 18, 26, 0.85);
   flex-shrink: 0;
-  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+  padding: 8px;
 }
 
 .hudHot {
@@ -1479,19 +1492,20 @@
 }
 
 .scoreHUDValue {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 900;
   color: white;
   line-height: 1;
 }
 
 .scoreHUDLabel {
-  font-size: 0.55rem;
+  font-size: 0.58rem;
   text-transform: uppercase;
   color: var(--muted-foreground);
   font-weight: 800;
-  letter-spacing: 0.05em;
-  margin-top: 2px;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+  text-align: center;
 }
 
 .scoreHUDInfo {

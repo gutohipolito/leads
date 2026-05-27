@@ -1260,7 +1260,7 @@ export default function LeadsPage() {
                               </button>
                             )}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '60%', justifyContent: 'flex-end' }}>
+                          <div className={styles.valueContainer}>
                             <span className={styles.jsonValue}>
                               {typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://')) ? (
                                 <a href={val} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{val}</a>
