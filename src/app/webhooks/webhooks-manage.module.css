@@ -486,21 +486,24 @@
 .noWebhookSelectedInline p { font-size: 0.85rem; font-weight: 500; margin: 0; }
 
 .stepsCard { 
-  padding: 2.25rem !important; 
+  padding: 1.5rem !important; 
   display: flex; 
   flex-direction: column; 
-  gap: 1.75rem; 
+  gap: 1.25rem; 
   background: var(--card) !important;
   border: 1px solid var(--border);
   border-radius: 20px;
+  max-height: calc(100vh - 12rem);
+  overflow: hidden;
 }
 
 .stepsHeader {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding-bottom: 1.25rem;
+  gap: 0.35rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid rgba(var(--foreground-rgb), 0.05);
+  flex-shrink: 0;
 }
 
 .stepsHeaderTitle {
@@ -512,7 +515,7 @@
 }
 
 .stepsHeaderTitle h4 {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--foreground);
   margin: 0;
@@ -522,20 +525,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
+  padding: 0.25rem 0.6rem;
   background: rgba(37, 211, 102, 0.1);
   color: #25d366;
   border: 1px solid rgba(37, 211, 102, 0.2);
   border-radius: 20px;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .pulseDot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   background-color: #25d366;
   border-radius: 50%;
   display: inline-block;
@@ -550,23 +553,44 @@
 }
 
 .stepsDesc {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--muted-foreground);
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .stepsList {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  flex: 1;
+}
+
+/* Custom Scrollbar para a lista de passos */
+.stepsList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.stepsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.stepsList::-webkit-scrollbar-thumb {
+  background: rgba(86, 215, 253, 0.15);
+  border-radius: 4px;
+}
+
+.stepsList::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
 .stepItem {
   display: flex;
-  gap: 1.15rem;
-  padding: 1.15rem;
-  border-radius: 16px;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
   background: rgba(var(--foreground-rgb), 0.01);
   border: 1px solid rgba(var(--foreground-rgb), 0.03);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
