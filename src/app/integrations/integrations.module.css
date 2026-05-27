@@ -401,3 +401,213 @@
 .backBtn:hover {
   color: white;
 }
+
+/* Novo Diagrama de Fluxo HUD Neon */
+.flowDiagram {
+  background: rgba(10, 25, 41, 0.4);
+  border: 1px solid rgba(86, 215, 253, 0.15);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: inset 0 0 20px rgba(86, 215, 253, 0.05), 0 4px 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.flowDiagram::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.flowTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.flowTitleIcon {
+  color: var(--primary);
+  filter: drop-shadow(0 0 5px var(--primary));
+}
+
+.flowSteps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .flowSteps {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  
+  .flowArrow {
+    transform: rotate(90deg);
+    align-self: center;
+    margin: 0.25rem 0;
+  }
+}
+
+.flowStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+  min-width: 220px;
+}
+
+.stepNumber {
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--primary);
+  background: rgba(86, 215, 253, 0.1);
+  border: 1px solid rgba(86, 215, 253, 0.3);
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  text-shadow: 0 0 8px rgba(86, 215, 253, 0.5);
+  box-shadow: 0 0 10px rgba(86, 215, 253, 0.05);
+}
+
+.stepContent h4 {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 0.25rem 0;
+}
+
+.stepContent p {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.flowArrow {
+  font-size: 1.25rem;
+  color: rgba(86, 215, 253, 0.3);
+  text-shadow: 0 0 5px rgba(86, 215, 253, 0.2);
+  user-select: none;
+}
+
+/* Botão de Teste */
+.testBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.testBtn:hover:not(:disabled) {
+  background: #8b5cf6;
+  color: white;
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.testBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Caixa de Resultados de Teste */
+.testResultBox {
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  border: 1px solid transparent;
+}
+
+.testSuccess {
+  background: rgba(37, 211, 102, 0.05);
+  border-color: rgba(37, 211, 102, 0.25);
+  box-shadow: 0 0 15px rgba(37, 211, 102, 0.05);
+}
+
+.testDanger {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.05);
+}
+
+.testResultHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.testIconSuccess {
+  color: #25d366;
+  filter: drop-shadow(0 0 3px #25d366);
+}
+
+.testIconDanger {
+  color: #ef4444;
+  filter: drop-shadow(0 0 3px #ef4444);
+}
+
+.testResultHeader strong {
+  font-weight: 800;
+}
+
+.testSuccess .testResultHeader strong {
+  color: #25d366;
+}
+
+.testDanger .testResultHeader strong {
+  color: #ef4444;
+}
+
+.testResultMessage {
+  margin: 0;
+  line-height: 1.4;
+  color: var(--foreground);
+}
+
+.testResultResponse {
+  font-family: monospace;
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  max-height: 100px;
+  overflow-y: auto;
+  margin: 0.25rem 0 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
