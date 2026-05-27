@@ -30,7 +30,13 @@ import {
   Link,
   Mail,
   Play,
-  Trash2
+  Trash2,
+  MousePointerClick,
+  Share2,
+  Compass,
+  Smartphone,
+  Activity,
+  Lock
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -474,12 +480,101 @@ export default function WebhooksManagePage() {
                   </div>
                 )}
               </div>
-              <div className={styles.stepsCard}>
-                <div className={styles.stepsHeader}><h4>Funcionamento</h4></div>
+              <div className={`${styles.stepsCard} glass`}>
+                <div className={styles.stepsHeader}>
+                  <div className={styles.stepsHeaderTitle}>
+                    <h4>Funcionamento do Rastreamento</h4>
+                    <span className={styles.statusBadgeLive}>
+                      <span className={styles.pulseDot}></span>
+                      Ativo & Monitorando
+                    </span>
+                  </div>
+                  <p className={styles.stepsDesc}>Conheça as camadas de inteligência do script que otimizam sua captação de leads.</p>
+                </div>
+                
                 <div className={styles.stepsList}>
-                  <div className={styles.stepItem}><div className={styles.stepNum}>01</div><div className={styles.stepContent}><strong>Monitoramento</strong><p>Identifica cliques em links wa.me automaticamente.</p></div></div>
-                  <div className={styles.stepItem}><div className={styles.stepNum}>02</div><div className={styles.stepContent}><strong>Atribuição</strong><p>Captura UTMs, referrer e tempo de sessão.</p></div></div>
-                  <div className={styles.stepItem}><div className={styles.stepNum}>03</div><div className={styles.stepContent}><strong>Uplink</strong><p>Envia os dados via Beacon API de alta prioridade.</p></div></div>
+                  <div className={styles.stepItem}>
+                    <div className={styles.stepIconWrapper} style={{ '--accent-color': '#25d366' } as React.CSSProperties}>
+                      <MousePointerClick size={16} />
+                    </div>
+                    <div className={styles.stepContent}>
+                      <div className={styles.stepTitleRow}>
+                        <strong>01. Monitoramento Automático</strong>
+                        <span className={styles.stepNumTag}>DOM</span>
+                      </div>
+                      <p>Escuta cliques em links <code>wa.me</code>, <code>api.whatsapp.com</code> e seletores ou palavras-chave personalizados sem interromper a navegação.</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.stepItem}>
+                    <div className={styles.stepIconWrapper} style={{ '--accent-color': '#56d7fd' } as React.CSSProperties}>
+                      <Share2 size={16} />
+                    </div>
+                    <div className={styles.stepContent}>
+                      <div className={styles.stepTitleRow}>
+                        <strong>02. Atribuição UTM & Origem</strong>
+                        <span className={styles.stepNumTag}>Sessão</span>
+                      </div>
+                      <p>Resgata parâmetros de UTM da URL e detecta o <code>referrer</code> original (Google, Instagram, Facebook, etc.) persistindo-os durante a sessão.</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.stepItem}>
+                    <div className={styles.stepIconWrapper} style={{ '--accent-color': '#f39c12' } as React.CSSProperties}>
+                      <Compass size={16} />
+                    </div>
+                    <div className={styles.stepContent}>
+                      <div className={styles.stepTitleRow}>
+                        <strong>03. Inteligência Comportamental</strong>
+                        <span className={styles.stepNumTag}>UX</span>
+                      </div>
+                      <p>Calcula em tempo real a profundidade máxima de rolagem (scroll) e o tempo de permanência na página antes da conversão.</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.stepItem}>
+                    <div className={styles.stepIconWrapper} style={{ '--accent-color': '#9b59b6' } as React.CSSProperties}>
+                      <Activity size={16} />
+                    </div>
+                    <div className={styles.stepContent}>
+                      <div className={styles.stepTitleRow}>
+                        <strong>04. Roteamento de Atendimento</strong>
+                        <span className={styles.stepNumTag}>Dados</span>
+                      </div>
+                      <p>Identifica automaticamente o número de WhatsApp de destino clicado, permitindo mensurar a performance de atendentes rotativos.</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.stepItem}>
+                    <div className={styles.stepIconWrapper} style={{ '--accent-color': '#3498db' } as React.CSSProperties}>
+                      <Smartphone size={16} />
+                    </div>
+                    <div className={styles.stepContent}>
+                      <div className={styles.stepTitleRow}>
+                        <strong>05. Contexto de Dispositivo</strong>
+                        <span className={styles.stepNumTag}>Filtros</span>
+                      </div>
+                      <p>Coleta dados técnicos essenciais (sistema operacional, idioma do navegador, resolução de tela e viewport) para fins de estatística e segmentação.</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.stepItem}>
+                    <div className={styles.stepIconWrapper} style={{ '--accent-color': '#e74c3c' } as React.CSSProperties}>
+                      <Cpu size={16} />
+                    </div>
+                    <div className={styles.stepContent}>
+                      <div className={styles.stepTitleRow}>
+                        <strong>06. Uplink Resiliente (Zero Perda)</strong>
+                        <span className={styles.stepNumTag}>Rede</span>
+                      </div>
+                      <p>Transmite o payload em milissegundos via <code>Beacon API</code> (mantém o envio mesmo se a aba for fechada) com fallback para <code>Fetch API keepalive</code>.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.stepsFooterInfo}>
+                  <Lock size={14} className={styles.lockIcon} />
+                  <span>Compatível com as diretrizes da LGPD (captura apenas dados de interação voluntária).</span>
                 </div>
               </div>
             </div>
