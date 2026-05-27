@@ -841,7 +841,7 @@ export default function LeadsPage() {
               </div>
 
               <table className={styles.table}>
-                <thead><tr><th>Lead</th><th>Contato</th><th>Origem</th><th>Data</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Lead</th><th>Contato</th><th>Origem</th><th>Engajamento</th><th>Data</th><th>Ações</th></tr></thead>
                 <tbody>
                   {paginatedLeads.map(lead => (
                     <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
@@ -864,6 +864,17 @@ export default function LeadsPage() {
                           <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>{lead.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Botão'}</span></div>
                         ) : (
                           <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
+                        )}
+                      </td>
+                      <td>
+                        {lead.data?.lead_score !== undefined ? (
+                          <div className={`${styles.scoreBadgeMini} ${
+                            lead.data.lead_score >= 70 ? styles.scoreHot : (lead.data.lead_score >= 40 ? styles.scoreWarm : styles.scoreCold)
+                          }`}>
+                            ⚡ {lead.data.lead_score} pts
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--muted-foreground)' }}>N/A</span>
                         )}
                       </td>
                       <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
@@ -957,6 +968,31 @@ export default function LeadsPage() {
                 <button className={styles.closeBtn} onClick={() => setSelectedLead(null)}><X size={24} /></button>
               </div>
               <div className={styles.drawerBody}>
+                {/* Score de Engajamento */}
+                {selectedLead.data?.lead_score !== undefined && (
+                  <div className={`${styles.detailSection} ${styles.scoreSection}`}>
+                    <div className={styles.scoreHUDContainer}>
+                      <div className={`${styles.scoreHUDRing} ${
+                        selectedLead.data.lead_score >= 70 ? styles.hudHot : (selectedLead.data.lead_score >= 40 ? styles.hudWarm : styles.hudCold)
+                      }`}>
+                        <span className={styles.scoreHUDValue}>{selectedLead.data.lead_score}</span>
+                        <span className={styles.scoreHUDLabel}>Engajamento</span>
+                      </div>
+                      <div className={styles.scoreHUDInfo}>
+                        <h4>Status do Lead</h4>
+                        <h3>
+                          {selectedLead.data.lead_score >= 70 ? '🔥 Lead Quente' : (
+                            selectedLead.data.lead_score >= 40 ? '⚡ Lead Morno' : '❄️ Lead Frio'
+                          )}
+                        </h3>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                          Score calculado com base no comportamento do usuário, cliques no WhatsApp, profundidade de scroll e tempo de tela.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className={styles.detailSection}>
                   <h4>Captura & Contexto</h4>
                   <div className={styles.detailGrid}>
@@ -1035,6 +1071,37 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Jornada do Lead (Atribuição Multitouch) */}
+                {selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0 && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.sectionHeader}>
+                      <Globe size={16} className={styles.sectionIcon} style={{ color: '#56D7FD' }} />
+                      <h4>Jornada de Atribuição (Touchpoints)</h4>
+                    </div>
+                    <div className={styles.timeline}>
+                      {selectedLead.data.marketing.journey.map((tp: any, index: number) => (
+                        <div key={index} className={styles.timelineItem}>
+                          <div className={styles.timelineDot}></div>
+                          <div className={styles.timelineContent}>
+                            <div className={styles.timelineHeader}>
+                              <span className={styles.timelineSource}>{tp.source} ({tp.medium})</span>
+                              <span className={styles.timelineTime}>
+                                {new Date(tp.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className={styles.timelinePage} title={tp.page_url}>
+                              Visualizou: <em>{tp.page_title || 'Página do Site'}</em>
+                            </p>
+                            {tp.campaign && tp.campaign !== 'N/A' && (
+                              <span className={styles.timelineCampaign}>Campanha: {tp.campaign}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

@@ -25,7 +25,7 @@
         return;
     }
 
-    function saveUtmsToStorage() {
+    function saveUtmsToStorageAndJourney() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const utmsToSave = {};
@@ -39,6 +39,7 @@
                 }
             });
 
+            // 1. Gravar UTMs na sessão
             if (hasNewUtms) {
                 sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
                 if (!sessionStorage.getItem('asthros_referrer')) {
@@ -49,10 +50,58 @@
                     sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
                 }
             }
+
+            // 2. Gravar o Touchpoint na jornada do LocalStorage (Atribuição Multitouch)
+            const referrer = document.referrer || 'direto';
+            const sourceFromRef = getSourceFromReferrer(referrer);
+            let touchpointSource = 'direto';
+
+            if (hasNewUtms) {
+                touchpointSource = utmsToSave.source;
+            } else if (sourceFromRef !== 'direto') {
+                touchpointSource = sourceFromRef;
+            } else {
+                // Se for visita direta pura, registramos apenas se a jornada estiver vazia
+                const existing = localStorage.getItem('asthros_journey');
+                if (existing) return;
+            }
+
+            const touchpoint = {
+                source: touchpointSource,
+                medium: utmsToSave.medium || (hasNewUtms ? 'cpc' : (sourceFromRef !== 'direto' ? 'referência' : 'direto')),
+                campaign: utmsToSave.campaign || 'N/A',
+                timestamp: new Date().toISOString(),
+                page_url: window.location.href,
+                page_title: document.title
+            };
+
+            let journey = [];
+            try {
+                const existingJourney = localStorage.getItem('asthros_journey');
+                if (existingJourney) {
+                    journey = JSON.parse(existingJourney);
+                }
+            } catch (e) {}
+
+            // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal em menos de 5 min
+            if (journey.length > 0) {
+                const last = journey[journey.length - 1];
+                const diff = Date.now() - new Date(last.timestamp).getTime();
+                if (last.source === touchpoint.source && diff < 5 * 60 * 1000) {
+                    return;
+                }
+            }
+
+            journey.push(touchpoint);
+            if (journey.length > 10) {
+                journey.shift(); // Limita a jornada em 10 touchpoints
+            }
+
+            localStorage.setItem('asthros_journey', JSON.stringify(journey));
         } catch (e) {}
     }
 
-    saveUtmsToStorage();
+    saveUtmsToStorageAndJourney();
 
     /*
     console.log('[Asthros] Configuração Carregada:', {
@@ -222,7 +271,15 @@
                     }
                 })(),
                 page_title: document.title,
-                page_url: window.location.href
+                page_url: window.location.href,
+                journey: (() => {
+                    try {
+                        const stored = localStorage.getItem('asthros_journey');
+                        return stored ? JSON.parse(stored) : [];
+                    } catch (e) {
+                        return [];
+                    }
+                })()
             },
             behavior: {
                 time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',

@@ -17,7 +17,8 @@ import {
   FileText,
   Terminal,
   Tv,
-  X
+  X,
+  Plug
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { supabase } from '@/lib/supabase';
@@ -84,9 +85,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     { name: 'Leads', path: '/leads', icon: Database },
     { name: 'Relatórios', path: '/reports', icon: FileText },
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
+    { name: 'Integrações', path: '/integrations', icon: Plug },
   ].filter(item => {
     if (isImpersonating) {
-      return ['Geral', 'Leads'].includes(item.name);
+      return ['Geral', 'Leads', 'Integrações'].includes(item.name);
     }
     return true;
   });

@@ -142,15 +142,44 @@ export async function POST(
 
     const isCustomTracker = body.source === 'custom_tracker';
 
-    if (isWppTracker) {
-      name = `Click Wpp: ${body.marketing?.source || 'Direto'}`;
-    } else if (isCustomTracker) {
-      name = `Interação: ${body.marketing?.source || 'Botão'}`;
-    }
-
     const source = body.source === 'test_simulation' 
       ? 'test_simulation' 
       : (isWppTracker ? 'whatsapp_tracker' : (isCustomTracker ? 'custom_tracker' : 'form'));
+
+    // [NOVO] Cálculo do Lead Scoring
+    let leadScore = 0;
+    
+    // 1. WhatsApp dá +50 pontos
+    if (source === 'whatsapp_tracker') {
+      leadScore += 50;
+    }
+    
+    // 2. Tempo na página
+    const timeOnPage = body.behavior?.time_on_page 
+      ? parseInt(body.behavior.time_on_page.replace('s', '')) || 0 
+      : 0;
+    if (timeOnPage >= 60) leadScore += 20;
+    else if (timeOnPage >= 20) leadScore += 10;
+    
+    // 3. Profundidade de scroll
+    const scrollDepth = body.behavior?.scroll_depth 
+      ? parseInt(body.behavior.scroll_depth.replace('%', '')) || 0 
+      : 0;
+    if (scrollDepth >= 80) leadScore += 25;
+    else if (scrollDepth >= 50) leadScore += 15;
+    
+    // 4. Origem de tráfego pago
+    const utmSource = body.marketing?.source || '';
+    if (['google', 'facebook', 'instagram', 'cpc', 'ads', 'meta'].includes(utmSource.toLowerCase())) {
+      leadScore += 20;
+    }
+    
+    // 5. Visitas anteriores na jornada (Atribuição)
+    const journeyLength = body.marketing?.journey?.length || 0;
+    if (journeyLength >= 3) leadScore += 15;
+    else if (journeyLength === 2) leadScore += 10;
+    
+    body.lead_score = Math.min(100, leadScore);
 
     const { data: lead, error: insertError } = await supabase
       .from('leads')
@@ -170,41 +199,174 @@ export async function POST(
 
     if (insertError) throw insertError;
 
-    let outboundStatus = null;
-    let outboundResponse = null;
-    let outboundError = null;
+    // [NOVO] Hub de Integrações
+    // Buscar integrações ativas do cliente no banco
+    const { data: dbIntegrations } = await supabase
+      .from('integrations')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('status', 'active');
 
+    const activeIntegrations = [...(dbIntegrations || [])];
+    
+    // Suporte ao webhook legado configurado nas configurações de webhook
     if (webhook.outbound_url) {
-      try {
-        const response = await fetch(webhook.outbound_url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      activeIntegrations.push({
+        id: 'legacy-webhook',
+        name: 'Webhook Legado',
+        type: 'webhook',
+        config: { url: webhook.outbound_url }
+      });
+    }
+
+    if (activeIntegrations.length > 0) {
+      const repassePromises = activeIntegrations.map(async (integration) => {
+        let status = 200;
+        let responseText = '';
+        let errorMsg = null;
+
+        try {
+          const payloadToSend = {
             event: 'lead.captured',
             lead_id: lead.id,
             name,
             email,
             phone,
-            source: isWppTracker ? 'whatsapp_tracker' : 'form',
+            source: source,
+            lead_score: body.lead_score,
             raw_data: body,
             timestamp: new Date().toISOString()
-          })
-        });
-        outboundStatus = response.status;
-        outboundResponse = await response.text();
-      } catch (err: any) {
-        outboundError = err.message;
-      }
-    }
+          };
 
-    await supabase.from('webhook_logs').insert([{
-      webhook_id: webhook.id,
-      client_id: clientId,
-      status_code: outboundStatus || 201,
-      request_body: body,
-      response_body: outboundResponse,
-      error_message: outboundError
-    }]);
+          if (integration.type === 'webhook') {
+            const url = integration.config?.url;
+            if (url) {
+              const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadToSend)
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('URL do webhook de repasse não configurada.');
+            }
+          } 
+          else if (integration.type === 'hubspot') {
+            const portalId = integration.config?.portalId;
+            const formId = integration.config?.formId;
+            if (portalId && formId) {
+              const res = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${portalId}/${formId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  fields: [
+                    { name: 'email', value: email || '' },
+                    { name: 'firstname', value: name || '' },
+                    { name: 'phone', value: phone || '' }
+                  ],
+                  context: {
+                    pageUri: body.marketing?.page_url || '',
+                    pageName: body.marketing?.page_title || ''
+                  }
+                })
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('portalId ou formId do HubSpot ausentes.');
+            }
+          }
+          else if (integration.type === 'activecampaign') {
+            const apiUrl = integration.config?.apiUrl;
+            const apiKey = integration.config?.apiKey;
+            const listId = integration.config?.listId;
+            if (apiUrl && apiKey) {
+              const res = await fetch(`${apiUrl}/api/3/contacts`, {
+                method: 'POST',
+                headers: {
+                  'Api-Token': apiKey,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  contact: {
+                    email: email || '',
+                    firstName: name || '',
+                    phone: phone || ''
+                  }
+                })
+              });
+              status = res.status;
+              const json = await res.json();
+              responseText = JSON.stringify(json);
+              
+              if (res.ok && listId && json.contact?.id) {
+                await fetch(`${apiUrl}/api/3/contactLists`, {
+                  method: 'POST',
+                  headers: {
+                    'Api-Token': apiKey,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    contactList: {
+                      list: listId,
+                      contact: json.contact.id,
+                      status: 1
+                    }
+                  })
+                });
+              }
+            } else {
+              throw new Error('API URL ou API Key do ActiveCampaign ausentes.');
+            }
+          }
+          else if (integration.type === 'zapi') {
+            const instanceId = integration.config?.instanceId;
+            const token = integration.config?.token;
+            const targetPhone = integration.config?.targetPhone;
+            
+            if (instanceId && token && targetPhone) {
+              const msg = `🚀 *Novo Lead Asthros!*\n\n*Nome:* ${name}\n*E-mail:* ${email || 'N/A'}\n*Telefone:* ${phone || 'N/A'}\n*Origem:* ${source}\n*Score:* ${body.lead_score} pts`;
+              const res = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/send-messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: targetPhone,
+                  message: msg
+                })
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('instanceId, token ou targetPhone do Z-API ausentes.');
+            }
+          }
+        } catch (err: any) {
+          status = 500;
+          errorMsg = err.message;
+        }
+
+        // Registrar Log de Repasse no banco
+        await supabase.from('webhook_logs').insert([{
+          webhook_id: webhook.id,
+          client_id: clientId,
+          status_code: status,
+          request_body: { ...body, integration_name: integration.name, integration_type: integration.type },
+          response_body: responseText.substring(0, 1000), // Prevenir estouro de texto
+          error_message: errorMsg
+        }]);
+      });
+
+      await Promise.all(repassePromises);
+    } else {
+      await supabase.from('webhook_logs').insert([{
+        webhook_id: webhook.id,
+        client_id: clientId,
+        status_code: 201,
+        request_body: body,
+        response_body: 'Lead gravado internamente com sucesso (Sem integrações adicionais).'
+      }]);
+    }
 
     if (webhook.notification_email) {
       console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);

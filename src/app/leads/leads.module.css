@@ -1404,3 +1404,200 @@
   min-width: 40px;
   text-align: right;
 }
+
+/* Estilos para o Lead Score na Tabela */
+.scoreBadgeMini {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+
+.scoreHot {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366;
+  border-color: rgba(37, 211, 102, 0.2);
+}
+
+.scoreWarm {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.scoreCold {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ff4d4d;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Score HUD Cyberpunk no Drawer */
+.scoreSection {
+  background: rgba(var(--foreground-rgb), 0.02) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px;
+  padding: 1.5rem !important;
+}
+
+.scoreHUDContainer {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.scoreHUDRing {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid rgba(var(--foreground-rgb), 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 18, 26, 0.85);
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+.hudHot {
+  border-color: #25d366;
+  box-shadow: 0 0 15px rgba(37, 211, 102, 0.2);
+}
+
+.hudWarm {
+  border-color: #f59e0b;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
+.hudCold {
+  border-color: #ff4d4d;
+  box-shadow: 0 0 15px rgba(255, 77, 77, 0.2);
+}
+
+.scoreHUDValue {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.scoreHUDLabel {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.scoreHUDInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.scoreHUDInfo h4 {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--muted-foreground) !important;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.scoreHUDInfo h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+}
+
+/* Timeline da Jornada Multitouch */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: relative;
+  padding-left: 1rem;
+  margin-top: 0.75rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: rgba(var(--foreground-rgb), 0.05);
+}
+
+.timelineItem {
+  position: relative;
+  display: flex;
+  gap: 1rem;
+}
+
+.timelineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--card);
+  position: absolute;
+  left: -13px;
+  top: 6px;
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.timelineContent {
+  flex: 1;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.timelineHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.timelineSource {
+  font-weight: 800;
+  color: white;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.timelineTime {
+  font-size: 0.65rem;
+  color: var(--muted-foreground);
+}
+
+.timelinePage {
+  margin: 0 0 0.25rem 0;
+  color: #d1d5db;
+  line-height: 1.3;
+}
+
+.timelinePage em {
+  font-style: normal;
+  color: var(--primary);
+}
+
+.timelineCampaign {
+  font-size: 0.65rem;
+  color: var(--muted-foreground);
+  background: rgba(var(--foreground-rgb), 0.03);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
