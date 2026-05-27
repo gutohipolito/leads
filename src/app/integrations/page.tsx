@@ -91,6 +91,17 @@ const LeadloversLogo = () => (
   </svg>
 );
 
+const defaultProviderLogos: Record<string, string> = {
+  hubspot: 'https://logo.clearbit.com/hubspot.com',
+  activecampaign: 'https://logo.clearbit.com/activecampaign.com',
+  zapi: 'https://logo.clearbit.com/whatsapp.com',
+  rdstation: 'https://logo.clearbit.com/rdstation.com',
+  pipedrive: 'https://logo.clearbit.com/pipedrive.com',
+  piperun: 'https://logo.clearbit.com/crmpiperun.com',
+  kommo: 'https://logo.clearbit.com/kommo.com',
+  leadlovers: 'https://logo.clearbit.com/leadlovers.com'
+};
+
 interface Integration {
   id: string;
   client_id: string;
@@ -171,6 +182,11 @@ export default function IntegrationsPage() {
   const [selectedIntegrationForIcon, setSelectedIntegrationForIcon] = useState<Integration | null>(null);
   const [customIconUrlInput, setCustomIconUrlInput] = useState('');
   const [failedCustomLogos, setFailedCustomLogos] = useState<Record<string, boolean>>({});
+  const [failedDefaultLogos, setFailedDefaultLogos] = useState<Record<string, boolean>>({});
+
+  const handleDefaultLogoError = (type: string) => {
+    setFailedDefaultLogos(prev => ({ ...prev, [type]: true }));
+  };
 
   const handleSaveCustomIcon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,6 +240,19 @@ export default function IntegrationsPage() {
           alt={type} 
           className={styles.customLogoImg} 
           onError={() => handleCustomLogoError(integration.id)} 
+        />
+      );
+    }
+
+    // Tentar renderizar o logotipo colorido oficial da marca via Clearbit
+    const defaultUrl = defaultProviderLogos[type];
+    if (defaultUrl && !failedDefaultLogos[type]) {
+      return (
+        <img 
+          src={defaultUrl} 
+          alt={type} 
+          className={styles.customLogoImg} 
+          onError={() => handleDefaultLogoError(type)} 
         />
       );
     }
