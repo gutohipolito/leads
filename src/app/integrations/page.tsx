@@ -159,6 +159,8 @@ export default function IntegrationsPage() {
   const [configLlSequence, setConfigLlSequence] = useState('');
   const [configLlLevel, setConfigLlLevel] = useState('');
 
+  const [formCustomIconUrl, setFormCustomIconUrl] = useState('');
+
   const handleLogoError = (clientId: string) => {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
   };
@@ -381,6 +383,7 @@ export default function IntegrationsPage() {
     setConfigLlSequence('');
     setConfigLlLevel('');
     
+    setFormCustomIconUrl('');
     setTestResult(null); // Reseta testes
     setActiveModal('create');
   };
@@ -423,6 +426,7 @@ export default function IntegrationsPage() {
       setConfigLlSequence(integration.config?.sequenceId || '');
       setConfigLlLevel(integration.config?.levelCode || '');
     }
+    setFormCustomIconUrl(integration.config?.customIconUrl || '');
     setTestResult(null); // Reseta testes
     setActiveModal('edit');
   };
@@ -459,6 +463,8 @@ export default function IntegrationsPage() {
       };
     }
 
+    config.customIconUrl = formCustomIconUrl.trim() || null;
+
     const { data, error } = await supabase
       .from('integrations')
       .insert([{
@@ -485,36 +491,40 @@ export default function IntegrationsPage() {
     e.preventDefault();
     if (!editingIntegration) return;
 
-    let config: any = {};
+    let config: any = { ...(editingIntegration.config || {}) };
     if (editingIntegration.type === 'webhook') {
-      config = { url: configWebhookUrl.trim() };
+      config.url = configWebhookUrl.trim();
     } else if (editingIntegration.type === 'hubspot') {
-      config = { portalId: configHubspotPortal.trim(), formId: configHubspotForm.trim() };
+      config.portalId = configHubspotPortal.trim();
+      config.formId = configHubspotForm.trim();
     } else if (editingIntegration.type === 'activecampaign') {
-      config = { apiUrl: configAcUrl.trim(), apiKey: configAcKey.trim(), listId: configAcList.trim() };
+      config.apiUrl = configAcUrl.trim();
+      config.apiKey = configAcKey.trim();
+      config.listId = configAcList.trim();
     } else if (editingIntegration.type === 'zapi') {
-      config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
+      config.instanceId = configZapiInstance.trim();
+      config.token = configZapiToken.trim();
+      config.targetPhone = configZapiPhone.trim();
     } else if (editingIntegration.type === 'rdstation') {
-      config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
+      config.tokenApi = configRdToken.trim();
+      config.identifier = configRdIdentifier.trim();
     } else if (editingIntegration.type === 'pipedrive') {
-      config = { apiToken: configPipeToken.trim(), stageId: configPipeStage.trim() };
+      config.apiToken = configPipeToken.trim();
+      config.stageId = configPipeStage.trim();
     } else if (editingIntegration.type === 'piperun') {
-      config = { token: configRunToken.trim(), stageId: configRunStage.trim() };
+      config.token = configRunToken.trim();
+      config.stageId = configRunStage.trim();
     } else if (editingIntegration.type === 'kommo') {
-      config = { subdomain: configKommoSubdomain.trim(), token: configKommoToken.trim() };
+      config.subdomain = configKommoSubdomain.trim();
+      config.token = configKommoToken.trim();
     } else if (editingIntegration.type === 'leadlovers') {
-      config = { 
-        token: configLlToken.trim(), 
-        machineId: configLlMachine.trim(), 
-        sequenceId: configLlSequence.trim(), 
-        levelCode: configLlLevel.trim() 
-      };
+      config.token = configLlToken.trim();
+      config.machineId = configLlMachine.trim();
+      config.sequenceId = configLlSequence.trim();
+      config.levelCode = configLlLevel.trim();
     }
 
-    // Preservar o ícone customizado se ele já existia no config anterior
-    if (editingIntegration.config?.customIconUrl) {
-      config.customIconUrl = editingIntegration.config.customIconUrl;
-    }
+    config.customIconUrl = formCustomIconUrl.trim() || null;
 
     const { data, error } = await supabase
       .from('integrations')
@@ -530,6 +540,11 @@ export default function IntegrationsPage() {
       alert('Erro ao atualizar integração: ' + error.message);
     } else {
       setIntegrations(prev => prev.map(item => item.id === editingIntegration.id ? data : item));
+      setFailedCustomLogos(prev => {
+        const next = { ...prev };
+        delete next[editingIntegration.id];
+        return next;
+      });
       setActiveModal(null);
       setEditingIntegration(null);
       await logAction('Integração Atualizada', 'webhook', data.id, { name: data.name });
@@ -743,7 +758,7 @@ export default function IntegrationsPage() {
             <div className={styles.cardsGrid}>
               
               {/* Webhook Customizado */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${webhookIntegration ? (webhookIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(86, 215, 253, 0.1)', color: 'var(--primary)', boxShadow: '0 0 10px rgba(86, 215, 253, 0.2)' }}>
@@ -772,11 +787,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {webhookIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(webhookIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(webhookIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('webhook')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('webhook')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -797,7 +812,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* HubSpot CRM */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${hubspotIntegration ? (hubspotIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(255, 122, 89, 0.1)', color: '#FF7A59', border: '1px solid rgba(255, 122, 89, 0.2)' }}>
@@ -826,11 +841,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {hubspotIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(hubspotIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(hubspotIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('hubspot')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('hubspot')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -851,7 +866,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* ActiveCampaign */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${activecampaignIntegration ? (activecampaignIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(53, 114, 239, 0.1)', color: '#3572ef', border: '1px solid rgba(53, 114, 239, 0.2)' }}>
@@ -880,11 +895,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {activecampaignIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(activecampaignIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(activecampaignIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('activecampaign')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('activecampaign')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -905,7 +920,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* Z-API (WhatsApp notification) */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${zapiIntegration ? (zapiIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
@@ -934,11 +949,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {zapiIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(zapiIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(zapiIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('zapi')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('zapi')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -959,7 +974,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* RD Station */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${rdstationIntegration ? (rdstationIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(249, 95, 98, 0.1)', color: '#F95F62', border: '1px solid rgba(249, 95, 98, 0.2)' }}>
@@ -988,11 +1003,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {rdstationIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(rdstationIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(rdstationIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('rdstation')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('rdstation')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -1013,7 +1028,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* Pipedrive CRM */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${pipedriveIntegration ? (pipedriveIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(23, 184, 119, 0.1)', color: '#17B877', border: '1px solid rgba(23, 184, 119, 0.2)' }}>
@@ -1042,11 +1057,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {pipedriveIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(pipedriveIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(pipedriveIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('pipedrive')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('pipedrive')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -1067,7 +1082,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* PipeRun CRM */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${piperunIntegration ? (piperunIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
@@ -1096,11 +1111,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {piperunIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(piperunIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(piperunIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('piperun')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('piperun')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -1121,7 +1136,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* Kommo CRM */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${kommoIntegration ? (kommoIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(138, 43, 226, 0.1)', color: '#8A2BE2', border: '1px solid rgba(138, 43, 226, 0.2)' }}>
@@ -1150,11 +1165,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {kommoIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(kommoIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(kommoIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('kommo')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('kommo')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -1175,7 +1190,7 @@ export default function IntegrationsPage() {
               </div>
 
               {/* Leadlovers */}
-              <div className={`${styles.providerCard} glass`}>
+              <div className={`${styles.providerCard} ${leadloversIntegration ? (leadloversIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
                     <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(225, 29, 72, 0.1)', color: '#E11D48', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
@@ -1204,11 +1219,11 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerFooter}>
                   {leadloversIntegration ? (
-                    <button className={styles.secondaryBtn} onClick={() => openEditModal(leadloversIntegration)}>
+                    <button className={styles.configureBtn} onClick={() => openEditModal(leadloversIntegration)}>
                       <Settings size={14} /> <span>Configurar</span>
                     </button>
                   ) : (
-                    <button className={styles.primaryBtn} onClick={() => openCreateModal('leadlovers')}>
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('leadlovers')}>
                       <Plus size={14} /> <span>Conectar</span>
                     </button>
                   )}
@@ -1258,6 +1273,19 @@ export default function IntegrationsPage() {
                     placeholder="Ex: Integração Principal"
                     required
                   />
+                </div>
+
+                <div className={styles.field}>
+                  <label>URL do Ícone Customizado (Opcional)</label>
+                  <input 
+                    type="url" 
+                    value={formCustomIconUrl}
+                    onChange={e => setFormCustomIconUrl(e.target.value)}
+                    placeholder="https://exemplo.com/sua-logo.png"
+                  />
+                  <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', marginTop: '0.1rem' }}>
+                    Deixe em branco para utilizar o logotipo oficial da marca.
+                  </span>
                 </div>
 
                 {/* Campos Webhook */}
