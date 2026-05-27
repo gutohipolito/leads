@@ -159,6 +159,36 @@ export async function POST(request: NextRequest) {
           signal: controller.signal
         });
       } 
+      else if (type === 'rdstation') {
+        const tokenApi = config?.tokenApi?.trim();
+        const identifier = config?.identifier?.trim() || 'asthros_lead_capture';
+        if (!tokenApi) {
+          throw new Error('API Token do RD Station ausente.');
+        }
+        
+        response = await fetch(`https://api.rd.services/platform/conversions?api_key=${tokenApi}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Asthros-Webhook-Tester/1.0'
+          },
+          body: JSON.stringify({
+            event_type: "CONVERSION",
+            event_family: "CDP",
+            payload: {
+              email: payload.email,
+              name: payload.name,
+              personal_phone: payload.phone,
+              conversion_identifier: identifier,
+              traffic_source: payload.raw_data.utm_source,
+              traffic_medium: payload.raw_data.utm_medium,
+              traffic_campaign: payload.raw_data.utm_campaign,
+              cf_lead_score: payload.lead_score.toString()
+            }
+          }),
+          signal: controller.signal
+        });
+      }
       else {
         throw new Error(`Provedor de integração '${type}' não é suportado.`);
       }

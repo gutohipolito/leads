@@ -341,6 +341,37 @@ export async function POST(
               throw new Error('instanceId, token ou targetPhone do Z-API ausentes.');
             }
           }
+          else if (integration.type === 'rdstation') {
+            const tokenApi = integration.config?.tokenApi;
+            const identifier = integration.config?.identifier || 'asthros_lead_capture';
+            if (tokenApi) {
+              const res = await fetch(`https://api.rd.services/platform/conversions?api_key=${tokenApi}`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'Asthros-Webhook/1.0'
+                },
+                body: JSON.stringify({
+                  event_type: "CONVERSION",
+                  event_family: "CDP",
+                  payload: {
+                    email: email || '',
+                    name: name || '',
+                    personal_phone: phone || '',
+                    conversion_identifier: identifier,
+                    traffic_source: body.marketing?.source || '',
+                    traffic_medium: body.marketing?.medium || '',
+                    traffic_campaign: body.marketing?.campaign || '',
+                    cf_lead_score: body.lead_score?.toString() || '0'
+                  }
+                })
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('API Token do RD Station ausente.');
+            }
+          }
         } catch (err: any) {
           status = 500;
           errorMsg = err.message;

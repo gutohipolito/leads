@@ -50,11 +50,22 @@ const WhatsAppLogo = () => (
   </svg>
 );
 
+const RDStationLogo = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 0 6px rgba(249, 95, 98, 0.4))', display: 'block' }}>
+    <path d="M21 3C16 3 11 8 11 13C11 13.5 10.5 14 10 14.5L6 18.5L3 21L5.5 18L9.5 14C10 13.5 10.5 13 11 13" stroke="#F95F62" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 3C21 8 16 13 11 13" stroke="#F95F62" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 17L6 18L7 14L10 17Z" fill="#F95F62" />
+    <path d="M17 10L18 6L14 7L17 10Z" fill="#F95F62" />
+    <path d="M6 18L3 21L4.5 19.5L5.5 19L6 18Z" fill="#FF7A59" />
+    <circle cx="15.5" cy="8.5" r="1.5" fill="#FFF" />
+  </svg>
+);
+
 interface Integration {
   id: string;
   client_id: string;
   name: string;
-  type: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi';
+  type: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation';
   config: any;
   status: 'active' | 'inactive';
   created_at: string;
@@ -73,8 +84,11 @@ export default function IntegrationsPage() {
 
   // Modais de Criação/Edição
   const [activeModal, setActiveModal] = useState<'create' | 'edit' | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | null>(null);
   const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
+
+  // Controle de falha no carregamento dos logotipos dos clientes
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
   // Dados do Formulário
   const [formName, setFormName] = useState('');
@@ -87,6 +101,12 @@ export default function IntegrationsPage() {
   const [configZapiInstance, setConfigZapiInstance] = useState('');
   const [configZapiToken, setConfigZapiToken] = useState('');
   const [configZapiPhone, setConfigZapiPhone] = useState('');
+  const [configRdToken, setConfigRdToken] = useState('');
+  const [configRdIdentifier, setConfigRdIdentifier] = useState('');
+
+  const handleLogoError = (clientId: string) => {
+    setFailedLogos(prev => ({ ...prev, [clientId]: true }));
+  };
 
   // Controle de Teste de Conexão
   const [testing, setTesting] = useState(false);
@@ -199,9 +219,15 @@ export default function IntegrationsPage() {
   };
 
   // Abrir Modal de Criação
-  const openCreateModal = (provider: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi') => {
+  const openCreateModal = (provider: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation') => {
     setSelectedProvider(provider);
-    setFormName(provider === 'webhook' ? 'Webhook Customizado' : (provider === 'hubspot' ? 'HubSpot CRM' : (provider === 'activecampaign' ? 'ActiveCampaign' : 'WhatsApp/Z-API')));
+    setFormName(
+      provider === 'webhook' ? 'Webhook Customizado' : 
+      provider === 'hubspot' ? 'HubSpot CRM' : 
+      provider === 'activecampaign' ? 'ActiveCampaign' : 
+      provider === 'zapi' ? 'WhatsApp/Z-API' : 
+      'RD Station Platform'
+    );
     setConfigWebhookUrl('');
     setConfigHubspotPortal('');
     setConfigHubspotForm('');
@@ -211,6 +237,8 @@ export default function IntegrationsPage() {
     setConfigZapiInstance('');
     setConfigZapiToken('');
     setConfigZapiPhone('');
+    setConfigRdToken('');
+    setConfigRdIdentifier('');
     setTestResult(null); // Reseta testes
     setActiveModal('create');
   };
@@ -235,6 +263,9 @@ export default function IntegrationsPage() {
       setConfigZapiInstance(integration.config?.instanceId || '');
       setConfigZapiToken(integration.config?.token || '');
       setConfigZapiPhone(integration.config?.targetPhone || '');
+    } else if (integration.type === 'rdstation') {
+      setConfigRdToken(integration.config?.tokenApi || '');
+      setConfigRdIdentifier(integration.config?.identifier || '');
     }
     setTestResult(null); // Reseta testes
     setActiveModal('edit');
@@ -250,11 +281,13 @@ export default function IntegrationsPage() {
     if (selectedProvider === 'webhook') {
       config = { url: configWebhookUrl.trim() };
     } else if (selectedProvider === 'hubspot') {
-      config = { portalId: configHubspotPortal.trim(), formId: configHubspotForm.trim() };
+      config = { portalId: configHubspotPortal.trim(), fillFormId: configHubspotForm.trim() };
     } else if (selectedProvider === 'activecampaign') {
       config = { apiUrl: configAcUrl.trim(), apiKey: configAcKey.trim(), listId: configAcList.trim() };
     } else if (selectedProvider === 'zapi') {
       config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
+    } else if (selectedProvider === 'rdstation') {
+      config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
     }
 
     const { data, error } = await supabase
@@ -292,6 +325,8 @@ export default function IntegrationsPage() {
       config = { apiUrl: configAcUrl.trim(), apiKey: configAcKey.trim(), listId: configAcList.trim() };
     } else if (editingIntegration.type === 'zapi') {
       config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
+    } else if (editingIntegration.type === 'rdstation') {
+      config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
     }
 
     const { data, error } = await supabase
@@ -363,6 +398,8 @@ export default function IntegrationsPage() {
         config = { apiUrl: configAcUrl.trim(), apiKey: configAcKey.trim(), listId: configAcList.trim() };
       } else if (selectedProvider === 'zapi') {
         config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
+      } else if (selectedProvider === 'rdstation') {
+        config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
       }
 
       const res = await fetch('/api/webhooks/test-outbound', {
@@ -421,8 +458,13 @@ export default function IntegrationsPage() {
                   </div>
                   <div className={styles.clientSelectorBody}>
                     <div className={styles.clientSelectorInitials} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.08)' }}>
-                      {client.logo_url ? (
-                        <img src={client.logo_url} alt={client.name} className={styles.clientSelectorImg} />
+                      {client.logo_url && !failedLogos[client.id] ? (
+                        <img 
+                          src={client.logo_url} 
+                          alt={client.name} 
+                          className={styles.clientSelectorImg} 
+                          onError={() => handleLogoError(client.id)}
+                        />
                       ) : (
                         <span>{client.name.substring(0, 2).toUpperCase()}</span>
                       )}
@@ -662,6 +704,49 @@ export default function IntegrationsPage() {
                 </div>
               </div>
 
+              {/* RD Station */}
+              <div className={`${styles.providerCard} glass`}>
+                <div className={styles.providerHeader}>
+                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(249, 95, 98, 0.1)', color: '#F95F62', border: '1px solid rgba(249, 95, 98, 0.2)' }}>
+                    <RDStationLogo />
+                  </div>
+                  {integrations.some(i => i.type === 'rdstation' && i.status === 'active') && (
+                    <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
+                  )}
+                </div>
+                <div className={styles.providerBody}>
+                  <h3>RD Station Platform</h3>
+                  <p>Envie leads e conversões diretamente para a API de Conversões do RD Station. Mapeia automaticamente nome, e-mail, telefone, cargo, UTMs de tráfego e pontuação (Lead Score) para alimentar sua automação de marketing.</p>
+                </div>
+                <div className={styles.providerFooter}>
+                  {integrations.find(i => i.type === 'rdstation') ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'rdstation')!)}>
+                      <Settings size={14} /> <span>Configurar</span>
+                    </button>
+                  ) : (
+                    <button className={styles.primaryBtn} onClick={() => openCreateModal('rdstation')}>
+                      <Plus size={14} /> <span>Conectar</span>
+                    </button>
+                  )}
+                  {integrations.find(i => i.type === 'rdstation') && (
+                    <div className={styles.switchContainer}>
+                      <span>{integrations.find(i => i.type === 'rdstation')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <label className={styles.switch}>
+                        <input 
+                          type="checkbox"
+                          checked={integrations.find(i => i.type === 'rdstation')?.status === 'active'}
+                          onChange={() => handleToggleStatus(
+                            integrations.find(i => i.type === 'rdstation')!.id, 
+                            integrations.find(i => i.type === 'rdstation')!.status
+                          )}
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
@@ -675,7 +760,18 @@ export default function IntegrationsPage() {
               className={`${styles.modal} glass`}
             >
               <div className={styles.modalHeader}>
-                <h3>{activeModal === 'create' ? 'Conectar' : 'Configurar'} {selectedProvider === 'webhook' ? 'Webhook' : (selectedProvider === 'hubspot' ? 'HubSpot' : (selectedProvider === 'activecampaign' ? 'ActiveCampaign' : 'WhatsApp/Z-API'))}</h3>
+                <h3>
+                  {activeModal === 'create' ? 'Conectar' : 'Configurar'}{' '}
+                  {selectedProvider === 'webhook'
+                    ? 'Webhook'
+                    : selectedProvider === 'hubspot'
+                    ? 'HubSpot'
+                    : selectedProvider === 'activecampaign'
+                    ? 'ActiveCampaign'
+                    : selectedProvider === 'zapi'
+                    ? 'WhatsApp/Z-API'
+                    : 'RD Station'}
+                </h3>
                 <p>Preencha os parâmetros abaixo para habilitar o envio de leads em tempo real.</p>
               </div>
 
@@ -796,6 +892,32 @@ export default function IntegrationsPage() {
                         value={configZapiPhone}
                         onChange={e => setConfigZapiPhone(e.target.value)}
                         placeholder="Ex: 5511999999999"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Campos RD Station */}
+                {selectedProvider === 'rdstation' && (
+                  <>
+                    <div className={styles.field}>
+                      <label>Token de API (Token de Conversão)</label>
+                      <input 
+                        type="password" 
+                        value={configRdToken}
+                        onChange={e => setConfigRdToken(e.target.value)}
+                        placeholder="Insira o Token de API do RD Station (API Key / Token de Conversão)"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Identificador do Evento (Conversion Identifier)</label>
+                      <input 
+                        type="text" 
+                        value={configRdIdentifier}
+                        onChange={e => setConfigRdIdentifier(e.target.value)}
+                        placeholder="Ex: conversao-leads-asthros, lead-site"
                         required
                       />
                     </div>
