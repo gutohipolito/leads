@@ -372,6 +372,138 @@ export async function POST(
               throw new Error('API Token do RD Station ausente.');
             }
           }
+          else if (integration.type === 'pipedrive') {
+            const apiToken = integration.config?.apiToken;
+            const stageId = integration.config?.stageId;
+            if (apiToken) {
+              // 1. Criar Pessoa no Pipedrive
+              const personRes = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${apiToken}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name,
+                  email: email ? [email] : [],
+                  phone: phone ? [phone] : []
+                })
+              });
+              
+              status = personRes.status;
+              const personData = await personRes.json();
+              
+              if (personRes.ok && personData.success && personData.data?.id) {
+                const personId = personData.data.id;
+                // 2. Criar Negócio (Deal) vinculado à Pessoa
+                const dealRes = await fetch(`https://api.pipedrive.com/v1/deals?api_token=${apiToken}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    title: `Lead - ${name}`,
+                    person_id: personId,
+                    stage_id: stageId ? parseInt(stageId) : undefined
+                  })
+                });
+                
+                status = dealRes.status;
+                const dealData = await dealRes.json();
+                responseText = JSON.stringify({ person: personData.data, deal: dealData.data });
+              } else {
+                responseText = JSON.stringify(personData);
+                throw new Error(personData.error || 'Falha ao criar pessoa no Pipedrive.');
+              }
+            } else {
+              throw new Error('apiToken do Pipedrive ausente.');
+            }
+          }
+          else if (integration.type === 'piperun') {
+            const token = integration.config?.token;
+            const stageId = integration.config?.stageId;
+            if (token) {
+              const res = await fetch('https://app.piperun.com/api/v1/leads', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'token': token
+                },
+                body: JSON.stringify({
+                  rules: { update: true, equal_pipeline: true },
+                  lead: {
+                    title: `Lead - ${name}`,
+                    name,
+                    email,
+                    phone,
+                    stage_id: stageId ? parseInt(stageId) : undefined
+                  }
+                })
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('token do PipeRun ausente.');
+            }
+          }
+          else if (integration.type === 'kommo') {
+            const subdomain = integration.config?.subdomain;
+            const token = integration.config?.token;
+            if (subdomain && token) {
+              const res = await fetch(`https://${subdomain}.kommo.com/api/v4/leads/complex`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify([
+                  {
+                    name: `Negócio - ${name}`,
+                    _embedded: {
+                      contacts: [
+                        {
+                          first_name: name,
+                          custom_fields_values: [
+                            ...(email ? [{
+                              field_code: "EMAIL",
+                              values: [{ value: email, enum_code: "WORK" }]
+                            }] : []),
+                            ...(phone ? [{
+                              field_code: "PHONE",
+                              values: [{ value: phone, enum_code: "WORK" }]
+                            }] : [])
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ])
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('subdomain ou token do Kommo ausentes.');
+            }
+          }
+          else if (integration.type === 'leadlovers') {
+            const token = integration.config?.token;
+            const machineId = integration.config?.machineId;
+            const sequenceId = integration.config?.sequenceId;
+            const levelCode = integration.config?.levelCode;
+            if (token) {
+              const res = await fetch(`https://mkt.leadlovers.com/api/v1/lead?token=${token}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  Name: name,
+                  Email: email || '',
+                  Phone: phone || '',
+                  MachineCode: machineId ? parseInt(machineId) : undefined,
+                  EmailSequenceCode: sequenceId ? parseInt(sequenceId) : undefined,
+                  SequenceLevelCode: levelCode ? parseInt(levelCode) : 1
+                })
+              });
+              status = res.status;
+              responseText = await res.text();
+            } else {
+              throw new Error('token do Leadlovers ausente.');
+            }
+          }
         } catch (err: any) {
           status = 500;
           errorMsg = err.message;

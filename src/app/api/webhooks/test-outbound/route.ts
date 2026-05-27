@@ -189,6 +189,139 @@ export async function POST(request: NextRequest) {
           signal: controller.signal
         });
       }
+      else if (type === 'pipedrive') {
+        const apiToken = config?.apiToken?.trim();
+        const stageId = config?.stageId?.trim();
+        if (!apiToken) {
+          throw new Error('API Token do Pipedrive ausente.');
+        }
+        
+        response = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${apiToken}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Asthros-Webhook-Tester/1.0'
+          },
+          body: JSON.stringify({
+            name: payload.name,
+            email: [payload.email],
+            phone: [payload.phone]
+          }),
+          signal: controller.signal
+        });
+        
+        if (response.ok && stageId) {
+          try {
+            const json = await response.clone().json();
+            if (json.success && json.data?.id) {
+              await fetch(`https://api.pipedrive.com/v1/deals?api_token=${apiToken}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: `Lead de Teste - ${payload.name}`,
+                  person_id: json.data.id,
+                  stage_id: parseInt(stageId)
+                }),
+                signal: controller.signal
+              });
+            }
+          } catch (dealErr) {
+            console.error('Erro de teste ao criar negócio Pipedrive:', dealErr);
+          }
+        }
+      }
+      else if (type === 'piperun') {
+        const token = config?.token?.trim();
+        const stageId = config?.stageId?.trim();
+        if (!token) {
+          throw new Error('Token do PipeRun ausente.');
+        }
+        
+        response = await fetch('https://app.piperun.com/api/v1/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'token': token,
+            'User-Agent': 'Asthros-Webhook-Tester/1.0'
+          },
+          body: JSON.stringify({
+            rules: { update: true, equal_pipeline: true },
+            lead: {
+              title: `Lead de Teste - ${payload.name}`,
+              name: payload.name,
+              email: payload.email,
+              phone: payload.phone,
+              stage_id: stageId ? parseInt(stageId) : undefined
+            }
+          }),
+          signal: controller.signal
+        });
+      }
+      else if (type === 'kommo') {
+        const subdomain = config?.subdomain?.trim();
+        const token = config?.token?.trim();
+        if (!subdomain || !token) {
+          throw new Error('Subdomain ou Token do Kommo ausentes.');
+        }
+        
+        response = await fetch(`https://${subdomain}.kommo.com/api/v4/leads/complex`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'User-Agent': 'Asthros-Webhook-Tester/1.0'
+          },
+          body: JSON.stringify([
+            {
+              name: `Negócio de Teste - ${payload.name}`,
+              _embedded: {
+                contacts: [
+                  {
+                    first_name: payload.name,
+                    custom_fields_values: [
+                      {
+                        field_code: "EMAIL",
+                        values: [{ value: payload.email, enum_code: "WORK" }]
+                      },
+                      {
+                        field_code: "PHONE",
+                        values: [{ value: payload.phone, enum_code: "WORK" }]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]),
+          signal: controller.signal
+        });
+      }
+      else if (type === 'leadlovers') {
+        const token = config?.token?.trim();
+        const machineId = config?.machineId?.trim();
+        const sequenceId = config?.sequenceId?.trim();
+        const levelCode = config?.levelCode?.trim();
+        if (!token) {
+          throw new Error('Token do Leadlovers ausente.');
+        }
+        
+        response = await fetch(`https://mkt.leadlovers.com/api/v1/lead?token=${token}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Asthros-Webhook-Tester/1.0'
+          },
+          body: JSON.stringify({
+            Name: payload.name,
+            Email: payload.email,
+            Phone: payload.phone,
+            MachineCode: machineId ? parseInt(machineId) : undefined,
+            EmailSequenceCode: sequenceId ? parseInt(sequenceId) : undefined,
+            SequenceLevelCode: levelCode ? parseInt(levelCode) : 1
+          }),
+          signal: controller.signal
+        });
+      }
       else {
         throw new Error(`Provedor de integração '${type}' não é suportado.`);
       }

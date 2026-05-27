@@ -61,11 +61,38 @@ const RDStationLogo = () => (
   </svg>
 );
 
+const PipedriveLogo = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#17B877', filter: 'drop-shadow(0 0 6px rgba(23, 184, 119, 0.4))', display: 'block' }}>
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" fill="#17B877" />
+  </svg>
+);
+
+const PipeRunLogo = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3B82F6', filter: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))', display: 'block' }}>
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3B82F6" />
+  </svg>
+);
+
+const KommoLogo = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#8A2BE2', filter: 'drop-shadow(0 0 6px rgba(138, 43, 226, 0.4))', display: 'block' }}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="#8A2BE2" />
+    <circle cx="8" cy="10" r="1.5" fill="#8A2BE2" />
+    <circle cx="12" cy="10" r="1.5" fill="#8A2BE2" />
+    <circle cx="16" cy="10" r="1.5" fill="#8A2BE2" />
+  </svg>
+);
+
+const LeadloversLogo = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#E11D48', filter: 'drop-shadow(0 0 6px rgba(225, 29, 72, 0.4))', display: 'block' }}>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#E11D48" />
+  </svg>
+);
+
 interface Integration {
   id: string;
   client_id: string;
   name: string;
-  type: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation';
+  type: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers';
   config: any;
   status: 'active' | 'inactive';
   created_at: string;
@@ -82,9 +109,22 @@ export default function IntegrationsPage() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
 
+  // Mapeamento de nomes amigáveis para os provedores
+  const providerNames: Record<string, string> = {
+    webhook: 'Webhook Customizado',
+    hubspot: 'HubSpot CRM',
+    activecampaign: 'ActiveCampaign',
+    zapi: 'WhatsApp (Z-API)',
+    rdstation: 'RD Station Platform',
+    pipedrive: 'Pipedrive CRM',
+    piperun: 'PipeRun CRM',
+    kommo: 'Kommo CRM',
+    leadlovers: 'Leadlovers'
+  };
+
   // Modais de Criação/Edição
   const [activeModal, setActiveModal] = useState<'create' | 'edit' | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers' | null>(null);
   const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
 
   // Controle de falha no carregamento dos logotipos dos clientes
@@ -103,6 +143,18 @@ export default function IntegrationsPage() {
   const [configZapiPhone, setConfigZapiPhone] = useState('');
   const [configRdToken, setConfigRdToken] = useState('');
   const [configRdIdentifier, setConfigRdIdentifier] = useState('');
+
+  // Novos Provedores
+  const [configPipeToken, setConfigPipeToken] = useState('');
+  const [configPipeStage, setConfigPipeStage] = useState('');
+  const [configRunToken, setConfigRunToken] = useState('');
+  const [configRunStage, setConfigRunStage] = useState('');
+  const [configKommoSubdomain, setConfigKommoSubdomain] = useState('');
+  const [configKommoToken, setConfigKommoToken] = useState('');
+  const [configLlToken, setConfigLlToken] = useState('');
+  const [configLlMachine, setConfigLlMachine] = useState('');
+  const [configLlSequence, setConfigLlSequence] = useState('');
+  const [configLlLevel, setConfigLlLevel] = useState('');
 
   const handleLogoError = (clientId: string) => {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
@@ -219,15 +271,9 @@ export default function IntegrationsPage() {
   };
 
   // Abrir Modal de Criação
-  const openCreateModal = (provider: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation') => {
+  const openCreateModal = (provider: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers') => {
     setSelectedProvider(provider);
-    setFormName(
-      provider === 'webhook' ? 'Webhook Customizado' : 
-      provider === 'hubspot' ? 'HubSpot CRM' : 
-      provider === 'activecampaign' ? 'ActiveCampaign' : 
-      provider === 'zapi' ? 'WhatsApp/Z-API' : 
-      'RD Station Platform'
-    );
+    setFormName(providerNames[provider] || 'Nova Integração');
     setConfigWebhookUrl('');
     setConfigHubspotPortal('');
     setConfigHubspotForm('');
@@ -239,6 +285,19 @@ export default function IntegrationsPage() {
     setConfigZapiPhone('');
     setConfigRdToken('');
     setConfigRdIdentifier('');
+    
+    // Resets novos provedores
+    setConfigPipeToken('');
+    setConfigPipeStage('');
+    setConfigRunToken('');
+    setConfigRunStage('');
+    setConfigKommoSubdomain('');
+    setConfigKommoToken('');
+    setConfigLlToken('');
+    setConfigLlMachine('');
+    setConfigLlSequence('');
+    setConfigLlLevel('');
+    
     setTestResult(null); // Reseta testes
     setActiveModal('create');
   };
@@ -266,6 +325,20 @@ export default function IntegrationsPage() {
     } else if (integration.type === 'rdstation') {
       setConfigRdToken(integration.config?.tokenApi || '');
       setConfigRdIdentifier(integration.config?.identifier || '');
+    } else if (integration.type === 'pipedrive') {
+      setConfigPipeToken(integration.config?.apiToken || '');
+      setConfigPipeStage(integration.config?.stageId || '');
+    } else if (integration.type === 'piperun') {
+      setConfigRunToken(integration.config?.token || '');
+      setConfigRunStage(integration.config?.stageId || '');
+    } else if (integration.type === 'kommo') {
+      setConfigKommoSubdomain(integration.config?.subdomain || '');
+      setConfigKommoToken(integration.config?.token || '');
+    } else if (integration.type === 'leadlovers') {
+      setConfigLlToken(integration.config?.token || '');
+      setConfigLlMachine(integration.config?.machineId || '');
+      setConfigLlSequence(integration.config?.sequenceId || '');
+      setConfigLlLevel(integration.config?.levelCode || '');
     }
     setTestResult(null); // Reseta testes
     setActiveModal('edit');
@@ -288,6 +361,19 @@ export default function IntegrationsPage() {
       config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
     } else if (selectedProvider === 'rdstation') {
       config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
+    } else if (selectedProvider === 'pipedrive') {
+      config = { apiToken: configPipeToken.trim(), stageId: configPipeStage.trim() };
+    } else if (selectedProvider === 'piperun') {
+      config = { token: configRunToken.trim(), stageId: configRunStage.trim() };
+    } else if (selectedProvider === 'kommo') {
+      config = { subdomain: configKommoSubdomain.trim(), token: configKommoToken.trim() };
+    } else if (selectedProvider === 'leadlovers') {
+      config = { 
+        token: configLlToken.trim(), 
+        machineId: configLlMachine.trim(), 
+        sequenceId: configLlSequence.trim(), 
+        levelCode: configLlLevel.trim() 
+      };
     }
 
     const { data, error } = await supabase
@@ -327,6 +413,19 @@ export default function IntegrationsPage() {
       config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
     } else if (editingIntegration.type === 'rdstation') {
       config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
+    } else if (editingIntegration.type === 'pipedrive') {
+      config = { apiToken: configPipeToken.trim(), stageId: configPipeStage.trim() };
+    } else if (editingIntegration.type === 'piperun') {
+      config = { token: configRunToken.trim(), stageId: configRunStage.trim() };
+    } else if (editingIntegration.type === 'kommo') {
+      config = { subdomain: configKommoSubdomain.trim(), token: configKommoToken.trim() };
+    } else if (editingIntegration.type === 'leadlovers') {
+      config = { 
+        token: configLlToken.trim(), 
+        machineId: configLlMachine.trim(), 
+        sequenceId: configLlSequence.trim(), 
+        levelCode: configLlLevel.trim() 
+      };
     }
 
     const { data, error } = await supabase
@@ -400,6 +499,19 @@ export default function IntegrationsPage() {
         config = { instanceId: configZapiInstance.trim(), token: configZapiToken.trim(), targetPhone: configZapiPhone.trim() };
       } else if (selectedProvider === 'rdstation') {
         config = { tokenApi: configRdToken.trim(), identifier: configRdIdentifier.trim() };
+      } else if (selectedProvider === 'pipedrive') {
+        config = { apiToken: configPipeToken.trim(), stageId: configPipeStage.trim() };
+      } else if (selectedProvider === 'piperun') {
+        config = { token: configRunToken.trim(), stageId: configRunStage.trim() };
+      } else if (selectedProvider === 'kommo') {
+        config = { subdomain: configKommoSubdomain.trim(), token: configKommoToken.trim() };
+      } else if (selectedProvider === 'leadlovers') {
+        config = { 
+          token: configLlToken.trim(), 
+          machineId: configLlMachine.trim(), 
+          sequenceId: configLlSequence.trim(), 
+          levelCode: configLlLevel.trim() 
+        };
       }
 
       const res = await fetch('/api/webhooks/test-outbound', {
@@ -544,7 +656,7 @@ export default function IntegrationsPage() {
                 </div>
                 <div className={styles.providerBody}>
                   <h3>Webhook Customizado</h3>
-                  <p>Dispare um POST HTTP em formato JSON com todos os dados do lead, jornada de touchpoints e pontuação (lead score) para uma URL externa. Excelente para alimentar plataformas como Make, n8n, Zapier ou sistemas internos.</p>
+                  <p>Dispare um POST HTTP em formato JSON com todos os dados do lead, jornada de touchpoints e pontuação (lead score) para uma URL externa. Perfeito para disparar fluxos e automatizar processos no **Make.com**, **n8n.io**, **Zapier** ou sistemas internos.</p>
                 </div>
                 <div className={styles.providerFooter}>
                   {integrations.find(i => i.type === 'webhook') ? (
@@ -747,6 +859,178 @@ export default function IntegrationsPage() {
                 </div>
               </div>
 
+              {/* Pipedrive CRM */}
+              <div className={`${styles.providerCard} glass`}>
+                <div className={styles.providerHeader}>
+                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(23, 184, 119, 0.1)', color: '#17B877', border: '1px solid rgba(23, 184, 119, 0.2)' }}>
+                    <PipedriveLogo />
+                  </div>
+                  {integrations.some(i => i.type === 'pipedrive' && i.status === 'active') && (
+                    <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
+                  )}
+                </div>
+                <div className={styles.providerBody}>
+                  <h3>Pipedrive CRM</h3>
+                  <p>Envie contatos (Pessoas) e crie Negócios (Deals) vinculados automaticamente dentro de funis específicos do Pipedrive CRM, estruturando todo o fluxo de negociações comerciais.</p>
+                </div>
+                <div className={styles.providerFooter}>
+                  {integrations.find(i => i.type === 'pipedrive') ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'pipedrive')!)}>
+                      <Settings size={14} /> <span>Configurar</span>
+                    </button>
+                  ) : (
+                    <button className={styles.primaryBtn} onClick={() => openCreateModal('pipedrive')}>
+                      <Plus size={14} /> <span>Conectar</span>
+                    </button>
+                  )}
+                  {integrations.find(i => i.type === 'pipedrive') && (
+                    <div className={styles.switchContainer}>
+                      <span>{integrations.find(i => i.type === 'pipedrive')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <label className={styles.switch}>
+                        <input 
+                          type="checkbox"
+                          checked={integrations.find(i => i.type === 'pipedrive')?.status === 'active'}
+                          onChange={() => handleToggleStatus(
+                            integrations.find(i => i.type === 'pipedrive')!.id, 
+                            integrations.find(i => i.type === 'pipedrive')!.status
+                          )}
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* PipeRun CRM */}
+              <div className={`${styles.providerCard} glass`}>
+                <div className={styles.providerHeader}>
+                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                    <PipeRunLogo />
+                  </div>
+                  {integrations.some(i => i.type === 'piperun' && i.status === 'active') && (
+                    <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
+                  )}
+                </div>
+                <div className={styles.providerBody}>
+                  <h3>PipeRun CRM</h3>
+                  <p>Repasse seus leads capturados em tempo real para o CRM nacional PipeRun, organizando as informações e disparando as etapas comerciais (Pipelines) dos seus vendedores.</p>
+                </div>
+                <div className={styles.providerFooter}>
+                  {integrations.find(i => i.type === 'piperun') ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'piperun')!)}>
+                      <Settings size={14} /> <span>Configurar</span>
+                    </button>
+                  ) : (
+                    <button className={styles.primaryBtn} onClick={() => openCreateModal('piperun')}>
+                      <Plus size={14} /> <span>Conectar</span>
+                    </button>
+                  )}
+                  {integrations.find(i => i.type === 'piperun') && (
+                    <div className={styles.switchContainer}>
+                      <span>{integrations.find(i => i.type === 'piperun')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <label className={styles.switch}>
+                        <input 
+                          type="checkbox"
+                          checked={integrations.find(i => i.type === 'piperun')?.status === 'active'}
+                          onChange={() => handleToggleStatus(
+                            integrations.find(i => i.type === 'piperun')!.id, 
+                            integrations.find(i => i.type === 'piperun')!.status
+                          )}
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Kommo CRM */}
+              <div className={`${styles.providerCard} glass`}>
+                <div className={styles.providerHeader}>
+                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(138, 43, 226, 0.1)', color: '#8A2BE2', border: '1px solid rgba(138, 43, 226, 0.2)' }}>
+                    <KommoLogo />
+                  </div>
+                  {integrations.some(i => i.type === 'kommo' && i.status === 'active') && (
+                    <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
+                  )}
+                </div>
+                <div className={styles.providerBody}>
+                  <h3>Kommo CRM</h3>
+                  <p>Cadastre contatos e negócios complexos integrados de forma direta no Kommo (antigo amoCRM). Perfeito para funis comerciais baseados em conversas e WhatsApp.</p>
+                </div>
+                <div className={styles.providerFooter}>
+                  {integrations.find(i => i.type === 'kommo') ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'kommo')!)}>
+                      <Settings size={14} /> <span>Configurar</span>
+                    </button>
+                  ) : (
+                    <button className={styles.primaryBtn} onClick={() => openCreateModal('kommo')}>
+                      <Plus size={14} /> <span>Conectar</span>
+                    </button>
+                  )}
+                  {integrations.find(i => i.type === 'kommo') && (
+                    <div className={styles.switchContainer}>
+                      <span>{integrations.find(i => i.type === 'kommo')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <label className={styles.switch}>
+                        <input 
+                          type="checkbox"
+                          checked={integrations.find(i => i.type === 'kommo')?.status === 'active'}
+                          onChange={() => handleToggleStatus(
+                            integrations.find(i => i.type === 'kommo')!.id, 
+                            integrations.find(i => i.type === 'kommo')!.status
+                          )}
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Leadlovers */}
+              <div className={`${styles.providerCard} glass`}>
+                <div className={styles.providerHeader}>
+                  <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(225, 29, 72, 0.1)', color: '#E11D48', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
+                    <LeadloversLogo />
+                  </div>
+                  {integrations.some(i => i.type === 'leadlovers' && i.status === 'active') && (
+                    <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
+                  )}
+                </div>
+                <div className={styles.providerBody}>
+                  <h3>Leadlovers</h3>
+                  <p>Adicione automaticamente seus leads capturados em suas respectivas Máquinas, Sequências e níveis de funil do Leadlovers, iniciando automações e disparos de marketing.</p>
+                </div>
+                <div className={styles.providerFooter}>
+                  {integrations.find(i => i.type === 'leadlovers') ? (
+                    <button className={styles.secondaryBtn} onClick={() => openEditModal(integrations.find(i => i.type === 'leadlovers')!)}>
+                      <Settings size={14} /> <span>Configurar</span>
+                    </button>
+                  ) : (
+                    <button className={styles.primaryBtn} onClick={() => openCreateModal('leadlovers')}>
+                      <Plus size={14} /> <span>Conectar</span>
+                    </button>
+                  )}
+                  {integrations.find(i => i.type === 'leadlovers') && (
+                    <div className={styles.switchContainer}>
+                      <span>{integrations.find(i => i.type === 'leadlovers')?.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <label className={styles.switch}>
+                        <input 
+                          type="checkbox"
+                          checked={integrations.find(i => i.type === 'leadlovers')?.status === 'active'}
+                          onChange={() => handleToggleStatus(
+                            integrations.find(i => i.type === 'leadlovers')!.id, 
+                            integrations.find(i => i.type === 'leadlovers')!.status
+                          )}
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
@@ -762,15 +1046,7 @@ export default function IntegrationsPage() {
               <div className={styles.modalHeader}>
                 <h3>
                   {activeModal === 'create' ? 'Conectar' : 'Configurar'}{' '}
-                  {selectedProvider === 'webhook'
-                    ? 'Webhook'
-                    : selectedProvider === 'hubspot'
-                    ? 'HubSpot'
-                    : selectedProvider === 'activecampaign'
-                    ? 'ActiveCampaign'
-                    : selectedProvider === 'zapi'
-                    ? 'WhatsApp/Z-API'
-                    : 'RD Station'}
+                  {selectedProvider ? providerNames[selectedProvider] : ''}
                 </h3>
                 <p>Preencha os parâmetros abaixo para habilitar o envio de leads em tempo real.</p>
               </div>
@@ -919,6 +1195,127 @@ export default function IntegrationsPage() {
                         onChange={e => setConfigRdIdentifier(e.target.value)}
                         placeholder="Ex: conversao-leads-asthros, lead-site"
                         required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Campos Pipedrive */}
+                {selectedProvider === 'pipedrive' && (
+                  <>
+                    <div className={styles.field}>
+                      <label>API Token do Pipedrive</label>
+                      <input 
+                        type="password" 
+                        value={configPipeToken}
+                        onChange={e => setConfigPipeToken(e.target.value)}
+                        placeholder="Insira a chave API Token da sua conta do Pipedrive"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>ID do Estágio do Funil (Stage ID - Opcional)</label>
+                      <input 
+                        type="text" 
+                        value={configPipeStage}
+                        onChange={e => setConfigPipeStage(e.target.value)}
+                        placeholder="Ex: 1 (Número do estágio no pipeline comercial)"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Campos PipeRun */}
+                {selectedProvider === 'piperun' && (
+                  <>
+                    <div className={styles.field}>
+                      <label>Token de Integração PipeRun</label>
+                      <input 
+                        type="password" 
+                        value={configRunToken}
+                        onChange={e => setConfigRunToken(e.target.value)}
+                        placeholder="Insira o Token de Integração do PipeRun"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>ID do Estágio do Funil (Stage ID - Opcional)</label>
+                      <input 
+                        type="text" 
+                        value={configRunStage}
+                        onChange={e => setConfigRunStage(e.target.value)}
+                        placeholder="Ex: 12345 (Código da etapa de destino do lead)"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Campos Kommo */}
+                {selectedProvider === 'kommo' && (
+                  <>
+                    <div className={styles.field}>
+                      <label>Subdomínio Kommo (Nome da Conta)</label>
+                      <input 
+                        type="text" 
+                        value={configKommoSubdomain}
+                        onChange={e => setConfigKommoSubdomain(e.target.value)}
+                        placeholder="Ex: sua-empresa (Sem o '.kommo.com')"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Token de Acesso (Long-Lived Bearer Token)</label>
+                      <input 
+                        type="password" 
+                        value={configKommoToken}
+                        onChange={e => setConfigKommoToken(e.target.value)}
+                        placeholder="Cole o Token de Acesso de Longa Duração da Integração"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Campos Leadlovers */}
+                {selectedProvider === 'leadlovers' && (
+                  <>
+                    <div className={styles.field}>
+                      <label>Token da Conta Leadlovers</label>
+                      <input 
+                        type="password" 
+                        value={configLlToken}
+                        onChange={e => setConfigLlToken(e.target.value)}
+                        placeholder="Insira o Token Pessoal de Integração da sua conta"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Código da Máquina (Machine Code)</label>
+                      <input 
+                        type="text" 
+                        value={configLlMachine}
+                        onChange={e => setConfigLlMachine(e.target.value)}
+                        placeholder="Ex: 123456"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Código da Sequência (Email Sequence Code)</label>
+                      <input 
+                        type="text" 
+                        value={configLlSequence}
+                        onChange={e => setConfigLlSequence(e.target.value)}
+                        placeholder="Ex: 654321"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Nível da Sequência (Sequence Level Code)</label>
+                      <input 
+                        type="text" 
+                        value={configLlLevel}
+                        onChange={e => setConfigLlLevel(e.target.value)}
+                        placeholder="Ex: 1 (Número do nível de e-mail do lead)"
                       />
                     </div>
                   </>
