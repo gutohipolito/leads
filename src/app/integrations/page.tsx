@@ -21,22 +21,32 @@ import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
 
-// Componentes SVG Inline Oficiais com Estilo Premium
+// Componentes SVG Inline Oficiais com Estilo Premium Geométrico robusto
 const HubSpotLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#FF7A59', filter: 'drop-shadow(0 0 8px rgba(255, 122, 89, 0.4))' }}>
-    <path d="M18.874 10.457a3.535 3.535 0 0 0-2.822-2.845V4.23a1.415 1.415 0 0 0-2.83 0v3.382a3.535 3.535 0 1 0 1.954 5.922l2.368 2.368a3.529 3.529 0 0 0-.294.945h-2.316a3.535 3.535 0 1 0-3.327-2.358v-4.63a3.535 3.535 0 1 0-2.83 0v4.63a3.535 3.535 0 1 0 4.242 4.242h2.316a3.535 3.535 0 0 0 6.643-2.146 3.513 3.513 0 0 0-.084-.799l-2.368-2.368a3.538 3.538 0 0 0.96-2.56Zm-7.07 10.011a1.415 1.415 0 1 1 1.415-1.415 1.415 1.415 0 0 1-1.415 1.415ZM4.943 14.838a1.415 1.415 0 1 1 1.415-1.415 1.415 1.415 0 0 1-1.415 1.415Zm10.011-5.795a1.415 1.415 0 1 1-1.415 1.415 1.415 0 0 1 1.415-1.415Z" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#FF7A59', filter: 'drop-shadow(0 0 6px rgba(255, 122, 89, 0.4))', display: 'block' }}>
+    <circle cx="12" cy="12" r="3" fill="#FF7A59" />
+    <line x1="12" y1="9" x2="12" y2="4" stroke="#FF7A59" strokeWidth="2.5" />
+    <line x1="9.5" y1="13.5" x2="5" y2="16" stroke="#FF7A59" strokeWidth="2.5" />
+    <line x1="14.5" y1="13.5" x2="19" y2="16" stroke="#FF7A59" strokeWidth="2.5" />
+    <circle cx="12" cy="4" r="2.5" fill="#FF7A59" />
+    <circle cx="5" cy="16" r="2.5" fill="#FF7A59" />
+    <circle cx="19" cy="16" r="2.5" fill="#FF7A59" />
   </svg>
 );
 
 const ActiveCampaignLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 34 32" fill="currentColor" style={{ color: '#3572ef', filter: 'drop-shadow(0 0 8px rgba(53, 114, 239, 0.4))' }}>
-    <path d="M12.983 23.366l3.708-3.708 6.969 6.969-3.708 3.708-6.969-6.969zm17.65-17.65a3.178 3.178 0 00-4.495 0L10.366 21.49l4.495 4.495L30.633 10.21a3.178 3.178 0 000-4.494zM7.55 17.55L2.35 22.75a1.589 1.589 0 000 2.247l2.248 2.247a1.589 1.589 0 002.247 0l5.201-5.201-4.495-4.495z" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3572ef', filter: 'drop-shadow(0 0 6px rgba(53, 114, 239, 0.4))', display: 'block' }}>
+    <circle cx="6" cy="18" r="3" fill="#3572ef" />
+    <circle cx="12" cy="12" r="3" fill="#3572ef" />
+    <circle cx="18" cy="6" r="3" fill="#3572ef" />
+    <line x1="8.1" y1="15.9" x2="9.9" y2="14.1" stroke="#3572ef" />
+    <line x1="14.1" y1="11.9" x2="15.9" y2="10.1" stroke="#3572ef" />
   </svg>
 );
 
 const WhatsAppLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25D366', filter: 'drop-shadow(0 0 8px rgba(37, 211, 102, 0.4))' }}>
-    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.456L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.528 2.01 14.069.988 11.84.988c-5.452 0-9.873 4.38-9.876 9.809-.001 1.77.469 3.5 1.361 5.022L2.348 21.65l6.3-1.496zM17.15 13.9c-.28-.14-1.656-.82-1.916-.913-.26-.094-.45-.14-.64.14-.19.28-.735.914-.9 1.1-.166.186-.333.208-.613.068-.28-.14-1.18-.433-2.25-1.385-.83-.74-1.39-1.656-1.55-1.936-.16-.28-.018-.43.12-.57.126-.127.28-.328.42-.492.14-.164.186-.28.28-.466.09-.186.046-.35-.02-.49-.07-.14-.64-1.543-.876-2.11-.23-.554-.464-.477-.64-.486-.166-.008-.356-.01-.546-.01-.19 0-.5.07-.76.357-.26.28-1 .978-1 2.387s1.02 2.766 1.16 2.954c.14.188 2.007 3.06 4.86 4.29.68.29 1.21.464 1.625.596.685.218 1.31.187 1.8.113.55-.083 1.656-.677 1.89-1.332.233-.655.233-1.22.162-1.332-.07-.112-.26-.205-.54-.345z" />
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25D366', filter: 'drop-shadow(0 0 6px rgba(37, 211, 102, 0.4))', display: 'block' }}>
+    <path d="M12.004 2C6.48 2 2 6.48 2 12.004c0 1.76.46 3.42 1.27 4.88L2 22l5.3-.96c1.4.77 3 1.2 4.7 1.2 5.52 0 10-4.48 10-10.004C22.004 6.48 17.524 2 12.004 2zM17.2 16.3c-.2.6-.9 1.1-1.6 1.3-.5.1-1.1.2-3.1-.6-2.5-1.1-4.1-3.7-4.2-3.9 0-.1-.8-1.1-.8-2.1 0-1 .5-1.5.7-1.7.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .5.4.2.5.7 1.7.8 1.9.1.1.1.3 0 .4-.1.2-.2.3-.4.5-.2.2-.3.3-.5.5-.2.2-.1.4.1.7.4.7.9 1.3 1.6 1.9.9.8 1.6 1 1.9 1.2.3.1.5.1.7-.1.2-.2.8-.9.9-1.2.1-.3.3-.3.6-.2.3.1 1.9.9 2 1 .1.1.2.2.2.3 0 .3-.1.9-.3 1.5z" />
   </svg>
 );
 
@@ -99,6 +109,8 @@ export default function IntegrationsPage() {
           setIsAdmin(isUserAdmin);
           setUserClientId(clientId);
 
+          let activeClientId = clientId;
+
           // Carregar Clientes se for Admin
           if (isUserAdmin) {
             const { data: clientsData } = await supabase
@@ -119,41 +131,31 @@ export default function IntegrationsPage() {
                 if (isStillActive) {
                   setSelectedClientId(impData.id);
                   setImpersonatedName(impData.name);
+                  activeClientId = impData.id;
                 } else {
                   // Se foi desativado no banco, limpa a impersonação local
                   localStorage.removeItem('impersonated_client');
                   setSelectedClientId(null);
                   setImpersonatedName(null);
+                  activeClientId = null;
                 }
+              } else {
+                activeClientId = null;
               }
             }
           }
 
-          // Carregar Integrações
-          let integrationsQuery = supabase.from('integrations').select('*').order('created_at', { ascending: false });
-          let activeClientId = clientId;
-
-          if (isUserAdmin) {
-            const impersonated = localStorage.getItem('impersonated_client');
-            if (impersonated) {
-              const impData = JSON.parse(impersonated);
-              // Verificar se ele estava ativo na lista
-              const stillActive = clients.length > 0 
-                ? clients.some(c => c.id === impData.id) 
-                : true; // Se os clientes ainda não carregaram, assume true temporariamente
-              
-              if (stillActive) {
-                activeClientId = impData.id;
-              }
-            }
-          }
-
+          // Carregar Integrações apenas para o cliente ativo selecionado
           if (activeClientId) {
-            integrationsQuery = integrationsQuery.eq('client_id', activeClientId);
+            const { data: integrationsData } = await supabase
+              .from('integrations')
+              .select('*')
+              .eq('client_id', activeClientId)
+              .order('created_at', { ascending: false });
+            if (integrationsData) setIntegrations(integrationsData);
+          } else {
+            setIntegrations([]);
           }
-
-          const { data: integrationsData } = await integrationsQuery;
-          if (integrationsData) setIntegrations(integrationsData);
         }
       } catch (error) {
         console.error('Erro ao carregar configurações de integrações:', error);
@@ -162,7 +164,7 @@ export default function IntegrationsPage() {
       }
     }
     loadData();
-  }, [clients.length]); // Executa novamente após carregar os clientes para validação cruzada
+  }, []);
 
   const currentClient = useMemo(() => {
     if (!isAdmin) return clients.find(c => c.id === userClientId);
@@ -407,16 +409,28 @@ export default function IntegrationsPage() {
             <div className={styles.header}>
               <div>
                 <h2>Selecione um Cliente (Hub de Integrações)</h2>
-                <p>Gerencie conexões e repasses de leads de cada parceiro.</p>
+                <p>Gerencie conexões e repasses de leads em tempo real de cada parceiro ativo.</p>
               </div>
             </div>
-            <div className={styles.clientsGrid}>
+            <div className={styles.clientsGridSelector}>
               {clients.map(client => (
-                <div key={client.id} className={`${styles.clientCard} glass`} onClick={() => handleSelectClient(client)}>
-                  <div className={styles.clientInitials}>{client.name.charAt(0)}</div>
-                  <div className={styles.clientInfo}>
-                    <h3>{client.name}</h3>
-                    <span>ID: {client.id.substring(0, 8)}</span>
+                <div key={client.id} className={`${styles.clientSelectorCard} glass`} onClick={() => handleSelectClient(client)}>
+                  <div className={styles.clientSelectorBadge}>ATIVO</div>
+                  <div className={styles.clientSelectorBody}>
+                    <div className={styles.clientSelectorInitials} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.08)' }}>
+                      {client.logo_url ? (
+                        <img src={client.logo_url} alt={client.name} className={styles.clientSelectorImg} />
+                      ) : (
+                        <span>{client.name.substring(0, 2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className={styles.clientSelectorInfo}>
+                      <h3>{client.name}</h3>
+                      <span className={styles.clientSelectorId}>UPLINK_ID: {client.id.substring(0, 8).toUpperCase()}</span>
+                    </div>
+                  </div>
+                  <div className={styles.clientSelectorFooter}>
+                    <span>CONFIGURAR CONEXÕES ➔</span>
                   </div>
                 </div>
               ))}
