@@ -51,6 +51,20 @@ const formatPhone = (phone: string | null | undefined): string => {
   return cleaned || 'N/A';
 };
 
+const formatTimeOnPage = (time: any): string => {
+  if (time === undefined || time === null) return 'N/A';
+  const str = String(time).toLowerCase();
+  const num = parseInt(str.replace(/[^0-9]/g, '')) || 0;
+  return `${num} segundos`;
+};
+
+const formatScrollDepth = (depth: any): string => {
+  if (depth === undefined || depth === null) return 'N/A';
+  const str = String(depth);
+  const num = parseInt(str.replace(/[^0-9]/g, '')) || 0;
+  return `${num}%`;
+};
+
 const getSanitizedLeads = (rawLeads: any[]): any[] => {
   return rawLeads
     .filter(l => l.source !== 'test_simulation')
@@ -1048,7 +1062,7 @@ export default function LeadsPage() {
                             <span>Tempo na Página</span>
                           </div>
                           <span className={styles.behaviorItemValue}>
-                            {selectedLead.data.behavior.time_on_page} segundos
+                            {formatTimeOnPage(selectedLead.data.behavior.time_on_page)}
                           </span>
                         </div>
                       )}
@@ -1066,7 +1080,7 @@ export default function LeadsPage() {
                       )}
 
                       {selectedLead.data.behavior.button_text && (
-                        <div className={`${styles.behaviorItem} ${styles.behaviorItemFull}`}>
+                        <div className={styles.behaviorItem}>
                           <div className={styles.behaviorItemHeader}>
                             <MessageCircle size={12} />
                             <span>Botão Clicado</span>
@@ -1086,11 +1100,11 @@ export default function LeadsPage() {
                             <div className={styles.scrollProgressBar}>
                               <div 
                                 className={styles.scrollProgressFill} 
-                                style={{ width: `${Math.min(100, Math.max(0, parseInt(selectedLead.data.behavior.scroll_depth)))}%` }}
+                                style={{ width: `${Math.min(100, Math.max(0, parseInt(String(selectedLead.data.behavior.scroll_depth).replace(/[^0-9]/g, ''))))}%` }}
                               />
                             </div>
                             <span className={styles.scrollProgressText}>
-                              {selectedLead.data.behavior.scroll_depth}%
+                              {formatScrollDepth(selectedLead.data.behavior.scroll_depth)}
                             </span>
                           </div>
                         </div>
