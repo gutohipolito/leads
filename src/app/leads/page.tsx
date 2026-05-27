@@ -973,6 +973,72 @@ export default function LeadsPage() {
                   </div>
                 </div>
 
+                {/* Raio-X de Comportamento */}
+                {selectedLead.data?.behavior && (
+                  <div className={`${styles.detailSection} ${styles.behaviorSection}`}>
+                    <div className={styles.sectionHeader}>
+                      <Zap size={16} className={styles.sectionIcon} style={{ color: '#00D1FF' }} />
+                      <h4>Raio-X de Comportamento</h4>
+                    </div>
+                    <div className={styles.behaviorGrid}>
+                      {selectedLead.data.behavior.time_on_page !== undefined && (
+                        <div className={styles.behaviorItem}>
+                          <div className={styles.behaviorItemHeader}>
+                            <Clock size={12} />
+                            <span>Tempo na Página</span>
+                          </div>
+                          <span className={styles.behaviorItemValue}>
+                            {selectedLead.data.behavior.time_on_page} segundos
+                          </span>
+                        </div>
+                      )}
+                      
+                      {selectedLead.data.behavior.trigger_rule && (
+                        <div className={styles.behaviorItem}>
+                          <div className={styles.behaviorItemHeader}>
+                            <Database size={12} />
+                            <span>Regra de Disparo</span>
+                          </div>
+                          <span className={styles.behaviorItemValue}>
+                            {selectedLead.data.behavior.trigger_rule}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedLead.data.behavior.button_text && (
+                        <div className={`${styles.behaviorItem} ${styles.behaviorItemFull}`}>
+                          <div className={styles.behaviorItemHeader}>
+                            <MessageCircle size={12} />
+                            <span>Botão Clicado</span>
+                          </div>
+                          <span className={styles.behaviorItemValue} style={{ color: '#25D366' }}>
+                            "{selectedLead.data.behavior.button_text}"
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedLead.data.behavior.scroll_depth !== undefined && (
+                        <div className={`${styles.behaviorItem} ${styles.behaviorItemFull}`}>
+                          <div className={styles.behaviorItemHeader}>
+                            <span>Profundidade de Rolagem (Scroll)</span>
+                          </div>
+                          <div className={styles.scrollProgressContainer}>
+                            <div className={styles.scrollProgressBar}>
+                              <div 
+                                className={styles.scrollProgressFill} 
+                                style={{ width: `${Math.min(100, Math.max(0, parseInt(selectedLead.data.behavior.scroll_depth)))}%` }}
+                              />
+                            </div>
+                            <span className={styles.scrollProgressText}>
+                              {selectedLead.data.behavior.scroll_depth}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Canal/Atendente de Destino Rastreado (Apenas para Rastreio) */}
                 {selectedLead.data?.behavior?.whatsapp_destination_phone && (
                   <div className={`${styles.detailSection} ${styles.trackerWarningSection}`}>

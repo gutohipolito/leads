@@ -58,6 +58,12 @@ export default function LogsPage() {
   const [isRegenerateConfirmOpen, setIsRegenerateConfirmOpen] = useState(false);
   const [keyToRegenerate, setKeyToRegenerate] = useState<any>(null);
 
+  // Novos estados do Firewall
+  const [blockedIps, setBlockedIps] = useState<any[]>([]);
+  const [newIp, setNewIp] = useState('');
+  const [newReason, setNewReason] = useState('');
+  const [newExpiresMinutes, setNewExpiresMinutes] = useState('10');
+
   const handleCopyKey = (secret: string, keyId: string) => {
     navigator.clipboard.writeText(secret);
     setCopiedKeyId(keyId);
@@ -67,6 +73,8 @@ export default function LogsPage() {
   };
 
   useEffect(() => {
+    let firewallChannel: any = null;
+
     async function loadAllLogs() {
       try {
         const { data: signalData, error: signalError } = await supabase
@@ -113,6 +121,19 @@ export default function LogsPage() {
           setScore(Math.max(currentScore, 0));
         }
 
+        // Carregar IPs do firewall
+        try {
+          const { data: firewallData } = await supabase
+            .from('ip_firewall')
+            .select('*')
+            .order('blocked_at', { ascending: false });
+          if (firewallData) {
+            setBlockedIps(firewallData);
+          }
+        } catch (e) {
+          console.error('Erro ao carregar firewall ips (a tabela ip_firewall pode não existir):', e);
+        }
+
         if (signalData) setSignals(signalData);
         if (activityData) setActivity(activityData);
       } catch (error) {
@@ -122,7 +143,70 @@ export default function LogsPage() {
       }
     }
     loadAllLogs();
+
+    // Assinatura do Realtime para ip_firewall
+    try {
+      const channel = supabase.channel('realtime-firewall')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ip_firewall' }, (payload: any) => {
+          if (payload.eventType === 'INSERT') {
+            setBlockedIps(prev => [payload.new, ...prev].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i));
+          } else if (payload.eventType === 'DELETE') {
+            setBlockedIps(prev => prev.filter(ip => ip.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setBlockedIps(prev => prev.map(ip => ip.id === payload.new.id ? payload.new : ip));
+          }
+        })
+        .subscribe();
+      firewallChannel = channel;
+    } catch (e) {
+      console.error('Erro na assinatura do Realtime do Firewall:', e);
+    }
+
+    return () => {
+      if (firewallChannel) {
+        supabase.removeChannel(firewallChannel);
+      }
+    };
   }, []);
+
+  const handleBlockIp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIp.trim()) return;
+
+    const expiresAt = newExpiresMinutes === 'infinite' 
+      ? null 
+      : new Date(Date.now() + parseInt(newExpiresMinutes) * 60 * 1000).toISOString();
+
+    const { error } = await supabase
+      .from('ip_firewall')
+      .insert([{
+        ip_address: newIp.trim(),
+        reason: newReason.trim() || 'Bloqueio manual administrativo',
+        expires_at: expiresAt
+      }]);
+
+    if (error) {
+      alert('Erro ao bloquear IP: ' + error.message);
+    } else {
+      setNewIp('');
+      setNewReason('');
+      setNewExpiresMinutes('10');
+      await logAction('IP Bloqueado Manualmente', 'security', newIp.trim(), { reason: newReason.trim() });
+    }
+  };
+
+  const handleUnlockIp = async (id: string, ipAddress: string) => {
+    const { error } = await supabase
+      .from('ip_firewall')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Erro ao desbloquear IP: ' + error.message);
+    } else {
+      await logAction('IP Desbloqueado Manualmente', 'security', ipAddress, { unlocked_by: 'admin' });
+    }
+  };
 
   const handleRegenerateSecret = async () => {
     if (!keyToRegenerate) return;
@@ -458,6 +542,116 @@ export default function LogsPage() {
               </div>
             </section>
           </div>
+
+          {/* Firewall de IPs */}
+          <section className={`${styles.keysSection} glass`} style={{ margin: '2rem 0' }}>
+            <div className={styles.cardHeader}>
+              <div className={styles.headerInfo}>
+                <div className={styles.iconCircle} style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}><ShieldAlert size={18} /></div>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>Firewall de IPs (Leads Guard)</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>Gerenciamento e controle de IPs bloqueados temporariamente por spam/rate limits.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Formulário de Bloqueio Manual */}
+            <form onSubmit={handleBlockIp} className={styles.blockIpForm}>
+              <div className={styles.formFieldMini}>
+                <label>Endereço IP</label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: 172.16.254.1" 
+                  value={newIp}
+                  onChange={e => setNewIp(e.target.value)}
+                  required
+                />
+              </div>
+              <div className={styles.formFieldMini}>
+                <label>Motivo do Bloqueio</label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: Spam frequente de formulário" 
+                  value={newReason}
+                  onChange={e => setNewReason(e.target.value)}
+                />
+              </div>
+              <div className={styles.formFieldMini}>
+                <label>Duração</label>
+                <select 
+                  value={newExpiresMinutes}
+                  onChange={e => setNewExpiresMinutes(e.target.value)}
+                >
+                  <option value="10">10 Minutos</option>
+                  <option value="60">1 Hora</option>
+                  <option value="1440">1 Dia</option>
+                  <option value="10080">1 Semana</option>
+                  <option value="infinite">Permanente (Infinito)</option>
+                </select>
+              </div>
+              <button type="submit" className={styles.blockBtn}>
+                <ShieldAlert size={16} />
+                <span>Bloquear IP</span>
+              </button>
+            </form>
+
+            <div className={styles.tableResponsive} style={{ marginTop: '1.5rem' }}>
+              <table className={styles.keysTable}>
+                <thead>
+                  <tr>
+                    <th>Endereço IP</th>
+                    <th>Motivo</th>
+                    <th>Bloqueado em</th>
+                    <th>Expira em</th>
+                    <th>Cidade / País</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blockedIps.map(ip => {
+                    const isExpired = ip.expires_at && new Date(ip.expires_at).getTime() < Date.now();
+                    return (
+                      <tr key={ip.id} style={{ opacity: isExpired ? 0.4 : 1 }}>
+                        <td>
+                          <span style={{ color: '#ef4444', fontFamily: 'monospace', fontWeight: 'bold' }}>{ip.ip_address}</span>
+                        </td>
+                        <td style={{ fontSize: '0.8rem' }}>{ip.reason}</td>
+                        <td style={{ fontSize: '0.8rem' }}>{new Date(ip.blocked_at).toLocaleString('pt-BR')}</td>
+                        <td style={{ fontSize: '0.8rem' }}>
+                          {ip.expires_at ? (
+                            isExpired ? 'Expirado' : new Date(ip.expires_at).toLocaleString('pt-BR')
+                          ) : (
+                            <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Permanente</span>
+                          )}
+                        </td>
+                        <td style={{ fontSize: '0.8rem' }}>
+                          {ip.city ? `${ip.city} (${ip.country || 'BR'})` : 'N/A'}
+                        </td>
+                        <td>
+                          <button 
+                            type="button"
+                            className={styles.iconBtn} 
+                            style={{ color: '#10b981' }}
+                            onClick={() => handleUnlockIp(ip.id, ip.ip_address)}
+                            title="Desbloquear IP"
+                          >
+                            <ShieldCheck size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {blockedIps.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>
+                        Nenhum IP bloqueado no firewall do sistema.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <div className={styles.firewallGrid}>
             <section className={`${styles.configCard} glass`}>

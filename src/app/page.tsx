@@ -137,12 +137,20 @@ export default function Home() {
             const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
             const dayEnd = dayStart + 24 * 60 * 60 * 1000;
             
-            const count = allLeads?.filter(l => {
+            const dayLeads = allLeads?.filter(l => {
               const ts = new Date(l.created_at).getTime();
               return ts >= dayStart && ts < dayEnd;
-            }).length || 0;
+            }) || [];
 
-            return { date: dateStr, leads: count };
+            const whatsappCount = dayLeads.filter(l => l.source === 'whatsapp_tracker').length;
+            const formsCount = dayLeads.length - whatsappCount;
+
+            return { 
+              date: dateStr, 
+              leads: dayLeads.length,
+              whatsapp: whatsappCount,
+              forms: formsCount
+            };
           });
           
           const lastLead = recentLeads?.[0];

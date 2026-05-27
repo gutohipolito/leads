@@ -8,11 +8,17 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  Legend
 } from 'recharts';
 
 interface AnalyticsChartProps {
-  data: { date: string; leads: number }[];
+  data: { 
+    date: string; 
+    leads: number; 
+    whatsapp?: number; 
+    forms?: number;
+  }[];
 }
 
 export default function AnalyticsChart({ data }: AnalyticsChartProps) {
@@ -24,9 +30,13 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
           margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
         >
           <defs>
-            <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#00D1FF" stopOpacity={0.3} />
+            <linearGradient id="colorForms" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#00D1FF" stopOpacity={0.25} />
               <stop offset="95%" stopColor="#00D1FF" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorWhatsapp" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#25d366" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#25d366" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid 
@@ -46,24 +56,46 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
             tickLine={false}
             tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
           />
+          <Legend 
+            verticalAlign="top" 
+            height={36} 
+            iconType="circle"
+            wrapperStyle={{
+              paddingBottom: '10px',
+              fontSize: '12px',
+              color: 'var(--foreground)'
+            }}
+          />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: 'var(--card)', 
               border: '1px solid var(--border)',
               borderRadius: '12px',
               color: 'var(--foreground)',
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
             }}
-            itemStyle={{ color: 'var(--primary)' }}
+            labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px', fontWeight: 'bold' }}
           />
           <Area 
             type="monotone" 
-            dataKey="leads" 
-            stroke="#00D1FF" 
-            strokeWidth={3}
+            name="WhatsApp"
+            dataKey="whatsapp" 
+            stroke="#25d366" 
+            strokeWidth={2.5}
             fillOpacity={1} 
-            fill="url(#colorLeads)" 
-            animationDuration={1500}
+            fill="url(#colorWhatsapp)" 
+            animationDuration={1200}
+          />
+          <Area 
+            type="monotone" 
+            name="Formulários"
+            dataKey="forms" 
+            stroke="#00D1FF" 
+            strokeWidth={2.5}
+            fillOpacity={1} 
+            fill="url(#colorForms)" 
+            animationDuration={1200}
           />
         </AreaChart>
       </ResponsiveContainer>

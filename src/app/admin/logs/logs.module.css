@@ -969,3 +969,68 @@
   transform: translateY(0);
 }
 
+/* Firewall IP Form Styles */
+.blockIpForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  background: rgba(var(--foreground-rgb), 0.02);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.formFieldMini {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.formFieldMini label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.formFieldMini input, .formFieldMini select {
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  outline: none;
+  height: 40px;
+  width: 100%;
+}
+
+.formFieldMini input:focus, .formFieldMini select:focus {
+  border-color: #ef4444;
+}
+
+.blockBtn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  height: 40px;
+  padding: 0 1.25rem;
+  border-radius: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.blockBtn:hover {
+  background: #d32f2f;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}

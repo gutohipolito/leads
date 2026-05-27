@@ -1328,3 +1328,79 @@
 .trackerNotice strong {
   color: #f59e0b;
 }
+/* Seção do Raio-X Comportamental */
+.behaviorSection {
+  background: rgba(var(--foreground-rgb), 0.02) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px;
+  padding: 1.5rem !important;
+}
+
+.behaviorGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.behaviorItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: rgba(var(--foreground-rgb), 0.03);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.behaviorItemFull {
+  grid-column: span 2;
+}
+
+.behaviorItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  font-weight: 800;
+}
+
+.behaviorItemValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 0.25rem;
+}
+
+.scrollProgressContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.scrollProgressBar {
+  flex: 1;
+  height: 6px;
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.scrollProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #2ecc71);
+  border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+.scrollProgressText {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--primary);
+  min-width: 40px;
+  text-align: right;
+}

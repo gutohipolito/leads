@@ -9,8 +9,37 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
+  const origin = request.headers.get('origin') || '*';
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+
   try {
     const { clientId } = await params;
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+
+    // 1. Verificar se o IP está bloqueado no Firewall
+    try {
+      const { data: blockedIp, error: firewallError } = await supabase
+        .from('ip_firewall')
+        .select('id, expires_at')
+        .eq('ip_address', ip)
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+        .maybeSingle();
+
+      if (blockedIp) {
+        console.warn(`[Firewall] Bloqueando requisição do IP ${ip} (Ban ativo)`);
+        return NextResponse.json(
+          { error: 'Acesso bloqueado temporariamente por medidas de segurança.' },
+          { status: 429, headers: corsHeaders }
+        );
+      }
+    } catch (e) {
+      console.error('Erro ao verificar firewall (a tabela ip_firewall pode não existir):', e);
+    }
     
     // Suporte a JSON ou Form Data (Elementor pode enviar ambos)
     const contentType = request.headers.get('content-type') || '';
@@ -49,7 +78,52 @@ export async function POST(
     const country = request.headers.get('x-vercel-ip-country') || 'BR';
     
     if (!body.location) {
-      body.location = { city, region, country, ip: request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1' };
+      body.location = { city, region, country, ip };
+    }
+
+    // 2. Verificar Rate Limiting (máximo 5 leads em 1 minuto por IP)
+    try {
+      const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+      const { count, error: countError } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clientId)
+        .gt('created_at', oneMinuteAgo)
+        .contains('data', { location: { ip: ip } });
+
+      if (!countError && count !== null && count >= 5) {
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
+        
+        console.warn(`[Firewall] Bloqueando IP ${ip} por excesso de requisições. Cadastrando na lista.`);
+        
+        await supabase.from('ip_firewall').upsert({
+          ip_address: ip,
+          reason: 'Rate limit excedido (Mais de 5 leads em 1 minuto)',
+          expires_at: expiresAt,
+          city: city || null,
+          country: country || null
+        }, { onConflict: 'ip_address' });
+
+        await supabase.from('system_logs').insert([{
+          action: 'IP Bloqueado',
+          entity: 'security',
+          entity_id: ip,
+          details: { 
+            ip: ip,
+            reason: 'Rate limit excedido (Mais de 5 leads em 1 minuto)',
+            city,
+            country
+          },
+          ip_address: ip
+        }]);
+
+        return NextResponse.json(
+          { error: 'Limite de requisições excedido. IP bloqueado temporariamente.' },
+          { status: 429, headers: corsHeaders }
+        );
+      }
+    } catch (e) {
+      console.error('Erro no processamento do rate limiter (a tabela pode não existir):', e);
     }
 
     const isWppTracker = body.source === 'whatsapp_tracker';
@@ -155,14 +229,6 @@ export async function POST(
     clientUsers?.forEach(u => userIds.add(u.id));
     adminUsers?.forEach(u => userIds.add(u.id));
 
-    const origin = request.headers.get('origin') || '*';
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-
     if (userIds.size > 0) {
       const notificationTitle = isWppTracker ? 'Intercepção de WhatsApp' : 'Novo Lead via Form';
       const notificationMsg = isWppTracker 
@@ -195,7 +261,7 @@ export async function POST(
         source: source,
         webhook_name: webhook.name
       },
-      ip_address: request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1'
+      ip_address: ip
     }]);
 
     return NextResponse.json(
@@ -211,7 +277,6 @@ export async function POST(
     );
   } catch (error: any) {
     console.error('Erro no processamento do uplink:', error);
-    const origin = request.headers.get('origin') || '*';
     return NextResponse.json(
       { error: 'Falha no processamento: ' + (error.message || 'Erro interno') },
       { 
