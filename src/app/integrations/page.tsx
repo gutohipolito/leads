@@ -17,7 +17,8 @@ import {
   Send,
   Save,
   MessageSquare,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Pencil
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -761,21 +762,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${webhookIntegration ? (webhookIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(86, 215, 253, 0.1)', color: 'var(--primary)', boxShadow: '0 0 10px rgba(86, 215, 253, 0.2)' }}>
-                      {renderProviderLogo('webhook', webhookIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>Webhook Customizado</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(86, 215, 253, 0.1)', color: 'var(--primary)', boxShadow: '0 0 10px rgba(86, 215, 253, 0.2)' }}>
+                        {renderProviderLogo('webhook', webhookIntegration)}
+                      </div>
                       {webhookIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(webhookIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Webhook Customizado</h3>
                     </div>
                   </div>
                   {webhookIntegration?.status === 'active' && (
@@ -815,21 +818,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${hubspotIntegration ? (hubspotIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(255, 122, 89, 0.1)', color: '#FF7A59', border: '1px solid rgba(255, 122, 89, 0.2)' }}>
-                      {renderProviderLogo('hubspot', hubspotIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>HubSpot CRM</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(255, 122, 89, 0.1)', color: '#FF7A59', border: '1px solid rgba(255, 122, 89, 0.2)' }}>
+                        {renderProviderLogo('hubspot', hubspotIntegration)}
+                      </div>
                       {hubspotIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(hubspotIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>HubSpot CRM</h3>
                     </div>
                   </div>
                   {hubspotIntegration?.status === 'active' && (
@@ -869,21 +874,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${activecampaignIntegration ? (activecampaignIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(53, 114, 239, 0.1)', color: '#3572ef', border: '1px solid rgba(53, 114, 239, 0.2)' }}>
-                      {renderProviderLogo('activecampaign', activecampaignIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>ActiveCampaign</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(53, 114, 239, 0.1)', color: '#3572ef', border: '1px solid rgba(53, 114, 239, 0.2)' }}>
+                        {renderProviderLogo('activecampaign', activecampaignIntegration)}
+                      </div>
                       {activecampaignIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(activecampaignIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>ActiveCampaign</h3>
                     </div>
                   </div>
                   {activecampaignIntegration?.status === 'active' && (
@@ -923,21 +930,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${zapiIntegration ? (zapiIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
-                      {renderProviderLogo('zapi', zapiIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>WhatsApp (Z-API)</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
+                        {renderProviderLogo('zapi', zapiIntegration)}
+                      </div>
                       {zapiIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(zapiIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>WhatsApp (Z-API)</h3>
                     </div>
                   </div>
                   {zapiIntegration?.status === 'active' && (
@@ -977,21 +986,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${rdstationIntegration ? (rdstationIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(249, 95, 98, 0.1)', color: '#F95F62', border: '1px solid rgba(249, 95, 98, 0.2)' }}>
-                      {renderProviderLogo('rdstation', rdstationIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>RD Station Platform</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(249, 95, 98, 0.1)', color: '#F95F62', border: '1px solid rgba(249, 95, 98, 0.2)' }}>
+                        {renderProviderLogo('rdstation', rdstationIntegration)}
+                      </div>
                       {rdstationIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(rdstationIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>RD Station Platform</h3>
                     </div>
                   </div>
                   {rdstationIntegration?.status === 'active' && (
@@ -1031,21 +1042,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${pipedriveIntegration ? (pipedriveIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(23, 184, 119, 0.1)', color: '#17B877', border: '1px solid rgba(23, 184, 119, 0.2)' }}>
-                      {renderProviderLogo('pipedrive', pipedriveIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>Pipedrive CRM</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(23, 184, 119, 0.1)', color: '#17B877', border: '1px solid rgba(23, 184, 119, 0.2)' }}>
+                        {renderProviderLogo('pipedrive', pipedriveIntegration)}
+                      </div>
                       {pipedriveIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(pipedriveIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Pipedrive CRM</h3>
                     </div>
                   </div>
                   {pipedriveIntegration?.status === 'active' && (
@@ -1085,21 +1098,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${piperunIntegration ? (piperunIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                      {renderProviderLogo('piperun', piperunIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>PipeRun CRM</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        {renderProviderLogo('piperun', piperunIntegration)}
+                      </div>
                       {piperunIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(piperunIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>PipeRun CRM</h3>
                     </div>
                   </div>
                   {piperunIntegration?.status === 'active' && (
@@ -1139,21 +1154,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${kommoIntegration ? (kommoIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(138, 43, 226, 0.1)', color: '#8A2BE2', border: '1px solid rgba(138, 43, 226, 0.2)' }}>
-                      {renderProviderLogo('kommo', kommoIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>Kommo CRM</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(138, 43, 226, 0.1)', color: '#8A2BE2', border: '1px solid rgba(138, 43, 226, 0.2)' }}>
+                        {renderProviderLogo('kommo', kommoIntegration)}
+                      </div>
                       {kommoIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(kommoIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Kommo CRM</h3>
                     </div>
                   </div>
                   {kommoIntegration?.status === 'active' && (
@@ -1193,21 +1210,23 @@ export default function IntegrationsPage() {
               <div className={`${styles.providerCard} ${leadloversIntegration ? (leadloversIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
                 <div className={styles.providerHeader}>
                   <div className={styles.providerBrand}>
-                    <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(225, 29, 72, 0.1)', color: '#E11D48', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
-                      {renderProviderLogo('leadlovers', leadloversIntegration)}
-                    </div>
-                    <div className={styles.providerTitleContainer}>
-                      <h3>Leadlovers</h3>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(225, 29, 72, 0.1)', color: '#E11D48', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
+                        {renderProviderLogo('leadlovers', leadloversIntegration)}
+                      </div>
                       {leadloversIntegration && (
                         <button 
                           type="button"
-                          className={styles.changeIconBtn} 
+                          className={styles.editLogoOverlay} 
                           onClick={() => openIconModal(leadloversIntegration)}
-                          title="Alterar ícone por imagem"
+                          title="Alterar imagem do card"
                         >
-                          <ImageIcon size={12} />
+                          <Pencil size={12} />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Leadlovers</h3>
                     </div>
                   </div>
                   {leadloversIntegration?.status === 'active' && (
@@ -1275,18 +1294,7 @@ export default function IntegrationsPage() {
                   />
                 </div>
 
-                <div className={styles.field}>
-                  <label>URL do Ícone Customizado (Opcional)</label>
-                  <input 
-                    type="url" 
-                    value={formCustomIconUrl}
-                    onChange={e => setFormCustomIconUrl(e.target.value)}
-                    placeholder="https://exemplo.com/sua-logo.png"
-                  />
-                  <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', marginTop: '0.1rem' }}>
-                    Deixe em branco para utilizar o logotipo oficial da marca.
-                  </span>
-                </div>
+
 
                 {/* Campos Webhook */}
                 {selectedProvider === 'webhook' && (
