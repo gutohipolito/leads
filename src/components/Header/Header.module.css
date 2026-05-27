@@ -606,3 +606,24 @@
     background: rgba(var(--foreground-rgb), 0.03);
   }
 }
+
+.notifHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.clientTag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: rgba(86, 215, 253, 0.08);
+  border: 1px solid rgba(86, 215, 253, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}

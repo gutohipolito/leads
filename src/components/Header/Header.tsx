@@ -108,10 +108,10 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
           .eq('read', true)
           .lt('created_at', dataLimite);
 
-        // Carrega as 10 notificações mais recentes do usuário
+        // Carrega as 10 notificações mais recentes do usuário com o nome do cliente
         const { data } = await supabase
           .from('notifications')
-          .select('*')
+          .select('*, client:clients(name)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -139,9 +139,20 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
               schema: 'public',
               table: 'notifications'
             },
-            (payload) => {
+            async (payload) => {
               const newNotif = payload.new;
               if (newNotif.user_id !== user.id) return;
+              
+              if (newNotif.client_id) {
+                const { data: clientData } = await supabase
+                  .from('clients')
+                  .select('name')
+                  .eq('id', newNotif.client_id)
+                  .single();
+                if (clientData) {
+                  newNotif.client = { name: clientData.name };
+                }
+              }
               
               setNotifications(prev => {
                 if (prev.some(n => n.id === newNotif.id)) return prev;
@@ -338,8 +349,13 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
               {notifications.length > 0 ? notifications.map(n => (
                 <div key={n.id} className={`${styles.notifItem} ${n.read ? '' : styles.unread}`}>
                   <div className={styles.notifIndicator} />
-                  <div className={styles.notifContent}>
-                    <p className={styles.notifTitle}>{n.title}</p>
+                  <div className={styles.notifContent} style={{ width: '100%' }}>
+                    <div className={styles.notifHeaderRow}>
+                      <p className={styles.notifTitle}>{n.title}</p>
+                      {n.client?.name && (
+                        <span className={styles.clientTag}>{n.client.name}</span>
+                      )}
+                    </div>
                     <p className={styles.notifMsg}>{n.message}</p>
                     <span className={styles.notifTime}>
                       <Clock size={12} />
