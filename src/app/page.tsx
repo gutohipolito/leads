@@ -260,8 +260,8 @@ export default function Home() {
         </div>
 
         <div className={styles.statsGrid}>
-          <div className={`${styles.statCard} glass ${styles.animateFadeInUp}`}>
-            <div className={styles.statIcon}><TrendingUp size={20} /></div>
+          <div className={`${styles.statCard} ${styles.blue} glass ${styles.animateFadeInUp}`}>
+            <div className={styles.statIcon}><TrendingUp size={22} /></div>
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Leads Totais</span>
               <h2 className={styles.statValue}>{stats.totalLeads}</h2>
@@ -269,8 +269,8 @@ export default function Home() {
             </div>
           </div>
           
-          <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay1}`}>
-            <div className={styles.statIcon}><Activity size={20} /></div>
+          <div className={`${styles.statCard} ${styles.green} glass ${styles.animateFadeInUp} ${styles.delay1}`}>
+            <div className={styles.statIcon}><Activity size={22} /></div>
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Capturas Hoje</span>
               <h2 className={styles.statValue}>{stats.leadsToday}</h2>
@@ -278,8 +278,8 @@ export default function Home() {
             </div>
           </div>
           
-          <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay2}`}>
-            <div className={styles.statIcon}><Clock size={20} /></div>
+          <div className={`${styles.statCard} ${styles.purple} glass ${styles.animateFadeInUp} ${styles.delay2}`}>
+            <div className={styles.statIcon}><Clock size={22} /></div>
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Últimos 7 dias</span>
               <h2 className={styles.statValue}>{stats.leads7Days}</h2>
@@ -288,8 +288,8 @@ export default function Home() {
           </div>
 
           {isAdmin && !impersonatedName ? (
-            <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
-              <div className={styles.statIcon}><Users size={20} /></div>
+            <div className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
+              <div className={styles.statIcon}><Users size={22} /></div>
               <div className={styles.statInfo}>
                 <span className={styles.statLabel}>Parceiros Ativos</span>
                 <h2 className={styles.statValue}>{stats.activeClientsCount}</h2>
@@ -297,8 +297,8 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
-              <div className={styles.statIcon}><Webhook size={20} /></div>
+            <div className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
+              <div className={styles.statIcon}><Webhook size={22} /></div>
               <div className={styles.statInfo}>
                 <span className={styles.statLabel}>Status do Sistema</span>
                 <div className={styles.statusContainer}>
