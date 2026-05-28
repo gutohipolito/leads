@@ -27,6 +27,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .innerWrapper {
@@ -35,6 +36,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  height: 100%;
 }
 
 .impersonationBanner {
