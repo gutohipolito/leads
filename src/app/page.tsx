@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
@@ -260,7 +260,7 @@ export default function Home() {
         </div>
 
         <div className={styles.statsGrid}>
-          <div className={`${styles.statCard} glass`}>
+          <div className={`${styles.statCard} glass ${styles.animateFadeInUp}`}>
             <div className={styles.statIcon}><TrendingUp size={20} /></div>
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Leads Totais</span>
@@ -269,7 +269,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className={`${styles.statCard} glass`}>
+          <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay1}`}>
             <div className={styles.statIcon}><Activity size={20} /></div>
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Capturas Hoje</span>
@@ -278,7 +278,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className={`${styles.statCard} glass`}>
+          <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay2}`}>
             <div className={styles.statIcon}><Clock size={20} /></div>
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Últimos 7 dias</span>
@@ -288,7 +288,7 @@ export default function Home() {
           </div>
 
           {isAdmin && !impersonatedName ? (
-            <div className={`${styles.statCard} glass`}>
+            <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
               <div className={styles.statIcon}><Users size={20} /></div>
               <div className={styles.statInfo}>
                 <span className={styles.statLabel}>Parceiros Ativos</span>
@@ -297,7 +297,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className={`${styles.statCard} glass`}>
+            <div className={`${styles.statCard} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
               <div className={styles.statIcon}><Webhook size={20} /></div>
               <div className={styles.statInfo}>
                 <span className={styles.statLabel}>Status do Sistema</span>
@@ -473,10 +473,17 @@ export default function Home() {
                     <tr key={lead.id}>
                       {(isAdmin && !impersonatedName) && <td>{lead.clients?.name || 'N/A'}</td>}
                       <td>
-                        <div className={styles.leadInfoMini}>
-                          <span className={styles.leadName}>{lead.name || 'Sem nome'}</span>
-                          <span className={styles.leadEmail}>{lead.email || 'Sem e-mail'}</span>
-                        </div>
+                        {lead.source === 'whatsapp_tracker' ? (
+                          <div className={styles.whatsappTag}>
+                            <MessageCircle className={styles.whatsappIcon} />
+                            <span>Clique via WhatsApp</span>
+                          </div>
+                        ) : (
+                          <div className={styles.leadInfoMini}>
+                            <span className={styles.leadName}>{lead.name || 'Sem nome'}</span>
+                            <span className={styles.leadEmail}>{lead.email || 'Sem e-mail'}</span>
+                          </div>
+                        )}
                       </td>
                       <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
                       <td><span className={styles.statusBadge}>OK</span></td>

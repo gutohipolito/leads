@@ -60,10 +60,35 @@
 }
 
 .statCard {
-  padding: 1rem !important;
+  padding: 1.25rem !important;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 209, 255, 0.15);
+  border-color: rgba(0, 209, 255, 0.3);
+}
+
+.statCard::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.03), transparent);
+  transform: skewX(-20deg);
+  transition: all 0.7s ease;
+}
+
+.statCard:hover::after {
+  left: 150%;
 }
 
 .statIcon {
@@ -328,20 +353,26 @@
 }
 
 .table th {
-  padding: 0.75rem;
+  padding: 1rem 0.75rem;
   text-align: left;
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255,255,255, 0.03);
+  letter-spacing: 0.05em;
 }
 
 .table td {
-  padding: 1rem 0.75rem;
+  padding: 1.25rem 0.75rem;
   font-size: 0.85rem;
   color: var(--foreground);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255,255,255, 0.02);
+  transition: background 0.2s ease;
+}
+
+.table tbody tr:hover td {
+  background: rgba(255,255,255, 0.02);
 }
 
 .statusBadge {
@@ -558,4 +589,45 @@
   border-color: var(--primary);
   background-color: rgba(86, 215, 253, 0.05);
   box-shadow: 0 0 10px rgba(86, 215, 253, 0.1);
+}
+
+/* Animações e Tags de WhatsApp */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animateFadeInUp {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.delay1 { animation-delay: 0.1s; }
+.delay2 { animation-delay: 0.2s; }
+.delay3 { animation-delay: 0.3s; }
+.delay4 { animation-delay: 0.4s; }
+
+.whatsappTag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #25d366;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(37, 211, 102, 0.1);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  width: fit-content;
+  border: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.whatsappIcon {
+  width: 16px;
+  height: 16px;
 }
