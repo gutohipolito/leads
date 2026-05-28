@@ -318,6 +318,16 @@ export default function Home() {
                 <BarChart3 size={18} className={styles.iconPrimary} />
                 <h3>Análise de Conversão</h3>
               </div>
+              <div className={styles.chartLegend}>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#00D1FF', boxShadow: '0 0 10px rgba(0, 209, 255, 0.5)' }} />
+                  <span>Formulários</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#25d366', boxShadow: '0 0 10px rgba(37, 211, 102, 0.5)' }} />
+                  <span>WhatsApp</span>
+                </div>
+              </div>
             </div>
             <div className={styles.chartArea}>
               <AnalyticsChart data={stats.chartData} />

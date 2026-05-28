@@ -8,8 +8,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from 'recharts';
 
 interface AnalyticsChartProps {
@@ -55,16 +54,6 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-          />
-          <Legend 
-            verticalAlign="top" 
-            height={36} 
-            iconType="circle"
-            wrapperStyle={{
-              paddingBottom: '10px',
-              fontSize: '12px',
-              color: 'var(--foreground)'
-            }}
           />
           <Tooltip 
             contentStyle={{ 
