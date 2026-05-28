@@ -261,52 +261,62 @@ export default function Home() {
 
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} ${styles.blue} glass ${styles.animateFadeInUp}`}>
-            <div className={styles.statIcon}><TrendingUp size={22} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Leads Totais</span>
-              <h2 className={styles.statValue}>{stats.totalLeads}</h2>
-              <span className={styles.statSub}>Acumulado total</span>
+            <div className={styles.statLeft}>
+              <div className={styles.statIcon}><TrendingUp size={22} /></div>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>Leads Totais</span>
+                <span className={styles.statSub}>Acumulado total</span>
+              </div>
             </div>
+            <h2 className={styles.statValue}>{stats.totalLeads}</h2>
           </div>
           
           <div className={`${styles.statCard} ${styles.green} glass ${styles.animateFadeInUp} ${styles.delay1}`}>
-            <div className={styles.statIcon}><Activity size={22} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Capturas Hoje</span>
-              <h2 className={styles.statValue}>{stats.leadsToday}</h2>
-              <span className={styles.statSub}>Últimas 24 horas</span>
+            <div className={styles.statLeft}>
+              <div className={styles.statIcon}><Activity size={22} /></div>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>Capturas Hoje</span>
+                <span className={styles.statSub}>Últimas 24 horas</span>
+              </div>
             </div>
+            <h2 className={styles.statValue}>{stats.leadsToday}</h2>
           </div>
           
           <div className={`${styles.statCard} ${styles.purple} glass ${styles.animateFadeInUp} ${styles.delay2}`}>
-            <div className={styles.statIcon}><Clock size={22} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Últimos 7 dias</span>
-              <h2 className={styles.statValue}>{stats.leads7Days}</h2>
-              <span className={styles.statSub}>Volume semanal</span>
+            <div className={styles.statLeft}>
+              <div className={styles.statIcon}><Clock size={22} /></div>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>Últimos 7 dias</span>
+                <span className={styles.statSub}>Volume semanal</span>
+              </div>
             </div>
+            <h2 className={styles.statValue}>{stats.leads7Days}</h2>
           </div>
 
           {isAdmin && !impersonatedName ? (
             <div className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
-              <div className={styles.statIcon}><Users size={22} /></div>
-              <div className={styles.statInfo}>
-                <span className={styles.statLabel}>Parceiros Ativos</span>
-                <h2 className={styles.statValue}>{stats.activeClientsCount}</h2>
-                <span className={styles.statSub}>Clientes no sistema</span>
+              <div className={styles.statLeft}>
+                <div className={styles.statIcon}><Users size={22} /></div>
+                <div className={styles.statInfo}>
+                  <span className={styles.statLabel}>Parceiros Ativos</span>
+                  <span className={styles.statSub}>Clientes no sistema</span>
+                </div>
               </div>
+              <h2 className={styles.statValue}>{stats.activeClientsCount}</h2>
             </div>
           ) : (
             <div className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
-              <div className={styles.statIcon}><Webhook size={22} /></div>
-              <div className={styles.statInfo}>
-                <span className={styles.statLabel}>Status do Sistema</span>
-                <div className={styles.statusContainer}>
-                  <div className={`${styles.pulse} ${styles.pulseGreen}`} />
-                  <h2 className={styles.statValue}>Operacional</h2>
+              <div className={styles.statLeft}>
+                <div className={styles.statIcon}><Webhook size={22} /></div>
+                <div className={styles.statInfo}>
+                  <span className={styles.statLabel}>Status do Sistema</span>
+                  <div className={styles.statusContainer}>
+                    <div className={`${styles.pulse} ${styles.pulseGreen}`} />
+                    <span className={styles.statSub}>Última captura: {getLastLeadTime()}</span>
+                  </div>
                 </div>
-                <span className={styles.statSub}>Última captura: {getLastLeadTime()}</span>
               </div>
+              <h2 className={styles.statValue}>Operacional</h2>
             </div>
           )}
         </div>

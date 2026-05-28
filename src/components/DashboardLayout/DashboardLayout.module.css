@@ -24,7 +24,7 @@
 .pageContent {
   flex: 1;
   padding: 1rem 2rem 2rem;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
