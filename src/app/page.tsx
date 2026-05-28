@@ -476,7 +476,7 @@ export default function Home() {
                         {lead.source === 'whatsapp_tracker' ? (
                           <div className={styles.whatsappTag}>
                             <MessageCircle className={styles.whatsappIcon} />
-                            <span>Clique via WhatsApp</span>
+                            <span>Whatsapp Click</span>
                           </div>
                         ) : (
                           <div className={styles.leadInfoMini}>
