@@ -47,19 +47,37 @@ export default function LiveMonitorPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
+  const [appTheme, setAppTheme] = useState<'dark' | 'light'>('dark');
   const [isNightMode, setIsNightMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const celebrationTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
+    const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    setAppTheme(activeTheme as 'dark' | 'light');
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          const newTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+          setAppTheme(newTheme as 'dark' | 'light');
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
     const checkNightMode = () => {
       const hour = new Date().getHours();
       setIsNightMode(hour >= 19 || hour < 7);
     };
     checkNightMode();
     const interval = setInterval(checkNightMode, 60000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
+    };
   }, []);
 
   const playNotificationSound = (clientId: string) => {
@@ -319,7 +337,7 @@ export default function LiveMonitorPage() {
   const maxPerf = Math.max(...stats.performanceBars, 1);
 
   return (
-    <div className={`${styles.wrapper} ${isNightMode ? styles.nightMode : ''}`} ref={containerRef}>
+    <div className={`${styles.wrapper} ${appTheme === 'light' ? styles.lightMode : ''} ${isNightMode && appTheme === 'dark' ? styles.nightMode : ''}`} ref={containerRef}>
       {isCelebration && celebrationLead && (
         <div className={styles.celebrationOverlay}>
           <div className={styles.flashEffect} />

@@ -1099,3 +1099,175 @@
   background: #2ecc71;
   color: white;
 }
+
+/* Modo Claro */
+.wrapper.lightMode {
+  background: radial-gradient(circle at top right, #f8fafc, #f1f5f9);
+  color: #0f172a;
+}
+.wrapper.lightMode::before {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.05), transparent 70%);
+}
+.wrapper.lightMode .backBtn {
+  color: rgba(15, 23, 42, 0.4);
+}
+.wrapper.lightMode .backBtn:hover {
+  color: #0ea5e9;
+}
+.wrapper.lightMode .logo h1 span {
+  color: #0ea5e9;
+}
+.wrapper.lightMode .logo p {
+  color: rgba(15, 23, 42, 0.5);
+}
+.wrapper.lightMode .clock {
+  background: rgba(0, 0, 0, 0.02);
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .statusPill {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .screenBtn {
+  color: rgba(15, 23, 42, 0.4);
+}
+.wrapper.lightMode .screenBtn:hover {
+  color: #0ea5e9;
+}
+.wrapper.lightMode .statCard {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+.wrapper.lightMode .statCard:hover {
+  background: #ffffff;
+  border-color: var(--card-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+.wrapper.lightMode .statIcon {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .statLabel {
+  color: rgba(15, 23, 42, 0.5);
+}
+.wrapper.lightMode .statValue {
+  color: #0f172a;
+  text-shadow: none;
+}
+.wrapper.lightMode .sectionHeader h2 {
+  color: #0f172a;
+}
+.wrapper.lightMode .leadItem {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .leadItem:hover {
+  background: #ffffff;
+}
+.wrapper.lightMode .leadName {
+  color: #0f172a;
+}
+.wrapper.lightMode .leadClient {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+}
+.wrapper.lightMode .leadMeta {
+  color: rgba(15, 23, 42, 0.5);
+}
+.wrapper.lightMode .worldMap {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+.wrapper.lightMode .mapOverlay h3 {
+  color: #0f172a;
+}
+.wrapper.lightMode .mapOverlay p {
+  color: rgba(15, 23, 42, 0.5);
+}
+.wrapper.lightMode .activeClientItem {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .activeClientItem:hover {
+  background: #ffffff;
+  border-color: rgba(14, 165, 233, 0.2);
+}
+.wrapper.lightMode .clientLine span {
+  color: #0f172a;
+}
+.wrapper.lightMode .clientLine strong {
+  color: #0ea5e9;
+}
+.wrapper.lightMode .clientLine strong span {
+  color: rgba(15, 23, 42, 0.4);
+}
+.wrapper.lightMode .bigTotal {
+  background: rgba(255, 255, 255, 0.7);
+}
+.wrapper.lightMode .bigTotal p {
+  background: linear-gradient(to bottom, #0f172a, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+.wrapper.lightMode .bigTotal span {
+  color: rgba(15, 23, 42, 0.5);
+}
+.wrapper.lightMode .clientBar {
+  background: rgba(0, 0, 0, 0.05);
+}
+.wrapper.lightMode .clientBarFill {
+  background: linear-gradient(90deg, #0ea5e9, #2ecc71);
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.15);
+}
+.wrapper.lightMode .footerInfo {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.06);
+  color: rgba(15, 23, 42, 0.4);
+}
+.wrapper.lightMode .footerInfo span {
+  color: rgba(15, 23, 42, 0.4);
+}
+.wrapper.lightMode .sliderContainer {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .sliderArrow {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+}
+.wrapper.lightMode .sliderArrow:hover {
+  background: #0ea5e9;
+  color: #ffffff;
+}
+.wrapper.lightMode .sliderItem {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.wrapper.lightMode .sliderItem:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.wrapper.lightMode .sliderItem.active {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: #0ea5e9;
+}
+.wrapper.lightMode .sliderInfo span {
+  color: #0f172a;
+}
+.wrapper.lightMode .sliderInfo small {
+  color: #0ea5e9;
+}
+.wrapper.lightMode .sliderItem.active .sliderInfo small {
+  color: #0f172a;
+}
+.wrapper.lightMode .sliderLogo {
+  background: rgba(0, 0, 0, 0.03);
+  color: #0ea5e9;
+}
+.wrapper.lightMode .miniStatus {
+  border-color: #f1f5f9;
+}
