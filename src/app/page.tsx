@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
@@ -20,20 +20,12 @@ import {
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [stats, setStats] = useState({
-    totalLeads: 0,
-    leadsToday: 0,
-    leads7Days: 0,
-    activeClientsCount: 0,
-    chartData: [] as any[],
-    sourceData: [] as any[],
-    topUtms: [] as any[],
-    recentLeads: [] as any[],
-    lastSignalTime: null as number | null,
-    performanceData: [] as any[],
-    locationData: [] as any[]
-  });
+  const [allLeads, setAllLeads] = useState<any[]>([]);
+  const [lastSignalTime, setLastSignalTime] = useState<number | null>(null);
+  const [activeClientsCount, setActiveClientsCount] = useState(0);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
 
   useEffect(() => {
     let notifChannel: any = null;
@@ -64,97 +56,35 @@ export default function Home() {
             setImpersonatedName(null);
           }
 
-
-
-          // 2. Query de contagem de leads totais
-          let totalLeadsQuery = supabase
-            .from('leads')
-            .select('*', { count: 'exact', head: true })
-            .neq('source', 'test_simulation');
-          
-          if (!(isUserAdmin && !impersonated)) {
-            totalLeadsQuery = totalLeadsQuery.eq('client_id', activeClientId);
+          // 1. Obter quantidade de parceiros se admin
+          let activeClients = 0;
+          if (isUserAdmin && !impersonated) {
+            const { count } = await supabase
+              .from('clients')
+              .select('*', { count: 'exact', head: true })
+              .eq('status', 'active');
+            activeClients = count || 0;
+            setActiveClientsCount(activeClients);
           }
-          const { count: totalLeads } = await totalLeadsQuery;
 
-          // 3. Query de todos os leads para graficos e analytics
+          // 2. Query de todos os leads para graficos e analytics (com colunas completas)
           let analyticsQuery = supabase
             .from('leads')
-            .select('created_at, source, data')
-            .neq('source', 'test_simulation');
+            .select('*, clients(name)')
+            .neq('source', 'test_simulation')
+            .order('created_at', { ascending: false });
           
           if (!(isUserAdmin && !impersonated)) {
             analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
           }
           
           const { data: allLeadsRaw } = await analyticsQuery;
-          const allLeads = allLeadsRaw || [];
+          const leadsList = allLeadsRaw || [];
+          setAllLeads(leadsList);
 
-          let activeClientsCount = 0;
-          if (isUserAdmin && !impersonated) {
-            const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active');
-            activeClientsCount = count || 0;
-          }
-
-          // 4. Query de leads recentes
-          let recentLeadsQuery = supabase
-            .from('leads')
-            .select('*, clients (name)')
-            .order('created_at', { ascending: false })
-            .limit(5);
-
-          if (!(isUserAdmin && !impersonated)) {
-            recentLeadsQuery = recentLeadsQuery.eq('client_id', activeClientId);
-          }
-          const { data: recentLeads } = await recentLeadsQuery;
-
-          const now = new Date();
-          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-          const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-          const wppCount = allLeads?.filter(l => l.source === 'whatsapp_tracker').length || 0;
-          const formCount = (allLeads?.length || 0) - wppCount;
-          const sourceData = [
-            { name: 'WhatsApp', value: wppCount, color: '#25d366' },
-            { name: 'Formulários', value: formCount, color: '#56d7fd' }
-          ];
-
-          const utmMap: any = {};
-          allLeads?.forEach(l => {
-            const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
-            const utm = decodeURIComponent(rawUtm);
-            utmMap[utm] = (utmMap[utm] || 0) + 1;
-          });
-          const topUtms = Object.entries(utmMap)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a: any, b: any) => (b.value as number) - (a.value as number))
-            .slice(0, 5);
-
-          const chartData = Array.from({ length: 7 }).map((_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
-            const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-            const dayEnd = dayStart + 24 * 60 * 60 * 1000;
-            
-            const dayLeads = allLeads?.filter(l => {
-              const ts = new Date(l.created_at).getTime();
-              return ts >= dayStart && ts < dayEnd;
-            }) || [];
-
-            const whatsappCount = dayLeads.filter(l => l.source === 'whatsapp_tracker').length;
-            const formsCount = dayLeads.length - whatsappCount;
-
-            return { 
-              date: dateStr, 
-              leads: dayLeads.length,
-              whatsapp: whatsappCount,
-              forms: formsCount
-            };
-          });
-          
-          const lastLead = recentLeads?.[0];
-          const lastSignalTime = lastLead ? new Date(lastLead.created_at).getTime() : null;
+          const lastLead = leadsList[0];
+          const lastSignal = lastLead ? new Date(lastLead.created_at).getTime() : null;
+          setLastSignalTime(lastSignal);
 
           // Inscrição Realtime para Notificações na Home
           const channel = supabase.channel('dashboard-notifications');
@@ -163,23 +93,18 @@ export default function Home() {
               const newLead = payload.new;
               const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
               if (!canSee) return;
+              
+              // Recarregar dados brutos ao receber lead em tempo real
+              loadDashboardData();
             })
             .subscribe();
           notifChannel = channel;
 
-          setStats({
-            totalLeads: totalLeads || 0,
-            leadsToday: allLeads?.filter(l => l.created_at >= todayStart).length || 0,
-            leads7Days: allLeads?.filter(l => l.created_at >= weekStart).length || 0,
-            activeClientsCount,
-            chartData,
-            sourceData,
-            topUtms,
-            recentLeads: recentLeads || [],
-            lastSignalTime,
-            performanceData: isUserAdmin && !impersonated ? await fetchPerformanceData() : [],
-            locationData: calculateLocationData(allLeads)
-          });
+          // Se for admin, carrega performance de parceiros
+          if (isUserAdmin && !impersonated) {
+            const perfData = await fetchPerformanceData(leadsList);
+            setPerformanceData(perfData);
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar dashboard:', error);
@@ -188,17 +113,11 @@ export default function Home() {
       }
     }
 
-    async function fetchPerformanceData() {
-      let perfQuery = supabase
-        .from('leads')
-        .select('client_id, clients(name)')
-        .neq('source', 'test_simulation');
-      
-      const { data } = await perfQuery;
-      if (!data) return [];
+    async function fetchPerformanceData(leads: any[]) {
+      if (!leads || leads.length === 0) return [];
       
       const counts: any = {};
-      data.forEach(l => {
+      leads.forEach(l => {
         const name = l.clients?.name || 'Desconhecido';
         counts[name] = (counts[name] || 0) + 1;
       });
@@ -206,21 +125,6 @@ export default function Home() {
       return Object.entries(counts)
         .map(([name, count]) => ({ name, count }))
         .sort((a: any, b: any) => (b.count as number) - (a.count as number))
-        .slice(0, 5);
-    }
-
-    function calculateLocationData(leads: any[]) {
-      const map: any = {};
-      leads.forEach(l => {
-        const cityRaw = l.data?.location?.city;
-        if (cityRaw && cityRaw !== 'Desconhecida') {
-          const city = decodeURIComponent(cityRaw);
-          map[city] = (map[city] || 0) + 1;
-        }
-      });
-      return Object.entries(map)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a: any, b: any) => (b.value as number) - (a.value as number))
         .slice(0, 5);
     }
 
@@ -233,11 +137,147 @@ export default function Home() {
     };
   }, []);
 
+  // Filtro de leads e computação reativa na memória
+  const filteredLeads = useMemo(() => {
+    return allLeads.filter(l => {
+      const isSelector = l.source === 'custom_tracker' && (
+        l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+        l.data?.match_type?.toLowerCase().includes('selector') || 
+        l.name?.toLowerCase().includes('selector')
+      );
+      const isKeyword = l.source === 'custom_tracker' && (
+        l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+        l.data?.match_type?.toLowerCase().includes('keyword') || 
+        l.name?.toLowerCase().includes('keyword')
+      );
+
+      if (activeFilter === 'whatsapp') return l.source === 'whatsapp_tracker';
+      if (activeFilter === 'selectors') return isSelector;
+      if (activeFilter === 'keywords') return isKeyword;
+      if (activeFilter === 'forms') return l.source !== 'whatsapp_tracker' && !isSelector && !isKeyword;
+      return true; // 'all'
+    });
+  }, [allLeads, activeFilter]);
+
+  const statsSummary = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const totalLeads = filteredLeads.length;
+    const leadsToday = filteredLeads.filter(l => l.created_at >= todayStart).length;
+    const leads7Days = filteredLeads.filter(l => l.created_at >= weekStart).length;
+
+    // Pizza (Divisão de origens)
+    const wppCount = filteredLeads.filter(l => l.source === 'whatsapp_tracker').length;
+    const selectorCount = filteredLeads.filter(l => 
+      l.source === 'custom_tracker' && (
+        l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+        l.data?.match_type?.toLowerCase().includes('selector') || 
+        l.name?.toLowerCase().includes('selector')
+      )
+    ).length;
+    const keywordCount = filteredLeads.filter(l => 
+      l.source === 'custom_tracker' && (
+        l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+        l.data?.match_type?.toLowerCase().includes('keyword') || 
+        l.name?.toLowerCase().includes('keyword')
+      )
+    ).length;
+    const formCount = filteredLeads.length - wppCount - selectorCount - keywordCount;
+
+    const sourceData = [
+      { name: 'WhatsApp', value: wppCount, color: '#25d366' },
+      { name: 'Seletores', value: selectorCount, color: '#a855f7' },
+      { name: 'Palavras-Chave', value: keywordCount, color: '#f97316' },
+      { name: 'Formulários', value: formCount, color: '#56d7fd' }
+    ].filter(s => activeFilter === 'all' ? true : s.value > 0);
+
+    // UTMs
+    const utmMap: any = {};
+    filteredLeads.forEach(l => {
+      const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
+      const utm = decodeURIComponent(rawUtm);
+      utmMap[utm] = (utmMap[utm] || 0) + 1;
+    });
+    const topUtms = Object.entries(utmMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+      .slice(0, 5);
+
+    // Localização
+    const locMap: any = {};
+    filteredLeads.forEach(l => {
+      const cityRaw = l.data?.location?.city;
+      if (cityRaw && cityRaw !== 'Desconhecida') {
+        const city = decodeURIComponent(cityRaw);
+        locMap[city] = (locMap[city] || 0) + 1;
+      }
+    });
+    const locationData = Object.entries(locMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+      .slice(0, 5);
+
+    // Chart Data
+    const chartData = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      
+      const dayLeads = filteredLeads.filter(l => {
+        const ts = new Date(l.created_at).getTime();
+        return ts >= dayStart && ts < dayEnd;
+      });
+
+      const dayWpp = dayLeads.filter(l => l.source === 'whatsapp_tracker').length;
+      const daySel = dayLeads.filter(l => 
+        l.source === 'custom_tracker' && (
+          l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+          l.data?.match_type?.toLowerCase().includes('selector') || 
+          l.name?.toLowerCase().includes('selector')
+        )
+      ).length;
+      const dayKey = dayLeads.filter(l => 
+        l.source === 'custom_tracker' && (
+          l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+          l.data?.match_type?.toLowerCase().includes('keyword') || 
+          l.name?.toLowerCase().includes('keyword')
+        )
+      ).length;
+      const dayForm = dayLeads.length - dayWpp - daySel - dayKey;
+
+      return { 
+        date: dateStr, 
+        leads: dayLeads.length,
+        whatsapp: dayWpp,
+        selectors: daySel,
+        keywords: dayKey,
+        forms: dayForm
+      };
+    });
+
+    const recentLeads = filteredLeads.slice(0, 5);
+
+    return {
+      totalLeads,
+      leadsToday,
+      leads7Days,
+      sourceData,
+      topUtms,
+      locationData,
+      chartData,
+      recentLeads
+    };
+  }, [filteredLeads, activeFilter]);
+
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
 
   const getLastLeadTime = () => {
-    if (!stats.lastSignalTime) return 'Nenhuma captura';
-    const mins = Math.floor((Date.now() - stats.lastSignalTime) / 60000);
+    if (!lastSignalTime) return 'Nenhuma captura';
+    const mins = Math.floor((Date.now() - lastSignalTime) / 60000);
     if (mins < 1) return 'Agora mesmo';
     if (mins < 60) return `${mins} min atrás`;
     const hours = Math.floor(mins / 60);
@@ -259,6 +299,45 @@ export default function Home() {
           <h2>{dashboardTitle}</h2>
         </div>
 
+        {/* Barra de Filtros Rápidos */}
+        <div className={styles.filterBar}>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'all' ? styles.activeAll : ''}`}
+            onClick={() => setActiveFilter('all')}
+          >
+            <BarChart3 size={16} />
+            <span>Todos os Leads</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'whatsapp' ? styles.activeWhatsapp : ''}`}
+            onClick={() => setActiveFilter('whatsapp')}
+          >
+            <MessageCircle size={16} />
+            <span>WhatsApp</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'forms' ? styles.activeForms : ''}`}
+            onClick={() => setActiveFilter('forms')}
+          >
+            <FileText size={16} />
+            <span>Formulários</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'selectors' ? styles.activeSelectors : ''}`}
+            onClick={() => setActiveFilter('selectors')}
+          >
+            <MousePointerClick size={16} />
+            <span>Seletores</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'keywords' ? styles.activeKeywords : ''}`}
+            onClick={() => setActiveFilter('keywords')}
+          >
+            <Type size={16} />
+            <span>Palavras-Chave</span>
+          </button>
+        </div>
+
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} ${styles.blue} glass ${styles.animateFadeInUp}`}>
             <div className={styles.statLeft}>
@@ -268,7 +347,7 @@ export default function Home() {
                 <span className={styles.statSub}>Acumulado total</span>
               </div>
             </div>
-            <h2 className={styles.statValue}>{stats.totalLeads}</h2>
+            <h2 className={styles.statValue}>{statsSummary.totalLeads}</h2>
           </div>
           
           <div className={`${styles.statCard} ${styles.green} glass ${styles.animateFadeInUp} ${styles.delay1}`}>
@@ -279,7 +358,7 @@ export default function Home() {
                 <span className={styles.statSub}>Últimas 24 horas</span>
               </div>
             </div>
-            <h2 className={styles.statValue}>{stats.leadsToday}</h2>
+            <h2 className={styles.statValue}>{statsSummary.leadsToday}</h2>
           </div>
           
           <div className={`${styles.statCard} ${styles.purple} glass ${styles.animateFadeInUp} ${styles.delay2}`}>
@@ -290,7 +369,7 @@ export default function Home() {
                 <span className={styles.statSub}>Volume semanal</span>
               </div>
             </div>
-            <h2 className={styles.statValue}>{stats.leads7Days}</h2>
+            <h2 className={styles.statValue}>{statsSummary.leads7Days}</h2>
           </div>
 
           {isAdmin && !impersonatedName ? (
@@ -302,7 +381,7 @@ export default function Home() {
                   <span className={styles.statSub}>Clientes no sistema</span>
                 </div>
               </div>
-              <h2 className={styles.statValue}>{stats.activeClientsCount}</h2>
+              <h2 className={styles.statValue}>{activeClientsCount}</h2>
             </div>
           ) : (
             <div className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3}`}>
@@ -337,14 +416,22 @@ export default function Home() {
                   <div className={styles.dot} style={{ background: '#25d366', boxShadow: '0 0 10px rgba(37, 211, 102, 0.5)' }} />
                   <span>WhatsApp</span>
                 </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#a855f7', boxShadow: '0 0 10px rgba(168, 85, 247, 0.5)' }} />
+                  <span>Seletores</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#f97316', boxShadow: '0 0 10px rgba(249, 115, 22, 0.5)' }} />
+                  <span>Palavras-Chave</span>
+                </div>
               </div>
             </div>
             <div className={styles.chartArea}>
-              <AnalyticsChart data={stats.chartData} />
+              <AnalyticsChart data={statsSummary.chartData} activeFilter={activeFilter} />
             </div>
           </div>
 
-          {isAdmin && !impersonatedName && stats.performanceData.length > 0 && (
+          {isAdmin && !impersonatedName && performanceData.length > 0 && (
             <div className={`${styles.chartCard} glass`}>
               <div className={styles.cardHeader}>
                 <div className={styles.titleWithIcon}>
@@ -353,7 +440,7 @@ export default function Home() {
                 </div>
               </div>
               <div className={styles.performanceList}>
-                {stats.performanceData.map((p: any, i: number) => (
+                {performanceData.map((p: any, i: number) => (
                   <div key={p.name} className={styles.perfItem}>
                     <div className={styles.perfInfo}>
                       <span className={styles.perfName}>{p.name}</span>
@@ -363,7 +450,7 @@ export default function Home() {
                       <div 
                         className={styles.perfBarFill} 
                         style={{ 
-                          width: `${(p.count / stats.performanceData[0].count) * 100}%`,
+                          width: `${(p.count / performanceData[0].count) * 100}%`,
                           background: `linear-gradient(90deg, #56d7fd, #2ecc71)`
                         }} 
                       />
@@ -385,13 +472,13 @@ export default function Home() {
               <ResponsiveContainer width="100%" height={200} minWidth={0}>
                 <PieChart>
                   <Pie
-                    data={stats.sourceData}
+                    data={statsSummary.sourceData}
                     innerRadius={60}
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {stats.sourceData.map((entry: any, index: number) => (
+                    {statsSummary.sourceData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -407,7 +494,7 @@ export default function Home() {
                 </PieChart>
               </ResponsiveContainer>
               <div className={styles.pieLegend}>
-                {stats.sourceData.map((s: any) => (
+                {statsSummary.sourceData.map((s: any) => (
                   <div key={s.name} className={styles.legendItem}>
                     <div className={styles.dot} style={{ background: s.color }} />
                     <span>{s.name} ({s.value})</span>
@@ -427,16 +514,16 @@ export default function Home() {
               </div>
             </div>
             <div className={styles.utmList}>
-              {stats.topUtms.map((utm: any, i: number) => (
+              {statsSummary.topUtms.map((utm: any, i: number) => (
                 <div key={utm.name} className={styles.utmItem}>
                   <div className={styles.utmInfo}>
                     <span className={styles.utmRank}>#{i + 1}</span>
                     <span className={styles.utmName}>{utm.name}</span>
                   </div>
                   <div className={styles.utmBarWrapper}>
-                    <div className={styles.utmBar} style={{ width: `${(utm.value / stats.totalLeads) * 100}%` }} />
+                    <div className={styles.utmBar} style={{ width: `${(utm.value / (statsSummary.totalLeads || 1)) * 100}%` }} />
                     <span className={styles.utmValue}>
-                      {utm.value} <span className={styles.separator}>•</span> {((utm.value / stats.totalLeads) * 100).toFixed(1)}%
+                      {utm.value} <span className={styles.separator}>•</span> {((utm.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -452,16 +539,16 @@ export default function Home() {
               </div>
             </div>
             <div className={styles.utmList}>
-              {stats.locationData.length > 0 ? stats.locationData.map((loc: any, i: number) => (
+              {statsSummary.locationData.length > 0 ? statsSummary.locationData.map((loc: any, i: number) => (
                 <div key={loc.name} className={styles.utmItem}>
                   <div className={styles.utmInfo}>
                     <span className={styles.utmRank}>#{i + 1}</span>
                     <span className={styles.utmName}>{loc.name}</span>
                   </div>
                   <div className={styles.utmBarWrapper}>
-                    <div className={styles.locationBar} style={{ width: `${(loc.value / (stats.locationData[0]?.value || 1)) * 100}%` }} />
+                    <div className={styles.locationBar} style={{ width: `${(loc.value / (statsSummary.locationData[0]?.value || 1)) * 100}%` }} />
                     <span className={styles.utmValue}>
-                      {loc.value} <span className={styles.separator}>•</span> {((loc.value / stats.totalLeads) * 100).toFixed(1)}%
+                      {loc.value} <span className={styles.separator}>•</span> {((loc.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -489,7 +576,7 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.recentLeads.map((lead) => {
+                  {statsSummary.recentLeads.map((lead) => {
                     const isSelector = lead.source === 'custom_tracker' && (
                       lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
                       lead.data?.match_type?.toLowerCase().includes('selector') || 
@@ -533,7 +620,7 @@ export default function Home() {
                       </tr>
                     );
                   })}
-                  {stats.recentLeads.length === 0 && (
+                  {statsSummary.recentLeads.length === 0 && (
                     <tr>
                       <td colSpan={4} className={styles.emptyTable}>Nenhum registro encontrado.</td>
                     </tr>

@@ -50,6 +50,26 @@ export default function SettingsPage() {
   const [soundType, setSoundType] = useState('bubble');
   const [isSoundModalOpen, setIsSoundModalOpen] = useState(false);
   const [pendingSound, setPendingSound] = useState(true);
+
+  // Lead Scoring States
+  const [scoringRules, setScoringRules] = useState<any>({
+    whatsapp_score: 50,
+    time_on_page_60: 20,
+    time_on_page_20: 10,
+    scroll_depth_80: 25,
+    scroll_depth_50: 15,
+    paid_traffic: 20,
+    journey_3: 15,
+    journey_2: 10
+  });
+  const [savingScoring, setSavingScoring] = useState(false);
+  const [scoringSuccess, setScoringSuccess] = useState(false);
+
+  // Gestão multicliente para admins
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClientIdForScoring, setSelectedClientIdForScoring] = useState<string | null>(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   
   // Security Modal States
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
@@ -83,6 +103,29 @@ export default function SettingsPage() {
           if (data) {
             setProfile(data);
             setNewName(data.name);
+
+            const isUserAdmin = data.role === 'admin';
+            const impersonated = localStorage.getItem('impersonated_client');
+            let activeClientId = data.client_id;
+
+            if (isUserAdmin && impersonated) {
+              const impData = JSON.parse(impersonated);
+              activeClientId = impData.id;
+              setIsImpersonating(true);
+              setImpersonatedName(impData.name);
+            }
+
+            setSelectedClientIdForScoring(activeClientId);
+
+            // Carregar clientes ativos se for admin
+            if (isUserAdmin) {
+              const { data: clientsData } = await supabase
+                .from('clients')
+                .select('id, name')
+                .eq('status', 'active')
+                .order('name', { ascending: true });
+              setClients(clientsData || []);
+            }
           }
         } else {
           router.push('/login');
@@ -107,6 +150,48 @@ export default function SettingsPage() {
       setSoundType(savedSoundType);
     }
   }, [router]);
+
+  // Carregar regras de Lead Scoring quando o cliente selecionado mudar
+  useEffect(() => {
+    async function loadScoringRules() {
+      if (!selectedClientIdForScoring) return;
+      try {
+        const { data: scoringData } = await supabase
+          .from('lead_scoring_rules')
+          .select('*')
+          .eq('client_id', selectedClientIdForScoring)
+          .maybeSingle();
+
+        if (scoringData) {
+          setScoringRules({
+            whatsapp_score: scoringData.whatsapp_score ?? 50,
+            time_on_page_60: scoringData.time_on_page_60 ?? 20,
+            time_on_page_20: scoringData.time_on_page_20 ?? 10,
+            scroll_depth_80: scoringData.scroll_depth_80 ?? 25,
+            scroll_depth_50: scoringData.scroll_depth_50 ?? 15,
+            paid_traffic: scoringData.paid_traffic ?? 20,
+            journey_3: scoringData.journey_3 ?? 15,
+            journey_2: scoringData.journey_2 ?? 10
+          });
+        } else {
+          // Resetar para as regras padrão
+          setScoringRules({
+            whatsapp_score: 50,
+            time_on_page_60: 20,
+            time_on_page_20: 10,
+            scroll_depth_80: 25,
+            scroll_depth_50: 15,
+            paid_traffic: 20,
+            journey_3: 15,
+            journey_2: 10
+          });
+        }
+      } catch (err) {
+        console.error('Erro ao carregar regras de scoring:', err);
+      }
+    }
+    loadScoringRules();
+  }, [selectedClientIdForScoring]);
 
   const loadSecurityData = async () => {
     setLoadingSecurity(true);
@@ -275,6 +360,39 @@ export default function SettingsPage() {
       alert('Erro ao atualizar perfil: ' + error.message);
     }
     setSaving(false);
+  };
+
+  const handleUpdateScoring = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClientIdForScoring) return;
+    setSavingScoring(true);
+
+    const { error } = await supabase
+      .from('lead_scoring_rules')
+      .upsert({
+        client_id: selectedClientIdForScoring,
+        whatsapp_score: scoringRules.whatsapp_score,
+        time_on_page_60: scoringRules.time_on_page_60,
+        time_on_page_20: scoringRules.time_on_page_20,
+        scroll_depth_80: scoringRules.scroll_depth_80,
+        scroll_depth_50: scoringRules.scroll_depth_50,
+        paid_traffic: scoringRules.paid_traffic,
+        journey_3: scoringRules.journey_3,
+        journey_2: scoringRules.journey_2
+      }, { onConflict: 'client_id' });
+
+    if (!error) {
+      if (profile?.id) {
+        await logAction('Configurações: Regras de Lead Scoring Atualizadas', 'client', selectedClientIdForScoring, {
+          updated_by: profile.email
+        });
+      }
+      setScoringSuccess(true);
+      setTimeout(() => setScoringSuccess(false), 3000);
+    } else {
+      alert('Erro ao salvar regras de pontuação: ' + error.message);
+    }
+    setSavingScoring(false);
   };
 
   if (loading) return (
@@ -468,6 +586,150 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Lead Scoring Section */}
+          {(profile?.client_id || profile?.role === 'admin') && (
+            <div className={`${styles.card} glass`}>
+              <div className={styles.cardHeader}>
+                <SettingsIcon size={20} className={styles.icon} style={{ color: '#f1c40f' }} />
+                <h3>Regras de Lead Scoring</h3>
+              </div>
+              <form className={styles.form} onSubmit={handleUpdateScoring}>
+                <p className={styles.cardDesc} style={{ marginBottom: '1.25rem', marginTop: '-0.5rem', fontSize: '0.8rem', opacity: 0.8 }}>
+                  Personalize a pontuação atribuída a cada ação de engajamento do lead (máximo 100 pontos por lead).
+                </p>
+
+                {/* Seletor de Cliente para Admin */}
+                {profile?.role === 'admin' && (
+                  <div className={styles.field} style={{ marginBottom: '1.25rem' }}>
+                    <label>Cliente Gerenciado</label>
+                    {isImpersonating ? (
+                      <div className={styles.inputDisabled}>
+                        <span>Impersonando: <strong>{impersonatedName}</strong></span>
+                      </div>
+                    ) : (
+                      <select
+                        className={styles.clientSelectScoring}
+                        value={selectedClientIdForScoring || ''}
+                        onChange={(e) => setSelectedClientIdForScoring(e.target.value || null)}
+                      >
+                        <option value="">-- Selecione um Cliente --</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
+                {/* Só exibe os inputs se houver um client_id selecionado */}
+                {selectedClientIdForScoring ? (
+                  <>
+                    <div className={styles.fieldRow}>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>WhatsApp Click (Score)</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.whatsapp_score} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, whatsapp_score: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Tráfego Pago (UTM Ads)</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.paid_traffic} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, paid_traffic: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.fieldRow}>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Permanência ≥ 60s</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.time_on_page_60} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, time_on_page_60: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Permanência ≥ 20s</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.time_on_page_20} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, time_on_page_20: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.fieldRow}>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Scroll da Página ≥ 80%</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.scroll_depth_80} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, scroll_depth_80: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Scroll da Página ≥ 50%</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.scroll_depth_50} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, scroll_depth_50: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.fieldRow}>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Jornada ≥ 3 Visitas</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.journey_3} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, journey_3: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                      <div className={styles.field} style={{ flex: 1 }}>
+                        <label>Jornada = 2 Visitas</label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={scoringRules.journey_2} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, journey_2: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                    </div>
+                    
+                    <button type="submit" className={styles.saveBtn} disabled={savingScoring} style={{ marginTop: '1rem' }}>
+                      {scoringSuccess ? <CheckCircle2 size={18} /> : <Save size={18} />}
+                      <span>{savingScoring ? 'Salvando...' : (scoringSuccess ? 'Regras Salvas!' : 'Salvar Regras')}</span>
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)', fontStyle: 'italic', textAlign: 'center', padding: '1rem' }}>
+                    Por favor, selecione um cliente para gerenciar as regras de lead scoring.
+                  </p>
+                )}
+              </form>
+            </div>
+          )}
 
           {/* Account Management */}
           <div className={`${styles.card} ${styles.dangerCard} glass`}>

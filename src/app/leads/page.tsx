@@ -99,6 +99,12 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
 
+  // Status de reenvio e logs de integração
+  const [integrationLogs, setIntegrationLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
   const handleLogoError = (clientId: string) => {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
@@ -251,6 +257,61 @@ export default function LeadsPage() {
       logAction('Lead Excluído', 'lead', leadId, { deleted_by: 'admin' });
     } else {
       alert('Erro ao excluir lead: ' + error.message);
+    }
+  };
+
+  // Monitorar seleção do Lead para carregar logs de sincronização
+  useEffect(() => {
+    if (selectedLead) {
+      fetchIntegrationLogs(selectedLead.id);
+    } else {
+      setIntegrationLogs([]);
+      setExpandedLogId(null);
+    }
+  }, [selectedLead]);
+
+  const fetchIntegrationLogs = async (leadId: string) => {
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('webhook_logs')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setIntegrationLogs(data);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar logs de integração:', e);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const handleRetryIntegrations = async (leadId: string) => {
+    setRetrying(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/leads/retry', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': session ? `Bearer ${session.access_token}` : ''
+        },
+        body: JSON.stringify({ leadId })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert('Integrações disparadas e reprocessadas com sucesso!');
+        fetchIntegrationLogs(leadId); // Atualiza os logs na tela
+      } else {
+        alert('Falha ao reprocessar: ' + result.error);
+      }
+    } catch (e: any) {
+      alert('Erro de conexão: ' + e.message);
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -1246,6 +1307,100 @@ export default function LeadsPage() {
                   </div>
                 )}
 
+                {/* Integrações & Sincronização */}
+                <div className={styles.detailSection}>
+                  <div className={styles.sectionHeader}>
+                    <Cpu size={16} className={styles.sectionIcon} style={{ color: '#a855f7' }} />
+                    <h4>Integrações & Sincronização</h4>
+                  </div>
+                  {loadingLogs ? (
+                    <div style={{ padding: '0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.7, fontSize: '0.8rem' }}>
+                      <div className={styles.spinner} style={{ width: '14px', height: '14px', borderWidth: '2px' }} /> <span>Carregando logs de integração...</span>
+                    </div>
+                  ) : integrationLogs.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.25rem' }}>
+                      {integrationLogs.map((log: any) => {
+                        const integrationName = log.request_body?.integration_name || 'Integração';
+                        const integrationType = log.request_body?.integration_type || 'webhook';
+                        const isSuccess = log.status_code >= 200 && log.status_code < 300;
+                        const dateFormatted = new Date(log.created_at).toLocaleString('pt-BR');
+                        
+                        return (
+                          <div 
+                            key={log.id} 
+                            style={{ 
+                              background: 'rgba(255, 255, 255, 0.01)', 
+                              border: '1px solid var(--border)', 
+                              borderRadius: '10px', 
+                              padding: '0.6rem 0.85rem',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.4rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ 
+                                  width: '8px', 
+                                  height: '8px', 
+                                  borderRadius: '50%', 
+                                  background: isSuccess ? '#25d366' : '#ff4d4d',
+                                  boxShadow: isSuccess ? '0 0 8px rgba(37, 211, 102, 0.4)' : '0 0 8px rgba(255, 77, 77, 0.4)'
+                                }} />
+                                <strong style={{ fontSize: '0.8rem' }}>{integrationName} ({integrationType.toUpperCase()})</strong>
+                              </div>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>{dateFormatted}</span>
+                            </div>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                              <span style={{ color: isSuccess ? '#25d366' : '#ff4d4d', fontWeight: 700 }}>
+                                Status HTTP: {log.status_code}
+                              </span>
+                              <button 
+                                type="button" 
+                                style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                                onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                              >
+                                {expandedLogId === log.id ? 'Ocultar resposta' : 'Ver resposta da API'}
+                              </button>
+                            </div>
+                            
+                            {expandedLogId === log.id && (
+                              <div style={{ 
+                                background: 'rgba(0,0,0,0.2)', 
+                                padding: '0.6rem', 
+                                borderRadius: '6px', 
+                                fontSize: '0.7rem', 
+                                fontFamily: 'monospace', 
+                                overflowX: 'auto', 
+                                color: 'var(--muted-foreground)',
+                                marginTop: '0.2rem',
+                                border: '1px solid rgba(255, 255, 255, 0.03)'
+                              }}>
+                                {log.error_message && (
+                                  <div style={{ color: '#ff4d4d', marginBottom: '0.3rem' }}>
+                                    <strong>Erro:</strong> {log.error_message}
+                                  </div>
+                                )}
+                                <div>
+                                  <strong>Resposta:</strong>
+                                  <pre style={{ margin: '0.2rem 0 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                    {log.response_body || 'Nenhuma resposta.'}
+                                  </pre>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', fontStyle: 'italic', margin: '0.2rem 0' }}>
+                      Nenhum envio registrado para este lead.
+                    </p>
+                  )}
+                </div>
+
                 <div className={styles.detailSection}>
                   <h4>Dados Brutos & Personalizados</h4>
                   <div className={styles.jsonView}>
@@ -1301,9 +1456,17 @@ export default function LeadsPage() {
               </div>
               <div className={styles.drawerFooter}>
                 <div className={styles.drawerActionsLeft}>
-                  <button className={styles.primaryBtn} onClick={() => alert('Integrando com CRM...')}>
-                    <Send size={16} />
-                    <span>Exportar para CRM</span>
+                  <button 
+                    className={styles.primaryBtn} 
+                    onClick={() => handleRetryIntegrations(selectedLead.id)}
+                    disabled={retrying}
+                  >
+                    {retrying ? (
+                      <div className={styles.spinnerMini} />
+                    ) : (
+                      <Send size={16} />
+                    )}
+                    <span>{retrying ? 'Repassando...' : 'Reenviar para CRM'}</span>
                   </button>
                   {isAdmin && (
                     <button 
