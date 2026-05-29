@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './logs.module.css';
 import { 
@@ -64,6 +65,7 @@ export default function LogsPage() {
   const [newIp, setNewIp] = useState('');
   const [newReason, setNewReason] = useState('');
   const [newExpiresMinutes, setNewExpiresMinutes] = useState('10');
+  const [isFirewallModalOpen, setIsFirewallModalOpen] = useState(false);
 
   const handleCopyKey = (secret: string, keyId: string) => {
     navigator.clipboard.writeText(secret);
@@ -574,117 +576,24 @@ export default function LogsPage() {
             </section>
           </div>
 
-          {/* Firewall de IPs */}
-          <section className={`${styles.keysSection} glass`} style={{ margin: '2rem 0' }}>
-            <div className={styles.cardHeader}>
-              <div className={styles.headerInfo}>
-                <div className={styles.iconCircle} style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}><ShieldAlert size={18} /></div>
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>Firewall de IPs (Leads Guard)</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>Gerenciamento e controle de IPs bloqueados temporariamente por spam/rate limits.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Formulário de Bloqueio Manual */}
-            <form onSubmit={handleBlockIp} className={styles.blockIpForm}>
-              <div className={styles.formFieldMini}>
-                <label>Endereço IP</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: 172.16.254.1" 
-                  value={newIp}
-                  onChange={e => setNewIp(e.target.value)}
-                  required
-                />
-              </div>
-              <div className={styles.formFieldMini}>
-                <label>Motivo do Bloqueio</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: Spam frequente de formulário" 
-                  value={newReason}
-                  onChange={e => setNewReason(e.target.value)}
-                />
-              </div>
-              <div className={styles.formFieldMini}>
-                <label>Duração</label>
-                <select 
-                  value={newExpiresMinutes}
-                  onChange={e => setNewExpiresMinutes(e.target.value)}
-                >
-                  <option value="10">10 Minutos</option>
-                  <option value="60">1 Hora</option>
-                  <option value="1440">1 Dia</option>
-                  <option value="10080">1 Semana</option>
-                  <option value="infinite">Permanente (Infinito)</option>
-                </select>
-              </div>
-              <button type="submit" className={styles.blockBtn}>
-                <ShieldAlert size={16} />
-                <span>Bloquear IP</span>
-              </button>
-            </form>
-
-            <div className={styles.tableResponsive} style={{ marginTop: '1.5rem' }}>
-              <table className={styles.keysTable}>
-                <thead>
-                  <tr>
-                    <th>Endereço IP</th>
-                    <th>Motivo</th>
-                    <th>Bloqueado em</th>
-                    <th>Expira em</th>
-                    <th>Cidade / País</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {blockedIps.map(ip => {
-                    const isExpired = ip.expires_at && new Date(ip.expires_at).getTime() < Date.now();
-                    return (
-                      <tr key={ip.id} style={{ opacity: isExpired ? 0.4 : 1 }}>
-                        <td>
-                          <span style={{ color: '#ef4444', fontFamily: 'monospace', fontWeight: 'bold' }}>{ip.ip_address}</span>
-                        </td>
-                        <td style={{ fontSize: '0.8rem' }}>{ip.reason}</td>
-                        <td style={{ fontSize: '0.8rem' }}>{new Date(ip.blocked_at).toLocaleString('pt-BR')}</td>
-                        <td style={{ fontSize: '0.8rem' }}>
-                          {ip.expires_at ? (
-                            isExpired ? 'Expirado' : new Date(ip.expires_at).toLocaleString('pt-BR')
-                          ) : (
-                            <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Permanente</span>
-                          )}
-                        </td>
-                        <td style={{ fontSize: '0.8rem' }}>
-                          {ip.city ? `${ip.city} (${ip.country || 'BR'})` : 'N/A'}
-                        </td>
-                        <td>
-                          <button 
-                            type="button"
-                            className={styles.iconBtn} 
-                            style={{ color: '#10b981' }}
-                            onClick={() => handleUnlockIp(ip.id, ip.ip_address)}
-                            title="Desbloquear IP"
-                          >
-                            <ShieldCheck size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {blockedIps.length === 0 && (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>
-                        Nenhum IP bloqueado no firewall do sistema.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
           <div className={styles.firewallGrid}>
+            <section className={`${styles.configCard} glass`}>
+              <div className={styles.configHeader}>
+                <div className={styles.iconCircle} style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}><ShieldAlert size={18} /></div>
+                <h4>Firewall de IPs</h4>
+              </div>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                Gerencie e controle IPs bloqueados temporariamente por spam ou violações de regras.
+              </p>
+              <button 
+                type="button" 
+                className={styles.firewallManageBtn} 
+                onClick={() => setIsFirewallModalOpen(true)}
+              >
+                Gerenciar Firewall
+              </button>
+            </section>
+
             <section className={`${styles.configCard} glass`}>
               <div className={styles.configHeader}>
                 <div className={styles.iconCircle}><Globe size={18} /></div>
@@ -907,6 +816,126 @@ export default function LogsPage() {
           onConfirm={handleRegenerateSecret}
           onCancel={() => setIsRegenerateConfirmOpen(false)}
         />
+
+        {isFirewallModalOpen && typeof window !== 'undefined' && createPortal(
+          <div className={styles.modalOverlay} onClick={() => setIsFirewallModalOpen(false)}>
+            <div className={`${styles.modal} ${styles.firewallModal}`} onClick={e => e.stopPropagation()}>
+              <div className={styles.firewallHeader}>
+                <div className={styles.firewallTitle}>
+                  <ShieldAlert size={24} style={{ color: '#ef4444' }} />
+                  <div>
+                    <h3>Firewall de IPs (Leads Guard)</h3>
+                    <p>Gerenciamento e controle de IPs bloqueados no sistema</p>
+                  </div>
+                </div>
+                <button className={styles.closeModal} onClick={() => setIsFirewallModalOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className={styles.firewallContent}>
+                {/* Formulário de Bloqueio Manual */}
+                <form onSubmit={handleBlockIp} className={styles.blockIpFormModal}>
+                  <div className={styles.formFieldMini}>
+                    <label>Endereço IP</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: 172.16.254.1" 
+                      value={newIp}
+                      onChange={e => setNewIp(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className={styles.formFieldMini}>
+                    <label>Motivo do Bloqueio</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Spam frequente de formulário" 
+                      value={newReason}
+                      onChange={e => setNewReason(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.formFieldMini}>
+                    <label>Duração</label>
+                    <select 
+                      value={newExpiresMinutes}
+                      onChange={e => setNewExpiresMinutes(e.target.value)}
+                    >
+                      <option value="10">10 Minutos</option>
+                      <option value="60">1 Hora</option>
+                      <option value="1440">1 Dia</option>
+                      <option value="10080">1 Semana</option>
+                      <option value="infinite">Permanente (Infinito)</option>
+                    </select>
+                  </div>
+                  <button type="submit" className={styles.blockBtnModal}>
+                    <ShieldAlert size={16} />
+                    <span>Bloquear IP</span>
+                  </button>
+                </form>
+
+                {/* Tabela de IPs Bloqueados */}
+                <div className={styles.tableResponsiveFirewall}>
+                  <table className={styles.keysTable}>
+                    <thead>
+                      <tr>
+                        <th>Endereço IP</th>
+                        <th>Motivo</th>
+                        <th>Bloqueado em</th>
+                        <th>Expira em</th>
+                        <th>Cidade / País</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {blockedIps.map(ip => {
+                        const isExpired = ip.expires_at && new Date(ip.expires_at).getTime() < Date.now();
+                        return (
+                          <tr key={ip.id} style={{ opacity: isExpired ? 0.4 : 1 }}>
+                            <td>
+                              <span style={{ color: '#ef4444', fontFamily: 'monospace', fontWeight: 'bold' }}>{ip.ip_address}</span>
+                            </td>
+                            <td style={{ fontSize: '0.8rem' }}>{ip.reason}</td>
+                            <td style={{ fontSize: '0.8rem' }}>{new Date(ip.blocked_at).toLocaleString('pt-BR')}</td>
+                            <td style={{ fontSize: '0.8rem' }}>
+                              {ip.expires_at ? (
+                                isExpired ? 'Expirado' : new Date(ip.expires_at).toLocaleString('pt-BR')
+                              ) : (
+                                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Permanente</span>
+                              )}
+                            </td>
+                            <td style={{ fontSize: '0.8rem' }}>
+                              {ip.city ? `${ip.city} (${ip.country || 'BR'})` : 'N/A'}
+                            </td>
+                            <td>
+                              <button 
+                                type="button"
+                                className={styles.iconBtn} 
+                                style={{ color: '#10b981' }}
+                                onClick={() => handleUnlockIp(ip.id, ip.ip_address)}
+                                title="Desbloquear IP"
+                              >
+                                <ShieldCheck size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {blockedIps.length === 0 && (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>
+                            Nenhum IP bloqueado no firewall do sistema.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </DashboardLayout>
   );
