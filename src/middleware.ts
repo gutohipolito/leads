@@ -69,13 +69,14 @@ export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname
     const isLoginPage = pathname.startsWith('/login')
     const isPublicApi = pathname.startsWith('/api/leads') // Webhooks externos
-    const isInternalApi = pathname.startsWith('/api') && !isPublicApi
+    const isUptimeApi = pathname.startsWith('/api/uptime') // API do Monitor de Uptime
+    const isInternalApi = pathname.startsWith('/api') && !isPublicApi && !isUptimeApi
     const isPublicAsset = pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
     const isTracker = pathname === '/tracker.js' || pathname === '/tracker.min.js'
     const isPing = pathname === '/ping'
 
-    // 1. Assets públicos, Tracker e Endpoint de Leads (Webhooks) são liberados
-    if (isPublicAsset || isPublicApi || isTracker || isPing) {
+    // 1. Assets públicos, Tracker, Endpoint de Leads (Webhooks) e Uptime são liberados
+    if (isPublicAsset || isPublicApi || isTracker || isPing || isUptimeApi) {
       return response
     }
 
