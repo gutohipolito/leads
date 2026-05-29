@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
@@ -489,26 +489,50 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.recentLeads.map((lead) => (
-                    <tr key={lead.id}>
-                      {(isAdmin && !impersonatedName) && <td>{lead.clients?.name || 'N/A'}</td>}
-                      <td>
-                        {lead.source === 'whatsapp_tracker' ? (
-                          <div className={styles.whatsappTag}>
-                            <MessageCircle className={styles.whatsappIcon} />
-                            <span>Whatsapp Click</span>
-                          </div>
-                        ) : (
-                          <div className={styles.leadInfoMini}>
-                            <span className={styles.leadName}>{lead.name || 'Sem nome'}</span>
-                            <span className={styles.leadEmail}>{lead.email || 'Sem e-mail'}</span>
-                          </div>
-                        )}
-                      </td>
-                      <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
-                      <td><span className={styles.statusBadge}>OK</span></td>
-                    </tr>
-                  ))}
+                  {stats.recentLeads.map((lead) => {
+                    const isSelector = lead.source === 'custom_tracker' && (
+                      lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+                      lead.data?.match_type?.toLowerCase().includes('selector') || 
+                      lead.name?.toLowerCase().includes('selector')
+                    );
+
+                    const isKeyword = lead.source === 'custom_tracker' && (
+                      lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+                      lead.data?.match_type?.toLowerCase().includes('keyword') || 
+                      lead.name?.toLowerCase().includes('keyword')
+                    );
+
+                    return (
+                      <tr key={lead.id}>
+                        {(isAdmin && !impersonatedName) && <td>{lead.clients?.name || 'N/A'}</td>}
+                        <td>
+                          {lead.source === 'whatsapp_tracker' ? (
+                            <div className={styles.whatsappTag}>
+                              <MessageCircle className={styles.whatsappIcon} />
+                              <span>Whatsapp Click</span>
+                            </div>
+                          ) : isSelector ? (
+                            <div className={styles.selectorTag}>
+                              <MousePointerClick className={styles.selectorIcon} />
+                              <span>Selector</span>
+                            </div>
+                          ) : isKeyword ? (
+                            <div className={styles.keywordTag}>
+                              <Type className={styles.keywordIcon} />
+                              <span>Palavra-Chave</span>
+                            </div>
+                          ) : (
+                            <div className={styles.leadInfoMini}>
+                              <span className={styles.leadName}>{lead.name || 'Sem nome'}</span>
+                              <span className={styles.leadEmail}>{lead.email || 'Sem e-mail'}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td><span className={styles.statusBadge}>OK</span></td>
+                      </tr>
+                    );
+                  })}
                   {stats.recentLeads.length === 0 && (
                     <tr>
                       <td colSpan={4} className={styles.emptyTable}>Nenhum registro encontrado.</td>

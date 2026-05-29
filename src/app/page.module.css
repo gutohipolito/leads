@@ -702,3 +702,44 @@
   width: 14px;
   height: 14px;
 }
+
+.selectorTag {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #a855f7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(168, 85, 247, 0.1);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  width: fit-content;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  white-space: nowrap;
+}
+
+.selectorIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.keywordTag {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #f97316;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(249, 115, 22, 0.1);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  width: fit-content;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  white-space: nowrap;
+}
+
+.keywordIcon {
+  width: 14px;
+  height: 14px;
+}
+
