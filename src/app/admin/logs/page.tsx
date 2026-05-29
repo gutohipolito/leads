@@ -57,6 +57,7 @@ export default function LogsPage() {
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [isRegenerateConfirmOpen, setIsRegenerateConfirmOpen] = useState(false);
   const [keyToRegenerate, setKeyToRegenerate] = useState<any>(null);
+  const [apiKeysPage, setApiKeysPage] = useState(1);
 
   // Novos estados do Firewall
   const [blockedIps, setBlockedIps] = useState<any[]>([]);
@@ -303,6 +304,10 @@ export default function LogsPage() {
   const totalPages = Math.ceil(currentLogs.length / pageSize);
   const paginatedLogs = currentLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const apiKeysPageSize = 10;
+  const totalApiKeysPages = Math.ceil(apiKeys.length / apiKeysPageSize);
+  const paginatedApiKeys = apiKeys.slice((apiKeysPage - 1) * apiKeysPageSize, apiKeysPage * apiKeysPageSize);
+
   const getEntityIcon = (entity: string) => {
     switch(entity) {
       case 'user': return <UserIcon size={16} />;
@@ -456,7 +461,7 @@ export default function LogsPage() {
                   </button>
                 </div>
 
-                <div className={styles.tableResponsive}>
+                <div className={styles.tableResponsiveKeys}>
                   <table className={styles.keysTable}>
                     <thead>
                       <tr>
@@ -468,7 +473,7 @@ export default function LogsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                    {apiKeys.map(key => (
+                    {paginatedApiKeys.map(key => (
                        <tr key={key.id}>
                          <td>
                            <div className={styles.keyIdentity}>
@@ -540,6 +545,32 @@ export default function LogsPage() {
                   </tbody>
                 </table>
               </div>
+
+              {totalApiKeysPages > 1 && (
+                <div className={styles.apiKeysPagination}>
+                  <span>Página {apiKeysPage} de {totalApiKeysPages}</span>
+                  <div className={styles.pageActions}>
+                    <button 
+                      type="button" 
+                      disabled={apiKeysPage === 1} 
+                      onClick={() => setApiKeysPage(p => p - 1)}
+                      className={styles.iconBtn}
+                      style={{ width: '32px', height: '32px' }}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button 
+                      type="button" 
+                      disabled={apiKeysPage === totalApiKeysPages} 
+                      onClick={() => setApiKeysPage(p => p + 1)}
+                      className={styles.iconBtn}
+                      style={{ width: '32px', height: '32px' }}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </section>
           </div>
 
