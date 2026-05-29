@@ -16,24 +16,14 @@ ALTER TABLE uptime_monitors ENABLE ROW LEVEL SECURITY;
 
 -- Criar políticas RLS para uptime_monitors
 DROP POLICY IF EXISTS "Permitir leitura para o próprio cliente" ON uptime_monitors;
-CREATE POLICY "Permitir leitura para o próprio cliente" ON uptime_monitors
-    FOR SELECT USING (
-        auth.jwt() ->> 'email' IN (
-            SELECT email FROM system_users WHERE client_id = uptime_monitors.client_id
-        ) OR 
-        EXISTS (
-            SELECT 1 FROM system_users WHERE email = (select auth.jwt() ->> 'email') AND role = 'admin'
-        )
-    );
-
 DROP POLICY IF EXISTS "Permitir inserção/edição para admins e o próprio cliente" ON uptime_monitors;
-CREATE POLICY "Permitir inserção/edição para admins e o próprio cliente" ON uptime_monitors
+
+CREATE POLICY "Uptime Monitors: Admin vê tudo, Cliente vê apenas o seu" ON public.uptime_monitors
     FOR ALL USING (
-        auth.jwt() ->> 'email' IN (
-            SELECT email FROM system_users WHERE client_id = uptime_monitors.client_id
-        ) OR 
         EXISTS (
-            SELECT 1 FROM system_users WHERE email = (select auth.jwt() ->> 'email') AND role = 'admin'
+            SELECT 1 FROM public.system_users 
+            WHERE email = auth.jwt() ->> 'email' 
+            AND (role = 'admin' OR client_id = public.uptime_monitors.client_id)
         )
     );
 
@@ -53,16 +43,16 @@ ALTER TABLE uptime_logs ENABLE ROW LEVEL SECURITY;
 
 -- Criar políticas RLS para uptime_logs
 DROP POLICY IF EXISTS "Permitir leitura para o próprio cliente" ON uptime_logs;
-CREATE POLICY "Permitir leitura para o próprio cliente" ON uptime_logs
-    FOR SELECT USING (
+
+CREATE POLICY "Uptime Logs: Admin vê tudo, Cliente vê apenas o seu" ON public.uptime_logs
+    FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM uptime_monitors m 
-            WHERE m.id = uptime_logs.monitor_id AND (
-                auth.jwt() ->> 'email' IN (
-                    SELECT email FROM system_users WHERE client_id = m.client_id
-                ) OR 
+            SELECT 1 FROM public.uptime_monitors m
+            WHERE m.id = public.uptime_logs.monitor_id AND (
                 EXISTS (
-                    SELECT 1 FROM system_users WHERE email = (select auth.jwt() ->> 'email') AND role = 'admin'
+                    SELECT 1 FROM public.system_users u
+                    WHERE u.email = auth.jwt() ->> 'email'
+                    AND (u.role = 'admin' OR u.client_id = m.client_id)
                 )
             )
         )

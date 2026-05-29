@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 // Força que a API seja sempre processada de forma dinâmica
 export const dynamic = 'force-dynamic';
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     // 1. Obter monitores de uptime cadastrados
-    const { data: monitors, error } = await supabase
+    const { data: monitors, error } = await supabaseAdmin
       .from('uptime_monitors')
       .select('*');
 
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       }
 
       // Salva log de histórico
-      await supabase.from('uptime_logs').insert({
+      await supabaseAdmin.from('uptime_logs').insert({
         monitor_id: monitor.id,
         status_code: statusCode,
         response_time_ms: responseTimeMs,
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
       });
 
       // Atualiza monitor principal
-      await supabase
+      await supabaseAdmin
         .from('uptime_monitors')
         .update({
           status: status,

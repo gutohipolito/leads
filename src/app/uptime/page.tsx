@@ -284,7 +284,16 @@ export default function UptimePage() {
               const emptyBars = Array.from({ length: emptyBarsCount });
 
               return (
-                <div key={monitor.id} className={styles.monitorCard}>
+                <div 
+                  key={monitor.id} 
+                  className={`${styles.monitorCard} ${
+                    monitor.status === 'online' 
+                      ? styles.onlineCard 
+                      : monitor.status === 'offline' 
+                      ? styles.offlineCard 
+                      : ''
+                  }`}
+                >
                   <div className={styles.monitorHeader}>
                     <div className={styles.monitorInfo}>
                       <h3>{monitor.name}</h3>
@@ -332,9 +341,9 @@ export default function UptimePage() {
                       ))}
                       {monitor.logs.map((log: any) => (
                         <div 
-                          key={log.id} 
-                          className={`${styles.pingBar} ${log.is_up ? styles.up : styles.down}`} 
-                          title={`${new Date(log.created_at).toLocaleString('pt-BR')} - Latência: ${log.response_time_ms}ms${log.error_message ? ` - Erro: ${log.error_message}` : ''}`}
+                           key={log.id} 
+                           className={`${styles.pingBar} ${log.is_up ? styles.up : styles.down}`} 
+                           title={`${new Date(log.created_at).toLocaleString('pt-BR')} - Latência: ${log.response_time_ms}ms${log.error_message ? ` - Erro: ${log.error_message}` : ''}`}
                         />
                       ))}
                     </div>
@@ -342,7 +351,20 @@ export default function UptimePage() {
 
                   <div className={styles.monitorFooter}>
                     <div className={styles.footerMeta}>
-                      <span>Último Ping: <strong>{monitor.last_ping_ms ? `${monitor.last_ping_ms}ms` : 'N/A'}</strong></span>
+                      <span>
+                        Último Ping: <strong>{monitor.last_ping_ms ? `${monitor.last_ping_ms}ms` : 'N/A'}</strong>
+                        {monitor.last_ping_ms && (
+                          <span className={`${styles.latencyLabel} ${
+                            monitor.last_ping_ms <= 150 
+                              ? styles.latencyFast 
+                              : monitor.last_ping_ms <= 400 
+                              ? styles.latencyMedium 
+                              : styles.latencySlow
+                          }`}>
+                            {monitor.last_ping_ms <= 150 ? 'Rápido' : monitor.last_ping_ms <= 400 ? 'Moderado' : 'Lento'}
+                          </span>
+                        )}
+                      </span>
                       <span>Última checagem: <strong>
                         {monitor.last_checked ? new Date(monitor.last_checked).toLocaleTimeString('pt-BR') : 'N/A'}
                       </strong></span>
