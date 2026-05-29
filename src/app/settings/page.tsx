@@ -912,7 +912,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>WhatsApp Click</label>
-                          <span className={styles.rangeValue}>🔥 {scoringRules.whatsapp_score} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.whatsapp_score} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -929,7 +929,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Tráfego Pago (UTM Ads)</label>
-                          <span className={styles.rangeValue}>⚡ {scoringRules.paid_traffic} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.paid_traffic} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -946,7 +946,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Permanência ≥ 60s</label>
-                          <span className={styles.rangeValue}>⏱️ {scoringRules.time_on_page_60} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.time_on_page_60} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -963,7 +963,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Permanência ≥ 20s</label>
-                          <span className={styles.rangeValue}>⏱️ {scoringRules.time_on_page_20} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.time_on_page_20} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -980,7 +980,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Scroll da Página ≥ 80%</label>
-                          <span className={styles.rangeValue}>📜 {scoringRules.scroll_depth_80} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.scroll_depth_80} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -997,7 +997,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Scroll da Página ≥ 50%</label>
-                          <span className={styles.rangeValue}>📜 {scoringRules.scroll_depth_50} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.scroll_depth_50} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -1014,7 +1014,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Jornada ≥ 3 Visitas</label>
-                          <span className={styles.rangeValue}>👣 {scoringRules.journey_3} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.journey_3} pts</span>
                         </div>
                         <input 
                           type="range" 
@@ -1031,7 +1031,7 @@ export default function SettingsPage() {
                       <div className={styles.rangeWrapper}>
                         <div className={styles.rangeHeader}>
                           <label>Jornada = 2 Visitas</label>
-                          <span className={styles.rangeValue}>👣 {scoringRules.journey_2} pts</span>
+                          <span className={styles.rangeValue}>{scoringRules.journey_2} pts</span>
                         </div>
                         <input 
                           type="range" 

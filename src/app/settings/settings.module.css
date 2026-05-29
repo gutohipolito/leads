@@ -1012,7 +1012,7 @@
 
 /* Modal Lead Scoring */
 .scoringModal {
-  max-width: 600px !important;
+  max-width: 720px !important;
   max-height: 90vh !important;
   padding: 0 !important;
   overflow: hidden;
