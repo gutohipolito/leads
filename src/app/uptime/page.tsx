@@ -12,7 +12,8 @@ import {
   ExternalLink, 
   Clock, 
   CheckCircle2, 
-  AlertTriangle 
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -27,6 +28,16 @@ export default function UptimePage() {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Helper para exibir notificações temporárias (toasts)
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
 
   // Carregar cliente ativo e configurações
   useEffect(() => {
@@ -119,7 +130,12 @@ export default function UptimePage() {
   // Adicionar monitor de Uptime
   const handleAddMonitor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMonitorName.trim() || !newMonitorUrl.trim() || !activeClientId) return;
+    if (!newMonitorName.trim() || !newMonitorUrl.trim()) return;
+
+    if (!activeClientId) {
+      showToast('Selecione ou impersonar um cliente antes de adicionar um monitor.', 'error');
+      return;
+    }
 
     let formattedUrl = newMonitorUrl.trim();
     if (!/^https?:\/\//i.test(formattedUrl)) {
@@ -147,12 +163,14 @@ export default function UptimePage() {
 
       setNewMonitorName('');
       setNewMonitorUrl('');
+      setIsModalOpen(false);
+      showToast('Monitor de Uptime cadastrado com sucesso!', 'success');
       
       // Recarrega e força um ping imediato para atualizar o status
       await loadMonitors(activeClientId);
       handleCheckAll();
     } catch (err: any) {
-      alert('Erro ao cadastrar monitor: ' + err.message);
+      showToast('Erro ao cadastrar monitor: ' + err.message, 'error');
     }
   };
 
@@ -170,10 +188,11 @@ export default function UptimePage() {
 
       if (activeClientId) {
         await logAction('Monitor de Uptime Excluído', 'client', activeClientId, { name });
+        showToast('Monitor excluído com sucesso!', 'success');
         await loadMonitors(activeClientId);
       }
     } catch (err: any) {
-      alert('Erro ao remover monitor: ' + err.message);
+      showToast('Erro ao remover monitor: ' + err.message, 'error');
     }
   };
 
@@ -216,28 +235,51 @@ export default function UptimePage() {
     <DashboardLayout>
       <div className={styles.container}>
         
+        {/* Sistema de Toasts (Notificações) */}
+        {notification && (
+          <div className={styles.toastContainer}>
+            <div className={`${styles.toast} ${styles[notification.type]}`}>
+              {notification.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+              <span>{notification.message}</span>
+            </div>
+          </div>
+        )}
+
         <div className={styles.headerRow}>
           <h2>{uptimeTitle}</h2>
-          {totalMonitors > 0 && (
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <button 
               type="button" 
-              className={styles.manualCheckBtn} 
-              onClick={handleCheckAll}
-              disabled={checking}
+              className={styles.submitBtn} 
+              onClick={() => setIsModalOpen(true)}
+              style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', height: '36px' }}
             >
-              {checking ? (
-                <>
-                  <div className={styles.spinnerMini} />
-                  <span>Verificando...</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={14} />
-                  <span>Verificar Agora</span>
-                </>
-              )}
+              <Plus size={14} />
+              <span>Adicionar Monitor</span>
             </button>
-          )}
+
+            {totalMonitors > 0 && (
+              <button 
+                type="button" 
+                className={styles.manualCheckBtn} 
+                onClick={handleCheckAll}
+                disabled={checking}
+                style={{ height: '36px' }}
+              >
+                {checking ? (
+                  <>
+                    <div className={styles.spinnerMini} />
+                    <span>Verificando...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={14} />
+                    <span>Verificar Agora</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Linha de Estatísticas */}
@@ -384,47 +426,56 @@ export default function UptimePage() {
             })}
 
             {monitors.length === 0 && (
-              <div className={styles.emptyState}>
+              <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
                 <Globe size={48} />
                 <p>Nenhuma página de vendas está cadastrada para monitoramento de uptime.</p>
-                <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Adicione sua primeira URL no painel ao lado para começar.</p>
+                <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Clique no botão "Adicionar Monitor" no topo para começar.</p>
               </div>
             )}
           </div>
-
-          {/* Form lateral para Adicionar Monitor */}
-          <div className={styles.addFormCard}>
-            <h3>Novo Monitor de Uptime</h3>
-            <form onSubmit={handleAddMonitor} className={styles.form}>
-              <div className={styles.field}>
-                <label>Nome do Site</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: Página de Vendas Produto A"
-                  value={newMonitorName}
-                  onChange={e => setNewMonitorName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label>Endereço URL</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: minhapagina.com.br"
-                  value={newMonitorUrl}
-                  onChange={e => setNewMonitorUrl(e.target.value)}
-                  required
-                />
-              </div>
-
-              <button type="submit" className={styles.submitBtn}>
-                <Plus size={16} />
-                <span>Adicionar Monitor</span>
-              </button>
-            </form>
-          </div>
         </div>
+
+        {/* Modal de Cadastro de Novo Monitor */}
+        {isModalOpen && (
+          <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Novo Monitor de Uptime</h3>
+                <button className={styles.modalCloseBtn} onClick={() => setIsModalOpen(false)}>
+                  <X size={18} />
+                </button>
+              </div>
+              <form onSubmit={handleAddMonitor} className={styles.form}>
+                <div className={styles.field}>
+                  <label>Nome do Site</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Página de Vendas Produto A"
+                    value={newMonitorName}
+                    onChange={e => setNewMonitorName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className={styles.field}>
+                  <label>Endereço URL</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: minhapagina.com.br"
+                    value={newMonitorUrl}
+                    onChange={e => setNewMonitorUrl(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className={styles.submitBtn}>
+                  <Plus size={16} />
+                  <span>Adicionar Monitor</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     </DashboardLayout>
