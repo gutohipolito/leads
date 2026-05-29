@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './uptime.module.css';
 import { 
@@ -20,6 +21,7 @@ import Loader from '@/components/Loader/Loader';
 import { logAction } from '@/utils/logger';
 
 export default function UptimePage() {
+  const router = useRouter();
   const [monitors, setMonitors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -30,6 +32,8 @@ export default function UptimePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
 
   // Helper para exibir notificações temporárias (toasts)
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -54,6 +58,21 @@ export default function UptimePage() {
           const isUserAdmin = profile?.role === 'admin';
           setIsAdmin(isUserAdmin);
 
+          // Restrição temporária de Uptime: somente admins
+          if (!isUserAdmin) {
+            router.push('/');
+            return;
+          }
+
+          // Carregar todos os clientes do banco para o seletor no modal
+          const { data: clientsData } = await supabase
+            .from('clients')
+            .select('id, name')
+            .order('name');
+          if (clientsData) {
+            setClients(clientsData);
+          }
+
           const impersonated = localStorage.getItem('impersonated_client');
           let clientId = profile?.client_id;
 
@@ -66,9 +85,8 @@ export default function UptimePage() {
           }
 
           setActiveClientId(clientId);
-          if (clientId) {
-            await loadMonitors(clientId);
-          }
+          // Carrega monitores (se clientId for nulo, carrega todos)
+          await loadMonitors(clientId);
         }
       } catch (err) {
         console.error('Erro ao inicializar página de Uptime:', err);
@@ -80,12 +98,17 @@ export default function UptimePage() {
   }, []);
 
   // Carregar os monitores e buscar os logs de histórico para cada um
-  async function loadMonitors(clientId: string) {
+  async function loadMonitors(clientId: string | null) {
     try {
-      const { data: monitorsData, error: monitorsError } = await supabase
+      let query = supabase
         .from('uptime_monitors')
-        .select('*')
-        .eq('client_id', clientId)
+        .select('*, clients(name)');
+
+      if (clientId) {
+        query = query.eq('client_id', clientId);
+      }
+
+      const { data: monitorsData, error: monitorsError } = await query
         .order('created_at', { ascending: false });
 
       if (monitorsError) throw monitorsError;
@@ -132,8 +155,10 @@ export default function UptimePage() {
     e.preventDefault();
     if (!newMonitorName.trim() || !newMonitorUrl.trim()) return;
 
-    if (!activeClientId) {
-      showToast('Selecione ou impersonar um cliente antes de adicionar um monitor.', 'error');
+    const targetClientId = activeClientId || selectedClientId;
+
+    if (!targetClientId) {
+      showToast('Por favor, selecione um cliente para vincular este monitor.', 'error');
       return;
     }
 
@@ -146,7 +171,7 @@ export default function UptimePage() {
       const { data, error } = await supabase
         .from('uptime_monitors')
         .insert({
-          client_id: activeClientId,
+          client_id: targetClientId,
           name: newMonitorName.trim(),
           url: formattedUrl,
           status: 'checking'
@@ -156,13 +181,14 @@ export default function UptimePage() {
 
       if (error) throw error;
 
-      await logAction('Monitor de Uptime Adicionado', 'client', activeClientId, {
+      await logAction('Monitor de Uptime Adicionado', 'client', targetClientId, {
         name: newMonitorName.trim(),
         url: formattedUrl
       });
 
       setNewMonitorName('');
       setNewMonitorUrl('');
+      setSelectedClientId('');
       setIsModalOpen(false);
       showToast('Monitor de Uptime cadastrado com sucesso!', 'success');
       
@@ -467,6 +493,26 @@ export default function UptimePage() {
                     required
                   />
                 </div>
+
+                {/* Seletor de Cliente — aparece quando admin não tem cliente impersonado */}
+                {!activeClientId && clients.length > 0 && (
+                  <div className={styles.field}>
+                    <label>Vincular ao Cliente</label>
+                    <select
+                      className={styles.selectField}
+                      value={selectedClientId}
+                      onChange={e => setSelectedClientId(e.target.value)}
+                      required
+                    >
+                      <option value="">Selecione um cliente...</option>
+                      {clients.map(client => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <button type="submit" className={styles.submitBtn}>
                   <Plus size={16} />

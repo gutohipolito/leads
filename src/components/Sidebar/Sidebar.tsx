@@ -91,6 +91,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     if (item.name === 'Integrações' && !isAdmin) {
       return false;
     }
+    if (item.name === 'Uptime' && !isAdmin) {
+      return false;
+    }
     if (isImpersonating) {
       return ['Geral', 'Leads', 'Integrações', 'Uptime'].includes(item.name);
     }
