@@ -981,9 +981,9 @@
   font-family: var(--font-outfit), sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--foreground);
-  background: rgba(var(--foreground-rgb), 0.03);
-  border: 1px solid var(--border);
+  color: var(--foreground) !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
   padding: 0.75rem 2rem 0.75rem 1rem;
   border-radius: 12px;
   outline: none;
@@ -999,9 +999,170 @@
 }
 
 .clientSelectScoring:hover, .clientSelectScoring:focus {
-  border-color: var(--primary);
-  background-color: rgba(86, 215, 253, 0.05);
+  border-color: var(--primary) !important;
+  background-color: rgba(86, 215, 253, 0.05) !important;
   box-shadow: 0 0 10px rgba(86, 215, 253, 0.1);
+}
+
+.clientSelectScoring option {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+  padding: 0.5rem;
+}
+
+/* Modal Lead Scoring */
+.scoringModal {
+  max-width: 600px !important;
+  max-height: 90vh !important;
+  padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.scoringHeader {
+  padding: 1.5rem 2rem;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scoringTitle {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.scoringTitle h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.scoringTitle p {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  margin: 0.2rem 0 0;
+}
+
+.scoringContent {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.scoringContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scoringContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scoringContent::-webkit-scrollbar-thumb {
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-radius: 10px;
+}
+
+.modalDesc {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.slidersGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem 1.25rem;
+}
+
+@media (max-width: 580px) {
+  .slidersGrid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.rangeWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rangeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rangeHeader label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.rangeValue {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #f1c40f;
+  background: rgba(241, 196, 15, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Custom styling for range input */
+.rangeInput {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(var(--foreground-rgb), 0.1);
+  outline: none;
+  transition: background 0.3s;
+  cursor: pointer;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.rangeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f1c40f;
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.rangeInput::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: #f39c12;
+}
+
+.rangeInput::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f1c40f;
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.rangeInput::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: #f39c12;
 }
 
 

@@ -23,7 +23,6 @@ export default function Home() {
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [lastSignalTime, setLastSignalTime] = useState<number | null>(null);
   const [activeClientsCount, setActiveClientsCount] = useState(0);
-  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
 
@@ -100,32 +99,12 @@ export default function Home() {
             .subscribe();
           notifChannel = channel;
 
-          // Se for admin, carrega performance de parceiros
-          if (isUserAdmin && !impersonated) {
-            const perfData = await fetchPerformanceData(leadsList);
-            setPerformanceData(perfData);
-          }
         }
       } catch (error) {
         console.error('Erro ao carregar dashboard:', error);
       } finally {
         setLoading(false);
       }
-    }
-
-    async function fetchPerformanceData(leads: any[]) {
-      if (!leads || leads.length === 0) return [];
-      
-      const counts: any = {};
-      leads.forEach(l => {
-        const name = l.clients?.name || 'Desconhecido';
-        counts[name] = (counts[name] || 0) + 1;
-      });
-      
-      return Object.entries(counts)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a: any, b: any) => (b.count as number) - (a.count as number))
-        .slice(0, 5);
     }
 
     loadDashboardData();
@@ -167,6 +146,17 @@ export default function Home() {
     const totalLeads = filteredLeads.length;
     const leadsToday = filteredLeads.filter(l => l.created_at >= todayStart).length;
     const leads7Days = filteredLeads.filter(l => l.created_at >= weekStart).length;
+
+    // Performance por Parceiro (calculado de forma reativa a partir de filteredLeads)
+    const counts: any = {};
+    filteredLeads.forEach(l => {
+      const name = l.clients?.name || 'Desconhecido';
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const performanceData = Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a: any, b: any) => (b.count as number) - (a.count as number))
+      .slice(0, 5);
 
     // Pizza (Divisão de origens)
     const wppCount = filteredLeads.filter(l => l.source === 'whatsapp_tracker').length;
@@ -269,7 +259,8 @@ export default function Home() {
       topUtms,
       locationData,
       chartData,
-      recentLeads
+      recentLeads,
+      performanceData
     };
   }, [filteredLeads, activeFilter]);
 
@@ -431,7 +422,7 @@ export default function Home() {
             </div>
           </div>
 
-          {isAdmin && !impersonatedName && performanceData.length > 0 && (
+          {isAdmin && !impersonatedName && statsSummary.performanceData.length > 0 && (
             <div className={`${styles.chartCard} glass`}>
               <div className={styles.cardHeader}>
                 <div className={styles.titleWithIcon}>
@@ -440,7 +431,7 @@ export default function Home() {
                 </div>
               </div>
               <div className={styles.performanceList}>
-                {performanceData.map((p: any, i: number) => (
+                {statsSummary.performanceData.map((p: any, i: number) => (
                   <div key={p.name} className={styles.perfItem}>
                     <div className={styles.perfInfo}>
                       <span className={styles.perfName}>{p.name}</span>
@@ -450,7 +441,7 @@ export default function Home() {
                       <div 
                         className={styles.perfBarFill} 
                         style={{ 
-                          width: `${(p.count / performanceData[0].count) * 100}%`,
+                          width: `${(p.count / statsSummary.performanceData[0].count) * 100}%`,
                           background: `linear-gradient(90deg, #56d7fd, #2ecc71)`
                         }} 
                       />

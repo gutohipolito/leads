@@ -23,7 +23,8 @@ import {
   Info,
   MapPin,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Sliders
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -50,6 +51,7 @@ export default function SettingsPage() {
   const [soundType, setSoundType] = useState('bubble');
   const [isSoundModalOpen, setIsSoundModalOpen] = useState(false);
   const [pendingSound, setPendingSound] = useState(true);
+  const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
 
   // Lead Scoring States
   const [scoringRules, setScoringRules] = useState<any>({
@@ -591,143 +593,21 @@ export default function SettingsPage() {
           {(profile?.client_id || profile?.role === 'admin') && (
             <div className={`${styles.card} glass`}>
               <div className={styles.cardHeader}>
-                <SettingsIcon size={20} className={styles.icon} style={{ color: '#f1c40f' }} />
+                <Sliders size={20} className={styles.icon} style={{ color: '#f1c40f' }} />
                 <h3>Regras de Lead Scoring</h3>
               </div>
-              <form className={styles.form} onSubmit={handleUpdateScoring}>
-                <p className={styles.cardDesc} style={{ marginBottom: '1.25rem', marginTop: '-0.5rem', fontSize: '0.8rem', opacity: 0.8 }}>
-                  Personalize a pontuação atribuída a cada ação de engajamento do lead (máximo 100 pontos por lead).
-                </p>
-
-                {/* Seletor de Cliente para Admin */}
-                {profile?.role === 'admin' && (
-                  <div className={styles.field} style={{ marginBottom: '1.25rem' }}>
-                    <label>Cliente Gerenciado</label>
-                    {isImpersonating ? (
-                      <div className={styles.inputDisabled}>
-                        <span>Impersonando: <strong>{impersonatedName}</strong></span>
-                      </div>
-                    ) : (
-                      <select
-                        className={styles.clientSelectScoring}
-                        value={selectedClientIdForScoring || ''}
-                        onChange={(e) => setSelectedClientIdForScoring(e.target.value || null)}
-                      >
-                        <option value="">-- Selecione um Cliente --</option>
-                        {clients.map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                )}
-
-                {/* Só exibe os inputs se houver um client_id selecionado */}
-                {selectedClientIdForScoring ? (
-                  <>
-                    <div className={styles.fieldRow}>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>WhatsApp Click (Score)</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.whatsapp_score} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, whatsapp_score: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Tráfego Pago (UTM Ads)</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.paid_traffic} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, paid_traffic: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.fieldRow}>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Permanência ≥ 60s</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.time_on_page_60} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, time_on_page_60: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Permanência ≥ 20s</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.time_on_page_20} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, time_on_page_20: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.fieldRow}>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Scroll da Página ≥ 80%</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.scroll_depth_80} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, scroll_depth_80: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Scroll da Página ≥ 50%</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.scroll_depth_50} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, scroll_depth_50: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.fieldRow}>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Jornada ≥ 3 Visitas</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.journey_3} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, journey_3: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                      <div className={styles.field} style={{ flex: 1 }}>
-                        <label>Jornada = 2 Visitas</label>
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="100" 
-                          value={scoringRules.journey_2} 
-                          onChange={(e) => setScoringRules({ ...scoringRules, journey_2: parseInt(e.target.value) || 0 })} 
-                        />
-                      </div>
-                    </div>
-                    
-                    <button type="submit" className={styles.saveBtn} disabled={savingScoring} style={{ marginTop: '1rem' }}>
-                      {scoringSuccess ? <CheckCircle2 size={18} /> : <Save size={18} />}
-                      <span>{savingScoring ? 'Salvando...' : (scoringSuccess ? 'Regras Salvas!' : 'Salvar Regras')}</span>
-                    </button>
-                  </>
-                ) : (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)', fontStyle: 'italic', textAlign: 'center', padding: '1rem' }}>
-                    Por favor, selecione um cliente para gerenciar as regras de lead scoring.
-                  </p>
-                )}
-              </form>
+              <p className={styles.cardDesc}>
+                Personalize a pontuação de engajamento do lead baseada em ações em tempo real (tempo de permanência, cliques, profundidade de scroll, visitas e origem) para qualificar leads de forma automática e integrada.
+              </p>
+              <button 
+                type="button" 
+                className={styles.saveBtn} 
+                onClick={() => setIsScoringModalOpen(true)}
+                style={{ marginTop: 'auto', background: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f', border: '1px solid rgba(241, 196, 15, 0.2)' }}
+              >
+                <Sliders size={18} />
+                <span>Gerenciar Regras</span>
+              </button>
             </div>
           )}
 
@@ -972,6 +852,210 @@ export default function SettingsPage() {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isScoringModalOpen && typeof window !== 'undefined' && createPortal(
+        <div className={styles.modalOverlay} onClick={() => setIsScoringModalOpen(false)}>
+          <div className={`${styles.modal} ${styles.scoringModal}`} onClick={e => e.stopPropagation()}>
+            <div className={styles.scoringHeader}>
+              <div className={styles.scoringTitle}>
+                <Sliders size={24} className={styles.icon} style={{ color: '#f1c40f' }} />
+                <div>
+                  <h3>Configurar Lead Scoring</h3>
+                  <p>Ajuste a pontuação de engajamento para seus leads</p>
+                </div>
+              </div>
+              <button className={styles.closeModal} onClick={() => setIsScoringModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.scoringContent}>
+              <form className={styles.form} onSubmit={handleUpdateScoring}>
+                {/* Seletor de Cliente para Admin */}
+                {profile?.role === 'admin' && (
+                  <div className={styles.field} style={{ marginBottom: '1rem' }}>
+                    <label className={styles.fieldLabel}>Cliente Selecionado</label>
+                    {isImpersonating ? (
+                      <div className={styles.inputDisabled}>
+                        <span>Impersonando: <strong>{impersonatedName}</strong></span>
+                      </div>
+                    ) : (
+                      <div className={styles.selectWrapper}>
+                        <select
+                          className={styles.clientSelectScoring}
+                          value={selectedClientIdForScoring || ''}
+                          onChange={(e) => setSelectedClientIdForScoring(e.target.value || null)}
+                        >
+                          <option value="" style={{ background: 'var(--card)', color: 'var(--foreground)' }}>-- Selecione um Cliente --</option>
+                          {clients.map(c => (
+                            <option key={c.id} value={c.id} style={{ background: 'var(--card)', color: 'var(--foreground)' }}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedClientIdForScoring ? (
+                  <>
+                    <p className={styles.modalDesc}>
+                      Defina a pontuação (0 a 100) para cada ação de engajamento. A soma ajuda a qualificar a temperatura do lead.
+                    </p>
+
+                    <div className={styles.slidersGrid}>
+                      {/* WhatsApp Click */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>WhatsApp Click</label>
+                          <span className={styles.rangeValue}>🔥 {scoringRules.whatsapp_score} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.whatsapp_score} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, whatsapp_score: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Tráfego Pago */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Tráfego Pago (UTM Ads)</label>
+                          <span className={styles.rangeValue}>⚡ {scoringRules.paid_traffic} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.paid_traffic} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, paid_traffic: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Permanência >= 60s */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Permanência ≥ 60s</label>
+                          <span className={styles.rangeValue}>⏱️ {scoringRules.time_on_page_60} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.time_on_page_60} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, time_on_page_60: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Permanência >= 20s */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Permanência ≥ 20s</label>
+                          <span className={styles.rangeValue}>⏱️ {scoringRules.time_on_page_20} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.time_on_page_20} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, time_on_page_20: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Scroll depth >= 80% */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Scroll da Página ≥ 80%</label>
+                          <span className={styles.rangeValue}>📜 {scoringRules.scroll_depth_80} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.scroll_depth_80} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, scroll_depth_80: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Scroll depth >= 50% */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Scroll da Página ≥ 50%</label>
+                          <span className={styles.rangeValue}>📜 {scoringRules.scroll_depth_50} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.scroll_depth_50} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, scroll_depth_50: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Jornada >= 3 Visitas */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Jornada ≥ 3 Visitas</label>
+                          <span className={styles.rangeValue}>👣 {scoringRules.journey_3} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.journey_3} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, journey_3: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+
+                      {/* Jornada = 2 Visitas */}
+                      <div className={styles.rangeWrapper}>
+                        <div className={styles.rangeHeader}>
+                          <label>Jornada = 2 Visitas</label>
+                          <span className={styles.rangeValue}>👣 {scoringRules.journey_2} pts</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="5"
+                          className={styles.rangeInput}
+                          value={scoringRules.journey_2} 
+                          onChange={(e) => setScoringRules({ ...scoringRules, journey_2: parseInt(e.target.value) || 0 })} 
+                        />
+                      </div>
+                    </div>
+
+                    <button type="submit" className={styles.saveBtn} disabled={savingScoring} style={{ marginTop: '1.5rem', width: '100%' }}>
+                      {scoringSuccess ? <CheckCircle2 size={18} /> : <Save size={18} />}
+                      <span>{savingScoring ? 'Salvando...' : (scoringSuccess ? 'Regras Salvas com Sucesso!' : 'Salvar Regras de Pontuação')}</span>
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)', fontStyle: 'italic', textAlign: 'center', padding: '2rem 1rem' }}>
+                    Selecione um cliente para gerenciar as regras de lead scoring.
+                  </p>
+                )}
+              </form>
             </div>
           </div>
         </div>,
