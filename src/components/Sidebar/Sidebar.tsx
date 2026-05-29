@@ -86,12 +86,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     { name: 'Relatórios', path: '/reports', icon: FileText },
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
     { name: 'Integrações', path: '/integrations', icon: Plug },
+    { name: 'Uptime', path: '/uptime', icon: Activity },
   ].filter(item => {
     if (item.name === 'Integrações' && !isAdmin) {
       return false;
     }
     if (isImpersonating) {
-      return ['Geral', 'Leads', 'Integrações'].includes(item.name);
+      return ['Geral', 'Leads', 'Integrações', 'Uptime'].includes(item.name);
     }
     return true;
   });
