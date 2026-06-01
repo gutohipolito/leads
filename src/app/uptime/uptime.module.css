@@ -106,9 +106,15 @@
 
 .monitorsList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
   width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .monitorsList {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -348,7 +354,8 @@
 
 .footerMeta {
   display: flex;
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 0.4rem;
   font-size: 0.8rem;
   color: var(--muted-foreground);
 }
@@ -709,15 +716,30 @@
 }
 
 .pingHelpIcon {
-  color: var(--muted-foreground);
-  opacity: 0.7;
+  color: var(--primary);
+  opacity: 0.8;
+  animation: pulseHelpIcon 2.5s infinite ease-in-out;
   transition: color 0.2s, opacity 0.2s, transform 0.2s;
 }
 
 .pingTooltipWrapper:hover .pingHelpIcon {
   color: var(--primary);
   opacity: 1;
-  transform: scale(1.1);
+  transform: scale(1.2);
+  animation-play-state: paused;
+}
+
+@keyframes pulseHelpIcon {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px rgba(56, 189, 248, 0));
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 5px var(--primary));
+    opacity: 1;
+  }
 }
 
 .pingTooltipText {

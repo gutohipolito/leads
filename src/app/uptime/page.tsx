@@ -521,7 +521,7 @@ export default function UptimePage() {
                       <span>
                         Último Ping
                         <span className={styles.pingTooltipWrapper}>
-                          <HelpCircle size={13} className={styles.pingHelpIcon} />
+                          <HelpCircle size={14} className={styles.pingHelpIcon} />
                           <span className={styles.pingTooltipText}>
                             O Ping é o tempo de resposta do servidor (latência) em milissegundos. Um ping menor indica que o servidor do seu site responde rapidamente à conexão inicial, embora não garanta o tempo de carregamento completo da página (que depende do peso das imagens e scripts).
                           </span>
