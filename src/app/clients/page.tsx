@@ -50,6 +50,7 @@ export default function ClientsPage() {
   const [newClientPrimaryColor, setNewClientPrimaryColor] = useState('#56d7fd');
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogoError = (clientId: string) => {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
@@ -186,53 +187,68 @@ export default function ClientsPage() {
 
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase
-      .from('clients')
-      .insert([{ 
-        name: newClientName,
-        logo_url: newClientLogo,
-        logo_bg: newClientLogoBg,
-        primary_color: newClientPrimaryColor
-      }])
-      .select()
-      .single();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([{ 
+          name: newClientName,
+          logo_url: newClientLogo,
+          logo_bg: newClientLogoBg,
+          primary_color: newClientPrimaryColor
+        }])
+        .select()
+        .single();
 
-    if (error) {
-      showAlert('Erro ao Criar', 'Erro ao criar cliente: ' + error.message, 'danger');
-    } else {
-      if (data) {
-        await logAction('Cliente Criado', 'client', data.id, { name: data.name });
+      if (error) {
+        showAlert('Erro ao Criar', 'Erro ao criar cliente: ' + error.message, 'danger');
+      } else {
+        if (data) {
+          await logAction('Cliente Criado', 'client', data.id, { name: data.name });
+        }
+        showAlert('Sucesso', 'Cliente provisionado com sucesso!', 'success');
+        setIsModalOpen(false);
+        setNewClientName('');
+        setNewClientEmail('');
+        setNewClientLogo('');
+        loadClients();
       }
-      showAlert('Sucesso', 'Cliente provisionado com sucesso!', 'success');
-      setIsModalOpen(false);
-      setNewClientName('');
-      setNewClientEmail('');
-      setNewClientLogo('');
-      loadClients();
+    } catch (err: any) {
+      showAlert('Erro ao Criar', 'Erro inesperado: ' + err.message, 'danger');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateClient = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingClient) return;
+    if (!editingClient || isSubmitting) return;
 
-    const { error } = await supabase
-      .from('clients')
-      .update({ 
-        name: editingClient.name,
-        logo_url: editingClient.logo_url,
-        logo_bg: editingClient.logo_bg,
-        primary_color: editingClient.primary_color
-      })
-      .eq('id', editingClient.id);
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ 
+          name: editingClient.name,
+          logo_url: editingClient.logo_url,
+          logo_bg: editingClient.logo_bg,
+          primary_color: editingClient.primary_color
+        })
+        .eq('id', editingClient.id);
 
-    if (error) {
-      showAlert('Erro ao Atualizar', 'Erro ao atualizar cliente: ' + error.message, 'danger');
-    } else {
-      await logAction('Cliente Atualizado', 'client', editingClient.id, { name: editingClient.name });
-      showAlert('Sucesso', 'Dados atualizados com sucesso!', 'success');
-      setIsEditModalOpen(false);
-      loadClients();
+      if (error) {
+        showAlert('Erro ao Atualizar', 'Erro ao atualizar cliente: ' + error.message, 'danger');
+      } else {
+        await logAction('Cliente Atualizado', 'client', editingClient.id, { name: editingClient.name });
+        showAlert('Sucesso', 'Dados atualizados com sucesso!', 'success');
+        setIsEditModalOpen(false);
+        loadClients();
+      }
+    } catch (err: any) {
+      showAlert('Erro ao Atualizar', 'Erro inesperado: ' + err.message, 'danger');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -682,7 +698,9 @@ export default function ClientsPage() {
                 </div>
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                  <button type="submit" className={styles.submitBtn}>Provisionar Conta</button>
+                  <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                    {isSubmitting ? 'Provisionando...' : 'Provisionar Conta'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -761,7 +779,9 @@ export default function ClientsPage() {
                 </div>
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsEditModalOpen(false)}>Cancelar</button>
-                  <button type="submit" className={styles.submitBtn}>Salvar Alterações</button>
+                  <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                    {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
                 </div>
               </form>
             </div>

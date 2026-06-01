@@ -42,6 +42,7 @@ export default function UptimePage() {
   const [editingMonitor, setEditingMonitor] = useState<any | null>(null);
   const [editMonitorName, setEditMonitorName] = useState('');
   const [editMonitorUrl, setEditMonitorUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estado para o modal de confirmação
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -71,13 +72,14 @@ export default function UptimePage() {
 
   const handleUpdateMonitor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingMonitor || !editMonitorName.trim() || !editMonitorUrl.trim()) return;
+    if (!editingMonitor || !editMonitorName.trim() || !editMonitorUrl.trim() || isSubmitting) return;
 
     let formattedUrl = editMonitorUrl.trim();
     if (!/^https?:\/\//i.test(formattedUrl)) {
       formattedUrl = `https://${formattedUrl}`;
     }
 
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('uptime_monitors')
@@ -103,6 +105,8 @@ export default function UptimePage() {
       await loadMonitors(activeClientId);
     } catch (err: any) {
       showToast('Erro ao atualizar monitor: ' + err.message, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -224,7 +228,7 @@ export default function UptimePage() {
   // Adicionar monitor de Uptime
   const handleAddMonitor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMonitorName.trim() || !newMonitorUrl.trim()) return;
+    if (!newMonitorName.trim() || !newMonitorUrl.trim() || isSubmitting) return;
 
     const targetClientId = activeClientId || selectedClientId;
 
@@ -238,6 +242,7 @@ export default function UptimePage() {
       formattedUrl = `https://${formattedUrl}`;
     }
 
+    setIsSubmitting(true);
     try {
       const { data, error } = await supabase
         .from('uptime_monitors')
@@ -268,6 +273,8 @@ export default function UptimePage() {
       handleCheckAll();
     } catch (err: any) {
       showToast('Erro ao cadastrar monitor: ' + err.message, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -455,15 +462,6 @@ export default function UptimePage() {
                           <Pencil size={12} />
                         </button>
                       </h3>
-                      <a 
-                        href={monitor.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className={styles.monitorUrl}
-                      >
-                        <span>{monitor.url}</span>
-                        <ExternalLink size={12} />
-                      </a>
                     </div>
                     
                     <div className={styles.statusWrapper}>
@@ -485,6 +483,16 @@ export default function UptimePage() {
                       )}
                     </div>
                   </div>
+
+                  <a 
+                    href={monitor.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className={styles.monitorUrl}
+                  >
+                    <span>{monitor.url}</span>
+                    <ExternalLink size={12} />
+                  </a>
 
                   {/* Histórico Visual de Pings */}
                   <div className={styles.chartAndUptime}>
@@ -604,9 +612,9 @@ export default function UptimePage() {
                   </div>
                 )}
 
-                <button type="submit" className={styles.submitBtn}>
+                <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
                   <Plus size={16} />
-                  <span>Adicionar Monitor</span>
+                  <span>{isSubmitting ? 'Adicionando...' : 'Adicionar Monitor'}</span>
                 </button>
               </form>
             </div>
@@ -646,8 +654,8 @@ export default function UptimePage() {
                   />
                 </div>
 
-                <button type="submit" className={styles.submitBtn}>
-                  <span>Salvar Alterações</span>
+                <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                  <span>{isSubmitting ? 'Salvando...' : 'Salvar Alterações'}</span>
                 </button>
               </form>
             </div>

@@ -49,6 +49,7 @@ export default function WebhooksManagePage() {
   const [webhooks, setWebhooks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Controle de Notificações e Confirmação HUD
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -284,42 +285,60 @@ export default function WebhooksManagePage() {
   };
 
   const handleUpdateWebhook = async () => {
-    if (!selectedWebhook) return;
-    const { error } = await supabase
-      .from('webhooks')
-      .update({
-        outbound_url: selectedWebhook.outbound_url,
-        notification_email: selectedWebhook.notification_email
-      })
-      .eq('id', selectedWebhook.id);
+    if (!selectedWebhook || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('webhooks')
+        .update({
+          outbound_url: selectedWebhook.outbound_url,
+          notification_email: selectedWebhook.notification_email
+        })
+        .eq('id', selectedWebhook.id);
 
-    if (error) {
-      showAlert('Erro ao Salvar', 'Não foi possível salvar as configurações: ' + error.message, 'danger');
-    } else {
-      showToast('Configurações salvas com sucesso!', 'success');
-      setIsDetailsModalOpen(false);
-      loadWebhooksData();
+      if (error) {
+        showAlert('Erro ao Salvar', 'Não foi possível salvar as configurações: ' + error.message, 'danger');
+      } else {
+        showToast('Configurações salvas com sucesso!', 'success');
+        setIsDetailsModalOpen(false);
+        loadWebhooksData();
+      }
+    } catch (err: any) {
+      showAlert('Erro ao Salvar', 'Erro inesperado: ' + err.message, 'danger');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCreateWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newWebhook.name || !newWebhook.client_id) return;
+    if (!newWebhook.name || !newWebhook.client_id || isSubmitting) return;
     const secret = 'whsec_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const slug = newWebhook.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const { data, error } = await supabase.from('webhooks').insert([{
-      name: newWebhook.name,
-      client_id: newWebhook.client_id,
-      url_slug: slug,
-      secret: secret,
-      validation_type: newWebhook.validation_type,
-      status: 'active'
-    }]).select().single();
-    if (!error && data) {
-      await logAction('Webhook Ativado', 'webhook', data.id, { name: newWebhook.name });
-      setIsModalOpen(false);
-      setNewWebhook({ name: '', client_id: isAdmin ? '' : userClientId || '', validation_type: 'header' });
-      loadWebhooksData();
+    
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.from('webhooks').insert([{
+        name: newWebhook.name,
+        client_id: newWebhook.client_id,
+        url_slug: slug,
+        secret: secret,
+        validation_type: newWebhook.validation_type,
+        status: 'active'
+      }]).select().single();
+      
+      if (error) {
+        showAlert('Erro ao Criar', 'Erro ao criar webhook: ' + error.message, 'danger');
+      } else if (data) {
+        await logAction('Webhook Ativado', 'webhook', data.id, { name: newWebhook.name });
+        setIsModalOpen(false);
+        setNewWebhook({ name: '', client_id: isAdmin ? '' : userClientId || '', validation_type: 'header' });
+        loadWebhooksData();
+      }
+    } catch (err: any) {
+      showAlert('Erro ao Criar', 'Erro inesperado: ' + err.message, 'danger');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -641,12 +660,17 @@ export default function WebhooksManagePage() {
         {isModalOpen && (
           <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
             <div className={`${styles.modal} glass`} onClick={e => e.stopPropagation()}>
-              <div className={styles.modalHeader}><h3>Novo Ponto de Captura</h3></div>
+                  <div className={styles.modalHeader}><h3>Novo Ponto de Captura</h3></div>
               <form className={styles.form} onSubmit={handleCreateWebhook}>
                 <div className={styles.inputGroup}><label>Nome do Ponto</label><input type="text" placeholder="Ex: Site Principal" value={newWebhook.name} onChange={e => setNewWebhook({...newWebhook, name: e.target.value})} required /></div>
                 {isAdmin && (<div className={styles.inputGroup}><label>Cliente</label><select value={newWebhook.client_id} onChange={e => setNewWebhook({...newWebhook, client_id: e.target.value})} required><option value="">Selecionar...</option>{clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div>)}
                 <div className={styles.inputGroup}><label>Autenticação</label><select value={newWebhook.validation_type} onChange={e => setNewWebhook({...newWebhook, validation_type: e.target.value})}><option value="header">Header (Recomendado)</option><option value="query">URL Parameter</option></select></div>
-                <div className={styles.modalActions}><button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button><button type="submit" className={styles.modalSubmitBtn}>ATIVAR</button></div>
+                 <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                  <button type="submit" className={styles.modalSubmitBtn} disabled={isSubmitting}>
+                    {isSubmitting ? 'ATIVANDO...' : 'ATIVAR'}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -772,7 +796,9 @@ export default function WebhooksManagePage() {
 
               <div className={styles.premiumModalFooter}>
                 <button className={styles.secondaryBtn} onClick={() => setIsDetailsModalOpen(false)}>Cancelar</button>
-                <button className={styles.primaryBtn} onClick={handleUpdateWebhook}>Salvar Configurações</button>
+                <button className={styles.primaryBtn} onClick={handleUpdateWebhook} disabled={isSubmitting}>
+                  {isSubmitting ? 'Salvando...' : 'Salvar Configurações'}
+                </button>
               </div>
             </div>
           </div>

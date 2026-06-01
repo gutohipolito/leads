@@ -199,6 +199,9 @@
   gap: 0.25rem;
   transition: color 0.2s;
   word-break: break-all;
+  width: 100%;
+  margin-top: 0.4rem;
+  margin-bottom: 0.25rem;
 }
 
 .monitorUrl:hover {
