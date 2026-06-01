@@ -134,17 +134,18 @@
 }
 
 .providerCard {
-  background: rgba(13, 20, 35, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 1.5rem;
+  background: rgba(13, 20, 35, 0.45);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .providerCard::after {
@@ -156,9 +157,9 @@
 }
 
 .providerCard:hover {
-  border-color: rgba(86, 215, 253, 0.3);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 15px rgba(86, 215, 253, 0.1);
-  transform: translateY(-4px);
+  border-color: rgba(86, 215, 253, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(86, 215, 253, 0.2);
+  transform: translateY(-8px);
 }
 
 .cardActiveNeon {
@@ -938,7 +939,8 @@
 .clientSelectorImg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .clientSelectorInfo {
@@ -1034,5 +1036,53 @@
 .testBtnInline:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.clientFilters {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.4rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filterTab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.15rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filterTab span {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 6px;
+  opacity: 0.7;
+}
+
+.filterTab:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.filterTab.active {
+  background: var(--primary);
+  color: #050811;
+  box-shadow: 0 4px 15px rgba(86, 215, 253, 0.3);
+}
+
+.filterTab.active span {
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1;
 }
 

@@ -134,6 +134,9 @@ export default function IntegrationsPage() {
   // Controle de falha no carregamento dos logotipos dos clientes
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
+  // Filtro de clientes na seleção
+  const [clientFilter, setClientFilter] = useState<'active' | 'all'>('active');
+
   // Dados do Formulário
   const [formName, setFormName] = useState('');
   const [configWebhookUrl, setConfigWebhookUrl] = useState('');
@@ -328,6 +331,16 @@ export default function IntegrationsPage() {
     if (!isAdmin) return clients.find(c => c.id === userClientId);
     return clients.find(c => c.id === selectedClientId);
   }, [selectedClientId, isAdmin, clients, userClientId]);
+
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      const hasWebhook = client.webhooks && client.webhooks.length > 0;
+      if (clientFilter === 'active') {
+        return hasWebhook;
+      }
+      return true; // 'all'
+    });
+  }, [clients, clientFilter]);
 
   // Carregar integrações do cliente selecionado (Admin)
   const loadClientIntegrations = async (clientId: string) => {
@@ -669,14 +682,28 @@ export default function IntegrationsPage() {
         
         {showClientSelection && (
           <div>
-            <div className={styles.header}>
+            <div className={styles.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <h2>Selecione um Cliente (Hub de Integrações)</h2>
                 <p>Gerencie conexões e repasses de leads em tempo real de cada parceiro ativo.</p>
               </div>
+              <div className={styles.clientFilters}>
+                <button 
+                  className={`${styles.filterTab} ${clientFilter === 'active' ? styles.active : ''}`}
+                  onClick={() => setClientFilter('active')}
+                >
+                  Ativos <span>{clients.filter(c => c.webhooks && c.webhooks.length > 0).length}</span>
+                </button>
+                <button 
+                  className={`${styles.filterTab} ${clientFilter === 'all' ? styles.active : ''}`}
+                  onClick={() => setClientFilter('all')}
+                >
+                  Todos <span>{clients.length}</span>
+                </button>
+              </div>
             </div>
             <div className={styles.clientsGridSelector}>
-              {clients.map(client => (
+              {filteredClients.map(client => (
                 <div key={client.id} className={`${styles.clientSelectorCard} glass`} onClick={() => handleSelectClient(client)}>
                   <div className={styles.clientSelectorHeader}>
                     <span className={styles.clientSelectorId}>UPLINK_ID: {client.id.substring(0, 8).toUpperCase()}</span>
