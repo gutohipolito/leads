@@ -564,7 +564,8 @@ export default function LeadsPage() {
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 282, 34, { align: 'right' });
 
     const whatsappLeads = leadsToExport.filter(l => l.source === 'whatsapp_tracker');
-    const formLeads = leadsToExport.filter(l => l.source !== 'whatsapp_tracker');
+    const customLeads = leadsToExport.filter(l => l.source === 'custom_tracker');
+    const formLeads = leadsToExport.filter(l => l.source !== 'whatsapp_tracker' && l.source !== 'custom_tracker');
 
     const generateGroupTable = (title: string, groupLeads: any[], startY: number) => {
       if (groupLeads.length === 0) return startY;
@@ -671,12 +672,14 @@ export default function LeadsPage() {
       doc.text(value, x + 8, y + 13);
     };
 
-    drawStatBox(15, 46, 80, 18, 'Total de Leads', String(leadsToExport.length), [86, 215, 253]);
-    drawStatBox(108.5, 46, 80, 18, 'WhatsApp & Cliques', String(whatsappLeads.length), [37, 211, 102]);
-    drawStatBox(202, 46, 80, 18, 'Leads de Formulários', String(formLeads.length), [86, 215, 253]);
+    drawStatBox(15, 46, 62, 18, 'Total de Leads', String(leadsToExport.length), [86, 215, 253]);
+    drawStatBox(85, 46, 62, 18, 'WhatsApp & Cliques', String(whatsappLeads.length), [37, 211, 102]);
+    drawStatBox(155, 46, 62, 18, 'Cliques & Seletores', String(customLeads.length), [168, 85, 247]);
+    drawStatBox(225, 46, 62, 18, 'Leads de Formulários', String(formLeads.length), [86, 215, 253]);
 
     let currentY = 72;
-    currentY = generateGroupTable('Whatsapp', whatsappLeads, currentY);
+    currentY = generateGroupTable('WhatsApp', whatsappLeads, currentY);
+    currentY = generateGroupTable('Cliques & Seletores', customLeads, currentY);
     currentY = generateGroupTable('Formulário', formLeads, currentY);
 
     const pageCount = (doc as any).internal.getNumberOfPages();
@@ -929,35 +932,54 @@ export default function LeadsPage() {
               <table className={styles.table}>
                 <thead><tr><th>Lead</th><th>Contato</th><th>Origem</th><th>Engajamento</th><th>Data</th><th>Ações</th></tr></thead>
                 <tbody>
-                  {paginatedLeads.map(lead => (
-                    <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
-                      <td>
-                        <div className={styles.leadMain}>
-                          <div className={styles.avatar}>
-                            {getLeadIcon(lead.source, 20)}
+                  {paginatedLeads.map(lead => {
+                    const isSelector = lead.source === 'custom_tracker' && (
+                      lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+                      lead.data?.match_type?.toLowerCase().includes('selector') || 
+                      lead.name?.toLowerCase().includes('selector')
+                    );
+
+                    const isKeyword = lead.source === 'custom_tracker' && (
+                      lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+                      lead.data?.match_type?.toLowerCase().includes('keyword') || 
+                      lead.name?.toLowerCase().includes('keyword')
+                    );
+
+                    return (
+                      <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
+                        <td>
+                          <div className={styles.leadMain}>
+                            <div className={styles.avatar}>
+                              {getLeadIcon(lead.source, 20)}
+                            </div>
+                            <div>
+                              <p className={styles.name}>{lead.name || 'Sem nome'}</p>
+                              <p className={styles.id}>ID: {lead.id.substring(0, 8)}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className={styles.name}>{lead.name || 'Sem nome'}</p>
-                            <p className={styles.id}>ID: {lead.id.substring(0, 8)}</p>
-                          </div>
-                        </div>
-                      </td>
-                       <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{formatPhone(lead.phone)}</span></div></td>
-                      <td>
-                        {lead.source === 'test_simulation' ? (
-                          <div className={styles.sourceBadgeTest}><Database size={12} /> <span>Simulação</span></div>
-                        ) : (lead.source === 'whatsapp_tracker' || lead.source === 'custom_tracker') ? (
-                          <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>{lead.source === 'whatsapp_tracker' ? 'WhatsApp' : 'Botão'}</span></div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', display: 'block', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {lead.webhooks?.name || lead.data?.captured_by?.name || ''}
-                              {(!lead.webhooks?.name && lead.data?.captured_by?.name) ? ' (Removido)' : ''}
-                            </span>
-                          </div>
-                        )}
-                      </td>
+                        </td>
+                         <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{formatPhone(lead.phone)}</span></div></td>
+                        <td>
+                          {lead.source === 'test_simulation' ? (
+                            <div className={styles.sourceBadgeTest}><Database size={12} /> <span>Simulação</span></div>
+                          ) : lead.source === 'whatsapp_tracker' ? (
+                            <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>WhatsApp</span></div>
+                          ) : isSelector ? (
+                            <div className={styles.sourceBadgeZap} style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.2)' }}><Zap size={12} /> <span>Seletor</span></div>
+                          ) : isKeyword ? (
+                            <div className={styles.sourceBadgeZap} style={{ background: 'rgba(249, 115, 22, 0.1)', color: '#f97316', border: '1px solid rgba(249, 115, 22, 0.2)' }}><Zap size={12} /> <span>Palavra-Chave</span></div>
+                          ) : lead.source === 'custom_tracker' ? (
+                            <div className={styles.sourceBadgeZap}><Zap size={12} /> <span>Botão</span></div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <div className={styles.sourceBadgeForm}><FileText size={12} /> <span>Form</span></div>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', display: 'block', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {lead.webhooks?.name || lead.data?.captured_by?.name || ''}
+                                {(!lead.webhooks?.name && lead.data?.captured_by?.name) ? ' (Removido)' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </td>
                       <td>
                         {lead.data?.lead_score !== undefined ? (
                           <div className={`${styles.scoreBadgeMini} ${
@@ -997,7 +1019,8 @@ export default function LeadsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
 

@@ -350,8 +350,20 @@ export default function LiveMonitorPage() {
             <div className={styles.celebrationSource}>
               {celebrationLead.source === 'whatsapp_tracker' ? (
                 <><MessageCircle size={16} /> <span>VIA WHATSAPP</span></>
+              ) : (celebrationLead.source === 'custom_tracker' && (
+                celebrationLead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+                celebrationLead.data?.match_type?.toLowerCase().includes('selector') || 
+                celebrationLead.name?.toLowerCase().includes('selector')
+              )) ? (
+                <><Zap size={16} /> <span>VIA SELETOR</span></>
+              ) : (celebrationLead.source === 'custom_tracker' && (
+                celebrationLead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+                celebrationLead.data?.match_type?.toLowerCase().includes('keyword') || 
+                celebrationLead.name?.toLowerCase().includes('keyword')
+              )) ? (
+                <><Zap size={16} /> <span>VIA PALAVRA-CHAVE</span></>
               ) : celebrationLead.source === 'custom_tracker' ? (
-                <><Zap size={16} /> <span>VIA BOTÃO CUSTOM</span></>
+                <><Zap size={16} /> <span>VIA BOTÃO</span></>
               ) : (
                 <><Database size={16} /> <span>VIA FORMULÁRIO</span></>
               )}
@@ -505,6 +517,18 @@ export default function LiveMonitorPage() {
                 <div className={styles.leadStatus}>
                   {lead.source === 'whatsapp_tracker' ? (
                     <div className={`${styles.statusBadge} ${styles.whatsapp}`}>WHATSAPP</div>
+                  ) : (lead.source === 'custom_tracker' && (
+                    lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+                    lead.data?.match_type?.toLowerCase().includes('selector') || 
+                    lead.name?.toLowerCase().includes('selector')
+                  )) ? (
+                    <div className={`${styles.statusBadge} ${styles.selector}`}>SELETOR</div>
+                  ) : (lead.source === 'custom_tracker' && (
+                    lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+                    lead.data?.match_type?.toLowerCase().includes('keyword') || 
+                    lead.name?.toLowerCase().includes('keyword')
+                  )) ? (
+                    <div className={`${styles.statusBadge} ${styles.keyword}`}>PALAVRA-CHAVE</div>
                   ) : lead.source === 'custom_tracker' ? (
                     <div className={`${styles.statusBadge} ${styles.button}`}>BOTÃO</div>
                   ) : (

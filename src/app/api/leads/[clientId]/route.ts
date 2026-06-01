@@ -143,6 +143,18 @@ export async function POST(
 
     const isCustomTracker = body.source === 'custom_tracker';
 
+    const isSelector = isCustomTracker && (
+      body.behavior?.match_type?.toLowerCase().includes('selector') || 
+      body.match_type?.toLowerCase().includes('selector') || 
+      name?.toLowerCase().includes('selector')
+    );
+
+    const isKeyword = isCustomTracker && (
+      body.behavior?.match_type?.toLowerCase().includes('keyword') || 
+      body.match_type?.toLowerCase().includes('keyword') || 
+      name?.toLowerCase().includes('keyword')
+    );
+
     const source = body.source === 'test_simulation' 
       ? 'test_simulation' 
       : (isWppTracker ? 'whatsapp_tracker' : (isCustomTracker ? 'custom_tracker' : 'form'));
@@ -267,10 +279,27 @@ export async function POST(
     adminUsers?.forEach(u => userIds.add(u.id));
 
     if (userIds.size > 0) {
-      const notificationTitle = isWppTracker ? 'Intercepção de WhatsApp' : 'Novo Lead via Form';
-      const notificationMsg = isWppTracker 
-        ? `Um usuário de ${body.marketing?.source || 'origem direta'} clicou no WhatsApp.`
-        : `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`;
+      let notificationTitle = 'Novo Lead via Form';
+      let notificationMsg = `Recebemos os dados de "${name}" através do webhook ${webhook.name}.`;
+      let notificationType = 'success';
+
+      if (isWppTracker) {
+        notificationTitle = 'Intercepção de WhatsApp';
+        notificationMsg = `Um usuário de ${body.marketing?.source || 'origem direta'} clicou no WhatsApp.`;
+        notificationType = 'info';
+      } else if (isSelector) {
+        notificationTitle = 'Novo Lead via Seletor';
+        notificationMsg = `O lead "${name}" clicou no seletor "${body.behavior?.button_text || 'Desconhecido'}".`;
+        notificationType = 'info';
+      } else if (isKeyword) {
+        notificationTitle = 'Novo Lead via Palavra-Chave';
+        notificationMsg = `O lead "${name}" acionou a palavra-chave "${body.behavior?.trigger_rule || 'Desconhecida'}".`;
+        notificationType = 'info';
+      } else if (isCustomTracker) {
+        notificationTitle = 'Novo Lead via Botão';
+        notificationMsg = `O lead "${name}" clicou em um botão personalizado no site.`;
+        notificationType = 'info';
+      }
 
       const notificationPromises = Array.from(userIds).map(async (uid) => {
         const { error } = await supabase.from('notifications').insert({
@@ -278,7 +307,7 @@ export async function POST(
           client_id: clientId,
           title: notificationTitle,
           message: notificationMsg,
-          type: isWppTracker ? 'info' : 'success'
+          type: notificationType
         });
         if (error) {
           console.error(`Erro ao inserir notificação para o usuário ${uid}:`, error);
@@ -289,8 +318,18 @@ export async function POST(
     }
 
     // [NOVO] Log de Auditoria para o Sinal de Entrada
+    const logActionName = isWppTracker 
+      ? 'Intercepção de WhatsApp' 
+      : isSelector 
+      ? 'Interação via Seletor' 
+      : isKeyword 
+      ? 'Interação via Palavra-Chave' 
+      : isCustomTracker 
+      ? 'Interação de Botão' 
+      : 'Captura de Lead';
+
     await supabase.from('system_logs').insert([{
-      action: isWppTracker ? 'Intercepção de WhatsApp' : (isCustomTracker ? 'Interação de Botão' : 'Captura de Lead'),
+      action: logActionName,
       entity: 'lead',
       entity_id: lead.id,
       details: { 

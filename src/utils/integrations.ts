@@ -16,6 +16,28 @@ export async function sendLeadToIntegrations(params: {
   const phone = lead.phone || null;
   const source = lead.source || 'form';
 
+  const isWppTracker = source === 'whatsapp_tracker';
+  const isSelector = source === 'custom_tracker' && (
+    body.behavior?.match_type?.toLowerCase().includes('selector') || 
+    body.match_type?.toLowerCase().includes('selector') || 
+    lead.name?.toLowerCase().includes('selector')
+  );
+  const isKeyword = source === 'custom_tracker' && (
+    body.behavior?.match_type?.toLowerCase().includes('keyword') || 
+    body.match_type?.toLowerCase().includes('keyword') || 
+    lead.name?.toLowerCase().includes('keyword')
+  );
+
+  const friendlySource = isWppTracker 
+    ? 'WhatsApp' 
+    : isSelector 
+    ? 'Seletor' 
+    : isKeyword 
+    ? 'Palavra-Chave' 
+    : source === 'custom_tracker' 
+    ? 'Botão' 
+    : 'Formulário';
+
   // Buscar integrações ativas do cliente no banco
   const { data: dbIntegrations } = await supabase
     .from('integrations')
@@ -142,7 +164,7 @@ export async function sendLeadToIntegrations(params: {
           const targetPhone = integration.config?.targetPhone;
           
           if (instanceId && token && targetPhone) {
-            const msg = `🚀 *Novo Lead Asthros!*\n\n*Nome:* ${name}\n*E-mail:* ${email || 'N/A'}\n*Telefone:* ${phone || 'N/A'}\n*Origem:* ${source}\n*Score:* ${body.lead_score} pts`;
+            const msg = `🚀 *Novo Lead Asthros!*\n\n*Nome:* ${name}\n*E-mail:* ${email || 'N/A'}\n*Telefone:* ${phone || 'N/A'}\n*Origem:* ${friendlySource}\n*Score:* ${body.lead_score} pts`;
             const res = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/send-messages`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

@@ -409,9 +409,19 @@
   color: #56d7fd;
 }
 
-.statusBadge.form {
+.statusBadge.selector {
   background: rgba(168, 85, 247, 0.1);
   color: #a855f7;
+}
+
+.statusBadge.keyword {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.statusBadge.form {
+  background: rgba(86, 215, 253, 0.05);
+  color: #56d7fd;
 }
 
 .deleteBtn {
