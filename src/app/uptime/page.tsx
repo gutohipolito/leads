@@ -14,7 +14,8 @@ import {
   Clock, 
   CheckCircle2, 
   AlertTriangle,
-  X
+  X,
+  Pencil
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -34,6 +35,56 @@ export default function UptimePage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+
+  // Controle de edição de monitor
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMonitor, setEditingMonitor] = useState<any | null>(null);
+  const [editMonitorName, setEditMonitorName] = useState('');
+  const [editMonitorUrl, setEditMonitorUrl] = useState('');
+
+  const openEditModal = (monitor: any) => {
+    setEditingMonitor(monitor);
+    setEditMonitorName(monitor.name);
+    setEditMonitorUrl(monitor.url);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateMonitor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMonitor || !editMonitorName.trim() || !editMonitorUrl.trim()) return;
+
+    let formattedUrl = editMonitorUrl.trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('uptime_monitors')
+        .update({
+          name: editMonitorName.trim(),
+          url: formattedUrl
+        })
+        .eq('id', editingMonitor.id);
+
+      if (error) throw error;
+
+      await logAction('Monitor de Uptime Editado', 'client', editingMonitor.client_id, {
+        id: editingMonitor.id,
+        old_name: editingMonitor.name,
+        new_name: editMonitorName.trim(),
+        old_url: editingMonitor.url,
+        new_url: formattedUrl
+      });
+
+      showToast('Monitor atualizado com sucesso!', 'success');
+      setIsEditModalOpen(false);
+      setEditingMonitor(null);
+      await loadMonitors(activeClientId);
+    } catch (err: any) {
+      showToast('Erro ao atualizar monitor: ' + err.message, 'error');
+    }
+  };
 
   // Helper para exibir notificações temporárias (toasts)
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -364,7 +415,17 @@ export default function UptimePage() {
                 >
                   <div className={styles.monitorHeader}>
                     <div className={styles.monitorInfo}>
-                      <h3>{monitor.name}</h3>
+                      <h3>
+                        {monitor.name}
+                        <button 
+                          type="button" 
+                          className={styles.editTitleBtn} 
+                          onClick={() => openEditModal(monitor)}
+                          title="Editar Monitor"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      </h3>
                       <a 
                         href={monitor.url} 
                         target="_blank" 
@@ -517,6 +578,47 @@ export default function UptimePage() {
                 <button type="submit" className={styles.submitBtn}>
                   <Plus size={16} />
                   <span>Adicionar Monitor</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Edição de Monitor */}
+        {isEditModalOpen && editingMonitor && (
+          <div className={styles.modalOverlay} onClick={() => setIsEditModalOpen(false)}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Editar Monitor de Uptime</h3>
+                <button className={styles.modalCloseBtn} onClick={() => setIsEditModalOpen(false)}>
+                  <X size={18} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateMonitor} className={styles.form}>
+                <div className={styles.field}>
+                  <label>Nome do Site</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Página de Vendas Produto A"
+                    value={editMonitorName}
+                    onChange={e => setEditMonitorName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className={styles.field}>
+                  <label>Endereço URL</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: minhapagina.com.br"
+                    value={editMonitorUrl}
+                    onChange={e => setEditMonitorUrl(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className={styles.submitBtn}>
+                  <span>Salvar Alterações</span>
                 </button>
               </form>
             </div>
