@@ -693,14 +693,13 @@ export default function LeadsPage() {
     const generateGroupTable = (title: string, groupLeads: any[], startY: number) => {
       if (groupLeads.length === 0) return startY;
 
-      const hasEmail = selectedFields.includes('email') && groupLeads.some(l => l.email && l.email !== 'N/A');
-      const hasPhone = selectedFields.includes('phone') && groupLeads.some(l => {
-        const p = formatPhone(l.phone);
-        return p && p !== 'N/A';
-      });
-      const hasPage = selectedFields.includes('page_url') && groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
-      const hasButton = selectedFields.includes('button_text') && groupLeads.some(l => (l.data?.behavior?.button_text || l.data?.button_text));
-      const hasTime = selectedFields.includes('time_on_page') && groupLeads.some(l => (l.data?.behavior?.time_on_page || l.data?.time_on_page));
+      const hasEmail = selectedFields.includes('email');
+      const hasPhone = selectedFields.includes('phone');
+      const hasPage = selectedFields.includes('page_url');
+      const hasButton = selectedFields.includes('button_text');
+      const hasTime = selectedFields.includes('time_on_page');
+      const hasLocation = selectedFields.includes('location');
+      const hasUtm = selectedFields.includes('utm');
 
       const headers: string[] = [];
       if (selectedFields.includes('created_at')) headers.push('Data/Hora (captura)');
@@ -710,6 +709,8 @@ export default function LeadsPage() {
       if (hasPage) headers.push('Página');
       if (hasButton) headers.push('Nome Btn');
       if (hasTime) headers.push('Tempo na Pág.');
+      if (hasLocation) headers.push('Localização');
+      if (hasUtm) headers.push('UTM Source');
 
       const tableRows = groupLeads.map(l => {
         const row: string[] = [];
@@ -728,6 +729,15 @@ export default function LeadsPage() {
         }
         if (hasButton) row.push(l.data?.behavior?.button_text || l.data?.button_text || 'N/A');
         if (hasTime) row.push(l.data?.behavior?.time_on_page || l.data?.time_on_page || 'N/A');
+        if (hasLocation) {
+          const city = l.data?.location?.city ? decodeURIComponent(l.data.location.city) : '';
+          const region = l.data?.location?.region ? decodeURIComponent(l.data.location.region) : '';
+          row.push(city && region ? `${city}/${region}` : (city || region || 'N/A'));
+        }
+        if (hasUtm) {
+          const utm = l.data?.marketing?.source || l.data?.utm_source || 'N/A';
+          row.push(utm !== 'N/A' ? decodeURIComponent(utm) : 'N/A');
+        }
         
         return row;
       });
