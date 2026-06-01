@@ -264,7 +264,7 @@ export default function Home() {
     };
   }, [filteredLeads, activeFilter]);
 
-  const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard" : "Dashboard do Cliente");
+  const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : "";
 
   const getLastLeadTime = () => {
     if (!lastSignalTime) return 'Nenhuma captura';
@@ -286,9 +286,11 @@ export default function Home() {
       <div className={styles.dashboard}>
         
         {/* Cabeçalho do Dashboard */}
-        <div className={styles.dashboardHeader}>
-          <h2>{dashboardTitle}</h2>
-        </div>
+        {dashboardTitle && (
+          <div className={styles.dashboardHeader}>
+            <h2>{dashboardTitle}</h2>
+          </div>
+        )}
 
         {/* Barra de Filtros Rápidos */}
         <div className={styles.filterBar}>
