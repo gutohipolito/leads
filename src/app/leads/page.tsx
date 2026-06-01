@@ -1683,6 +1683,7 @@ export default function LeadsPage() {
       {exportType.show && (
         <ExportModal 
           format={exportType.type}
+          leads={filteredLeads}
           onConfirm={(password, selectedFields) => processExport(password, selectedFields)}
           onCancel={() => setExportType({ show: false, type: '' })}
         />

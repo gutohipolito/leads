@@ -350,3 +350,36 @@
   letter-spacing: 0.02em;
 }
 
+.disabledLabel {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.disabledLabel:hover {
+  background: transparent;
+}
+
+.disabledCheckbox {
+  border-color: rgba(var(--foreground-rgb), 0.1) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  cursor: not-allowed;
+}
+
+.helpText {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  margin-top: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  line-height: 1.45;
+}
+
+.helpText span {
+  flex: 1;
+}
+

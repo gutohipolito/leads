@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Unlock, Key, RefreshCw, CheckCircle2, List } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Shield, Lock, Unlock, Key, RefreshCw, CheckCircle2, List, Info } from 'lucide-react';
 import styles from './ExportModal.module.css';
 
 interface ExportModalProps {
   onConfirm: (password: string | null, selectedFields: string[]) => void;
   onCancel: () => void;
   format: string;
+  leads?: any[];
 }
 
 const AVAILABLE_FIELDS = [
@@ -25,18 +26,70 @@ const AVAILABLE_FIELDS = [
   { id: 'custom_fields', label: 'Campos Extras', category: 'Formulários', defaultChecked: true }
 ];
 
-export default function ExportModal({ onConfirm, onCancel, format }: ExportModalProps) {
+export default function ExportModal({ onConfirm, onCancel, format, leads = [] }: ExportModalProps) {
   const [usePassword, setUsePassword] = useState(false);
   const [password, setPassword] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [isWarning, setIsWarning] = useState(false);
   const [countdown, setCountdown] = useState(10);
   
-  const [selectedFields, setSelectedFields] = useState<string[]>(
-    AVAILABLE_FIELDS.filter(f => f.defaultChecked).map(f => f.id)
-  );
+  // Computar quais campos possuem dados válidos de fato nos leads filtrados
+  const fieldsWithData = useMemo(() => {
+    const active = new Set<string>();
+    if (!leads || leads.length === 0) return active;
+
+    leads.forEach(l => {
+      if (l.name) active.add('name');
+      if (l.email && l.email !== 'N/A') active.add('email');
+      
+      const p = l.phone?.replace(/^N\/A\s*/i, '').trim();
+      if (p && p.toLowerCase() !== 'n/a') active.add('phone');
+      
+      if (l.created_at) active.add('created_at');
+      if (l.id) active.add('id');
+      if (l.webhooks || l.webhook_id || l.data?.captured_by) active.add('webhook');
+      
+      if (l.data?.behavior?.page_url || l.data?.page_url) active.add('page_url');
+      if (l.data?.behavior?.button_text || l.data?.button_text) active.add('button_text');
+      if (l.data?.behavior?.time_on_page || l.data?.time_on_page) active.add('time_on_page');
+      
+      if (
+        l.data?.marketing?.source || l.data?.utm_source ||
+        l.data?.marketing?.medium || l.data?.utm_medium ||
+        l.data?.marketing?.campaign || l.data?.utm_campaign
+      ) {
+        active.add('utm');
+      }
+      
+      if (
+        l.data?.location?.city || l.data?.location?.region ||
+        l.data?.location?.country || l.data?.location?.ip
+      ) {
+        active.add('location');
+      }
+      
+      if (l.data) {
+        const hasExtra = Object.keys(l.data).some(k => 
+          !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign'].includes(k)
+        );
+        if (hasExtra) active.add('custom_fields');
+      }
+    });
+
+    return active;
+  }, [leads]);
+
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
+
+  // Inicializar selecionando apenas os campos defaultChecked que possuem dados reais nos leads
+  useEffect(() => {
+    const initial = AVAILABLE_FIELDS.filter(f => f.defaultChecked && (fieldsWithData.size === 0 || fieldsWithData.has(f.id)))
+      .map(f => f.id);
+    setSelectedFields(initial);
+  }, [fieldsWithData]);
 
   const handleToggleField = (id: string) => {
+    if (fieldsWithData.size > 0 && !fieldsWithData.has(id)) return; // Bloquear clique se não houver dados
     setSelectedFields(prev => 
       prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
     );
@@ -150,27 +203,50 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
               <h4>Campos para Exportação</h4>
             </div>
             <div className={styles.fieldsActions}>
-              <button type="button" onClick={() => setSelectedFields(AVAILABLE_FIELDS.map(f => f.id))}>Todos</button>
+              <button 
+                type="button" 
+                onClick={() => setSelectedFields(AVAILABLE_FIELDS.filter(f => fieldsWithData.size === 0 || fieldsWithData.has(f.id)).map(f => f.id))}
+              >
+                Todos
+              </button>
               <span>|</span>
               <button type="button" onClick={() => setSelectedFields([])}>Limpar</button>
             </div>
           </div>
           <div className={styles.fieldsGrid}>
-            {AVAILABLE_FIELDS.map((field) => (
-              <label key={field.id} className={styles.fieldCheckboxLabel}>
-                <input 
-                  type="checkbox"
-                  checked={selectedFields.includes(field.id)}
-                  onChange={() => handleToggleField(field.id)}
-                />
-                <span className={styles.checkboxCustom} />
-                <div className={styles.fieldInfo}>
-                  <span className={styles.fieldName}>{field.label}</span>
-                  <span className={styles.fieldCat}>{field.category}</span>
-                </div>
-              </label>
-            ))}
+            {AVAILABLE_FIELDS.map((field) => {
+              const hasData = fieldsWithData.size === 0 || fieldsWithData.has(field.id);
+              return (
+                <label 
+                  key={field.id} 
+                  className={`${styles.fieldCheckboxLabel} ${!hasData ? styles.disabledLabel : ''}`}
+                  title={!hasData ? "Nenhum lead possui esta informação no período/filtro atual." : undefined}
+                >
+                  <input 
+                    type="checkbox"
+                    checked={selectedFields.includes(field.id)}
+                    onChange={() => handleToggleField(field.id)}
+                    disabled={!hasData}
+                  />
+                  <span className={`${styles.checkboxCustom} ${!hasData ? styles.disabledCheckbox : ''}`} />
+                  <div className={styles.fieldInfo}>
+                    <span className={styles.fieldName}>{field.label}</span>
+                    <span className={styles.fieldCat}>
+                      {field.category} {!hasData && '• Sem dados'}
+                    </span>
+                  </div>
+                </label>
+              );
+            })}
           </div>
+          
+          {/* Mensagem explicativa se houver campos desabilitados */}
+          {AVAILABLE_FIELDS.some(f => fieldsWithData.size > 0 && !fieldsWithData.has(f.id)) && (
+            <div className={styles.helpText}>
+              <Info size={12} style={{ flexShrink: 0 }} />
+              <span>Campos sem dados capturados nos leads do filtro atual foram desabilitados para evitar colunas vazias.</span>
+            </div>
+          )}
         </div>
 
         {/* Opções de Criptografia */}
