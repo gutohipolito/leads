@@ -41,6 +41,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 export default function WebhooksManagePage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -48,6 +49,43 @@ export default function WebhooksManagePage() {
   const [webhooks, setWebhooks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Controle de Notificações e Confirmação HUD
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    confirmLabel: string;
+    cancelLabel: string | null;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirmar',
+    cancelLabel: 'Cancelar',
+    onConfirm: () => {}
+  });
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const showAlert = (title: string, message: string, type: 'info' | 'warning' | 'danger' | 'success' = 'info') => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmLabel: 'Entendido',
+      cancelLabel: null,
+      onConfirm: () => {}
+    });
+  };
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
   
   const [activeTab, setActiveTab] = useState<'webhooks' | 'whatsapp'>('webhooks');
@@ -185,7 +223,7 @@ export default function WebhooksManagePage() {
   const toggleSecret = (id: string) => setShowSecret(prev => ({ ...prev, [id]: !prev[id] }));
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copiado para a área de transferência!');
+    showToast('Copiado para a área de transferência!', 'success');
   };
 
   const [testStatus, setTestStatus] = useState<{
@@ -256,9 +294,9 @@ export default function WebhooksManagePage() {
       .eq('id', selectedWebhook.id);
 
     if (error) {
-      alert('Erro ao salvar: ' + error.message);
+      showAlert('Erro ao Salvar', 'Não foi possível salvar as configurações: ' + error.message, 'danger');
     } else {
-      alert('Configurações salvas com sucesso!');
+      showToast('Configurações salvas com sucesso!', 'success');
       setIsDetailsModalOpen(false);
       loadWebhooksData();
     }
@@ -285,16 +323,26 @@ export default function WebhooksManagePage() {
     }
   };
 
-  const handleRegenerate = async (id: string) => {
-    if (confirm('Tem certeza que deseja regenerar este segredo? Aplicações antigas pararão de funcionar.')) {
-      const newSecret = 'whsec_' + Math.random().toString(36).substring(2, 15);
-      const { error } = await supabase.from('webhooks').update({ secret: newSecret }).eq('id', id);
-      if (!error) {
-        setWebhooks(prev => prev.map(w => w.id === id ? { ...w, secret: newSecret } : w));
-        if (selectedWebhook?.id === id) setSelectedWebhook({ ...selectedWebhook, secret: newSecret });
-        alert(`Segredo regenerado com sucesso!`);
+  const handleRegenerate = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Regenerar Segredo',
+      message: 'Tem certeza que deseja regenerar este segredo? Aplicações e sites que utilizam a chave secreta antiga pararão de funcionar imediatamente.',
+      type: 'warning',
+      confirmLabel: 'Regenerar',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        const newSecret = 'whsec_' + Math.random().toString(36).substring(2, 15);
+        const { error } = await supabase.from('webhooks').update({ secret: newSecret }).eq('id', id);
+        if (!error) {
+          setWebhooks(prev => prev.map(w => w.id === id ? { ...w, secret: newSecret } : w));
+          if (selectedWebhook?.id === id) setSelectedWebhook({ ...selectedWebhook, secret: newSecret });
+          showToast('Segredo regenerado com sucesso!', 'success');
+        } else {
+          showAlert('Erro ao Regenerar', 'Não foi possível regenerar a chave secreta: ' + error.message, 'danger');
+        }
       }
-    }
+    });
   };
 
   const handleToggleStatus = async (webhook: any) => {
@@ -312,28 +360,36 @@ export default function WebhooksManagePage() {
       if (selectedWebhook?.id === webhook.id) {
         setSelectedWebhook({ ...selectedWebhook, status: newStatus });
       }
-      alert(`Terminal ${actionLabel} com sucesso!`);
+      showToast(`Terminal ${actionLabel} com sucesso!`, 'success');
     } else {
-      alert('Erro ao alterar status: ' + error.message);
+      showAlert('Erro ao Alterar Status', 'Não foi possível alterar o status do terminal: ' + error.message, 'danger');
     }
   };
 
-  const handleDeleteWebhook = async (id: string) => {
-    if (!confirm('ATENÇÃO: Esta ação é irreversível. Todos os logs vinculados a este terminal serão perdidos. Deseja continuar?')) return;
+  const handleDeleteWebhook = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Terminal',
+      message: 'ATENÇÃO: Esta ação é irreversível. Todos os logs vinculados a este terminal de uplink serão perdidos permanentemente. Deseja continuar?',
+      type: 'danger',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from('webhooks')
+          .delete()
+          .eq('id', id);
 
-    const { error } = await supabase
-      .from('webhooks')
-      .delete()
-      .eq('id', id);
-
-    if (!error) {
-      logAction('Webhook Excluído', 'webhook', id);
-      setIsDetailsModalOpen(false);
-      loadWebhooksData();
-      alert('Terminal removido com sucesso!');
-    } else {
-      alert('Erro ao excluir: ' + error.message);
-    }
+        if (!error) {
+          logAction('Webhook Excluído', 'webhook', id);
+          setIsDetailsModalOpen(false);
+          loadWebhooksData();
+          showToast('Terminal removido com sucesso!', 'success');
+        } else {
+          showAlert('Erro ao Excluir', 'Não foi possível remover o terminal: ' + error.message, 'danger');
+        }
+      }
+    });
   };
 
   return (
@@ -845,7 +901,7 @@ export default function WebhooksManagePage() {
                         try {
                           handleTestWebhook(JSON.parse(labPayload));
                         } catch(e) {
-                          alert('JSON Inválido');
+                          showAlert('Erro no JSON', 'O payload inserido não é um JSON válido. Por favor, corrija a sintaxe.', 'danger');
                         }
                       }}
                       disabled={testStatus.status === 'loading'}
@@ -938,6 +994,28 @@ export default function WebhooksManagePage() {
             </div>
           </div>
         )}
+        {/* Modal de Confirmação HUD */}
+        <ConfirmModal 
+          isOpen={confirmConfig.isOpen}
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          type={confirmConfig.type}
+          confirmLabel={confirmConfig.confirmLabel}
+          cancelLabel={confirmConfig.cancelLabel}
+          onConfirm={confirmConfig.onConfirm}
+          onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        />
+
+        {/* Sistema de Toasts (Notificações) */}
+        {notification && (
+          <div className={styles.toastContainer}>
+            <div className={`${styles.toast} ${styles[notification.type]}`}>
+              {notification.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+              <span>{notification.message}</span>
+            </div>
+          </div>
+        )}
+
       </div>
     </DashboardLayout>
   );

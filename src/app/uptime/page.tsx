@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
 import { logAction } from '@/utils/logger';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 export default function UptimePage() {
   const router = useRouter();
@@ -41,6 +42,25 @@ export default function UptimePage() {
   const [editingMonitor, setEditingMonitor] = useState<any | null>(null);
   const [editMonitorName, setEditMonitorName] = useState('');
   const [editMonitorUrl, setEditMonitorUrl] = useState('');
+
+  // Estado para o modal de confirmação
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    confirmLabel: string;
+    cancelLabel: string | null;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirmar',
+    cancelLabel: 'Cancelar',
+    onConfirm: () => {}
+  });
 
   const openEditModal = (monitor: any) => {
     setEditingMonitor(monitor);
@@ -252,25 +272,34 @@ export default function UptimePage() {
   };
 
   // Excluir monitor
-  const handleDeleteMonitor = async (id: string, name: string) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o monitor "${name}"?`)) return;
+  const handleDeleteMonitor = (id: string, name: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Monitor',
+      message: `Tem certeza que deseja excluir o monitor "${name}"? Esta ação removerá o monitor de Uptime e todos os seus logs associados.`,
+      type: 'danger',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('uptime_monitors')
+            .delete()
+            .eq('id', id);
 
-    try {
-      const { error } = await supabase
-        .from('uptime_monitors')
-        .delete()
-        .eq('id', id);
+          if (error) throw error;
 
-      if (error) throw error;
-
-      if (activeClientId) {
-        await logAction('Monitor de Uptime Excluído', 'client', activeClientId, { name });
-        showToast('Monitor excluído com sucesso!', 'success');
-        await loadMonitors(activeClientId);
+          const targetLogClientId = activeClientId || monitors.find(m => m.id === id)?.client_id;
+          if (targetLogClientId) {
+            await logAction('Monitor de Uptime Excluído', 'client', targetLogClientId, { name });
+          }
+          showToast('Monitor excluído com sucesso!', 'success');
+          await loadMonitors(activeClientId);
+        } catch (err: any) {
+          showToast('Erro ao remover monitor: ' + err.message, 'error');
+        }
       }
-    } catch (err: any) {
-      showToast('Erro ao remover monitor: ' + err.message, 'error');
-    }
+    });
   };
 
   // Disparar pings manuais via API interna
@@ -624,6 +653,18 @@ export default function UptimePage() {
             </div>
           </div>
         )}
+
+        {/* Modal de Confirmação HUD */}
+        <ConfirmModal 
+          isOpen={confirmConfig.isOpen}
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          type={confirmConfig.type}
+          confirmLabel={confirmConfig.confirmLabel}
+          cancelLabel={confirmConfig.cancelLabel}
+          onConfirm={confirmConfig.onConfirm}
+          onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        />
 
       </div>
     </DashboardLayout>

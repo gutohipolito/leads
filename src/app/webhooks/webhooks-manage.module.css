@@ -1520,3 +1520,52 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Toast de Notificação HUD */
+.toastContainer {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-width: 300px;
+  max-width: 450px;
+  pointer-events: auto;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+
+.toast.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+}
+
+.toast.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.1);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+

@@ -66,6 +66,7 @@ export default function ClientsPage() {
     message: string;
     type: 'info' | 'warning' | 'danger' | 'success';
     confirmLabel: string;
+    cancelLabel?: string | null;
     onConfirm: () => void;
   }>({
     isOpen: false,
@@ -73,8 +74,21 @@ export default function ClientsPage() {
     message: '',
     type: 'info',
     confirmLabel: 'Confirmar',
+    cancelLabel: 'Cancelar',
     onConfirm: () => {}
   });
+
+  const showAlert = (title: string, message: string, type: 'info' | 'warning' | 'danger' | 'success' = 'info') => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmLabel: 'Entendido',
+      cancelLabel: null,
+      onConfirm: () => {}
+    });
+  };
 
   const loadClients = async () => {
     try {
@@ -152,7 +166,7 @@ export default function ClientsPage() {
       const data = await response.json();
       
       if (!response.ok) {
-        alert(data.error || 'Erro ao buscar CNPJ.');
+        showAlert('Consulta de CNPJ', data.error || 'Erro ao buscar CNPJ.', 'danger');
         return;
       }
       
@@ -160,11 +174,11 @@ export default function ClientsPage() {
         setNewClientName(data.razao_social);
         if (data.email) setNewClientEmail(data.email);
       } else {
-        alert('Dados do CNPJ incompletos ou não encontrados.');
+        showAlert('CNPJ Não Encontrado', 'Dados do CNPJ incompletos ou não encontrados.', 'warning');
       }
     } catch (error) {
       console.error('Erro ao buscar CNPJ:', error);
-      alert('Erro na conexão com o serviço de busca.');
+      showAlert('Erro de Conexão', 'Erro na conexão com o serviço de busca.', 'danger');
     } finally {
       setIsLookingUpCnpj(false);
     }
@@ -184,12 +198,12 @@ export default function ClientsPage() {
       .single();
 
     if (error) {
-      alert('Erro ao criar cliente: ' + error.message);
+      showAlert('Erro ao Criar', 'Erro ao criar cliente: ' + error.message, 'danger');
     } else {
       if (data) {
         await logAction('Cliente Criado', 'client', data.id, { name: data.name });
       }
-      alert('Cliente provisionado com sucesso!');
+      showAlert('Sucesso', 'Cliente provisionado com sucesso!', 'success');
       setIsModalOpen(false);
       setNewClientName('');
       setNewClientEmail('');
@@ -213,10 +227,10 @@ export default function ClientsPage() {
       .eq('id', editingClient.id);
 
     if (error) {
-      alert('Erro ao atualizar cliente: ' + error.message);
+      showAlert('Erro ao Atualizar', 'Erro ao atualizar cliente: ' + error.message, 'danger');
     } else {
       await logAction('Cliente Atualizado', 'client', editingClient.id, { name: editingClient.name });
-      alert('Dados atualizados com sucesso!');
+      showAlert('Sucesso', 'Dados atualizados com sucesso!', 'success');
       setIsEditModalOpen(false);
       loadClients();
     }
@@ -236,7 +250,7 @@ export default function ClientsPage() {
           .eq('client_id', clientId);
 
         if (error) {
-          alert('Erro ao resetar webhooks: ' + error.message);
+          showAlert('Erro ao Resetar', 'Não foi possível resetar os webhooks: ' + error.message, 'danger');
         } else {
           await logAction('Reset de Webhooks', 'client', clientId, { action: 'delete_all_webhooks' });
           loadClients();
@@ -276,7 +290,7 @@ export default function ClientsPage() {
           .eq('id', client.id);
 
         if (error) {
-          alert('Erro ao excluir cliente: ' + error.message);
+          showAlert('Erro ao Excluir', 'Não foi possível excluir o cliente: ' + error.message, 'danger');
         } else {
           await logAction('Exclusão de Cliente', 'client', client.id, { name: client.name });
           loadClients();

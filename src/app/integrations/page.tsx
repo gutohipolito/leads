@@ -23,6 +23,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
+import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 
 // Componentes SVG Inline Oficiais com Estilo Premium Geométrico robusto
 const HubSpotLogo = () => (
@@ -137,6 +138,37 @@ export default function IntegrationsPage() {
   // Filtro de clientes na seleção
   const [clientFilter, setClientFilter] = useState<'active' | 'all'>('active');
 
+  // Controle de Confirmação e Alertas HUD
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    confirmLabel: string;
+    cancelLabel: string | null;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirmar',
+    cancelLabel: 'Cancelar',
+    onConfirm: () => {}
+  });
+
+  const showAlert = (title: string, message: string, type: 'info' | 'warning' | 'danger' | 'success' = 'info') => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmLabel: 'Entendido',
+      cancelLabel: null,
+      onConfirm: () => {}
+    });
+  };
+
   // Dados do Formulário
   const [formName, setFormName] = useState('');
   const [configWebhookUrl, setConfigWebhookUrl] = useState('');
@@ -192,7 +224,7 @@ export default function IntegrationsPage() {
       .single();
 
     if (error) {
-      alert('Erro ao atualizar ícone: ' + error.message);
+      showAlert('Erro ao Salvar Ícone', 'Não foi possível salvar o ícone personalizado: ' + error.message, 'danger');
     } else {
       setIntegrations(prev => prev.map(item => item.id === selectedIntegrationForIcon.id ? data : item));
       setFailedCustomLogos(prev => {
@@ -492,7 +524,7 @@ export default function IntegrationsPage() {
       .single();
 
     if (error) {
-      alert('Erro ao criar integração: ' + error.message);
+      showAlert('Erro ao Criar', 'Não foi possível registrar a nova integração: ' + error.message, 'danger');
     } else {
       setIntegrations(prev => [data, ...prev]);
       setActiveModal(null);
@@ -551,7 +583,7 @@ export default function IntegrationsPage() {
       .single();
 
     if (error) {
-      alert('Erro ao atualizar integração: ' + error.message);
+      showAlert('Erro ao Atualizar', 'Não foi possível salvar as alterações da integração: ' + error.message, 'danger');
     } else {
       setIntegrations(prev => prev.map(item => item.id === editingIntegration.id ? data : item));
       setFailedCustomLogos(prev => {
@@ -582,22 +614,30 @@ export default function IntegrationsPage() {
   };
 
   // Excluir Integração
-  const handleDeleteIntegration = async (id: string) => {
-    if (!confirm('Deseja realmente remover esta integração permanentemente?')) return;
+  const handleDeleteIntegration = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Integração',
+      message: 'Deseja realmente remover esta integração permanentemente? Esta ação removerá o canal e não repassará novos leads para ele.',
+      type: 'danger',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from('integrations')
+          .delete()
+          .eq('id', id);
 
-    const { error } = await supabase
-      .from('integrations')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert('Erro ao excluir integração: ' + error.message);
-    } else {
-      setIntegrations(prev => prev.filter(item => item.id !== id));
-      setActiveModal(null);
-      setEditingIntegration(null);
-      await logAction('Integração Excluída', 'webhook', id, { deleted_by: 'admin' });
-    }
+        if (error) {
+          showAlert('Erro ao Excluir', 'Não foi possível excluir a integração: ' + error.message, 'danger');
+        } else {
+          setIntegrations(prev => prev.filter(item => item.id !== id));
+          setActiveModal(null);
+          setEditingIntegration(null);
+          await logAction('Integração Excluída', 'webhook', id, { deleted_by: 'admin' });
+        }
+      }
+    });
   };
 
   // Disparar Teste de Conexão em Tempo Real
@@ -1685,6 +1725,18 @@ export default function IntegrationsPage() {
             </form>
           </div>
         )}
+
+        {/* Modal de Confirmação HUD */}
+        <ConfirmModal 
+          isOpen={confirmConfig.isOpen}
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          type={confirmConfig.type}
+          confirmLabel={confirmConfig.confirmLabel}
+          cancelLabel={confirmConfig.cancelLabel}
+          onConfirm={confirmConfig.onConfirm}
+          onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        />
 
       </div>
     </DashboardLayout>
