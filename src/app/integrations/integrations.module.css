@@ -905,13 +905,31 @@
   font-family: monospace;
   font-size: 0.6rem;
   font-weight: 800;
-  color: #25d366;
-  background: rgba(37, 211, 102, 0.1);
   padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid rgba(37, 211, 102, 0.2);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.activeBadge {
+  color: #25d366;
+  background: rgba(37, 211, 102, 0.1);
+  border-color: rgba(37, 211, 102, 0.2);
+  box-shadow: 0 0 10px rgba(37, 211, 102, 0.1);
+}
+
+.waitingBadge {
+  color: #ffaa00;
+  background: rgba(255, 170, 0, 0.1);
+  border-color: rgba(255, 170, 0, 0.2);
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.1);
+}
+
+.disabledBadge {
+  color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+  border-color: rgba(255, 77, 77, 0.2);
 }
 
 .clientSelectorBody {

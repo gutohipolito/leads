@@ -276,7 +276,7 @@ export default function IntegrationsPage() {
           if (isUserAdmin) {
             const { data: clientsData } = await supabase
               .from('clients')
-              .select('*')
+              .select('*, webhooks(*)')
               .eq('status', 'active');
             
             if (clientsData) {
@@ -703,34 +703,42 @@ export default function IntegrationsPage() {
               </div>
             </div>
             <div className={styles.clientsGridSelector}>
-              {filteredClients.map(client => (
-                <div key={client.id} className={`${styles.clientSelectorCard} glass`} onClick={() => handleSelectClient(client)}>
-                  <div className={styles.clientSelectorHeader}>
-                    <span className={styles.clientSelectorId}>UPLINK_ID: {client.id.substring(0, 8).toUpperCase()}</span>
-                    <div className={styles.clientSelectorBadge}>ATIVO</div>
-                  </div>
-                  <div className={styles.clientSelectorBody}>
-                    <div className={styles.clientSelectorInitials} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.08)' }}>
-                      {client.logo_url && !failedLogos[client.id] ? (
-                        <img 
-                          src={client.logo_url} 
-                          alt={client.name} 
-                          className={styles.clientSelectorImg} 
-                          onError={() => handleLogoError(client.id)}
-                        />
-                      ) : (
-                        <span>{client.name.substring(0, 2).toUpperCase()}</span>
-                      )}
+              {filteredClients.map(client => {
+                const isActive = client.status === 'active' && client.webhooks?.some((wh: any) => wh.status === 'active');
+                const isWaiting = client.status === 'active' && !isActive;
+                const isDisabled = client.status !== 'active';
+
+                return (
+                  <div key={client.id} className={`${styles.clientSelectorCard} glass`} onClick={() => handleSelectClient(client)}>
+                    <div className={styles.clientSelectorHeader}>
+                      <span className={styles.clientSelectorId}>UPLINK_ID: {client.id.substring(0, 8).toUpperCase()}</span>
+                      <div className={`${styles.clientSelectorBadge} ${isActive ? styles.activeBadge : isWaiting ? styles.waitingBadge : styles.disabledBadge}`}>
+                        {isActive ? 'ATIVO' : isWaiting ? 'AGUARDANDO' : 'INATIVO'}
+                      </div>
                     </div>
-                    <div className={styles.clientSelectorInfo}>
-                      <h3>{client.name}</h3>
+                    <div className={styles.clientSelectorBody}>
+                      <div className={styles.clientSelectorInitials} style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.08)' }}>
+                        {client.logo_url && !failedLogos[client.id] ? (
+                          <img 
+                            src={client.logo_url} 
+                            alt={client.name} 
+                            className={styles.clientSelectorImg} 
+                            onError={() => handleLogoError(client.id)}
+                          />
+                        ) : (
+                          <span>{client.name.substring(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className={styles.clientSelectorInfo}>
+                        <h3>{client.name}</h3>
+                      </div>
+                    </div>
+                    <div className={styles.clientSelectorFooter}>
+                      <span>CONFIGURAR CONEXÕES ➔</span>
                     </div>
                   </div>
-                  <div className={styles.clientSelectorFooter}>
-                    <span>CONFIGURAR CONEXÕES ➔</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
