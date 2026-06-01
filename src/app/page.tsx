@@ -264,7 +264,7 @@ export default function Home() {
     };
   }, [filteredLeads, activeFilter]);
 
-  const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard Administrador" : "Dashboard do Cliente");
+  const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : (isAdmin ? "Dashboard" : "Dashboard do Cliente");
 
   const getLastLeadTime = () => {
     if (!lastSignalTime) return 'Nenhuma captura';
