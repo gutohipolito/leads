@@ -1,14 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Unlock, Key, RefreshCw, CheckCircle2, X } from 'lucide-react';
+import { Shield, Lock, Unlock, Key, RefreshCw, CheckCircle2, List } from 'lucide-react';
 import styles from './ExportModal.module.css';
 
 interface ExportModalProps {
-  onConfirm: (password: string | null) => void;
+  onConfirm: (password: string | null, selectedFields: string[]) => void;
   onCancel: () => void;
   format: string;
 }
+
+const AVAILABLE_FIELDS = [
+  { id: 'name', label: 'Nome', category: 'Dados Pessoais', defaultChecked: true },
+  { id: 'email', label: 'E-mail', category: 'Dados Pessoais', defaultChecked: true },
+  { id: 'phone', label: 'Telefone', category: 'Dados Pessoais', defaultChecked: true },
+  { id: 'created_at', label: 'Data e Hora', category: 'Sistema', defaultChecked: true },
+  { id: 'webhook', label: 'Terminal / Webhook', category: 'Sistema', defaultChecked: true },
+  { id: 'id', label: 'ID do Lead', category: 'Sistema', defaultChecked: false },
+  { id: 'page_url', label: 'Página de Origem', category: 'Comportamento', defaultChecked: true },
+  { id: 'button_text', label: 'Botão Clicado', category: 'Comportamento', defaultChecked: true },
+  { id: 'time_on_page', label: 'Tempo na Página', category: 'Comportamento', defaultChecked: false },
+  { id: 'utm', label: 'Parâmetros UTM (Tráfego)', category: 'Campanha', defaultChecked: true },
+  { id: 'location', label: 'Localização (Cidade/Estado)', category: 'Geografia', defaultChecked: true },
+  { id: 'custom_fields', label: 'Campos Extras', category: 'Formulários', defaultChecked: true }
+];
 
 export default function ExportModal({ onConfirm, onCancel, format }: ExportModalProps) {
   const [usePassword, setUsePassword] = useState(false);
@@ -16,6 +31,16 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
   const [isSuccess, setIsSuccess] = useState(false);
   const [isWarning, setIsWarning] = useState(false);
   const [countdown, setCountdown] = useState(10);
+  
+  const [selectedFields, setSelectedFields] = useState<string[]>(
+    AVAILABLE_FIELDS.filter(f => f.defaultChecked).map(f => f.id)
+  );
+
+  const handleToggleField = (id: string) => {
+    setSelectedFields(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -24,16 +49,16 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
         setCountdown(prev => prev - 1);
       }, 1000);
     } else if (isWarning && countdown === 0) {
-      onConfirm(null);
+      onConfirm(null, selectedFields);
     }
     return () => clearInterval(timer);
-  }, [isWarning, countdown, onConfirm]);
+  }, [isWarning, countdown, onConfirm, selectedFields]);
 
   const handleConfirm = () => {
     if (usePassword) {
       setIsSuccess(true);
       setTimeout(() => {
-        onConfirm(password);
+        onConfirm(password, selectedFields);
       }, 1500);
     } else {
       setIsWarning(true);
@@ -114,15 +139,47 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
         
         <div className={styles.header}>
           <h3>Exportar com Segurança</h3>
-          <p>Deseja adicionar uma senha de proteção ao seu arquivo {format.toUpperCase()}?</p>
+          <p>Selecione os dados do relatório e as diretrizes de criptografia {format.toUpperCase()}.</p>
         </div>
 
+        {/* Seção de Seleção de Campos */}
+        <div className={styles.fieldsSection}>
+          <div className={styles.fieldsHeader}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <List size={16} color="var(--primary)" />
+              <h4>Campos para Exportação</h4>
+            </div>
+            <div className={styles.fieldsActions}>
+              <button type="button" onClick={() => setSelectedFields(AVAILABLE_FIELDS.map(f => f.id))}>Todos</button>
+              <span>|</span>
+              <button type="button" onClick={() => setSelectedFields([])}>Limpar</button>
+            </div>
+          </div>
+          <div className={styles.fieldsGrid}>
+            {AVAILABLE_FIELDS.map((field) => (
+              <label key={field.id} className={styles.fieldCheckboxLabel}>
+                <input 
+                  type="checkbox"
+                  checked={selectedFields.includes(field.id)}
+                  onChange={() => handleToggleField(field.id)}
+                />
+                <span className={styles.checkboxCustom} />
+                <div className={styles.fieldInfo}>
+                  <span className={styles.fieldName}>{field.label}</span>
+                  <span className={styles.fieldCat}>{field.category}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Opções de Criptografia */}
         <div 
           className={`${styles.optionCard} ${!usePassword ? styles.selected : ''}`}
           onClick={() => setUsePassword(false)}
         >
           <div className={styles.optionIcon}>
-            <Unlock size={24} color={!usePassword ? 'var(--primary)' : '#666'} />
+            <Unlock size={20} color={!usePassword ? 'var(--primary)' : '#666'} />
           </div>
           <div className={styles.optionInfo}>
             <h4>Sem Senha</h4>
@@ -135,7 +192,7 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
           onClick={() => setUsePassword(true)}
         >
           <div className={styles.optionIcon}>
-            <Lock size={24} color={usePassword ? 'var(--primary)' : '#666'} />
+            <Lock size={20} color={usePassword ? 'var(--primary)' : '#666'} />
           </div>
           <div className={styles.optionInfo}>
             <h4>Com Senha</h4>
@@ -157,8 +214,8 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
                 <RefreshCw size={18} />
               </button>
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.5rem' }}>
-              <Key size={12} style={{ marginRight: '4px' }} /> 
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.5rem', textAlign: 'left' }}>
+              <Key size={12} style={{ marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }} /> 
               Guarde esta senha para abrir o arquivo.
             </p>
           </div>
@@ -169,7 +226,7 @@ export default function ExportModal({ onConfirm, onCancel, format }: ExportModal
           <button 
             className={styles.confirmBtn} 
             onClick={handleConfirm}
-            disabled={usePassword && !password}
+            disabled={(usePassword && !password) || selectedFields.length === 0}
           >
             Gerar Arquivo
           </button>

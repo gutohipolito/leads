@@ -13,8 +13,8 @@
 
 .modal {
   width: 100%;
-  max-width: 440px;
-  padding: 3rem !important;
+  max-width: 480px;
+  padding: 2rem !important;
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
   border-radius: 32px !important;
@@ -209,7 +209,144 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes scaleIn {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
+
+.fieldsSection {
+  text-align: left;
+  margin-bottom: 1.5rem;
+  background: rgba(0, 0, 0, 0.015);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1rem;
 }
+
+.fieldsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.fieldsHeader h4 {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.fieldsActions {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}
+
+.fieldsActions button {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.fieldsActions button:hover {
+  text-decoration: underline;
+}
+
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.fieldsGrid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.fieldsGrid::-webkit-scrollbar-thumb {
+  background: rgba(var(--foreground-rgb), 0.1);
+  border-radius: 10px;
+}
+
+.fieldCheckboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.fieldCheckboxLabel:hover {
+  background: rgba(var(--foreground-rgb), 0.03);
+}
+
+.fieldCheckboxLabel input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkboxCustom {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.02);
+  display: inline-block;
+  flex-shrink: 0;
+  position: relative;
+  margin-top: 2px;
+  transition: all 0.2s;
+}
+
+.fieldCheckboxLabel input:checked ~ .checkboxCustom {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.checkboxCustom::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 7px;
+  border: solid var(--background);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.fieldCheckboxLabel input:checked ~ .checkboxCustom::after {
+  display: block;
+}
+
+.fieldInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldName {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.fieldCat {
+  font-size: 0.6rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+

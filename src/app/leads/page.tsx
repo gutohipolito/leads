@@ -466,9 +466,9 @@ export default function LeadsPage() {
     setExportOpen(false);
   };
 
-  const processExport = (password: string | null) => {
+  const processExport = (password: string | null, selectedFields: string[]) => {
     if (exportType.type === 'pdf') {
-      handleExportPDF(password);
+      handleExportPDF(password, selectedFields);
     } else {
       const leadsToExport = getSanitizedLeads(filteredLeads);
       if (leadsToExport.length === 0) return;
@@ -480,7 +480,66 @@ export default function LeadsPage() {
       const formattedWebhookName = webhookName ? webhookName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'todos';
       const formattedClientName = (currentClient?.name || 'asthros').toLowerCase().replace(/[^a-z0-9]/g, '_');
       
-      const content = exportType.type === 'csv' ? convertToCSV(leadsToExport) : JSON.stringify(leadsToExport, null, 2);
+      let content = '';
+      if (exportType.type === 'csv') {
+        content = convertToCSV(leadsToExport, selectedFields);
+      } else {
+        const filteredLeadsData = leadsToExport.map(l => {
+          const item: any = {};
+          if (selectedFields.includes('id')) item.id = l.id;
+          if (selectedFields.includes('created_at')) item.created_at = l.created_at;
+          if (selectedFields.includes('name')) item.name = l.name;
+          if (selectedFields.includes('email')) item.email = l.email;
+          if (selectedFields.includes('phone')) item.phone = l.phone;
+          if (selectedFields.includes('webhook') && l.webhooks) item.webhook = l.webhooks.name;
+          
+          if (l.data) {
+            item.data = {};
+            if (selectedFields.includes('page_url')) {
+              if (l.data.page_url) item.data.page_url = l.data.page_url;
+              if (l.data.behavior?.page_url) {
+                item.data.behavior = item.data.behavior || {};
+                item.data.behavior.page_url = l.data.behavior.page_url;
+              }
+            }
+            if (selectedFields.includes('button_text')) {
+              if (l.data.button_text) item.data.button_text = l.data.button_text;
+              if (l.data.behavior?.button_text) {
+                item.data.behavior = item.data.behavior || {};
+                item.data.behavior.button_text = l.data.behavior.button_text;
+              }
+            }
+            if (selectedFields.includes('time_on_page')) {
+              if (l.data.time_on_page) item.data.time_on_page = l.data.time_on_page;
+              if (l.data.behavior?.time_on_page) {
+                item.data.behavior = item.data.behavior || {};
+                item.data.behavior.time_on_page = l.data.behavior.time_on_page;
+              }
+            }
+            if (selectedFields.includes('utm')) {
+              if (l.data.marketing) item.data.marketing = l.data.marketing;
+              if (l.data.utm_source) item.data.utm_source = l.data.utm_source;
+              if (l.data.utm_medium) item.data.utm_medium = l.data.utm_medium;
+              if (l.data.utm_campaign) item.data.utm_campaign = l.data.utm_campaign;
+            }
+            if (selectedFields.includes('location')) {
+              if (l.data.location) item.data.location = l.data.location;
+            }
+            if (selectedFields.includes('custom_fields')) {
+              Object.keys(l.data).forEach(key => {
+                if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign'].includes(key)) {
+                  item.data[key] = l.data[key];
+                }
+              });
+            }
+            if (Object.keys(item.data).length === 0) {
+              delete item.data;
+            }
+          }
+          return item;
+        });
+        content = JSON.stringify(filteredLeadsData, null, 2);
+      }
       const blob = new Blob([content], { type: exportType.type === 'csv' ? 'text/csv' : 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -491,28 +550,92 @@ export default function LeadsPage() {
         format: exportType.type, 
         count: leadsToExport.length, 
         protected: !!password,
-        password: password // Gravamos para consulta posterior no menu de relatórios
+        fields: selectedFields
       });
     }
     setExportType({ show: false, type: '' });
   };
 
-  const convertToCSV = (data: any[]) => {
+  const convertToCSV = (data: any[], selectedFields: string[]) => {
     const dynamicKeys = new Set<string>();
-    data.forEach(l => { if (l.data) Object.keys(l.data).forEach(k => dynamicKeys.add(k)); });
+    if (selectedFields.includes('custom_fields')) {
+      data.forEach(l => { 
+        if (l.data) {
+          Object.keys(l.data).forEach(k => {
+            if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign'].includes(k)) {
+              dynamicKeys.add(k);
+            }
+          });
+        }
+      });
+    }
     const dynamicKeysArray = Array.from(dynamicKeys);
     const mapping = data[0]?.webhooks?.field_mapping || {};
-    const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Terminal/Webhook', 'Data', ...dynamicKeysArray.map(k => mapping[k] || k)];
-    const rows = data.map(l => {
-      const webhookLabel = l.webhooks?.name || (l.data?.captured_by?.name ? `${l.data.captured_by.name} (Removido)` : 'N/A');
-      const base = [l.id, l.name || '', l.email || '', formatPhone(l.phone), webhookLabel, new Date(l.created_at).toLocaleString('pt-BR')];
-      const extra = dynamicKeysArray.map(k => l.data?.[k] !== undefined ? String(l.data[k]) : '');
-      return [...base, ...extra].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+
+    const headers: string[] = [];
+    if (selectedFields.includes('id')) headers.push('ID');
+    if (selectedFields.includes('created_at')) headers.push('Data');
+    if (selectedFields.includes('name')) headers.push('Nome');
+    if (selectedFields.includes('email')) headers.push('E-mail');
+    if (selectedFields.includes('phone')) headers.push('Telefone');
+    if (selectedFields.includes('webhook')) headers.push('Terminal/Webhook');
+    if (selectedFields.includes('page_url')) headers.push('Página');
+    if (selectedFields.includes('button_text')) headers.push('Botão Clicado');
+    if (selectedFields.includes('time_on_page')) headers.push('Tempo na Pág.');
+    if (selectedFields.includes('utm')) {
+      headers.push('UTM Source');
+      headers.push('UTM Medium');
+      headers.push('UTM Campaign');
+    }
+    if (selectedFields.includes('location')) {
+      headers.push('Cidade');
+      headers.push('Estado');
+      headers.push('IP');
+    }
+    dynamicKeysArray.forEach(k => {
+      headers.push(mapping[k] || k);
     });
+
+    const rows = data.map(l => {
+      const row: string[] = [];
+      if (selectedFields.includes('id')) row.push(l.id || '');
+      if (selectedFields.includes('created_at')) row.push(new Date(l.created_at).toLocaleString('pt-BR'));
+      if (selectedFields.includes('name')) row.push(l.name || '');
+      if (selectedFields.includes('email')) row.push(l.email || '');
+      if (selectedFields.includes('phone')) row.push(formatPhone(l.phone));
+      if (selectedFields.includes('webhook')) {
+        const webhookLabel = l.webhooks?.name || (l.data?.captured_by?.name ? `${l.data.captured_by.name} (Removido)` : 'N/A');
+        row.push(webhookLabel);
+      }
+      if (selectedFields.includes('page_url')) {
+        row.push(l.data?.behavior?.page_url || l.data?.page_url || '');
+      }
+      if (selectedFields.includes('button_text')) {
+        row.push(l.data?.behavior?.button_text || l.data?.button_text || '');
+      }
+      if (selectedFields.includes('time_on_page')) {
+        row.push(l.data?.behavior?.time_on_page || l.data?.time_on_page || '');
+      }
+      if (selectedFields.includes('utm')) {
+        row.push(l.data?.marketing?.source || l.data?.utm_source || '');
+        row.push(l.data?.marketing?.medium || l.data?.utm_medium || '');
+        row.push(l.data?.marketing?.campaign || l.data?.utm_campaign || '');
+      }
+      if (selectedFields.includes('location')) {
+        row.push(l.data?.location?.city || '');
+        row.push(l.data?.location?.region || '');
+        row.push(l.data?.location?.ip || '');
+      }
+      dynamicKeysArray.forEach(k => {
+        row.push(l.data?.[k] !== undefined ? String(l.data[k]) : '');
+      });
+      return row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+    });
+
     return "\uFEFF" + [headers.join(','), ...rows].join('\n');
   };
 
-  const handleExportPDF = async (password: string | null) => {
+  const handleExportPDF = async (password: string | null, selectedFields: string[]) => {
     const leadsToExport = getSanitizedLeads(filteredLeads);
     if (leadsToExport.length === 0) return;
 
@@ -570,16 +693,18 @@ export default function LeadsPage() {
     const generateGroupTable = (title: string, groupLeads: any[], startY: number) => {
       if (groupLeads.length === 0) return startY;
 
-      const hasEmail = groupLeads.some(l => l.email && l.email !== 'N/A');
-      const hasPhone = groupLeads.some(l => {
+      const hasEmail = selectedFields.includes('email') && groupLeads.some(l => l.email && l.email !== 'N/A');
+      const hasPhone = selectedFields.includes('phone') && groupLeads.some(l => {
         const p = formatPhone(l.phone);
         return p && p !== 'N/A';
       });
-      const hasPage = groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
-      const hasButton = groupLeads.some(l => (l.data?.behavior?.button_text || l.data?.button_text));
-      const hasTime = groupLeads.some(l => (l.data?.behavior?.time_on_page || l.data?.time_on_page));
+      const hasPage = selectedFields.includes('page_url') && groupLeads.some(l => (l.data?.behavior?.page_url || l.data?.page_url));
+      const hasButton = selectedFields.includes('button_text') && groupLeads.some(l => (l.data?.behavior?.button_text || l.data?.button_text));
+      const hasTime = selectedFields.includes('time_on_page') && groupLeads.some(l => (l.data?.behavior?.time_on_page || l.data?.time_on_page));
 
-      const headers = ['Data/Hora (captura)', 'Nome'];
+      const headers: string[] = [];
+      if (selectedFields.includes('created_at')) headers.push('Data/Hora (captura)');
+      if (selectedFields.includes('name')) headers.push('Nome');
       if (hasEmail) headers.push('E-mail');
       if (hasPhone) headers.push(title.includes('Formulário') ? 'Telefone/Whatsapp' : 'Telefone');
       if (hasPage) headers.push('Página');
@@ -587,10 +712,13 @@ export default function LeadsPage() {
       if (hasTime) headers.push('Tempo na Pág.');
 
       const tableRows = groupLeads.map(l => {
-        const row = [
-          new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-          l.name || 'S/ Nome'
-        ];
+        const row: string[] = [];
+        if (selectedFields.includes('created_at')) {
+          row.push(new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
+        }
+        if (selectedFields.includes('name')) {
+          row.push(l.name || 'S/ Nome');
+        }
         if (hasEmail) row.push(l.email || 'N/A');
         if (hasPhone) row.push(formatPhone(l.phone));
         
@@ -638,8 +766,9 @@ export default function LeadsPage() {
               else if (header === 'Telefone' || header === 'Telefone/Whatsapp') {
                 const cleanPhone = cellValue.replace(/\D/g, '');
                 const finalPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
-                // Nome está na coluna 1
-                const leadName = data.row.cells[1].raw as string;
+                // Encontrar a coluna de Nome no cabeçalho
+                const nameColIndex = headers.indexOf('Nome');
+                const leadName = nameColIndex !== -1 ? (data.row.cells[nameColIndex].raw as string) : '';
                 const message = encodeURIComponent(`Olá ${leadName || ''}, Tudo bem?`);
                 const url = `https://wa.me/${finalPhone}?text=${message}`;
                 
@@ -698,7 +827,7 @@ export default function LeadsPage() {
       format: 'pdf', 
       count: leadsToExport.length, 
       protected: !!password,
-      password: password 
+      fields: selectedFields
     });
     setExportOpen(false);
   };
@@ -1544,7 +1673,7 @@ export default function LeadsPage() {
       {exportType.show && (
         <ExportModal 
           format={exportType.type}
-          onConfirm={processExport}
+          onConfirm={(password, selectedFields) => processExport(password, selectedFields)}
           onCancel={() => setExportType({ show: false, type: '' })}
         />
       )}
