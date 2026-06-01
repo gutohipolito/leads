@@ -382,7 +382,7 @@ export default function LeadsPage() {
   const showWebhookSelection = currentClient && currentClient.webhooks?.length > 1 && !selectedWebhookId;
   const showLeadsList = (currentClient && (!currentClient.webhooks || currentClient.webhooks.length <= 1)) || selectedWebhookId;
 
-  const [activeCategory, setActiveCategory] = useState<'all' | 'forms' | 'whatsapp'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
 
   const filteredLeads = useMemo(() => {
     let result = [...leads];
@@ -398,10 +398,27 @@ export default function LeadsPage() {
     }
 
     // Filtro por Categoria (Abas)
-    if (activeCategory === 'whatsapp') {
-      result = result.filter(l => l.source === 'whatsapp_tracker' || l.source === 'custom_tracker');
-    } else if (activeCategory === 'forms') {
-      result = result.filter(l => l.source !== 'whatsapp_tracker' && l.source !== 'custom_tracker');
+    if (activeCategory !== 'all') {
+      result = result.filter(l => {
+        const isSelector = l.source === 'custom_tracker' && (
+          l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+          l.data?.match_type?.toLowerCase().includes('selector') || 
+          l.name?.toLowerCase().includes('selector')
+        );
+        const isKeyword = l.source === 'custom_tracker' && (
+          l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+          l.data?.match_type?.toLowerCase().includes('keyword') || 
+          l.name?.toLowerCase().includes('keyword')
+        );
+        const isWhatsapp = l.source === 'whatsapp_tracker';
+        const isForm = l.source !== 'whatsapp_tracker' && l.source !== 'test_simulation' && !isSelector && !isKeyword;
+
+        if (activeCategory === 'whatsapp') return isWhatsapp;
+        if (activeCategory === 'selectors') return isSelector;
+        if (activeCategory === 'keywords') return isKeyword;
+        if (activeCategory === 'forms') return isForm;
+        return true;
+      });
     }
 
     // Filtro por Período de Data
@@ -443,6 +460,93 @@ export default function LeadsPage() {
     
     return result;
   }, [currentClient, selectedWebhookId, filterName, filterEmail, leads, activeCategory, dateFilter, customStartDate, customEndDate]);
+
+  const leadsCounts = useMemo(() => {
+    if (!leads) return { all: 0, forms: 0, whatsapp: 0, selectors: 0, keywords: 0 };
+    let result = [...leads];
+    
+    // Filtro por Cliente
+    if (currentClient) result = result.filter(l => l.client_id === currentClient.id);
+    
+    // Filtro por Webhook (se selecionado)
+    if (selectedWebhookId) {
+      result = result.filter(l => l.webhook_id === selectedWebhookId);
+    } else if (currentClient && currentClient.webhooks?.length === 1) {
+      result = result.filter(l => l.webhook_id === currentClient.webhooks[0].id);
+    }
+
+    // Filtro por Período de Data
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      result = result.filter(l => {
+        const createdDate = new Date(l.created_at);
+        if (dateFilter === 'today') {
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return createdDate >= today;
+        }
+        if (dateFilter === '7days') {
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return createdDate >= sevenDaysAgo;
+        }
+        if (dateFilter === 'month') {
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          return createdDate >= startOfMonth;
+        }
+        if (dateFilter === 'custom') {
+          let match = true;
+          if (customStartDate) {
+            const start = new Date(customStartDate + 'T00:00:00');
+            match = match && createdDate >= start;
+          }
+          if (customEndDate) {
+            const end = new Date(customEndDate + 'T23:59:59');
+            match = match && createdDate <= end;
+          }
+          return match;
+        }
+        return true;
+      });
+    }
+
+    // Filtro por Texto
+    if (filterName) result = result.filter(l => (l.name || '').toLowerCase().includes(filterName.toLowerCase()));
+    if (filterEmail) result = result.filter(l => (l.email || '').toLowerCase().includes(filterEmail.toLowerCase()));
+
+    // Excluir simulações de teste
+    const baseLeads = result.filter(l => l.source !== 'test_simulation');
+
+    let forms = 0;
+    let whatsapp = 0;
+    let selectors = 0;
+    let keywords = 0;
+
+    baseLeads.forEach(l => {
+      const isSelector = l.source === 'custom_tracker' && (
+        l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+        l.data?.match_type?.toLowerCase().includes('selector') || 
+        l.name?.toLowerCase().includes('selector')
+      );
+      const isKeyword = l.source === 'custom_tracker' && (
+        l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+        l.data?.match_type?.toLowerCase().includes('keyword') || 
+        l.name?.toLowerCase().includes('keyword')
+      );
+      const isWhatsapp = l.source === 'whatsapp_tracker';
+
+      if (isWhatsapp) whatsapp++;
+      else if (isSelector) selectors++;
+      else if (isKeyword) keywords++;
+      else forms++;
+    });
+
+    return {
+      all: baseLeads.length,
+      forms,
+      whatsapp,
+      selectors,
+      keywords
+    };
+  }, [currentClient, selectedWebhookId, filterName, filterEmail, leads, dateFilter, customStartDate, customEndDate]);
 
   const paginatedLeads = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -960,7 +1064,7 @@ export default function LeadsPage() {
                     <div className={styles.totalIcon}><Database size={14} /></div>
                     <div className={styles.totalInfo}>
                       <span className={styles.totalLabel}>Total</span>
-                      <strong className={styles.totalValue}>{filteredLeads.filter(l => l.source !== 'test_simulation').length}</strong>
+                      <strong className={styles.totalValue}>{leadsCounts.all}</strong>
                     </div>
                   </div>
                   
@@ -968,19 +1072,31 @@ export default function LeadsPage() {
                     <div className={styles.totalIcon}><FileText size={14} /></div>
                     <div className={styles.totalInfo}>
                       <span className={styles.totalLabel}>Forms</span>
-                      <strong className={styles.totalValue}>
-                        {filteredLeads.filter(l => l.source !== 'whatsapp_tracker' && l.source !== 'test_simulation').length}
-                      </strong>
+                      <strong className={styles.totalValue}>{leadsCounts.forms}</strong>
                     </div>
                   </div>
 
                   <div className={`${styles.totalStatsCard} ${styles.cardWhatsApp}`}>
-                    <div className={styles.totalIcon}><Zap size={14} /></div>
+                    <div className={styles.totalIcon}><MessageCircle size={14} /></div>
                     <div className={styles.totalInfo}>
-                      <span className={styles.totalLabel}>Interações</span>
-                      <strong className={styles.totalValue}>
-                        {filteredLeads.filter(l => l.source === 'whatsapp_tracker' || l.source === 'custom_tracker').length}
-                      </strong>
+                      <span className={styles.totalLabel}>WhatsApp</span>
+                      <strong className={styles.totalValue}>{leadsCounts.whatsapp}</strong>
+                    </div>
+                  </div>
+
+                  <div className={`${styles.totalStatsCard} ${styles.cardSelectors}`}>
+                    <div className={styles.totalIcon}><Monitor size={14} /></div>
+                    <div className={styles.totalInfo}>
+                      <span className={styles.totalLabel}>Seletores</span>
+                      <strong className={styles.totalValue}>{leadsCounts.selectors}</strong>
+                    </div>
+                  </div>
+
+                  <div className={`${styles.totalStatsCard} ${styles.cardKeywords}`}>
+                    <div className={styles.totalIcon}><FlaskConical size={14} /></div>
+                    <div className={styles.totalInfo}>
+                      <span className={styles.totalLabel}>Keywords</span>
+                      <strong className={styles.totalValue}>{leadsCounts.keywords}</strong>
                     </div>
                   </div>
                 </div>
@@ -998,14 +1114,20 @@ export default function LeadsPage() {
 
             <div className={styles.leadsTableWrapper}>
               <div className={styles.categoryTabs}>
-                <button className={`${styles.catTab} ${activeCategory === 'all' ? styles.active : ''}`} onClick={() => setActiveCategory('all')}>
-                  Todos os Leads
+                <button className={`${styles.catTab} ${activeCategory === 'all' ? styles.active : ''}`} onClick={() => { setActiveCategory('all'); setCurrentPage(1); }}>
+                  Todos os Leads <span>({leadsCounts.all})</span>
                 </button>
-                <button className={`${styles.catTab} ${activeCategory === 'forms' ? styles.active : ''}`} onClick={() => setActiveCategory('forms')}>
-                  Formulários
+                <button className={`${styles.catTab} ${activeCategory === 'forms' ? styles.active : ''}`} onClick={() => { setActiveCategory('forms'); setCurrentPage(1); }}>
+                  Formulários <span>({leadsCounts.forms})</span>
                 </button>
-                <button className={`${styles.catTab} ${activeCategory === 'whatsapp' ? styles.active : ''}`} onClick={() => setActiveCategory('whatsapp')}>
-                  Botões & Whats
+                <button className={`${styles.catTab} ${activeCategory === 'whatsapp' ? styles.active : ''}`} onClick={() => { setActiveCategory('whatsapp'); setCurrentPage(1); }}>
+                  WhatsApp <span>({leadsCounts.whatsapp})</span>
+                </button>
+                <button className={`${styles.catTab} ${activeCategory === 'selectors' ? styles.active : ''}`} onClick={() => { setActiveCategory('selectors'); setCurrentPage(1); }}>
+                  Seletores <span>({leadsCounts.selectors})</span>
+                </button>
+                <button className={`${styles.catTab} ${activeCategory === 'keywords' ? styles.active : ''}`} onClick={() => { setActiveCategory('keywords'); setCurrentPage(1); }}>
+                  Palavras-Chave <span>({leadsCounts.keywords})</span>
                 </button>
               </div>
 

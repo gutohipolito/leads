@@ -407,6 +407,34 @@
   background: rgba(86, 215, 253, 0.02);
 }
 
+.cardSelectors .totalIcon {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.cardSelectors .totalValue {
+  color: #a855f7;
+}
+
+.cardSelectors {
+  border-color: rgba(168, 85, 247, 0.1);
+  background: rgba(168, 85, 247, 0.02);
+}
+
+.cardKeywords .totalIcon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.cardKeywords .totalValue {
+  color: #f59e0b;
+}
+
+.cardKeywords {
+  border-color: rgba(245, 158, 11, 0.1);
+  background: rgba(245, 158, 11, 0.02);
+}
+
 .primaryBtn, .secondaryBtn {
   display: flex;
   align-items: center;
@@ -480,6 +508,18 @@
   background: rgba(13, 17, 23, 0.6);
   border-color: rgba(var(--foreground-rgb), 0.05);
   color: var(--primary);
+}
+
+.catTab span {
+  font-size: 0.7rem;
+  opacity: 0.65;
+  margin-left: 0.25rem;
+  font-weight: 500;
+}
+
+.catTab.active span {
+  color: var(--primary);
+  opacity: 0.85;
 }
 
 .catTab.active::after {
