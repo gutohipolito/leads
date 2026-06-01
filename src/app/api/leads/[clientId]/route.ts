@@ -234,6 +234,40 @@ export async function POST(
       url_slug: webhook.url_slug
     };
 
+    // 3. Prevenção de Leads Duplicados (janela de 5 segundos para o mesmo email/telefone e cliente)
+    if (email || phone) {
+      const fiveSecondsAgo = new Date(Date.now() - 5 * 1000).toISOString();
+      let deduplicationQuery = supabase
+        .from('leads')
+        .select('id')
+        .eq('client_id', clientId)
+        .gt('created_at', fiveSecondsAgo);
+
+      if (email && phone) {
+        deduplicationQuery = deduplicationQuery.or(`email.eq.${email},phone.eq.${phone}`);
+      } else if (email) {
+        deduplicationQuery = deduplicationQuery.eq('email', email);
+      } else if (phone) {
+        deduplicationQuery = deduplicationQuery.eq('phone', phone);
+      }
+
+      const { data: existingLead } = await deduplicationQuery.maybeSingle();
+      if (existingLead) {
+        console.log(`[Deduplicação] Lead duplicado detectado nos últimos 5 segundos. Ignorando inserção.`);
+        return NextResponse.json(
+          { 
+            status: 'success',
+            message: 'Sinal de Uplink satisfeito (Lead duplicado ignorado).', 
+            lead_id: existingLead.id
+          }, 
+          { 
+            status: 200,
+            headers: corsHeaders
+          }
+        );
+      }
+    }
+
     const { data: lead, error: insertError } = await supabase
       .from('leads')
       .insert([

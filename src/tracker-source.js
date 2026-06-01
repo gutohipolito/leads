@@ -207,9 +207,22 @@
     function getTrackingMatch(link) {
         if (!link) return null;
         const url = link.href || '';
+        const lowerUrl = url.toLowerCase();
+        const id = (link.id || '').toLowerCase();
+        const className = (link.className || '').toLowerCase();
         
-        // 1. WhatsApp (Sempre ativo por padrão)
-        if (isWhatsAppLink(url)) {
+        // 1. WhatsApp (Verificação expandida com suporte a encurtadores e classes de plugins)
+        const isWpp = isWhatsAppLink(url) || 
+                      lowerUrl.includes('whatsapp') || 
+                      id.includes('whatsapp') || 
+                      id.includes('wpp') || 
+                      className.includes('whatsapp') || 
+                      className.includes('wpp') ||
+                      className.includes('wa-link') ||
+                      className.includes('wa_btn') ||
+                      className.includes('whatsapp-button');
+
+        if (isWpp) {
             const destPhone = extractWhatsAppPhone(url);
             return { 
                 source: 'whatsapp_tracker', 
@@ -221,7 +234,7 @@
         // 2. Custom Keywords (ex: 'checkout', 'comprar')
         if (config.trackKeywords && Array.isArray(config.trackKeywords)) {
             for (const keyword of config.trackKeywords) {
-                if (keyword && url.toLowerCase().includes(keyword.toLowerCase())) {
+                if (keyword && lowerUrl.includes(keyword.toLowerCase())) {
                     return { source: 'custom_tracker', label: `Keyword: ${keyword}` };
                 }
             }
@@ -244,7 +257,12 @@
                      e.target.closest('button') || 
                      e.target.closest('[role="button"]') || 
                      e.target.closest('.btn') || 
-                     e.target.closest('.button');
+                     e.target.closest('.button') ||
+                     // Suporte a elementos div/span/img com tags de whatsapp de plugins de terceiros
+                     e.target.closest('[class*="whatsapp"]') ||
+                     e.target.closest('[class*="wpp"]') ||
+                     e.target.closest('[id*="whatsapp"]') ||
+                     e.target.closest('[id*="wpp"]');
         if (!link) return;
 
         const trackerMatch = getTrackingMatch(link);
@@ -317,7 +335,96 @@
         }
     }
 
+    // 4. Captura Inteligente de Formulários no Frontend (Opcional)
+    async function trackFormSubmit(e) {
+        try {
+            const form = e.target;
+            const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+            const formDataFields = {};
+            
+            let leadName = '';
+            let leadEmail = '';
+            let leadPhone = '';
+            
+            inputs.forEach(input => {
+                const nameAttr = (input.name || input.id || '').toLowerCase();
+                const value = (input.value || '').trim();
+                if (!value) return;
+                
+                // Ignorar campos confidenciais
+                if (input.type === 'password' || nameAttr.includes('password') || nameAttr.includes('token') || nameAttr.includes('nonce')) {
+                    return;
+                }
+                
+                if (nameAttr.includes('name') || nameAttr.includes('nome')) {
+                    leadName = value;
+                } else if (nameAttr.includes('email') || nameAttr.includes('e-mail') || input.type === 'email') {
+                    leadEmail = value;
+                } else if (nameAttr.includes('phone') || nameAttr.includes('tel') || nameAttr.includes('whats') || nameAttr.includes('cel') || input.type === 'tel') {
+                    leadPhone = value;
+                } else {
+                    if (value.length < 500) {
+                        formDataFields[input.name || input.id] = value;
+                    }
+                }
+            });
+            
+            if (leadName && (leadEmail || leadPhone)) {
+                const payload = {
+                    source: 'form',
+                    name: leadName,
+                    email: leadEmail,
+                    phone: leadPhone,
+                    fields: formDataFields,
+                    marketing: {
+                        ...getUtms(),
+                        referrer: (() => {
+                            try {
+                                return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
+                            } catch(e) { return document.referrer || 'direto'; }
+                        })(),
+                        page_title: document.title,
+                        page_url: window.location.href,
+                        journey: (() => {
+                            try {
+                                const stored = localStorage.getItem('asthros_journey');
+                                return stored ? JSON.parse(stored) : [];
+                            } catch (e) { return []; }
+                        })()
+                    },
+                    behavior: {
+                        time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
+                        scroll_depth: maxScroll + '%',
+                        button_text: form.querySelector('[type="submit"]')?.innerText?.trim() || 'Enviar Formulário',
+                        match_type: 'Auto-captura de Formulário'
+                    },
+                    device: getDeviceContext(),
+                    timestamp: new Date().toISOString()
+                };
+                
+                const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
+                
+                if (navigator.sendBeacon) {
+                    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                    navigator.sendBeacon(endpoint, blob);
+                } else {
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        keepalive: true
+                    });
+                }
+            }
+        } catch (err) {}
+    }
+
     document.addEventListener('click', trackLead, { capture: true });
+
+    // Habilita a escuta de formulários apenas se configurado explicitamente autoTrackForms: true
+    if (config.autoTrackForms === true || config.autoTrackForms === 'true') {
+        document.addEventListener('submit', trackFormSubmit, { capture: true });
+    }
     // console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
 })();
 
