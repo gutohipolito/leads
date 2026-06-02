@@ -956,6 +956,9 @@ export default function UptimePage() {
     );
   }
 
+  // Clientes com monitoramento configurado
+  const activeClients = clients.filter(c => monitors.some(m => m.client_id === c.id));
+
   // Estatísticas gerais
   const totalMonitors = monitors.length;
   const onlineMonitors = monitors.filter(m => m.status === 'online').length;
@@ -988,7 +991,7 @@ export default function UptimePage() {
                 type="button" 
                 className={styles.exportReportBtn} 
                 onClick={() => {
-                  setSelectedClientsForExport(activeClientId ? [activeClientId] : clients.map(c => c.id));
+                  setSelectedClientsForExport(activeClientId ? [activeClientId] : activeClients.map(c => c.id));
                   setIsExportModalOpen(true);
                 }}
               >
@@ -1334,24 +1337,27 @@ export default function UptimePage() {
                     <button 
                       type="button" 
                       onClick={() => {
-                        if (selectedClientsForExport.length === clients.length) {
+                        if (selectedClientsForExport.length === activeClients.length) {
                           setSelectedClientsForExport([]);
                         } else {
-                          setSelectedClientsForExport(clients.map(c => c.id));
+                          setSelectedClientsForExport(activeClients.map(c => c.id));
                         }
                       }}
                       className={styles.textLinkBtn}
                     >
-                      {selectedClientsForExport.length === clients.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                      {selectedClientsForExport.length === activeClients.length ? 'Desmarcar Todos' : 'Selecionar Todos'} ({selectedClientsForExport.length}/{activeClients.length})
                     </button>
                   </div>
                   
                   <div className={styles.clientSelectionList}>
-                    {clients.map(client => {
+                    {activeClients.map(client => {
                       const isChecked = selectedClientsForExport.includes(client.id);
                       const clientMonitorCount = monitors.filter(m => m.client_id === client.id).length;
                       return (
-                        <label key={client.id} className={styles.clientCheckboxItem}>
+                        <label 
+                          key={client.id} 
+                          className={`${styles.clientCheckboxItem} ${isChecked ? styles.activeItem : ''}`}
+                        >
                           <input 
                             type="checkbox"
                             checked={isChecked}
@@ -1372,6 +1378,11 @@ export default function UptimePage() {
                         </label>
                       );
                     })}
+                    {activeClients.length === 0 && (
+                      <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+                        Nenhum cliente possui monitoramento ativo.
+                      </div>
+                    )}
                   </div>
                 </div>
 

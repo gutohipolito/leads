@@ -822,14 +822,22 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
 }
 
 .clientCheckboxItem:hover {
   background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.clientCheckboxItem.activeItem {
+  background: rgba(86, 215, 253, 0.06);
+  border-color: rgba(86, 215, 253, 0.2);
 }
 
 .clientCheckboxItem input[type="checkbox"] {
@@ -876,6 +884,28 @@
 .textLinkBtn:hover {
   opacity: 0.8;
   text-decoration: underline;
+}
+
+.exportReportBtn {
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(86, 215, 253, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  height: 36px;
+}
+
+.exportReportBtn:hover {
+  background: var(--primary);
+  color: black;
+  box-shadow: 0 0 15px rgba(86, 215, 253, 0.3);
 }
 
 
