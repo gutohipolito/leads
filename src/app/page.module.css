@@ -847,4 +847,21 @@
   box-shadow: 0 0 15px rgba(249, 115, 22, 0.2);
 }
 
+.leadTimeWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.leadDate {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.leadTime {
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
 

@@ -632,7 +632,16 @@ export default function Home() {
                             </div>
                           )}
                         </td>
-                        <td>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td>
+                          <div className={styles.leadTimeWrapper}>
+                            <span className={styles.leadDate}>
+                              {new Date(lead.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className={styles.leadTime}>
+                              {new Date(lead.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </td>
                         <td><span className={styles.statusBadge}>OK</span></td>
                       </tr>
                     );
