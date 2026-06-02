@@ -70,6 +70,7 @@ export default function UptimePage() {
   const [selectedClientsForExport, setSelectedClientsForExport] = useState<string[]>([]);
   const [exportPeriod, setExportPeriod] = useState<'24h' | '7d' | '30d'>('24h');
   const [isExporting, setIsExporting] = useState(false);
+  const [clientMonitorSelection, setClientMonitorSelection] = useState<Record<string, string>>({});
 
   const openEditModal = (monitor: any) => {
     setEditingMonitor(monitor);
@@ -134,8 +135,13 @@ export default function UptimePage() {
         startDate.setDate(now.getDate() - 30);
       }
 
-      // Obter monitores dos clientes selecionados
-      const monitorsToExport = monitors.filter(m => selectedClientsForExport.includes(m.client_id));
+      // Obter monitores dos clientes selecionados com base na seleção do dropdown
+      const monitorsToExport = monitors.filter(m => {
+        if (!selectedClientsForExport.includes(m.client_id)) return false;
+        const selection = clientMonitorSelection[m.client_id] || 'all';
+        if (selection === 'all') return true;
+        return m.id === selection;
+      });
       if (monitorsToExport.length === 0) {
         showToast('Nenhum monitor cadastrado para os clientes selecionados.', 'error');
         setIsExporting(false);
@@ -991,6 +997,11 @@ export default function UptimePage() {
                 type="button" 
                 className={styles.exportReportBtn} 
                 onClick={() => {
+                  const initialSelections: Record<string, string> = {};
+                  activeClients.forEach(c => {
+                    initialSelections[c.id] = 'all';
+                  });
+                  setClientMonitorSelection(initialSelections);
                   setSelectedClientsForExport(activeClientId ? [activeClientId] : activeClients.map(c => c.id));
                   setIsExportModalOpen(true);
                 }}
@@ -1310,7 +1321,7 @@ export default function UptimePage() {
         {/* Modal de Exportação de Relatório de Uptime */}
         {isExportModalOpen && (
           <div className={styles.modalOverlay} onClick={() => setIsExportModalOpen(false)}>
-            <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
               <div className={styles.modalHeader}>
                 <h3>Exportar Relatório de Uptime</h3>
                 <button className={styles.modalCloseBtn} onClick={() => setIsExportModalOpen(false)}>
@@ -1320,15 +1331,32 @@ export default function UptimePage() {
               <div className={styles.form}>
                 <div className={styles.field}>
                   <label>Período de Análise</label>
-                  <select
-                    className={styles.selectField}
-                    value={exportPeriod}
-                    onChange={e => setExportPeriod(e.target.value as any)}
-                  >
-                    <option value="24h">Últimas 24 Horas</option>
-                    <option value="7d">Últimos 7 Dias</option>
-                    <option value="30d">Últimos 30 Dias</option>
-                  </select>
+                  <div className={styles.periodCardsContainer}>
+                    <button
+                      type="button"
+                      className={`${styles.periodCard} ${exportPeriod === '24h' ? styles.activePeriod : ''}`}
+                      onClick={() => setExportPeriod('24h')}
+                    >
+                      <span>24 Horas</span>
+                      <span className={styles.periodCardSubtext}>Último dia</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.periodCard} ${exportPeriod === '7d' ? styles.activePeriod : ''}`}
+                      onClick={() => setExportPeriod('7d')}
+                    >
+                      <span>7 Dias</span>
+                      <span className={styles.periodCardSubtext}>Última semana</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.periodCard} ${exportPeriod === '30d' ? styles.activePeriod : ''}`}
+                      onClick={() => setExportPeriod('30d')}
+                    >
+                      <span>30 Dias</span>
+                      <span className={styles.periodCardSubtext}>Último mês</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className={styles.field}>
@@ -1352,30 +1380,57 @@ export default function UptimePage() {
                   <div className={styles.clientSelectionList}>
                     {activeClients.map(client => {
                       const isChecked = selectedClientsForExport.includes(client.id);
-                      const clientMonitorCount = monitors.filter(m => m.client_id === client.id).length;
+                      const clientMonitors = monitors.filter(m => m.client_id === client.id);
+                      const clientMonitorCount = clientMonitors.length;
+                      const currentSelection = clientMonitorSelection[client.id] || 'all';
+
                       return (
-                        <label 
+                        <div 
                           key={client.id} 
-                          className={`${styles.clientCheckboxItem} ${isChecked ? styles.activeItem : ''}`}
+                          className={`${styles.clientCheckboxCard} ${isChecked ? styles.activeItem : ''}`}
                         >
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSelectedClientsForExport(prev => prev.filter(id => id !== client.id));
-                              } else {
-                                setSelectedClientsForExport(prev => [...prev, client.id]);
-                              }
-                            }}
-                          />
-                          <div className={styles.clientCheckboxLabel}>
+                          <label className={styles.clientCheckboxItemLabel}>
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedClientsForExport(prev => prev.filter(id => id !== client.id));
+                                } else {
+                                  setSelectedClientsForExport(prev => [...prev, client.id]);
+                                }
+                              }}
+                            />
                             <span className={styles.clientNameText}>{client.name}</span>
-                            <span className={styles.clientMonitorCountText}>
-                              {clientMonitorCount} {clientMonitorCount === 1 ? 'monitor' : 'monitores'}
-                            </span>
+                          </label>
+
+                          <div className={styles.clientActionsWrapper}>
+                            {clientMonitorCount > 1 ? (
+                              <select
+                                className={styles.clientMonitorSelect}
+                                value={currentSelection}
+                                disabled={!isChecked}
+                                onChange={e => {
+                                  setClientMonitorSelection(prev => ({
+                                    ...prev,
+                                    [client.id]: e.target.value
+                                  }));
+                                }}
+                              >
+                                <option value="all">Todos os Monitores ({clientMonitorCount})</option>
+                                {clientMonitors.map(m => (
+                                  <option key={m.id} value={m.id}>
+                                    Apenas: {m.name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className={styles.clientMonitorCountText}>
+                                1 monitor
+                              </span>
+                            )}
                           </div>
-                        </label>
+                        </div>
                       );
                     })}
                     {activeClients.length === 0 && (

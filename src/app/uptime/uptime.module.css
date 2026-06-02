@@ -818,29 +818,38 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-.clientCheckboxItem {
+/* Cards de Clientes no Modal de Exportação */
+.clientCheckboxCard {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 10px;
-  cursor: pointer;
   background: rgba(255, 255, 255, 0.01);
   border: 1px solid rgba(255, 255, 255, 0.04);
   transition: all 0.2s ease;
 }
 
-.clientCheckboxItem:hover {
+.clientCheckboxCard:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.clientCheckboxItem.activeItem {
+.clientCheckboxCard.activeItem {
   background: rgba(86, 215, 253, 0.06);
   border-color: rgba(86, 215, 253, 0.2);
 }
 
-.clientCheckboxItem input[type="checkbox"] {
+.clientCheckboxItemLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  flex: 1;
+}
+
+.clientCheckboxItemLabel input[type="checkbox"] {
   accent-color: var(--primary);
   width: 16px;
   height: 16px;
@@ -857,6 +866,33 @@
 .clientNameText {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--foreground);
+}
+
+.clientActionsWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.clientMonitorSelect {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  max-width: 180px;
+}
+
+.clientMonitorSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clientMonitorSelect option {
+  background: #1a1a1a;
   color: var(--foreground);
 }
 
@@ -886,10 +922,11 @@
   text-decoration: underline;
 }
 
+/* Botão Verde-Esmeralda de Exportar Relatório */
 .exportReportBtn {
-  background: rgba(86, 215, 253, 0.1);
-  color: var(--primary);
-  border: 1px solid rgba(86, 215, 253, 0.2);
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-size: 0.8rem;
@@ -903,9 +940,53 @@
 }
 
 .exportReportBtn:hover {
-  background: var(--primary);
+  background: #10b981;
   color: black;
-  box-shadow: 0 0 15px rgba(86, 215, 253, 0.3);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Cards de Seleção de Período */
+.periodCardsContainer {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.periodCard {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.periodCard:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.periodCard.activePeriod {
+  background: rgba(86, 215, 253, 0.06);
+  border-color: rgba(86, 215, 253, 0.3);
+  color: var(--primary);
+}
+
+.periodCardSubtext {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.7;
 }
 
 
