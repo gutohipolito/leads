@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import styles from './login.module.css';
+import Script from 'next/script';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,11 +28,20 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    if (!captchaToken) {
+      setError('Por favor, confirme que você não é um robô resolvendo a verificação do Turnstile.');
+      setLoading(false);
+      return;
+    }
+
     try {
       console.log('Iniciando tentativa de login para:', email);
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          captchaToken: captchaToken,
+        }
       });
       console.log('Resposta do Supabase recebida:', { data, error: authError });
 
@@ -63,6 +74,10 @@ export default function LoginPage() {
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Erro ao realizar login');
+      if (typeof window !== 'undefined' && (window as any).turnstile) {
+        (window as any).turnstile.reset('#turnstile-widget');
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -119,6 +134,8 @@ export default function LoginPage() {
             />
           </div>
 
+          <div id="turnstile-widget" style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'center' }}></div>
+
           <button 
             type="submit" 
             className={styles.submitBtn}
@@ -137,6 +154,20 @@ export default function LoginPage() {
       <p className={styles.copyright}>
         © {new Date().getFullYear()} - Todos os direitos reservados.
       </p>
+
+      <Script 
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" 
+        onLoad={() => {
+          if (typeof window !== 'undefined' && (window as any).turnstile) {
+            (window as any).turnstile.render('#turnstile-widget', {
+              sitekey: process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!,
+              callback: (token: string) => setCaptchaToken(token),
+              'expired-callback': () => setCaptchaToken(null),
+              'error-callback': () => setCaptchaToken(null)
+            });
+          }
+        }}
+      />
     </div>
   );
 }
