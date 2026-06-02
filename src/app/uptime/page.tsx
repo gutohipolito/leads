@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   X,
   Pencil,
-  HelpCircle
+  HelpCircle,
+  FileText
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -52,7 +53,7 @@ export default function UptimePage() {
     message: string;
     type: 'info' | 'warning' | 'danger' | 'success';
     confirmLabel: string;
-    cancelLabel: string | null;
+    cancelLabel?: string | null;
     onConfirm: () => void;
   }>({
     isOpen: false,
@@ -63,6 +64,12 @@ export default function UptimePage() {
     cancelLabel: 'Cancelar',
     onConfirm: () => {}
   });
+
+  // Estados para exportação de relatório
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedClientsForExport, setSelectedClientsForExport] = useState<string[]>([]);
+  const [exportPeriod, setExportPeriod] = useState<'24h' | '7d' | '30d'>('24h');
+  const [isExporting, setIsExporting] = useState(false);
 
   const openEditModal = (monitor: any) => {
     setEditingMonitor(monitor);
@@ -108,6 +115,620 @@ export default function UptimePage() {
       showToast('Erro ao atualizar monitor: ' + err.message, 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Função para gerar relatório de Uptime
+  const handleGenerateReport = async () => {
+    if (selectedClientsForExport.length === 0 || isExporting) return;
+    setIsExporting(true);
+
+    try {
+      const now = new Date();
+      let startDate = new Date();
+      if (exportPeriod === '24h') {
+        startDate.setHours(now.getHours() - 24);
+      } else if (exportPeriod === '7d') {
+        startDate.setDate(now.getDate() - 7);
+      } else if (exportPeriod === '30d') {
+        startDate.setDate(now.getDate() - 30);
+      }
+
+      // Obter monitores dos clientes selecionados
+      const monitorsToExport = monitors.filter(m => selectedClientsForExport.includes(m.client_id));
+      if (monitorsToExport.length === 0) {
+        showToast('Nenhum monitor cadastrado para os clientes selecionados.', 'error');
+        setIsExporting(false);
+        return;
+      }
+
+      const monitorIds = monitorsToExport.map(m => m.id);
+
+      const { data: logsData, error: logsError } = await supabase
+        .from('uptime_logs')
+        .select('*')
+        .in('monitor_id', monitorIds)
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (logsError) throw logsError;
+
+      const reportData = monitorsToExport.map(monitor => {
+        const monitorLogs = logsData ? logsData.filter(log => log.monitor_id === monitor.id) : [];
+        
+        const totalChecks = monitorLogs.length;
+        const upChecks = monitorLogs.filter(log => log.is_up).length;
+        const realUptimePercent = totalChecks > 0 ? ((upChecks / totalChecks) * 100).toFixed(2) : '100.00';
+
+        const averageLatency = totalChecks > 0
+          ? Math.round(monitorLogs.reduce((sum, log) => sum + (log.response_time_ms || 0), 0) / totalChecks)
+          : 0;
+
+        const downtimes: Array<{ start: Date; end: Date | null; durationMs: number; error: string }> = [];
+        let activeDowntime: any = null;
+
+        monitorLogs.forEach((log) => {
+          if (!log.is_up) {
+            if (!activeDowntime) {
+              activeDowntime = {
+                start: new Date(log.created_at),
+                error: log.error_message || 'Sem resposta do servidor'
+              };
+            }
+          } else {
+            if (activeDowntime) {
+              const end = new Date(log.created_at);
+              downtimes.push({
+                start: activeDowntime.start,
+                end: end,
+                durationMs: end.getTime() - activeDowntime.start.getTime(),
+                error: activeDowntime.error
+              });
+              activeDowntime = null;
+            }
+          }
+        });
+
+        if (activeDowntime) {
+          const end = new Date();
+          downtimes.push({
+            start: activeDowntime.start,
+            end: null,
+            durationMs: end.getTime() - activeDowntime.start.getTime(),
+            error: activeDowntime.error
+          });
+        }
+
+        const totalOutages = downtimes.length;
+        const totalDowntimeMs = downtimes.reduce((sum, d) => sum + d.durationMs, 0);
+
+        return {
+          ...monitor,
+          realUptimePercent,
+          averageLatency,
+          totalChecks,
+          totalOutages,
+          totalDowntimeMs,
+          downtimes
+        };
+      });
+
+      const periodLabel = exportPeriod === '24h' ? 'Últimas 24 Horas' : exportPeriod === '7d' ? 'Últimos 7 Dias' : 'Últimos 30 Dias';
+      const clientsInReport = clients.filter(c => selectedClientsForExport.includes(c.id));
+      const clientsWithMonitors = clientsInReport.filter(c => reportData.some(m => m.client_id === c.id));
+      
+      const totalMonitorsCount = reportData.length;
+      const totalOutagesCount = reportData.reduce((sum, m) => sum + m.totalOutages, 0);
+      const overallUptimeAverage = totalMonitorsCount > 0
+        ? (reportData.reduce((sum, m) => sum + parseFloat(m.realUptimePercent), 0) / totalMonitorsCount).toFixed(2)
+        : '100.00';
+      const overallLatencyAverage = totalMonitorsCount > 0
+        ? Math.round(reportData.reduce((sum, m) => sum + m.averageLatency, 0) / totalMonitorsCount)
+        : 0;
+
+      let reportHtml = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Uptime e Integridade - Asthros Leads</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+      color: #1e293b;
+      background: #f8fafc;
+      padding: 3rem;
+      line-height: 1.6;
+    }
+
+    .report-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+      border: 1px solid #e2e8f0;
+      padding: 3.5rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .brand-title h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.03em;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .brand-title p {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.4rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .meta-info {
+      text-align: right;
+    }
+
+    .meta-info div {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-bottom: 0.35rem;
+    }
+
+    .meta-info strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .summary-card .label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .summary-card .value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .summary-card.accent {
+      background: rgba(14, 165, 233, 0.04);
+      border-color: rgba(14, 165, 233, 0.2);
+    }
+    
+    .summary-card.accent .value {
+      color: #0284c7;
+    }
+
+    .summary-card.critical {
+      background: rgba(239, 68, 68, 0.03);
+      border-color: rgba(239, 68, 68, 0.15);
+    }
+
+    .summary-card.critical .value {
+      color: #dc2626;
+    }
+
+    .client-section {
+      margin-bottom: 3.5rem;
+    }
+
+    .client-header {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: 'Outfit', sans-serif;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .client-header::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 18px;
+      background: #0ea5e9;
+      border-radius: 2px;
+    }
+
+    .performance-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    .performance-table th, .performance-table td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .performance-table th {
+      background: #f8fafc;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .performance-table td {
+      font-size: 0.85rem;
+      color: #334155;
+    }
+
+    .monitor-name {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .monitor-url {
+      font-size: 0.78rem;
+      color: #64748b;
+      display: block;
+      margin-top: 0.15rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .status-badge.online {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-badge.offline {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    h2.section-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 2.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .insights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .insight-item {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #f97316;
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.01);
+    }
+
+    .insight-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .insight-title {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.9rem;
+    }
+
+    .insight-date {
+      font-size: 0.78rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .insight-description {
+      font-size: 0.88rem;
+      color: #475569;
+    }
+
+    .insight-description strong {
+      color: #0f172a;
+    }
+
+    .no-outages {
+      background: rgba(16, 185, 129, 0.02);
+      border: 1px dashed rgba(16, 185, 129, 0.3);
+      border-left: 4px solid #10b981;
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+      color: #065f46;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    footer.report-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1.5rem;
+      margin-top: 4rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .report-container {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="report-container">
+    <header>
+      <div class="brand-title">
+        <h1>Asthros Leads</h1>
+        <p>Relatório de Uptime e Integridade</p>
+      </div>
+      <div class="meta-info">
+        <div>Clientes: <strong>${selectedClientsForExport.length === clients.length ? 'Todos os Clientes' : clientsInReport.map(c => c.name).join(', ')}</strong></div>
+        <div>Período: <strong>${periodLabel}</strong></div>
+        <div>Gerado em: <strong>${now.toLocaleString('pt-BR')}</strong></div>
+      </div>
+    </header>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="label">Clientes</span>
+        <span class="value">${selectedClientsForExport.length}</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">Monitores</span>
+        <span class="value">${totalMonitorsCount}</span>
+      </div>
+      <div class="summary-card accent">
+        <span class="label">Média Uptime</span>
+        <span class="value">${overallUptimeAverage}%</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">Latência Média</span>
+        <span class="value">${overallLatencyAverage} ms</span>
+      </div>
+      <div class="summary-card critical">
+        <span class="label">Instabilidades</span>
+        <span class="value">${totalOutagesCount}</span>
+      </div>
+    </div>
+
+    ${clientsWithMonitors.map(client => {
+      const clientMonitors = reportData.filter(m => m.client_id === client.id);
+      return `
+        <div class="client-section">
+          <h3 class="client-header">${client.name}</h3>
+          <table class="performance-table">
+            <thead>
+              <tr>
+                <th>Monitor / URL</th>
+                <th>Status</th>
+                <th>Uptime Real</th>
+                <th>Latência Média</th>
+                <th>Verificações</th>
+                <th>Tempo Offline</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${clientMonitors.map(monitor => {
+                const totalOutageDurationStr = monitor.totalDowntimeMs > 0
+                  ? formatDuration(monitor.totalDowntimeMs)
+                  : '0s';
+                
+                return `
+                  <tr>
+                    <td>
+                      <span class="monitor-name">${monitor.name}</span>
+                      <span class="monitor-url">${monitor.url}</span>
+                    </td>
+                    <td>
+                      <span class="status-badge ${monitor.status === 'online' ? 'online' : 'offline'}">
+                        ● ${monitor.status === 'online' ? 'Online' : 'Offline'}
+                      </span>
+                    </td>
+                    <td style="font-weight: 700; color: ${parseFloat(monitor.realUptimePercent) >= 99 ? '#15803d' : (parseFloat(monitor.realUptimePercent) >= 95 ? '#d97706' : '#b91c1c')};">
+                      ${monitor.realUptimePercent}%
+                    </td>
+                    <td>${monitor.averageLatency} ms</td>
+                    <td>${monitor.totalChecks}</td>
+                    <td>${totalOutageDurationStr}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('')}
+
+    <h2 class="section-title">Insights & Histórico de Instabilidades</h2>
+    <div class="insights-list">
+      ${(() => {
+        const allOutages: Array<{ monitorName: string; clientName: string; start: Date; end: Date | null; durationMs: number; error: string }> = [];
+        reportData.forEach(m => {
+          const clientName = m.clients?.name || 'N/A';
+          m.downtimes.forEach((d: any) => {
+            allOutages.push({
+              monitorName: m.name,
+              clientName,
+              ...d
+            });
+          });
+        });
+
+        allOutages.sort((a, b) => b.start.getTime() - a.start.getTime());
+
+        if (allOutages.length === 0) {
+          return `
+            <div class="no-outages">
+              ✓ Excelente! Nenhuma instabilidade ou queda foi registrada para os clientes selecionados no período analisado.
+            </div>
+          `;
+        }
+
+        return allOutages.map(outage => {
+          const dateStr = outage.start.toLocaleDateString('pt-BR');
+          const durationStr = formatDurationHMS(outage.durationMs);
+          const startHour = outage.start.toLocaleTimeString('pt-BR');
+          const endHour = outage.end ? outage.end.toLocaleTimeString('pt-BR') : 'agora';
+
+          return `
+            <div class="insight-item">
+              <div class="insight-header">
+                <span class="insight-title">${outage.monitorName} (Cliente: ${outage.clientName})</span>
+                <span class="insight-date">${dateStr}</span>
+              </div>
+              <div class="insight-description">
+                No dia <strong>${dateStr}</strong>, a página ficou fora do ar por <strong>${durationStr}</strong>, da hora <strong>${startHour}</strong> até <strong>${endHour}</strong> (Motivo: <em>${outage.error}</em>).
+              </div>
+            </div>
+          `;
+        }).join('');
+      })()}
+    </div>
+
+    <footer class="report-footer">
+      Gerado automaticamente pelo Asthros Leads Monitor - Relatório de Uptime de Clientes
+    </footer>
+  </div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    };
+  </script>
+</body>
+</html>
+      `;
+
+      function formatDuration(ms: number): string {
+        const sec = Math.floor(ms / 1000);
+        if (sec < 60) return `${sec}s`;
+        const min = Math.floor(sec / 60);
+        if (min < 60) return `${min}m ${sec % 60}s`;
+        const hr = Math.floor(min / 60);
+        return `${hr}h ${min % 60}m ${sec % 60}s`;
+      }
+
+      function formatDurationHMS(ms: number): string {
+        const totalSec = Math.floor(ms / 1000);
+        const hr = Math.floor(totalSec / 3600);
+        const min = Math.floor((totalSec % 3600) / 60);
+        const sec = totalSec % 60;
+        
+        const hrStr = String(hr).padStart(2, '0');
+        const minStr = String(min).padStart(2, '0');
+        const secStr = String(sec).padStart(2, '0');
+        
+        return hrStr + ':' + minStr + ':' + secStr;
+      }
+
+      const reportWindow = window.open('', '_blank');
+      if (reportWindow) {
+        reportWindow.document.open();
+        reportWindow.document.write(reportHtml);
+        reportWindow.document.close();
+        logAction('Exportação de Uptime', 'uptime', undefined, {
+          clientsCount: selectedClientsForExport.length,
+          monitorsCount: totalMonitorsCount,
+          period: exportPeriod,
+          outagesTotal: totalOutagesCount
+        });
+      } else {
+        alert('O bloqueador de pop-ups impediu a abertura do relatório. Por favor, libere pop-ups para este site.');
+      }
+
+      setIsExportModalOpen(false);
+    } catch (err: any) {
+      alert('Erro ao gerar relatório: ' + err.message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -362,6 +983,20 @@ export default function UptimePage() {
         <div className={styles.headerRow}>
           <h2>{uptimeTitle}</h2>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {totalMonitors > 0 && (
+              <button 
+                type="button" 
+                className={styles.exportReportBtn} 
+                onClick={() => {
+                  setSelectedClientsForExport(activeClientId ? [activeClientId] : clients.map(c => c.id));
+                  setIsExportModalOpen(true);
+                }}
+              >
+                <FileText size={14} />
+                <span>Exportar Relatório</span>
+              </button>
+            )}
+
             <button 
               type="button" 
               className={styles.submitBtn} 
@@ -665,6 +1300,92 @@ export default function UptimePage() {
                   <span>{isSubmitting ? 'Salvando...' : 'Salvar Alterações'}</span>
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Exportação de Relatório de Uptime */}
+        {isExportModalOpen && (
+          <div className={styles.modalOverlay} onClick={() => setIsExportModalOpen(false)}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+              <div className={styles.modalHeader}>
+                <h3>Exportar Relatório de Uptime</h3>
+                <button className={styles.modalCloseBtn} onClick={() => setIsExportModalOpen(false)}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div className={styles.form}>
+                <div className={styles.field}>
+                  <label>Período de Análise</label>
+                  <select
+                    className={styles.selectField}
+                    value={exportPeriod}
+                    onChange={e => setExportPeriod(e.target.value as any)}
+                  >
+                    <option value="24h">Últimas 24 Horas</option>
+                    <option value="7d">Últimos 7 Dias</option>
+                    <option value="30d">Últimos 30 Dias</option>
+                  </select>
+                </div>
+
+                <div className={styles.field}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label style={{ margin: 0 }}>Selecione os Clientes</label>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        if (selectedClientsForExport.length === clients.length) {
+                          setSelectedClientsForExport([]);
+                        } else {
+                          setSelectedClientsForExport(clients.map(c => c.id));
+                        }
+                      }}
+                      className={styles.textLinkBtn}
+                    >
+                      {selectedClientsForExport.length === clients.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                    </button>
+                  </div>
+                  
+                  <div className={styles.clientSelectionList}>
+                    {clients.map(client => {
+                      const isChecked = selectedClientsForExport.includes(client.id);
+                      const clientMonitorCount = monitors.filter(m => m.client_id === client.id).length;
+                      return (
+                        <label key={client.id} className={styles.clientCheckboxItem}>
+                          <input 
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedClientsForExport(prev => prev.filter(id => id !== client.id));
+                              } else {
+                                setSelectedClientsForExport(prev => [...prev, client.id]);
+                              }
+                            }}
+                          />
+                          <div className={styles.clientCheckboxLabel}>
+                            <span className={styles.clientNameText}>{client.name}</span>
+                            <span className={styles.clientMonitorCountText}>
+                              {clientMonitorCount} {clientMonitorCount === 1 ? 'monitor' : 'monitores'}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button 
+                  type="button" 
+                  className={styles.submitBtn} 
+                  onClick={handleGenerateReport}
+                  disabled={selectedClientsForExport.length === 0 || isExporting}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  <FileText size={16} />
+                  <span>{isExporting ? 'Processando Relatório...' : 'Gerar Relatório'}</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

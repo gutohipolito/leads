@@ -786,3 +786,96 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* Seleção de Clientes no Modal de Exportação */
+.clientSelectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Personalização da barra de rolagem */
+.clientSelectionList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clientSelectionList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.clientSelectionList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.clientSelectionList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.clientCheckboxItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clientCheckboxItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.clientCheckboxItem input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.clientCheckboxLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.clientNameText {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.clientMonitorCountText {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.textLinkBtn {
+  font-size: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.textLinkBtn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+
