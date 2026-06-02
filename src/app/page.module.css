@@ -210,21 +210,103 @@
   min-height: 0;
 }
 
-/* Pie Chart Styles */
-.pieArea {
+/* Estilos dos Cards de Origem Modernos */
+.sourcesContainer {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 0.85rem;
   justify-content: center;
-  height: 100%;
-  width: 100%;
-  min-width: 0;
+  flex: 1;
+  min-height: 0;
 }
 
-.pieLegend {
+.sourcePerformanceCard {
+  background: rgba(var(--foreground-rgb), 0.015);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
   display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+}
+
+.sourcePerformanceCard:hover {
+  transform: translateY(-2px);
+  background: rgba(var(--foreground-rgb), 0.03);
+  border-color: rgba(var(--foreground-rgb), 0.15);
+}
+
+.sourceCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sourceInfoGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sourceIconWrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.sourcePerformanceCard:hover .sourceIconWrapper {
+  transform: scale(1.05);
+}
+
+.sourceName {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.sourceMetrics {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.sourceValue {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.sourcePercent {
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(var(--foreground-rgb), 0.03);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.sourceBarContainer {
+  height: 6px;
+  background: rgba(var(--foreground-rgb), 0.04);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.sourceBarFill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .legendItem {

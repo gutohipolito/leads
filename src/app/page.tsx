@@ -8,14 +8,6 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
-  ResponsiveContainer, 
-  Tooltip as RechartsTooltip,
-  Legend
-} from 'recharts';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -485,39 +477,61 @@ export default function Home() {
                 <h3>Divisão de Origens</h3>
               </div>
             </div>
-            <div className={styles.pieArea}>
-              <ResponsiveContainer width="100%" height={200} minWidth={0}>
-                <PieChart>
-                  <Pie
-                    data={statsSummary.sourceData}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {statsSummary.sourceData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      background: 'var(--card)', 
-                      border: '1px solid var(--border)', 
-                      borderRadius: '8px',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                    itemStyle={{ color: 'var(--foreground)', fontSize: '12px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className={styles.pieLegend}>
-                {statsSummary.sourceData.map((s: any) => (
-                  <div key={s.name} className={styles.legendItem}>
-                    <div className={styles.dot} style={{ background: s.color }} />
-                    <span>{s.name} ({s.value})</span>
+            <div className={styles.sourcesContainer}>
+              {statsSummary.sourceData.map((s: any) => {
+                const percentage = statsSummary.leadsInPeriod > 0 
+                  ? ((s.value / statsSummary.leadsInPeriod) * 100).toFixed(0) 
+                  : '0';
+
+                // Selecionar o ícone de forma dinâmica
+                const renderIcon = () => {
+                  switch (s.name) {
+                    case 'WhatsApp':
+                      return <MessageCircle size={18} />;
+                    case 'Seletores':
+                      return <MousePointerClick size={18} />;
+                    case 'Palavras-Chave':
+                      return <Type size={18} />;
+                    case 'Formulários':
+                    default:
+                      return <FileText size={18} />;
+                  }
+                };
+
+                return (
+                  <div key={s.name} className={styles.sourcePerformanceCard}>
+                    <div className={styles.sourceCardTop}>
+                      <div className={styles.sourceInfoGroup}>
+                        <div 
+                          className={styles.sourceIconWrapper} 
+                          style={{ 
+                            color: s.color, 
+                            background: `${s.color}15`,
+                            borderColor: `${s.color}30` 
+                          }}
+                        >
+                          {renderIcon()}
+                        </div>
+                        <span className={styles.sourceName}>{s.name}</span>
+                      </div>
+                      <div className={styles.sourceMetrics}>
+                        <span className={styles.sourceValue}>{s.value}</span>
+                        <span className={styles.sourcePercent} style={{ color: s.color }}>{percentage}%</span>
+                      </div>
+                    </div>
+                    <div className={styles.sourceBarContainer}>
+                      <div 
+                        className={styles.sourceBarFill} 
+                        style={{ 
+                          width: `${percentage}%`, 
+                          background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
+                          boxShadow: `0 0 10px ${s.color}40`
+                        }}
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
