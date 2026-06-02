@@ -30,6 +30,8 @@
         return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
     }
 
+    let isTracking = false;
+
     function saveUtmsToStorageAndJourney() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -258,26 +260,22 @@
     }
 
     async function trackLead(e) {
-        const link = e.target.closest('a') || 
-                     e.target.closest('button') || 
-                     e.target.closest('[role="button"]') || 
-                     e.target.closest('.btn') || 
-                     e.target.closest('.button') ||
-                     // Suporte a elementos div/span/img com tags de whatsapp de plugins de terceiros
-                     e.target.closest('[class*="whatsapp"]') ||
-                     e.target.closest('[class*="wpp"]') ||
-                     e.target.closest('[id*="whatsapp"]') ||
-                     e.target.closest('[id*="wpp"]');
+        // Encontra o elemento de link clicado
+        const link = e.target.closest('a') || e.target.closest('button') || e.target.closest('[role="button"]') || e.target.closest('.btn') || e.target.closest('.button') || e.target.closest('[class*="whatsapp"]') || e.target.closest('[class*="wpp"]') || e.target.closest('[id*="whatsapp"]') || e.target.closest('[id*="wpp"]');
         if (!link) return;
 
         const trackerMatch = getTrackingMatch(link);
         if (!trackerMatch) {
-            // Se for link mas não deu match, ignoramos
             if (link.tagName === 'A') {
-                // console.log('[Asthros] Link ignorado.');
+                // console.log('[Asthros] Link comum ignorado:', link.href);
             }
             return;
         }
+
+        // Proteção contra duplo clique e race condition de envio
+        if (isTracking) return;
+        isTracking = true;
+        setTimeout(() => { isTracking = false; }, 2000);
 
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
