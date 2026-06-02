@@ -49,50 +49,103 @@
   color: var(--primary);
 }
 
-/* Grid */
+/* Grid - 3 colunas fixas */
 .webhookGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
 }
 
+@media (max-width: 1100px) {
+  .webhookGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .webhookGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card redesenhado */
 .compactCard {
-  padding: 1rem !important;
+  padding: 1.5rem !important;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
   cursor: pointer;
-  background: var(--card) !important;
-  border: 1px solid var(--border);
-  transition: all 0.2s ease-out;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px !important;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.28s, box-shadow 0.28s;
+  position: relative;
+  overflow: hidden;
+}
+
+.compactCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(86, 215, 253, 0.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.28s;
+  pointer-events: none;
 }
 
 .compactCard:hover {
-  transform: translateY(-4px);
-  border-color: var(--primary);
-  background: rgba(86, 215, 253, 0.05) !important;
+  transform: translateY(-5px);
+  border-color: rgba(86, 215, 253, 0.35);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(86, 215, 253, 0.1);
 }
 
+.compactCard:hover::before {
+  opacity: 1;
+}
+
+/* Cabeçalho do card */
 .cardHeaderCompact {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .typeIcon {
-  width: 40px;
-  height: 40px;
-  background: rgba(var(--foreground-rgb), 0.03);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  background: linear-gradient(135deg, rgba(86, 215, 253, 0.15), rgba(86, 215, 253, 0.05));
+  border: 1px solid rgba(86, 215, 253, 0.25);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--primary);
+  transition: all 0.28s;
+  box-shadow: 0 0 18px rgba(86, 215, 253, 0.1);
+}
+
+.compactCard:hover .typeIcon {
+  background: linear-gradient(135deg, rgba(86, 215, 253, 0.25), rgba(86, 215, 253, 0.1));
+  box-shadow: 0 0 24px rgba(86, 215, 253, 0.2);
 }
 
 .mainInfo {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.clientTag {
+  font-size: 0.62rem;
+  color: var(--primary);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
 }
 
 .mainInfo h4 {
@@ -100,41 +153,87 @@
   font-weight: 700;
   color: var(--foreground);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.clientTag {
-  font-size: 0.65rem;
-  color: var(--primary);
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
+/* Status badge (substituindo bolinha simples) */
 .miniStatus {
   width: 8px;
   height: 8px;
+  min-width: 8px;
   border-radius: 50%;
+  margin-top: 4px;
 }
 
-.miniStatus.active { background: #34d399; box-shadow: 0 0 10px #34d399; }
-.miniStatus.inactive { background: #ef4444; }
+.miniStatus.active {
+  background: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.6);
+  animation: pulseGreen 2s infinite;
+}
 
+.miniStatus.inactive {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes pulseGreen {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+/* URL do card */
+.cardUrl {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  opacity: 0.55;
+  margin-bottom: 1.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+  letter-spacing: -0.01em;
+}
+
+/* Rodapé do card */
 .cardBrief {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-top: 1rem;
-  border-top: 1px solid rgba(var(--foreground-rgb), 0.05);
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .briefItem {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--muted-foreground);
 }
 
-.arrow { color: var(--primary); opacity: 0.4; }
+.briefStatusActive {
+  color: #34d399;
+}
+
+.briefStatusInactive {
+  color: #ef4444;
+}
+
+.arrow {
+  color: var(--primary);
+  opacity: 0.35;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.compactCard:hover .arrow {
+  opacity: 0.9;
+  transform: translateX(3px);
+}
 
 /* Tracker Hero */
 .trackerHero {

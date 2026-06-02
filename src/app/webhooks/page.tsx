@@ -438,16 +438,20 @@ export default function WebhooksManagePage() {
               {webhooks.map((webhook) => (
                 <div key={webhook.id} className={`${styles.compactCard} glass`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
                   <div className={styles.cardHeaderCompact}>
-                    <div className={styles.typeIcon}><Server size={18} /></div>
+                    <div className={styles.typeIcon}><Server size={20} /></div>
                     <div className={styles.mainInfo}>
                       {isAdmin && <span className={styles.clientTag}>{webhook.clientName}</span>}
                       <h4>{webhook.name}</h4>
                     </div>
                     <div className={`${styles.miniStatus} ${webhook.status === 'active' ? styles.active : styles.inactive}`} />
                   </div>
+                  <div className={styles.cardUrl}>{webhook.fullUrl}</div>
                   <div className={styles.cardBrief}>
-                    <div className={styles.briefItem}><Zap size={14} /><span>Ativo</span></div>
-                    <ArrowRight size={16} className={styles.arrow} />
+                    <div className={`${styles.briefItem} ${webhook.status === 'active' ? styles.briefStatusActive : styles.briefStatusInactive}`}>
+                      <Zap size={13} />
+                      <span>{webhook.status === 'active' ? 'Ativo' : 'Inativo'}</span>
+                    </div>
+                    <ArrowRight size={15} className={styles.arrow} />
                   </div>
                 </div>
               ))}
