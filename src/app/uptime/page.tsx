@@ -1068,6 +1068,22 @@ export default function UptimePage() {
           </div>
 
           <div className={styles.statCard}>
+            <div className={`${styles.statIcon} ${styles.purple}`}>
+              <RefreshCw size={24} />
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statLabel}>Última Checagem</span>
+              <span className={styles.statValue}>
+                {monitors.length > 0 && monitors.some(m => m.last_checked)
+                  ? new Date(
+                      Math.max(...monitors.filter(m => m.last_checked).map(m => new Date(m.last_checked).getTime()))
+                    ).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  : 'Aguardando'}
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
             <div className={`${styles.statIcon} ${styles.warning}`}>
               <Activity size={24} />
             </div>

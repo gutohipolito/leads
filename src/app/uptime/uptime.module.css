@@ -20,8 +20,14 @@
 
 .statsRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -78,6 +84,13 @@
   color: #f1c40f;
   border: 1px solid rgba(241, 196, 15, 0.3);
   box-shadow: 0 0 15px rgba(241, 196, 15, 0.15);
+}
+
+.statIcon.purple {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.05));
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
 }
 
 .statInfo {
