@@ -500,25 +500,25 @@ export default function Home() {
 
                 return (
                   <div key={s.name} className={styles.sourcePerformanceCard}>
-                    <div className={styles.sourceCardTop}>
-                      <div className={styles.sourceInfoGroup}>
-                        <div 
-                          className={styles.sourceIconWrapper} 
-                          style={{ 
-                            color: s.color, 
-                            background: `${s.color}15`,
-                            borderColor: `${s.color}30` 
-                          }}
-                        >
-                          {renderIcon()}
-                        </div>
-                        <span className={styles.sourceName}>{s.name}</span>
+                    <div className={styles.sourceCardHeader}>
+                      <div 
+                        className={styles.sourceIconWrapper} 
+                        style={{ 
+                          color: s.color, 
+                          background: `${s.color}15`,
+                          borderColor: `${s.color}30` 
+                        }}
+                      >
+                        {renderIcon()}
                       </div>
-                      <div className={styles.sourceMetrics}>
-                        <span className={styles.sourceValue}>{s.value}</span>
-                        <span className={styles.sourcePercent} style={{ color: s.color }}>{percentage}%</span>
-                      </div>
+                      <span className={styles.sourcePercent} style={{ color: s.color }}>{percentage}%</span>
                     </div>
+                    
+                    <div className={styles.sourceCardBody}>
+                      <span className={styles.sourceName}>{s.name}</span>
+                      <h4 className={styles.sourceValue}>{s.value}</h4>
+                    </div>
+
                     <div className={styles.sourceBarContainer}>
                       <div 
                         className={styles.sourceBarFill} 

@@ -212,22 +212,21 @@
 
 /* Estilos dos Cards de Origem Modernos */
 .sourcesContainer {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.85rem;
-  justify-content: center;
   flex: 1;
-  min-height: 0;
+  align-content: center;
 }
 
 .sourcePerformanceCard {
   background: rgba(var(--foreground-rgb), 0.015);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.85rem;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
   overflow: hidden;
@@ -235,26 +234,22 @@
 }
 
 .sourcePerformanceCard:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   background: rgba(var(--foreground-rgb), 0.03);
   border-color: rgba(var(--foreground-rgb), 0.15);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
 }
 
-.sourceCardTop {
+.sourceCardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.sourceInfoGroup {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  width: 100%;
 }
 
 .sourceIconWrapper {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -264,27 +259,31 @@
 }
 
 .sourcePerformanceCard:hover .sourceIconWrapper {
-  transform: scale(1.05);
+  transform: scale(1.08);
+}
+
+.sourceCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .sourceName {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--foreground);
-}
-
-.sourceMetrics {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .sourceValue {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--foreground);
+  margin: 0;
+  line-height: 1.1;
 }
 
 .sourcePercent {
@@ -301,6 +300,7 @@
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--border);
+  margin-top: 2px;
 }
 
 .sourceBarFill {
