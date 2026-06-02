@@ -277,6 +277,7 @@
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
+            secret: config.secret,
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             marketing: { 
@@ -310,7 +311,7 @@
             timestamp: new Date().toISOString()
         };
 
-        const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
+        const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
 
         try {
             if (navigator.sendBeacon) {
@@ -323,7 +324,10 @@
 
             fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Asthros-Secret': config.secret
+                },
                 body: JSON.stringify(payload),
                 keepalive: true
             })
@@ -371,6 +375,7 @@
             
             if (leadName && (leadEmail || leadPhone)) {
                 const payload = {
+                    secret: config.secret,
                     source: 'form',
                     name: leadName,
                     email: leadEmail,
@@ -402,7 +407,7 @@
                     timestamp: new Date().toISOString()
                 };
                 
-                const endpoint = `${config.apiUrl}/api/leads/${config.clientId}?secret=${config.secret}`;
+                const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
                 
                 if (navigator.sendBeacon) {
                     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
@@ -410,7 +415,10 @@
                 } else {
                     fetch(endpoint, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Asthros-Secret': config.secret
+                        },
                         body: JSON.stringify(payload),
                         keepalive: true
                     });

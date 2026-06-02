@@ -55,10 +55,10 @@ export async function POST(
       });
     }
     
-    const secret = request.headers.get('x-asthros-secret') || request.nextUrl.searchParams.get('secret');
+    const secret = request.headers.get('x-asthros-secret') || body.secret || request.nextUrl.searchParams.get('secret');
 
     if (!secret) {
-      return NextResponse.json({ error: 'Chave secreta ausente. Use ?secret= no final da URL ou o header X-Asthros-Secret.' }, { status: 401 });
+      return NextResponse.json({ error: 'Chave secreta ausente. Use ?secret= no final da URL, o header X-Asthros-Secret ou envie no corpo da requisição.' }, { status: 401 });
     }
 
     const { data: webhook, error: authError } = await supabase
@@ -71,6 +71,11 @@ export async function POST(
 
     if (authError || !webhook) {
       return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
+    }
+
+    // Remover o secret do corpo para evitar armazenamento em banco de dados
+    if (body.secret) {
+      delete body.secret;
     }
 
     // Captura de Localização baseada em IP (Vercel Headers)
@@ -231,7 +236,7 @@ export async function POST(
     body.captured_by = {
       id: webhook.id,
       name: webhook.name,
-      url_slug: webhook.url_slug
+      url_slug: (webhook as any).url_slug
     };
 
     // 3. Prevenção de Leads Duplicados (janela de 5 segundos para o mesmo email/telefone e cliente)
