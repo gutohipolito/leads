@@ -617,6 +617,41 @@
   margin: 0;
 }
 
+.periodSelectorBar {
+  display: flex;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid var(--border);
+  padding: 0.25rem;
+  border-radius: 12px;
+  gap: 0.25rem;
+  backdrop-filter: blur(10px);
+}
+
+.periodBtn {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  outline: none;
+}
+
+.periodBtn:hover {
+  color: var(--foreground);
+  background: rgba(var(--foreground-rgb), 0.03);
+}
+
+.periodBtn.activePeriod {
+  color: var(--primary);
+  background: rgba(0, 209, 255, 0.08);
+  box-shadow: 0 0 12px rgba(0, 209, 255, 0.15);
+}
+
 .webhookFilter {
   display: flex;
   align-items: center;

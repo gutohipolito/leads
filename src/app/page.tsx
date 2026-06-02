@@ -30,6 +30,7 @@ export default function Home() {
   const [activeClientsCount, setActiveClientsCount] = useState(0);
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
+  const [dashboardPeriod, setDashboardPeriod] = useState<7 | 15 | 30>(7);
 
   useEffect(() => {
     let notifChannel: any = null;
@@ -146,40 +147,40 @@ export default function Home() {
   const statsSummary = useMemo(() => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const periodStart = new Date(now.getTime() - dashboardPeriod * 24 * 60 * 60 * 1000).toISOString();
 
     const totalLeads = filteredLeads.length;
     const leadsToday = filteredLeads.filter(l => l.created_at >= todayStart).length;
-    const leads7Days = filteredLeads.filter(l => l.created_at >= weekStart).length;
+    const leadsInPeriod = filteredLeads.filter(l => l.created_at >= periodStart);
 
-    // Performance por Parceiro (calculado de forma reativa a partir de filteredLeads)
+    // Performance por Parceiro (calculado de forma reativa a partir de leadsInPeriod)
     const counts: any = {};
-    filteredLeads.forEach(l => {
+    leadsInPeriod.forEach(l => {
       const name = l.clients?.name || 'Desconhecido';
       counts[name] = (counts[name] || 0) + 1;
     });
-    const performanceData = Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a: any, b: any) => (b.count as number) - (a.count as number))
+    const performanceData: { name: string; count: number }[] = Object.entries(counts)
+      .map(([name, count]) => ({ name, count: count as number }))
+      .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
     // Pizza (Divisão de origens)
-    const wppCount = filteredLeads.filter(l => l.source === 'whatsapp_tracker').length;
-    const selectorCount = filteredLeads.filter(l => 
+    const wppCount = leadsInPeriod.filter(l => l.source === 'whatsapp_tracker').length;
+    const selectorCount = leadsInPeriod.filter(l => 
       l.source === 'custom_tracker' && (
         l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
         l.data?.match_type?.toLowerCase().includes('selector') || 
         l.name?.toLowerCase().includes('selector')
       )
     ).length;
-    const keywordCount = filteredLeads.filter(l => 
+    const keywordCount = leadsInPeriod.filter(l => 
       l.source === 'custom_tracker' && (
         l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
         l.data?.match_type?.toLowerCase().includes('keyword') || 
         l.name?.toLowerCase().includes('keyword')
       )
     ).length;
-    const formCount = filteredLeads.length - wppCount - selectorCount - keywordCount;
+    const formCount = leadsInPeriod.length - wppCount - selectorCount - keywordCount;
 
     const sourceData = [
       { name: 'WhatsApp', value: wppCount, color: '#25d366' },
@@ -190,39 +191,39 @@ export default function Home() {
 
     // UTMs
     const utmMap: any = {};
-    filteredLeads.forEach(l => {
+    leadsInPeriod.forEach(l => {
       const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
       const utm = decodeURIComponent(rawUtm);
       utmMap[utm] = (utmMap[utm] || 0) + 1;
     });
-    const topUtms = Object.entries(utmMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+    const topUtms: { name: string; value: number }[] = Object.entries(utmMap)
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 5);
 
     // Localização
     const locMap: any = {};
-    filteredLeads.forEach(l => {
+    leadsInPeriod.forEach(l => {
       const cityRaw = l.data?.location?.city;
       if (cityRaw && cityRaw !== 'Desconhecida') {
         const city = decodeURIComponent(cityRaw);
         locMap[city] = (locMap[city] || 0) + 1;
       }
     });
-    const locationData = Object.entries(locMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a: any, b: any) => (b.value as number) - (a.value as number))
+    const locationData: { name: string; value: number }[] = Object.entries(locMap)
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 5);
 
     // Chart Data
-    const chartData = Array.from({ length: 7 }).map((_, i) => {
+    const chartData = Array.from({ length: dashboardPeriod }).map((_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
+      d.setDate(d.getDate() - (dashboardPeriod - 1 - i));
       const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
       const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       const dayEnd = dayStart + 24 * 60 * 60 * 1000;
       
-      const dayLeads = filteredLeads.filter(l => {
+      const dayLeads = leadsInPeriod.filter(l => {
         const ts = new Date(l.created_at).getTime();
         return ts >= dayStart && ts < dayEnd;
       });
@@ -254,12 +255,12 @@ export default function Home() {
       };
     });
 
-    const recentLeads = filteredLeads.slice(0, 5);
+    const recentLeads = leadsInPeriod.slice(0, 5);
 
     return {
       totalLeads,
       leadsToday,
-      leads7Days,
+      leadsInPeriod: leadsInPeriod.length,
       sourceData,
       topUtms,
       locationData,
@@ -267,7 +268,7 @@ export default function Home() {
       recentLeads,
       performanceData
     };
-  }, [filteredLeads, activeFilter]);
+  }, [filteredLeads, activeFilter, dashboardPeriod]);
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : "";
 
@@ -291,11 +292,29 @@ export default function Home() {
       <div className={styles.dashboard}>
         
         {/* Cabeçalho do Dashboard */}
-        {dashboardTitle && (
-          <div className={styles.dashboardHeader}>
-            <h2>{dashboardTitle}</h2>
+        <div className={styles.dashboardHeader}>
+          <h2>{dashboardTitle || 'Visão Geral'}</h2>
+          <div className={styles.periodSelectorBar}>
+            <button 
+              className={`${styles.periodBtn} ${dashboardPeriod === 7 ? styles.activePeriod : ''}`}
+              onClick={() => setDashboardPeriod(7)}
+            >
+              07 dias
+            </button>
+            <button 
+              className={`${styles.periodBtn} ${dashboardPeriod === 15 ? styles.activePeriod : ''}`}
+              onClick={() => setDashboardPeriod(15)}
+            >
+              15 dias
+            </button>
+            <button 
+              className={`${styles.periodBtn} ${dashboardPeriod === 30 ? styles.activePeriod : ''}`}
+              onClick={() => setDashboardPeriod(30)}
+            >
+              30 dias
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Barra de Filtros Rápidos */}
         <div className={styles.filterBar}>
@@ -342,7 +361,7 @@ export default function Home() {
               <div className={styles.statIcon}><TrendingUp size={22} /></div>
               <div className={styles.statInfo}>
                 <span className={styles.statLabel}>Leads Totais</span>
-                <span className={styles.statSub}>Acumulado total</span>
+                <span className={styles.statSub}>Acumulado total (30d)</span>
               </div>
             </div>
             <h2 className={styles.statValue}>{statsSummary.totalLeads}</h2>
@@ -363,11 +382,11 @@ export default function Home() {
             <div className={styles.statLeft}>
               <div className={styles.statIcon}><Clock size={22} /></div>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>Últimos 7 dias</span>
-                <span className={styles.statSub}>Volume semanal</span>
+                <span className={styles.statLabel}>Últimos {dashboardPeriod} dias</span>
+                <span className={styles.statSub}>Volume do período</span>
               </div>
             </div>
-            <h2 className={styles.statValue}>{statsSummary.leads7Days}</h2>
+            <h2 className={styles.statValue}>{statsSummary.leadsInPeriod}</h2>
           </div>
 
           {isAdmin && !impersonatedName ? (
