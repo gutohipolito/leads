@@ -44,7 +44,7 @@ export default function LoginPage() {
           .eq('email', email),
         supabase
           .from('system_users')
-          .select('role, avatar_style, password_changed')
+          .select('role, avatar_style, password_changed, client_id')
           .eq('email', email)
           .single()
       ]);
@@ -54,6 +54,7 @@ export default function LoginPage() {
         localStorage.setItem('user_role', profile.role || 'user');
         localStorage.setItem('user_avatar_style', profile.avatar_style || 'avataaars');
         localStorage.setItem('user_password_changed', String(profile.password_changed ?? true));
+        localStorage.setItem('user_client_id', profile.client_id || '');
       }
 
       // Definir a flag de sessão ativa para evitar o logout imediato no primeiro carregamento do layout
@@ -75,6 +76,7 @@ export default function LoginPage() {
           muted 
           loop 
           playsInline 
+          preload="none"
           className={styles.videoBackground}
         >
           <source src={videoSrc} type="video/mp4" />

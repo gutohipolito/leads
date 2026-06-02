@@ -32,6 +32,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
           localStorage.removeItem('user_role');
           localStorage.removeItem('user_avatar_style');
           localStorage.removeItem('user_password_changed');
+          localStorage.removeItem('user_client_id');
           localStorage.removeItem('impersonated_client');
         }
         window.location.href = '/login';
@@ -74,6 +75,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_avatar_style');
             localStorage.removeItem('user_password_changed');
+            localStorage.removeItem('user_client_id');
             localStorage.removeItem('impersonated_client');
           }
           window.location.href = '/login';
@@ -112,7 +114,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
       try {
         const { data: profile } = await supabase
           .from('system_users')
-          .select('role, avatar_style, password_changed')
+          .select('role, avatar_style, password_changed, client_id')
           .eq('email', email)
           .single();
         
@@ -120,6 +122,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
           localStorage.setItem('user_role', profile.role || 'user');
           localStorage.setItem('user_avatar_style', profile.avatar_style || 'avataaars');
           localStorage.setItem('user_password_changed', String(profile.password_changed ?? true));
+          localStorage.setItem('user_client_id', profile.client_id || '');
         }
       } catch (e) {
         console.error('Erro ao atualizar perfil em background:', e);

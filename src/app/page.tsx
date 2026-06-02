@@ -36,17 +36,15 @@ export default function Home() {
 
     async function loadDashboardData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         
         if (user) {
-          const { data: profile } = await supabase
-            .from('system_users')
-            .select('*')
-            .eq('email', user.email)
-            .single();
+          const cachedRole = localStorage.getItem('user_role');
+          const cachedClientId = localStorage.getItem('user_client_id') || null;
 
-          const isUserAdmin = profile?.role === 'admin';
-          const clientId = profile?.client_id;
+          const isUserAdmin = cachedRole === 'admin';
+          const clientId = cachedClientId;
           setIsAdmin(isUserAdmin);
 
           const impersonated = localStorage.getItem('impersonated_client');
@@ -71,11 +69,13 @@ export default function Home() {
             setActiveClientsCount(activeClients);
           }
 
-          // 2. Query de todos os leads para graficos e analytics (com colunas completas)
+          // 2. Query de leads dos últimos 30 dias para graficos e analytics (com colunas completas)
+          const dataLimite = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
           let analyticsQuery = supabase
             .from('leads')
             .select('*, clients(name)')
             .neq('source', 'test_simulation')
+            .gte('created_at', dataLimite)
             .order('created_at', { ascending: false });
           
           if (!(isUserAdmin && !impersonated)) {
@@ -283,7 +283,7 @@ export default function Home() {
 
   return (
     <DashboardLayout title={
-      <Link href="/admin/live" className={styles.liveStatusPill}>
+      <Link href="/admin/live" prefetch={false} className={styles.liveStatusPill}>
         <Tv size={20} className={styles.liveIconPulse} />
         <span className={styles.liveLabel}>Monitor ao Vivo</span>
       </Link>

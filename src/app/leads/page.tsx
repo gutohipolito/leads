@@ -319,11 +319,14 @@ export default function LeadsPage() {
   useEffect(() => {
     async function loadAllData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (user) {
-          const { data: profile } = await supabase.from('system_users').select('*').eq('email', user.email).single();
-          const isUserAdmin = profile?.role === 'admin';
-          const clientId = profile?.client_id;
+          const cachedRole = localStorage.getItem('user_role');
+          const cachedClientId = localStorage.getItem('user_client_id') || null;
+
+          const isUserAdmin = cachedRole === 'admin';
+          const clientId = cachedClientId;
           setIsAdmin(isUserAdmin);
           setUserClientId(clientId);
 
@@ -340,7 +343,11 @@ export default function LeadsPage() {
             setSelectedClientId(impData.id);
           }
 
-          let leadsQuery = supabase.from('leads').select('*, webhooks(name, field_mapping)').order('created_at', { ascending: false });
+          let leadsQuery = supabase.from('leads')
+            .select('*, webhooks(name, field_mapping)')
+            .order('created_at', { ascending: false })
+            .limit(1000); // Limite para evitar lentidão
+          
           if (activeClientId) {
             leadsQuery = leadsQuery.eq('client_id', activeClientId);
           }

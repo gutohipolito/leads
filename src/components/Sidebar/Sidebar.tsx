@@ -139,6 +139,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                         <Link 
                           key={sub.path} 
                           href={sub.path}
+                          prefetch={false}
                           className={`${styles.subLink} ${isActive(sub.path) ? styles.subActive : ''}`}
                         >
                           <div className={styles.subDot} />
@@ -155,6 +156,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               <Link 
                 key={item.path} 
                 href={item.path} 
+                prefetch={false}
                 className={`${styles.navLink} ${isActive(item.path) ? styles.active : ''}`}
               >
                 <div className={styles.iconCircle}>
@@ -170,13 +172,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           <span className={styles.groupLabel}>Sistema</span>
           {isAdmin && !isImpersonating && (
             <>
-              <Link href="/admin/logs" className={`${styles.navLink} ${isActive('/admin/logs') ? styles.active : ''}`}>
+              <Link href="/admin/logs" prefetch={false} className={`${styles.navLink} ${isActive('/admin/logs') ? styles.active : ''}`}>
                 <div className={styles.iconCircle}>
                   <History size={18} />
                 </div>
                 <span className={styles.linkText}>Auditoria</span>
               </Link>
-              <Link href="/users" className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
+              <Link href="/users" prefetch={false} className={`${styles.navLink} ${isActive('/users') ? styles.active : ''}`}>
                 <div className={styles.iconCircle}>
                   <UserCircle size={18} />
                 </div>
@@ -184,7 +186,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               </Link>
             </>
           )}
-          <Link href="/settings" className={styles.navLink}>
+          <Link href="/settings" prefetch={false} className={styles.navLink}>
             <div className={styles.iconCircle}>
               <Settings size={18} />
             </div>

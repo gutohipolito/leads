@@ -32,28 +32,25 @@ export default function LogsPage() {
     async function fetchLogs() {
       setLoading(true);
       
-      // Validar se o usuário é admin
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
+      // Validar se o usuário é admin de forma síncrona/instantânea
+      const cachedRole = localStorage.getItem('user_role');
+      if (cachedRole !== 'admin') {
+        router.push('/');
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('system_users')
-        .select('role')
-        .eq('email', user.email)
-        .single();
-
-      if (profile?.role !== 'admin') {
-        router.push('/');
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) {
+        router.push('/login');
         return;
       }
 
       const { data } = await supabase
         .from('system_logs')
         .select('*, system_users!user_id(name)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500); // Limita os logs para evitar lentidão no frontend
       
       if (data) setLogs(data);
       setLoading(false);

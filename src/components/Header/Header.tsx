@@ -58,6 +58,7 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
       localStorage.removeItem('user_role');
       localStorage.removeItem('user_avatar_style');
       localStorage.removeItem('user_password_changed');
+      localStorage.removeItem('user_client_id');
       localStorage.removeItem('impersonated_client');
     }
     router.push('/login');
