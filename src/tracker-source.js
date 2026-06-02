@@ -25,6 +25,11 @@
         return;
     }
 
+    function sanitize(value) {
+        if (!value) return '';
+        return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
+    }
+
     function saveUtmsToStorageAndJourney() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -360,16 +365,17 @@
                     return;
                 }
                 
+                const cleanValue = sanitize(value);
+                if (!cleanValue) return;
+                
                 if (nameAttr.includes('name') || nameAttr.includes('nome')) {
-                    leadName = value;
+                    leadName = cleanValue;
                 } else if (nameAttr.includes('email') || nameAttr.includes('e-mail') || input.type === 'email') {
-                    leadEmail = value;
+                    leadEmail = cleanValue;
                 } else if (nameAttr.includes('phone') || nameAttr.includes('tel') || nameAttr.includes('whats') || nameAttr.includes('cel') || input.type === 'tel') {
-                    leadPhone = value;
+                    leadPhone = cleanValue;
                 } else {
-                    if (value.length < 500) {
-                        formDataFields[input.name || input.id] = value;
-                    }
+                    formDataFields[input.name || input.id] = cleanValue;
                 }
             });
             
