@@ -36,11 +36,25 @@ export default function LoginPage() {
 
       if (authError) throw authError;
 
-      // Atualizar o último login no perfil do sistema
-      await supabase
-        .from('system_users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('email', email);
+      // Atualizar o último login no perfil do sistema e buscar os dados de perfil em paralelo
+      const [updateResult, profileResult] = await Promise.all([
+        supabase
+          .from('system_users')
+          .update({ last_login: new Date().toISOString() })
+          .eq('email', email),
+        supabase
+          .from('system_users')
+          .select('role, avatar_style, password_changed')
+          .eq('email', email)
+          .single()
+      ]);
+
+      const profile = profileResult.data;
+      if (profile) {
+        localStorage.setItem('user_role', profile.role || 'user');
+        localStorage.setItem('user_avatar_style', profile.avatar_style || 'avataaars');
+        localStorage.setItem('user_password_changed', String(profile.password_changed ?? true));
+      }
 
       // Definir a flag de sessão ativa para evitar o logout imediato no primeiro carregamento do layout
       sessionStorage.setItem('asthros_session_active', 'true');

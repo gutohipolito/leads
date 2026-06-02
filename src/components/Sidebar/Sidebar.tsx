@@ -26,22 +26,23 @@ import { supabase } from '@/lib/supabase';
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_role') === 'admin';
+    }
+    return false;
+  });
   const [user, setUser] = useState<any>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        const { data: profile } = await supabase
-          .from('system_users')
-          .select('role')
-          .eq('email', user.email)
-          .single();
-        
-        setIsAdmin(profile?.role === 'admin');
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user;
+      if (currentUser) {
+        setUser(currentUser);
+        const cachedRole = localStorage.getItem('user_role');
+        setIsAdmin(cachedRole === 'admin');
       }
     }
     loadUser();

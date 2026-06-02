@@ -14,27 +14,39 @@ interface HeaderProps {
 
 export default function Header({ title, onMenuClick }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
-  const [avatarStyle, setAvatarStyle] = useState('avataaars');
-  const [passwordChanged, setPasswordChanged] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [avatarStyle, setAvatarStyle] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_avatar_style') || 'avataaars';
+    }
+    return 'avataaars';
+  });
+  const [passwordChanged, setPasswordChanged] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_password_changed') !== 'false';
+    }
+    return true;
+  });
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_role') === 'admin';
+    }
+    return false;
+  });
   const router = useRouter();
 
   useEffect(() => {
     async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        const { data: profile } = await supabase
-          .from('system_users')
-          .select('avatar_style, role, password_changed')
-          .eq('email', user.email)
-          .single();
-        
-        if (profile) {
-          setAvatarStyle(profile.avatar_style || 'avataaars');
-          setPasswordChanged(profile.password_changed ?? true);
-          setIsAdmin(profile.role === 'admin');
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user;
+      if (currentUser) {
+        setUser(currentUser);
+        const cachedRole = localStorage.getItem('user_role');
+        const cachedAvatar = localStorage.getItem('user_avatar_style');
+        const cachedPwChanged = localStorage.getItem('user_password_changed');
+
+        setIsAdmin(cachedRole === 'admin');
+        if (cachedAvatar) setAvatarStyle(cachedAvatar);
+        if (cachedPwChanged) setPasswordChanged(cachedPwChanged !== 'false');
       }
     }
     getUser();
@@ -42,6 +54,12 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('user_avatar_style');
+      localStorage.removeItem('user_password_changed');
+      localStorage.removeItem('impersonated_client');
+    }
     router.push('/login');
     router.refresh();
   };

@@ -19,7 +19,12 @@ import {
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_role') === 'admin';
+    }
+    return false;
+  });
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [lastSignalTime, setLastSignalTime] = useState<number | null>(null);
   const [activeClientsCount, setActiveClientsCount] = useState(0);
