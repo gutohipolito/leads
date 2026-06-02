@@ -22,6 +22,32 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // 1. Validar autenticação do solicitante e permissões de administrador
+    const authHeader = request.headers.get('Authorization') || '';
+    let user: any = null;
+
+    const token = authHeader.replace('Bearer ', '');
+    if (token) {
+      const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      if (!authError && authUser) {
+        user = authUser;
+      }
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from('system_users')
+      .select('role')
+      .eq('email', user.email)
+      .single();
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem provisionar novos usuários.' }, { status: 403 });
+    }
+
     // 1. Criar o usuário no Auth (sem disparar login automático e sem confirmação se desejar)
     // Usamos admin.createUser para evitar o fluxo de confirmação se as configs permitirem
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
