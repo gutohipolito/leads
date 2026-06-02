@@ -1072,7 +1072,7 @@ export default function UptimePage() {
               <RefreshCw size={24} />
             </div>
             <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Última Checagem</span>
+              <span className={styles.statLabel}>Última Checagem Geral</span>
               <span className={styles.statValue}>
                 {monitors.length > 0 && monitors.some(m => m.last_checked)
                   ? new Date(
@@ -1206,9 +1206,6 @@ export default function UptimePage() {
                           </span>
                         )}
                       </span>
-                      <span>Última checagem: <strong>
-                        {monitor.last_checked ? new Date(monitor.last_checked).toLocaleTimeString('pt-BR') : 'N/A'}
-                      </strong></span>
                     </div>
 
                     <button 
