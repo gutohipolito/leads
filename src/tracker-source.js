@@ -32,6 +32,77 @@
 
     let isTracking = false;
 
+    function queueFailedLead(payload) {
+        try {
+            const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+            queue.push(payload);
+            localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(-5))); // max 5
+        } catch (e) {}
+    }
+
+    async function sendPayload(payload) {
+        const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
+        try {
+            if (navigator.sendBeacon) {
+                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                if (navigator.sendBeacon(endpoint, blob)) {
+                    return;
+                }
+            }
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Asthros-Secret': config.secret
+                },
+                body: JSON.stringify(payload),
+                keepalive: true
+            });
+            
+            if (!response.ok) {
+                queueFailedLead(payload);
+            }
+        } catch (err) {
+            queueFailedLead(payload);
+        }
+    }
+
+    async function flushQueue() {
+        try {
+            const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+            if (!queue.length) return;
+
+            const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
+            const failedItems = [];
+
+            for (const payload of queue) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Asthros-Secret': config.secret
+                        },
+                        body: JSON.stringify(payload),
+                        keepalive: true
+                    });
+                    if (!response.ok) {
+                        failedItems.push(payload);
+                    }
+                } catch (e) {
+                    failedItems.push(payload);
+                }
+            }
+
+            if (failedItems.length > 0) {
+                localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(-5)));
+            } else {
+                localStorage.removeItem('asthros_queue');
+            }
+        } catch (err) {}
+    }
+
     function saveUtmsToStorageAndJourney() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -314,32 +385,7 @@
             timestamp: new Date().toISOString()
         };
 
-        const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
-
-        try {
-            if (navigator.sendBeacon) {
-                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-                if (navigator.sendBeacon(endpoint, blob)) {
-                    // console.log('[Asthros] Sucesso: Sinal enviado via Beacon API.');
-                    return;
-                }
-            }
-
-            fetch(endpoint, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Asthros-Secret': config.secret
-                },
-                body: JSON.stringify(payload),
-                keepalive: true
-            })
-            .then(() => { /* console.log('[Asthros] Sucesso: Sinal enviado via Fetch API.') */ })
-            .catch(err => { /* console.error('[Asthros] Falha no envio (Fetch):', err) */ });
-
-        } catch (err) {
-            // console.error('[Asthros] Erro crítico no processamento:', err);
-        }
+        sendPayload(payload);
     }
 
     // 4. Captura Inteligente de Formulários no Frontend (Opcional)
@@ -411,22 +457,7 @@
                     timestamp: new Date().toISOString()
                 };
                 
-                const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
-                
-                if (navigator.sendBeacon) {
-                    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-                    navigator.sendBeacon(endpoint, blob);
-                } else {
-                    fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'X-Asthros-Secret': config.secret
-                        },
-                        body: JSON.stringify(payload),
-                        keepalive: true
-                    });
-                }
+                sendPayload(payload);
             }
         } catch (err) {}
     }
@@ -437,6 +468,9 @@
     if (config.autoTrackForms === true || config.autoTrackForms === 'true') {
         document.addEventListener('submit', trackFormSubmit, { capture: true });
     }
+
+    // Tenta esvaziar a fila de reenvio offline
+    flushQueue();
     // console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
 })();
 
