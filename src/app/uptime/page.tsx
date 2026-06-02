@@ -1112,6 +1112,9 @@ export default function UptimePage() {
                           <Pencil size={12} />
                         </button>
                       </h3>
+                      {monitor.clients?.name && (
+                        <span className={styles.monitorClientName}>{monitor.clients.name}</span>
+                      )}
                     </div>
                     
                     <div className={styles.statusWrapper}>

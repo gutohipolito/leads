@@ -176,6 +176,15 @@
   gap: 0.5rem;
 }
 
+.monitorClientName {
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-top: -0.1rem;
+}
+
 .editTitleBtn {
   background: transparent;
   border: none;
