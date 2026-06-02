@@ -158,9 +158,14 @@ export default function LoginPage() {
       <Script 
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" 
         onLoad={() => {
+          const sitekey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
+          if (!sitekey) {
+            console.error("Cloudflare Turnstile: NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY não definida no ambiente.");
+            return;
+          }
           if (typeof window !== 'undefined' && (window as any).turnstile) {
             (window as any).turnstile.render('#turnstile-widget', {
-              sitekey: process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!,
+              sitekey: sitekey,
               callback: (token: string) => setCaptchaToken(token),
               'expired-callback': () => setCaptchaToken(null),
               'error-callback': () => setCaptchaToken(null)
