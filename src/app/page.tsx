@@ -66,7 +66,7 @@ export default function Home() {
           const dataLimite = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
           let analyticsQuery = supabase
             .from('leads')
-            .select('*, clients(name)')
+            .select('*, clients(name), webhooks(name)')
             .neq('source', 'test_simulation')
             .gte('created_at', dataLimite)
             .order('created_at', { ascending: false });
@@ -622,7 +622,16 @@ export default function Home() {
 
                     return (
                       <tr key={lead.id}>
-                        {(isAdmin && !impersonatedName) && <td>{lead.clients?.name || 'N/A'}</td>}
+                        {(isAdmin && !impersonatedName) && (
+                          <td>
+                            <div className={styles.clientCell}>
+                              <span className={styles.clientName}>{lead.clients?.name || 'N/A'}</span>
+                              <span className={styles.webhookSub}>
+                                {lead.webhooks?.name || lead.data?.captured_by?.name || 'Sem webhook'}
+                              </span>
+                            </div>
+                          </td>
+                        )}
                         <td>
                           {lead.source === 'whatsapp_tracker' ? (
                             <div className={styles.whatsappTag}>
