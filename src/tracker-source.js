@@ -73,6 +73,13 @@
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             if (!queue.length) return;
 
+            // Só tenta reenviar se tiver passado mais de 1 minuto desde a última tentativa
+            const lastTry = parseInt(localStorage.getItem('asthros_queue_last_try') || '0');
+            if (Date.now() - lastTry < 60 * 1000) {
+                return;
+            }
+            localStorage.setItem('asthros_queue_last_try', Date.now().toString());
+
             const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
             const failedItems = [];
 
@@ -99,6 +106,7 @@
                 localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(-5)));
             } else {
                 localStorage.removeItem('asthros_queue');
+                localStorage.removeItem('asthros_queue_last_try');
             }
         } catch (err) {}
     }
