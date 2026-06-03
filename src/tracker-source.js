@@ -229,19 +229,27 @@
 
     // Suporte a SPAs (React, Next.js, Vue) - Monitoramento de mudança de rota universal e compatível
     try {
-        window.addEventListener('popstate', () => {
+        const handleRoutePopstate = () => {
             saveUtmsToStorageAndJourney();
             resetPageContext();
-        });
+        };
+
+        window.addEventListener('popstate', handleRoutePopstate);
 
         let lastHref = location.href;
-        setInterval(() => {
+        const spaInterval = setInterval(() => {
             if (location.href !== lastHref) {
                 lastHref = location.href;
                 saveUtmsToStorageAndJourney();
                 resetPageContext();
             }
         }, 500);
+
+        // Expõe uma função de limpeza global (boa prática de ciclo de vida)
+        window._asthrosCleanup = () => {
+            clearInterval(spaInterval);
+            window.removeEventListener('popstate', handleRoutePopstate);
+        };
     } catch (e) {}
 
     /*
