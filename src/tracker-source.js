@@ -328,6 +328,27 @@
         };
     }
 
+    function getSessionFingerprint() {
+        try {
+            const raw = [
+                navigator.language || '',
+                navigator.platform || '',
+                window.screen ? window.screen.width : '',
+                window.screen ? window.screen.height : '',
+                new Date().getTimezoneOffset()
+            ].join('|');
+            
+            let hash = 0;
+            for (let i = 0; i < raw.length; i++) {
+                hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(36);
+        } catch (e) {
+            return 'unknown';
+        }
+    }
+
     function getReferrerContext() {
         try {
             return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
@@ -449,6 +470,7 @@
         const payload = {
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
+            session_fingerprint: getSessionFingerprint(),
             marketing: buildMarketingContext(),
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
@@ -517,6 +539,7 @@
                     email: leadEmail,
                     phone: leadPhone,
                     fields: formDataFields,
+                    session_fingerprint: getSessionFingerprint(),
                     marketing: buildMarketingContext(),
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),

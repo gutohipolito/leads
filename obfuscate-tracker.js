@@ -39,7 +39,8 @@ const replacements = [
   { from: 'trackerMatch', to: '_tm' },
   { from: 'payload', to: '_pl' },
   { from: 'endpoint', to: '_ep' },
-  { from: 'blob', to: '_bb' }
+  { from: 'blob', to: '_bb' },
+  { from: 'getSessionFingerprint', to: '_gf' }
 ];
 
 replacements.forEach(r => {
