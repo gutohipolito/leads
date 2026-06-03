@@ -317,6 +317,31 @@
             screen: `${window.screen.width}x${window.screen.height}`,
             viewport: `${window.innerWidth}x${window.innerHeight}`,
             user_agent: ua
+    }
+
+    function getReferrerContext() {
+        try {
+            return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
+        } catch (e) {
+            return document.referrer || 'direto';
+        }
+    }
+
+    function getJourneyContext() {
+        try {
+            return JSON.parse(localStorage.getItem('asthros_journey') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function buildMarketingContext() {
+        return {
+            ...getUtms(),
+            referrer: getReferrerContext(),
+            page_title: document.title,
+            page_url: window.location.href,
+            journey: getJourneyContext()
         };
     }
 
@@ -414,26 +439,7 @@
             secret: config.secret,
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
-            marketing: { 
-                ...getUtms(), 
-                referrer: (() => {
-                    try {
-                        return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
-                    } catch(e) {
-                        return document.referrer || 'direto';
-                    }
-                })(),
-                page_title: document.title,
-                page_url: window.location.href,
-                journey: (() => {
-                    try {
-                        const stored = localStorage.getItem('asthros_journey');
-                        return stored ? JSON.parse(stored) : [];
-                    } catch (e) {
-                        return [];
-                    }
-                })()
-            },
+            marketing: buildMarketingContext(),
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
                 scroll_depth: maxScroll + '%',
@@ -496,22 +502,7 @@
                     email: leadEmail,
                     phone: leadPhone,
                     fields: formDataFields,
-                    marketing: {
-                        ...getUtms(),
-                        referrer: (() => {
-                            try {
-                                return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
-                            } catch(e) { return document.referrer || 'direto'; }
-                        })(),
-                        page_title: document.title,
-                        page_url: window.location.href,
-                        journey: (() => {
-                            try {
-                                const stored = localStorage.getItem('asthros_journey');
-                                return stored ? JSON.parse(stored) : [];
-                            } catch (e) { return []; }
-                        })()
-                    },
+                    marketing: buildMarketingContext(),
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),
                         scroll_depth: maxScroll + '%',
