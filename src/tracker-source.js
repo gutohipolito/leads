@@ -410,28 +410,34 @@
         } catch (e) {}
     }, { passive: true });
 
-    // Suporte a SPAs (React, Next.js, Vue) - Monitoramento de mudança de rota universal e compatível
+    // Suporte a SPAs (React, Next.js, Vue) - Interceptação de navegação por History API (event-driven, sem polling)
     try {
-        const handleRoutePopstate = () => {
+        const handleRouteChange = () => {
             saveUtmsToStorageAndJourney();
             resetPageContext();
         };
 
-        window.addEventListener('popstate', handleRoutePopstate);
+        window.addEventListener('popstate', handleRouteChange);
 
-        let lastHref = location.href;
-        const spaInterval = setInterval(() => {
-            if (location.href !== lastHref) {
-                lastHref = location.href;
-                saveUtmsToStorageAndJourney();
-                resetPageContext();
-            }
-        }, 500);
+        // Intercepta pushState e replaceState para detectar navegações programáticas em qualquer framework
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
 
-        // Expõe uma função de limpeza global (boa prática de ciclo de vida)
+        history.pushState = function() {
+            originalPushState.apply(this, arguments);
+            handleRouteChange();
+        };
+
+        history.replaceState = function() {
+            originalReplaceState.apply(this, arguments);
+            handleRouteChange();
+        };
+
+        // Expõe uma função de limpeza global (restaura os métodos originais do History API)
         window._asthrosCleanup = () => {
-            clearInterval(spaInterval);
-            window.removeEventListener('popstate', handleRoutePopstate);
+            history.pushState = originalPushState;
+            history.replaceState = originalReplaceState;
+            window.removeEventListener('popstate', handleRouteChange);
         };
     } catch (e) {}
 
