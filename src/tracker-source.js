@@ -187,16 +187,12 @@
             const utmsToSave = parseUtmsFromUrl();
             const hasNewUtms = Object.keys(utmsToSave).length > 0;
 
-            // 1. Gravar UTMs na sessão
+            // 1. Gravar referrer e UTMs na sessão
+            if (!sessionStorage.getItem('asthros_referrer')) {
+                sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
+            }
             if (hasNewUtms) {
                 sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
-                if (!sessionStorage.getItem('asthros_referrer')) {
-                    sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
-                }
-            } else {
-                if (!sessionStorage.getItem('asthros_referrer')) {
-                    sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
-                }
             }
 
             // 2. Gravar o Touchpoint na jornada do LocalStorage (Atribuição Multitouch)
@@ -210,8 +206,7 @@
                 touchpointSource = sourceFromRef;
             } else {
                 // Se for visita direta pura, registramos apenas se a jornada estiver vazia
-                const existing = localStorage.getItem('asthros_journey');
-                if (existing) return;
+                if (localStorage.getItem('asthros_journey')) return;
             }
 
             const touchpoint = {
