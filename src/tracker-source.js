@@ -381,7 +381,7 @@
         const url = link.href || '';
         const lowerUrl = url.toLowerCase();
         const id = (link.id || '').toLowerCase();
-        const className = (link.className || '').toLowerCase();
+        const className = (typeof link.className === 'string' ? link.className : link.getAttribute('class') || '').toLowerCase();
         
         // 1. WhatsApp (Verificação expandida com suporte a encurtadores e classes de plugins)
         const isWpp = isWhatsAppLink(url) || 
