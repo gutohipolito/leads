@@ -46,7 +46,8 @@ const replacements = [
   { from: 'mergedQueue', to: '_mq' },
   { from: 'currentQueue', to: '_cq' },
   { from: 'lockKey', to: '_lky' },
-  { from: 'lock', to: '_lc' }
+  { from: 'lock', to: '_lc' },
+  { from: 'sanitizeButtonText', to: '_sb' }
 ];
 
 replacements.forEach(r => {

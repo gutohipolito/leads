@@ -30,6 +30,15 @@
         return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
     }
 
+    function sanitizeButtonText(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}/g, '[cartão]')
+            .replace(/\d{3}\.\d{3}\.\d{3}-\d{2}/g, '[cpf]')
+            .substring(0, 100)
+            .trim();
+    }
+
     function parseUtmsFromUrl() {
         const utms = {};
         try {
@@ -506,7 +515,7 @@
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
                 scroll_depth: maxScroll + '%',
-                button_text: link.innerText.trim() || link.getAttribute('aria-label') || trackerMatch.label,
+                button_text: sanitizeButtonText(link.innerText || link.getAttribute('aria-label') || trackerMatch.label),
                 match_type: trackerMatch.label,
                 ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
             },
@@ -575,7 +584,7 @@
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),
                         scroll_depth: maxScroll + '%',
-                        button_text: form.querySelector('[type="submit"]')?.innerText?.trim() || 'Enviar Formulário',
+                        button_text: sanitizeButtonText(form.querySelector('[type="submit"]')?.innerText || 'Enviar Formulário'),
                         match_type: 'Auto-captura de Formulário'
                     },
                     device: getDeviceContext(),
