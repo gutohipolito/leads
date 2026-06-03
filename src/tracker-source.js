@@ -51,7 +51,11 @@
         try {
             const queryParams = new URLSearchParams(window.location.search);
             const hash = window.location.hash || '';
-            const hashQueryPart = hash.includes('?') ? hash.split('?')[1] : hash.replace(/^#\/?/, '');
+            const hashQueryPart = hash.includes('?') 
+                ? hash.split('?')[1]          // hash com query: #/page?utm_source=...
+                : hash.includes('utm_') 
+                    ? hash.replace(/^#\/?/, '') // hash direto com UTM: #utm_source=...
+                    : '';                        // âncora normal: #secao — ignora
             const hashParams = new URLSearchParams(hashQueryPart);
 
             ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
@@ -381,9 +385,13 @@
             const raw = [
                 navigator.language || '',
                 navigator.platform || '',
+                navigator.hardwareConcurrency || '',       // núcleos de CPU
+                navigator.deviceMemory || '',              // RAM (Chrome)
                 window.screen ? window.screen.width : '',
                 window.screen ? window.screen.height : '',
-                new Date().getTimezoneOffset()
+                window.screen ? window.screen.colorDepth : '',
+                new Date().getTimezoneOffset(),
+                (Intl && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone || '' : ''
             ].join('|');
             
             let hash = 0;
@@ -523,6 +531,7 @@
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
                 scroll_depth: maxScroll + '%',
+                // Precedência de captura: innerText -> aria-label -> correspondência de rastreamento (funciona como fallback se innerText for undefined/vazio em SVGs/elementos ocultos)
                 button_text: sanitizeButtonText(link.innerText || link.getAttribute('aria-label') || trackerMatch.label),
                 match_type: trackerMatch.label,
                 ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
