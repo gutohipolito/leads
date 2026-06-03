@@ -227,27 +227,21 @@
         } catch (e) {}
     }, { passive: true });
 
-    // Suporte a SPAs (React, Next.js, Vue) - Monitoramento de mudança de rota via History API e popstate
+    // Suporte a SPAs (React, Next.js, Vue) - Monitoramento de mudança de rota universal e compatível
     try {
         window.addEventListener('popstate', () => {
             saveUtmsToStorageAndJourney();
             resetPageContext();
         });
 
-        const patchHistory = function(method) {
-            const original = history[method];
-            if (typeof original === 'function') {
-                history[method] = function() {
-                    const result = original.apply(this, arguments);
-                    saveUtmsToStorageAndJourney();
-                    resetPageContext();
-                    return result;
-                };
+        let lastHref = location.href;
+        setInterval(() => {
+            if (location.href !== lastHref) {
+                lastHref = location.href;
+                saveUtmsToStorageAndJourney();
+                resetPageContext();
             }
-        };
-
-        patchHistory('pushState');
-        patchHistory('replaceState');
+        }, 500);
     } catch (e) {}
 
     /*
