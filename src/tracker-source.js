@@ -437,7 +437,6 @@
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
-            secret: config.secret,
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             marketing: buildMarketingContext(),
@@ -497,7 +496,6 @@
             
             if (leadName && (leadEmail || leadPhone)) {
                 const payload = {
-                    secret: config.secret,
                     source: 'form',
                     name: leadName,
                     email: leadEmail,
