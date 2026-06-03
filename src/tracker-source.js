@@ -42,29 +42,29 @@
 
     async function sendPayload(payload) {
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
-        try {
-            if (navigator.sendBeacon) {
-                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-                if (navigator.sendBeacon(endpoint, blob)) {
-                    return;
-                }
-            }
+        
+        // Remove o secret do corpo para envio seguro e exclusivo via cabeçalhos HTTP
+        const safePayload = { ...payload };
+        if (safePayload.secret) {
+            delete safePayload.secret;
+        }
 
+        try {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-Asthros-Secret': config.secret
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(safePayload),
                 keepalive: true
             });
             
             if (!response.ok) {
-                queueFailedLead(payload);
+                queueFailedLead(safePayload);
             }
         } catch (err) {
-            queueFailedLead(payload);
+            queueFailedLead(safePayload);
         }
     }
 
