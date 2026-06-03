@@ -161,11 +161,12 @@
                 }
             } catch (e) {}
 
-            // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal em menos de 5 min
+            // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal e na mesma página em menos de 5 min
             if (journey.length > 0) {
                 const last = journey[journey.length - 1];
                 const diff = Date.now() - new Date(last.timestamp).getTime();
-                if (last.source === touchpoint.source && diff < 5 * 60 * 1000) {
+                const isSameUrl = last.page_url === touchpoint.page_url;
+                if (last.source === touchpoint.source && diff < 5 * 60 * 1000 && isSameUrl) {
                     return;
                 }
             }
