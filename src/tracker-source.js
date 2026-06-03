@@ -83,6 +83,13 @@
     async function sendPayload(payload) {
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
         
+        // Beacon apenas no fechamento — com secret no corpo como fallback seguro (o backend já aceita)
+        if (navigator.sendBeacon && document.visibilityState === 'hidden') {
+            const beaconPayload = { ...payload, secret: config.secret };
+            const blob = new Blob([JSON.stringify(beaconPayload)], { type: 'application/json' });
+            if (navigator.sendBeacon(endpoint, blob)) return;
+        }
+
         // Remove o secret do corpo para envio seguro e exclusivo via cabeçalhos HTTP
         const safePayload = { ...payload };
         if (safePayload.secret) {

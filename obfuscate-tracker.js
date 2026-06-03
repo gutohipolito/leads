@@ -47,7 +47,8 @@ const replacements = [
   { from: 'currentQueue', to: '_cq' },
   { from: 'lockKey', to: '_lky' },
   { from: 'lock', to: '_lc' },
-  { from: 'sanitizeButtonText', to: '_sb' }
+  { from: 'sanitizeButtonText', to: '_sb' },
+  { from: 'beaconPayload', to: '_bp' }
 ];
 
 replacements.forEach(r => {
