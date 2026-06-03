@@ -5,11 +5,25 @@
     let config = window.AsthrosConfig || null;
 
     if (!config) {
-        const script = document.currentScript || 
-                       document.querySelector('script[src*="tracker.js"]') || 
-                       document.querySelector('script[src*="tracker.min.js"]');
+        let script = document.currentScript;
+        
+        if (!script) {
+            // Se currentScript for nulo (async/defer/GTM), busca scripts que ainda não foram marcados como inicializados
+            const candidates = document.querySelectorAll(
+                'script[src*="tracker.js"]:not([data-asthros-initialized]), ' +
+                'script[src*="tracker.min.js"]:not([data-asthros-initialized])'
+            );
+            if (candidates.length > 0) {
+                script = candidates[0];
+            }
+        }
         
         if (script) {
+            // Marca o script atual para que outras execuções assíncronas concorrentes de múltiplos scripts não o selecionem
+            try {
+                script.setAttribute('data-asthros-initialized', 'true');
+            } catch (e) {}
+
             config = {
                 clientId: script.getAttribute('data-client-id'),
                 secret: script.getAttribute('data-secret'),

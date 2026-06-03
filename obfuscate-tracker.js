@@ -56,7 +56,8 @@ const replacements = [
   { from: 'lockValue', to: '_lv' },
   { from: 'currentLock', to: '_cl' },
   { from: 'finalLock', to: '_fl' },
-  { from: 'trackingLocks', to: '_tk' }
+  { from: 'trackingLocks', to: '_tk' },
+  { from: 'candidates', to: '_cd' }
 ];
 
 replacements.forEach(r => {
