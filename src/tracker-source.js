@@ -392,28 +392,20 @@
         };
     }
 
-    function getSessionFingerprint() {
+    function getSessionId() {
         try {
-            const raw = [
-                navigator.language || '',
-                navigator.platform || '',
-                navigator.hardwareConcurrency || '',       // núcleos de CPU
-                navigator.deviceMemory || '',              // RAM (Chrome)
-                window.screen ? window.screen.width : '',
-                window.screen ? window.screen.height : '',
-                window.screen ? window.screen.colorDepth : '',
-                new Date().getTimezoneOffset(),
-                (Intl && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone || '' : ''
-            ].join('|');
-            
-            let hash = 0;
-            for (let i = 0; i < raw.length; i++) {
-                hash = ((hash << 5) - hash) + raw.charCodeAt(i);
-                hash |= 0;
+            let sessionId = sessionStorage.getItem('asthros_session_id');
+            if (!sessionId) {
+                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                    sessionId = crypto.randomUUID();
+                } else {
+                    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                }
+                sessionStorage.setItem('asthros_session_id', sessionId);
             }
-            return Math.abs(hash).toString(36);
+            return sessionId;
         } catch (e) {
-            return 'unknown';
+            return 'temp_' + Math.random().toString(36).substring(2, 10);
         }
     }
 
@@ -538,7 +530,7 @@
         const payload = {
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
-            session_fingerprint: getSessionFingerprint(),
+            session_fingerprint: getSessionId(),
             marketing: buildMarketingContext(),
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
@@ -608,7 +600,7 @@
                     email: leadEmail,
                     phone: leadPhone,
                     fields: formDataFields,
-                    session_fingerprint: getSessionFingerprint(),
+                    session_fingerprint: getSessionId(),
                     marketing: buildMarketingContext(),
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),
