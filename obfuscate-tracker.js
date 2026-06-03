@@ -44,7 +44,9 @@ const replacements = [
   { from: 'parseUtmsFromUrl', to: '_pu' },
   { from: 'isFlushing', to: '_if' },
   { from: 'mergedQueue', to: '_mq' },
-  { from: 'currentQueue', to: '_cq' }
+  { from: 'currentQueue', to: '_cq' },
+  { from: 'lockKey', to: '_lky' },
+  { from: 'lock', to: '_lc' }
 ];
 
 replacements.forEach(r => {

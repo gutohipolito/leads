@@ -91,6 +91,8 @@
     let isFlushing = false;
     async function flushQueue() {
         if (isFlushing) return;
+        
+        const lockKey = 'asthros_flush_lock';
         try {
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             if (!queue.length) return;
@@ -100,6 +102,11 @@
             if (Date.now() - lastTry < 60 * 1000) {
                 return;
             }
+
+            // Lock distribuído entre abas
+            const lock = localStorage.getItem(lockKey);
+            if (lock && Date.now() - parseInt(lock) < 10000) return; // outra aba está processando
+            localStorage.setItem(lockKey, Date.now().toString());
 
             isFlushing = true;
             localStorage.setItem('asthros_queue_last_try', Date.now().toString());
@@ -144,6 +151,7 @@
         } catch (err) {
         } finally {
             isFlushing = false;
+            localStorage.removeItem(lockKey);
         }
     }
 
