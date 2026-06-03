@@ -404,8 +404,9 @@
 
     window.addEventListener('scroll', () => {
         try {
-            const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
-            if (scrollPercent > maxScroll) maxScroll = Math.round(scrollPercent);
+            const rawPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+            const scrollPercent = Math.min(100, Math.round(rawPercent));
+            if (scrollPercent > maxScroll) maxScroll = scrollPercent;
         } catch (e) {}
     }, { passive: true });
 
