@@ -30,7 +30,7 @@
         return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
     }
 
-    let isTracking = false;
+    const trackingLocks = new WeakSet();
 
     function queueFailedLead(payload) {
         try {
@@ -398,10 +398,10 @@
             return;
         }
 
-        // Proteção contra duplo clique e race condition de envio
-        if (isTracking) return;
-        isTracking = true;
-        setTimeout(() => { isTracking = false; }, 2000);
+        // Proteção contra duplo clique e race condition de envio por elemento
+        if (trackingLocks.has(link)) return;
+        trackingLocks.add(link);
+        setTimeout(() => { trackingLocks.delete(link); }, 2000);
 
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
