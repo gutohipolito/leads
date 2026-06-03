@@ -554,7 +554,7 @@
     function isWhatsAppLink(url) {
         if (!url) return false;
         const lowerUrl = url.toLowerCase();
-        const matches = /wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:/.test(lowerUrl);
+        const matches = /wa\.me|wa\.link|api\.whatsapp\.com|chat\.whatsapp\.com|web\.whatsapp\.com|^whatsapp:/.test(lowerUrl);
         return matches;
     }
 
