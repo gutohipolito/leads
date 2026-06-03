@@ -415,9 +415,11 @@
         // 3. Custom Selectors (ex: '.btn-checkout', '#buy-now')
         if (config.trackSelectors && Array.isArray(config.trackSelectors)) {
             for (const selector of config.trackSelectors) {
-                if (selector && link.matches(selector)) {
-                    return { source: 'custom_tracker', label: `Selector: ${selector}` };
-                }
+                try {
+                    if (selector && link.matches(selector)) {
+                        return { source: 'custom_tracker', label: `Selector: ${selector}` };
+                    }
+                } catch (e) {}
             }
         }
 
