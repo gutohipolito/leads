@@ -40,7 +40,11 @@ const replacements = [
   { from: 'payload', to: '_pl' },
   { from: 'endpoint', to: '_ep' },
   { from: 'blob', to: '_bb' },
-  { from: 'getSessionFingerprint', to: '_gf' }
+  { from: 'getSessionFingerprint', to: '_gf' },
+  { from: 'parseUtmsFromUrl', to: '_pu' },
+  { from: 'isFlushing', to: '_if' },
+  { from: 'mergedQueue', to: '_mq' },
+  { from: 'currentQueue', to: '_cq' }
 ];
 
 replacements.forEach(r => {

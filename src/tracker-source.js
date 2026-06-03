@@ -30,6 +30,26 @@
         return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
     }
 
+    function parseUtmsFromUrl() {
+        const utms = {};
+        try {
+            const queryParams = new URLSearchParams(window.location.search);
+            const hash = window.location.hash || '';
+            const hashQueryPart = hash.includes('?') ? hash.split('?')[1] : hash.replace(/^#\/?/, '');
+            const hashParams = new URLSearchParams(hashQueryPart);
+
+            ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
+                const valQuery = queryParams.get(`utm_${key}`);
+                const valHash = hashParams.get(`utm_${key}`);
+                const val = valQuery || valHash;
+                if (val) {
+                    utms[key] = val;
+                }
+            });
+        } catch (e) {}
+        return utms;
+    }
+
     const trackingLocks = new WeakSet();
 
     function queueFailedLead(payload) {
@@ -68,7 +88,9 @@
         }
     }
 
+    let isFlushing = false;
     async function flushQueue() {
+        if (isFlushing) return;
         try {
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             if (!queue.length) return;
@@ -78,7 +100,12 @@
             if (Date.now() - lastTry < 60 * 1000) {
                 return;
             }
+
+            isFlushing = true;
             localStorage.setItem('asthros_queue_last_try', Date.now().toString());
+            
+            // Remove temporariamente a fila do localStorage para evitar que outras abas leiam e enviem duplicado
+            localStorage.removeItem('asthros_queue');
 
             const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
             const failedItems = [];
@@ -103,27 +130,27 @@
             }
 
             if (failedItems.length > 0) {
-                localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(-5)));
+                try {
+                    // Mescla os itens que falharam com novos que possam ter entrado na fila no meio do caminho
+                    const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+                    const mergedQueue = [...failedItems, ...currentQueue];
+                    localStorage.setItem('asthros_queue', JSON.stringify(mergedQueue.slice(-5)));
+                } catch (e) {
+                    localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(-5)));
+                }
             } else {
-                localStorage.removeItem('asthros_queue');
                 localStorage.removeItem('asthros_queue_last_try');
             }
-        } catch (err) {}
+        } catch (err) {
+        } finally {
+            isFlushing = false;
+        }
     }
 
     function saveUtmsToStorageAndJourney() {
         try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const utmsToSave = {};
-            let hasNewUtms = false;
-
-            ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
-                const val = urlParams.get(`utm_${key}`);
-                if (val) {
-                    utmsToSave[key] = val;
-                    hasNewUtms = true;
-                }
-            });
+            const utmsToSave = parseUtmsFromUrl();
+            const hasNewUtms = Object.keys(utmsToSave).length > 0;
 
             // 1. Gravar UTMs na sessão
             if (hasNewUtms) {
@@ -281,16 +308,12 @@
     function getUtms() {
         let utms = {};
         
-        // 1. Tenta obter da URL atual
-        const urlParams = new URLSearchParams(window.location.search);
-        let hasUrlUtms = false;
-        ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
-            const val = urlParams.get(`utm_${key}`);
-            if (val) {
-                utms[key] = val;
-                hasUrlUtms = true;
-            }
-        });
+        // 1. Tenta obter da URL atual (query ou hash)
+        const urlUtms = parseUtmsFromUrl();
+        const hasUrlUtms = Object.keys(urlUtms).length > 0;
+        if (hasUrlUtms) {
+            utms = urlUtms;
+        }
 
         // 2. Se não tiver na URL atual, recupera do sessionStorage
         if (!hasUrlUtms) {
