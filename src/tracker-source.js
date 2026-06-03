@@ -261,6 +261,16 @@
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 totalActive += Date.now() - lastVisible;
+                
+                // Exit intent: enriquece o último touchpoint com dados de saída
+                try {
+                    const journey = getJourneyContext();
+                    if (journey.length > 0) {
+                        journey[journey.length - 1].exit_scroll = maxScroll + '%';
+                        journey[journey.length - 1].exit_time = getActiveTimeOnPage();
+                        localStorage.setItem('asthros_journey', JSON.stringify(journey));
+                    }
+                } catch (e) {}
             } else {
                 lastVisible = Date.now();
             }
