@@ -137,9 +137,6 @@
 
             isFlushing = true;
             localStorage.setItem('asthros_queue_last_try', Date.now().toString());
-            
-            // Remove temporariamente a fila do localStorage para evitar que outras abas leiam e enviem duplicado
-            localStorage.removeItem('asthros_queue');
 
             const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
             const failedItems = [];
@@ -163,17 +160,42 @@
                 }
             }
 
+            // Apenas atualiza o localStorage no final do processamento
             if (failedItems.length > 0) {
                 try {
-                    // Mescla os itens que falharam com novos que possam ter entrado na fila no meio do caminho
+                    // Mescla os itens que falharam com novos leads que possam ter entrado na fila no meio do caminho
                     const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
-                    const mergedQueue = [...failedItems, ...currentQueue];
+                    const mergedQueue = [...failedItems];
+                    
+                    currentQueue.forEach(item => {
+                        const isDuplicate = failedItems.some(f => f.timestamp === item.timestamp && f.name === item.name);
+                        if (!isDuplicate) {
+                            mergedQueue.push(item);
+                        }
+                    });
+                    
                     localStorage.setItem('asthros_queue', JSON.stringify(mergedQueue.slice(-5)));
                 } catch (e) {
                     localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(-5)));
                 }
             } else {
-                localStorage.removeItem('asthros_queue_last_try');
+                try {
+                    // Limpa apenas os leads que foram enviados com sucesso, mantendo novos leads que entraram no meio do caminho
+                    const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+                    const remainingQueue = currentQueue.filter(item => 
+                        !queue.some(q => q.timestamp === item.timestamp && q.name === item.name)
+                    );
+                    
+                    if (remainingQueue.length > 0) {
+                        localStorage.setItem('asthros_queue', JSON.stringify(remainingQueue.slice(-5)));
+                    } else {
+                        localStorage.removeItem('asthros_queue');
+                        localStorage.removeItem('asthros_queue_last_try');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('asthros_queue');
+                    localStorage.removeItem('asthros_queue_last_try');
+                }
             }
         } catch (err) {
         } finally {
