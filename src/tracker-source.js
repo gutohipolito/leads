@@ -181,6 +181,25 @@
 
     saveUtmsToStorageAndJourney();
 
+    // Suporte a SPAs (React, Next.js, Vue) - Monitoramento de mudança de rota via History API e popstate
+    try {
+        window.addEventListener('popstate', saveUtmsToStorageAndJourney);
+
+        const patchHistory = function(method) {
+            const original = history[method];
+            if (typeof original === 'function') {
+                history[method] = function() {
+                    const result = original.apply(this, arguments);
+                    saveUtmsToStorageAndJourney();
+                    return result;
+                };
+            }
+        };
+
+        patchHistory('pushState');
+        patchHistory('replaceState');
+    } catch (e) {}
+
     /*
     console.log('[Asthros] Configuração Carregada:', {
         clientId: config.clientId,
