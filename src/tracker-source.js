@@ -25,6 +25,13 @@
         return;
     }
 
+    // Validação de segurança da URL da API (deve utilizar HTTPS para prevenir sequestro de requisição ou injeção XSS)
+    if (config.apiUrl && !config.apiUrl.startsWith('https://')) {
+        config.apiUrl = 'https://leads.asthros.com.br';
+    } else if (!config.apiUrl) {
+        config.apiUrl = 'https://leads.asthros.com.br';
+    }
+
     function sanitize(value) {
         if (!value) return '';
         return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
@@ -359,6 +366,7 @@
         const ua = navigator.userAgent;
         return {
             platform: navigator.platform, // Mantido para compatibilidade histórica do banco
+            // A detecção de Android DEVE vir antes de Linux, pois dispositivos Android também contém 'Linux' no User Agent
             os: /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'Outro',
             is_mobile: /Mobi|Android/i.test(ua),
             language: navigator.language,
