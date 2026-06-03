@@ -480,6 +480,11 @@
                 }
             });
             
+            // Validação básica do formato do e-mail capturado
+            if (leadEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail)) {
+                leadEmail = '';
+            }
+            
             if (leadName && (leadEmail || leadPhone)) {
                 const payload = {
                     secret: config.secret,
