@@ -70,7 +70,7 @@
         return utms;
     }
 
-    const trackingLocks = new WeakSet();
+    const trackingLocks = new Set();
 
     function queueFailedLead(payload) {
         try {
@@ -621,10 +621,18 @@
             return;
         }
 
-        // Proteção contra duplo clique e race condition de envio por elemento
-        if (trackingLocks.has(link)) return;
-        trackingLocks.add(link);
-        setTimeout(() => { trackingLocks.delete(link); }, 2000);
+        // Proteção contra duplo clique e race condition de envio por elemento (resistente a re-renders em React/Vue)
+        const lockKey = [
+            'click',
+            link.tagName,
+            link.href || '',
+            link.innerText || link.getAttribute('aria-label') || '',
+            link.className || ''
+        ].join('|');
+
+        if (trackingLocks.has(lockKey)) return;
+        trackingLocks.add(lockKey);
+        setTimeout(() => { trackingLocks.delete(lockKey); }, 2000);
 
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
@@ -653,10 +661,17 @@
         try {
             const form = e.target;
             
-            // Proteção contra duplo submit do mesmo formulário
-            if (trackingLocks.has(form)) return;
-            trackingLocks.add(form);
-            setTimeout(() => { trackingLocks.delete(form); }, 3000);
+            // Proteção contra duplo submit do mesmo formulário (resistente a re-renders em React/Vue)
+            const lockKey = [
+                'form',
+                form.action || '',
+                form.id || '',
+                form.className || ''
+            ].join('|');
+
+            if (trackingLocks.has(lockKey)) return;
+            trackingLocks.add(lockKey);
+            setTimeout(() => { trackingLocks.delete(lockKey); }, 3000);
 
             const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
             const formDataFields = {};
