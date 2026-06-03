@@ -181,9 +181,49 @@
 
     saveUtmsToStorageAndJourney();
 
+    // Controle de tempo ativo na página e scroll máximo (Page Visibility API e Reset em SPAs)
+    let totalActive = 0;
+    let lastVisible = Date.now();
+    let maxScroll = 0;
+
+    try {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                totalActive += Date.now() - lastVisible;
+            } else {
+                lastVisible = Date.now();
+            }
+        });
+    } catch (e) {}
+
+    function getActiveTimeOnPage() {
+        try {
+            const currentActive = totalActive + (document.hidden ? 0 : Date.now() - lastVisible);
+            return Math.round(currentActive / 1000) + 's';
+        } catch (e) {
+            return '0s';
+        }
+    }
+
+    function resetPageContext() {
+        totalActive = 0;
+        lastVisible = Date.now();
+        maxScroll = 0;
+    }
+
+    window.addEventListener('scroll', () => {
+        try {
+            const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+            if (scrollPercent > maxScroll) maxScroll = Math.round(scrollPercent);
+        } catch (e) {}
+    }, { passive: true });
+
     // Suporte a SPAs (React, Next.js, Vue) - Monitoramento de mudança de rota via History API e popstate
     try {
-        window.addEventListener('popstate', saveUtmsToStorageAndJourney);
+        window.addEventListener('popstate', () => {
+            saveUtmsToStorageAndJourney();
+            resetPageContext();
+        });
 
         const patchHistory = function(method) {
             const original = history[method];
@@ -191,6 +231,7 @@
                 history[method] = function() {
                     const result = original.apply(this, arguments);
                     saveUtmsToStorageAndJourney();
+                    resetPageContext();
                     return result;
                 };
             }
@@ -211,13 +252,7 @@
     });
     */
 
-    const startTime = Date.now();
-    let maxScroll = 0;
 
-    window.addEventListener('scroll', () => {
-        const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
-        if (scrollPercent > maxScroll) maxScroll = Math.round(scrollPercent);
-    }, { passive: true });
 
     function getSourceFromReferrer(ref) {
         if (!ref || ref === 'direto') return 'direto';
@@ -394,7 +429,7 @@
                 })()
             },
             behavior: {
-                time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
+                time_on_page: getActiveTimeOnPage(),
                 scroll_depth: maxScroll + '%',
                 button_text: link.innerText.trim() || link.getAttribute('aria-label') || trackerMatch.label,
                 match_type: trackerMatch.label,
@@ -467,7 +502,7 @@
                         })()
                     },
                     behavior: {
-                        time_on_page: Math.round((Date.now() - startTime) / 1000) + 's',
+                        time_on_page: getActiveTimeOnPage(),
                         scroll_depth: maxScroll + '%',
                         button_text: form.querySelector('[type="submit"]')?.innerText?.trim() || 'Enviar Formulário',
                         match_type: 'Auto-captura de Formulário'
