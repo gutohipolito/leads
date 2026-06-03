@@ -48,7 +48,14 @@ const replacements = [
   { from: 'lockKey', to: '_lky' },
   { from: 'lock', to: '_lc' },
   { from: 'sanitizeButtonText', to: '_sb' },
-  { from: 'beaconPayload', to: '_bp' }
+  { from: 'beaconPayload', to: '_bp' },
+  { from: 'asthrosChannel', to: '_ac' },
+  { from: 'flushSafetyTimeout', to: '_ft' },
+  { from: 'myTabId', to: '_mt' },
+  { from: 'existingLock', to: '_el' },
+  { from: 'lockValue', to: '_lv' },
+  { from: 'currentLock', to: '_cl' },
+  { from: 'finalLock', to: '_fl' }
 ];
 
 replacements.forEach(r => {

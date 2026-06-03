@@ -116,10 +116,30 @@
     }
 
     let isFlushing = false;
-    async function flushQueue() {
-        if (isFlushing) return;
-        
-        const lockKey = 'asthros_flush_lock';
+    let asthrosChannel = null;
+    let flushSafetyTimeout = null;
+
+    if (typeof BroadcastChannel !== 'undefined') {
+        try {
+            asthrosChannel = new BroadcastChannel('asthros_channel');
+            asthrosChannel.onmessage = (event) => {
+                if (event.data) {
+                    if (event.data.action === 'flush_start') {
+                        isFlushing = true;
+                        if (flushSafetyTimeout) clearTimeout(flushSafetyTimeout);
+                        flushSafetyTimeout = setTimeout(() => {
+                            isFlushing = false;
+                        }, 20000); // 20 segundos de segurança
+                    } else if (event.data.action === 'flush_end') {
+                        isFlushing = false;
+                        if (flushSafetyTimeout) clearTimeout(flushSafetyTimeout);
+                    }
+                }
+            };
+        } catch (e) {}
+    }
+
+    async function executeFlush() {
         try {
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             if (!queue.length) return;
@@ -130,12 +150,12 @@
                 return;
             }
 
-            // Lock distribuído entre abas
-            const lock = localStorage.getItem(lockKey);
-            if (lock && Date.now() - parseInt(lock) < 10000) return; // outra aba está processando
-            localStorage.setItem(lockKey, Date.now().toString());
-
             isFlushing = true;
+            if (asthrosChannel) {
+                try {
+                    asthrosChannel.postMessage({ action: 'flush_start' });
+                } catch (e) {}
+            }
             localStorage.setItem('asthros_queue_last_try', Date.now().toString());
 
             const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
@@ -200,7 +220,66 @@
         } catch (err) {
         } finally {
             isFlushing = false;
-            localStorage.removeItem(lockKey);
+            if (asthrosChannel) {
+                try {
+                    asthrosChannel.postMessage({ action: 'flush_end' });
+                } catch (e) {}
+            }
+            if (flushSafetyTimeout) {
+                clearTimeout(flushSafetyTimeout);
+            }
+        }
+    }
+
+    async function flushQueue() {
+        if (isFlushing) return;
+
+        // Se o navegador suportar Web Locks API, usamos o lock atômico nativo (concorrência perfeita multi-abas)
+        if (navigator.locks) {
+            try {
+                await navigator.locks.request('asthros_flush_lock', { ifAvailable: true }, async (lock) => {
+                    if (!lock) return; // Outra aba já está processando
+                    await executeFlush();
+                });
+                return;
+            } catch (e) {}
+        }
+
+        // Fallback: Lock baseado em localStorage aprimorado com ID único e delay de verificação para atomicidade artificial
+        const lockKey = 'asthros_flush_lock';
+        const myTabId = Math.random().toString(36).substring(2);
+
+        try {
+            const existingLock = localStorage.getItem(lockKey);
+            if (existingLock) {
+                const parts = existingLock.split(':');
+                const lockTime = parseInt(parts[1] || '0');
+                if (Date.now() - lockTime < 10000) {
+                    return; // Outra aba tem um lock válido e ativo
+                }
+            }
+
+            const lockValue = `${myTabId}:${Date.now()}`;
+            localStorage.setItem(lockKey, lockValue);
+
+            // Pequeno delay para verificar se outra aba concorrente gravou por cima
+            await new Promise(function(resolve) { setTimeout(resolve, 50); });
+
+            const currentLock = localStorage.getItem(lockKey);
+            if (currentLock !== lockValue) {
+                return; // Perdemos a disputa de concorrência
+            }
+
+            await executeFlush();
+        } catch (e) {
+        } finally {
+            // Só remove o lock se ele ainda for nosso (evita remover locks de outras abas)
+            try {
+                const finalLock = localStorage.getItem(lockKey);
+                if (finalLock && finalLock.startsWith(myTabId)) {
+                    localStorage.removeItem(lockKey);
+                }
+            } catch (e) {}
         }
     }
 
