@@ -308,12 +308,15 @@
     }
 
     function getDeviceContext() {
+        const ua = navigator.userAgent;
         return {
-            platform: navigator.platform,
+            platform: navigator.platform, // Mantido para compatibilidade histórica do banco
+            os: /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'Outro',
+            is_mobile: /Mobi|Android/i.test(ua),
             language: navigator.language,
             screen: `${window.screen.width}x${window.screen.height}`,
             viewport: `${window.innerWidth}x${window.innerHeight}`,
-            user_agent: navigator.userAgent
+            user_agent: ua
         };
     }
 
