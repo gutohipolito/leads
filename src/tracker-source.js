@@ -317,6 +317,7 @@
             screen: `${window.screen.width}x${window.screen.height}`,
             viewport: `${window.innerWidth}x${window.innerHeight}`,
             user_agent: ua
+        };
     }
 
     function getReferrerContext() {
