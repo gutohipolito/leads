@@ -458,6 +458,12 @@
     async function trackFormSubmit(e) {
         try {
             const form = e.target;
+            
+            // Proteção contra duplo submit do mesmo formulário
+            if (trackingLocks.has(form)) return;
+            trackingLocks.add(form);
+            setTimeout(() => { trackingLocks.delete(form); }, 3000);
+
             const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
             const formDataFields = {};
             
