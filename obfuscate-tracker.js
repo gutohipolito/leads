@@ -1,15 +1,35 @@
 const fs = require('fs');
 const path = require('path');
 
+const trackerDir = path.join(__dirname, 'src', 'tracker');
 const sourcePath = path.join(__dirname, 'src', 'tracker-source.js');
 const outputPath = path.join(__dirname, 'public', 'tracker.js');
 
-if (!fs.existsSync(sourcePath)) {
-  console.error('Erro: Arquivo fonte src/tracker-source.js não encontrado.');
-  process.exit(1);
-}
+const moduleFiles = [
+  'header.js',
+  'utils.js',
+  'session.js',
+  'attribution.js',
+  'transport.js',
+  'queue.js',
+  'lead-capture.js',
+  'footer.js'
+];
 
-let code = fs.readFileSync(sourcePath, 'utf8');
+console.log('Concatenando módulos do tracker em src/tracker-source.js...');
+let code = '';
+
+moduleFiles.forEach(file => {
+  const filePath = path.join(trackerDir, file);
+  if (!fs.existsSync(filePath)) {
+    console.error(`Erro: Arquivo do módulo não encontrado: ${filePath}`);
+    process.exit(1);
+  }
+  code += fs.readFileSync(filePath, 'utf8') + '\n\n';
+});
+
+// Gravar o código fonte unificado (útil para desenvolvimento/depuração local)
+fs.writeFileSync(sourcePath, code, 'utf8');
 
 // 1. Remover Comentários de bloco e linha de forma segura
 code = code.replace(/\/\*[\s\S]*?\*\//g, ''); // bloco /* */

@@ -46,6 +46,7 @@
         config.apiUrl = 'https://leads.asthros.com.br';
     }
 
+
     function sanitize(value) {
         if (!value) return '';
         return String(value).replace(/[<>]/g, '').substring(0, 500).trim();
@@ -59,6 +60,134 @@
             .substring(0, 100)
             .trim();
     }
+
+
+    const trackingLocks = new Set();
+
+    // Controle de tempo ativo na página e scroll máximo (Page Visibility API e Reset em SPAs)
+    let totalActive = 0;
+    let lastVisible = Date.now();
+    let maxScroll = 0;
+
+    try {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                totalActive += Date.now() - lastVisible;
+                
+                // Exit intent: enriquece o último touchpoint com dados de saída
+                try {
+                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
+                    if (lastTouchStr) {
+                        const lastTouch = JSON.parse(lastTouchStr);
+                        lastTouch.exit_scroll = maxScroll + '%';
+                        lastTouch.exit_time = getActiveTimeOnPage();
+                        localStorage.setItem('asthros_last_touch', JSON.stringify(lastTouch));
+                    } else {
+                        const firstTouchStr = localStorage.getItem('asthros_first_touch');
+                        if (firstTouchStr) {
+                            const firstTouch = JSON.parse(firstTouchStr);
+                            firstTouch.exit_scroll = maxScroll + '%';
+                            firstTouch.exit_time = getActiveTimeOnPage();
+                            localStorage.setItem('asthros_first_touch', JSON.stringify(firstTouch));
+                        }
+                    }
+                } catch (e) {}
+            } else {
+                lastVisible = Date.now();
+            }
+        });
+    } catch (e) {}
+
+    function getActiveTimeOnPage() {
+        try {
+            const currentActive = totalActive + (document.hidden ? 0 : Date.now() - lastVisible);
+            return Math.round(currentActive / 1000) + 's';
+        } catch (e) {
+            return '0s';
+        }
+    }
+
+    function resetPageContext() {
+        totalActive = 0;
+        lastVisible = Date.now();
+        maxScroll = 0;
+    }
+
+    window.addEventListener('scroll', () => {
+        try {
+            const rawPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+            const scrollPercent = Math.min(100, Math.round(rawPercent));
+            if (scrollPercent > maxScroll) maxScroll = scrollPercent;
+        } catch (e) {}
+    }, { passive: true });
+
+    // Suporte a SPAs (React, Next.js, Vue) - Interceptação de navegação por History API (event-driven, sem polling)
+    try {
+        const handleRouteChange = () => {
+            saveUtmsToStorageAndJourney();
+            resetPageContext();
+        };
+
+        window.addEventListener('popstate', handleRouteChange);
+
+        // Intercepta pushState e replaceState para detectar navegações programáticas em qualquer framework
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+
+        history.pushState = function() {
+            originalPushState.apply(this, arguments);
+            handleRouteChange();
+        };
+
+        history.replaceState = function() {
+            originalReplaceState.apply(this, arguments);
+            handleRouteChange();
+        };
+
+        // Expõe uma função de limpeza global (restaura os métodos originais do History API)
+        window._asthrosCleanup = () => {
+            history.pushState = originalPushState;
+            history.replaceState = originalReplaceState;
+            window.removeEventListener('popstate', handleRouteChange);
+        };
+    } catch (e) {}
+
+    // Cache do contexto de dispositivo — os dados são praticamente estáticos e não precisam ser recalculados a cada lead
+    const cachedDeviceContext = (function() {
+        const ua = navigator.userAgent;
+        return {
+            platform: navigator.platform, // Mantido para compatibilidade histórica do banco
+            // A detecção de Android DEVE vir antes de Linux, pois dispositivos Android também contém 'Linux' no User Agent
+            os: /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'Outro',
+            is_mobile: /Mobi|Android/i.test(ua),
+            language: navigator.language,
+            screen: `${window.screen.width}x${window.screen.height}`,
+            viewport: `${window.innerWidth}x${window.innerHeight}`,
+            user_agent: ua
+        };
+    })();
+
+    function getDeviceContext() {
+        return cachedDeviceContext;
+    }
+
+    function getSessionId() {
+        try {
+            let sessionId = sessionStorage.getItem('asthros_session_id');
+            if (!sessionId) {
+                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                    sessionId = crypto.randomUUID();
+                } else {
+                    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                }
+                sessionStorage.setItem('asthros_session_id', sessionId);
+            }
+            return sessionId;
+        } catch (e) {
+            return 'temp_' + Math.random().toString(36).substring(2, 10);
+        }
+    }
+
 
     function parseUtmsFromUrl() {
         const utms = {};
@@ -112,7 +241,168 @@
         return utms;
     }
 
-    const trackingLocks = new Set();
+    function saveUtmsToStorageAndJourney() {
+        try {
+            const utmsToSave = parseUtmsFromUrl();
+            const hasNewUtms = Object.keys(utmsToSave).length > 0;
+
+            // 1. Gravar referrer e UTMs na sessão
+            if (!sessionStorage.getItem('asthros_referrer')) {
+                sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
+            }
+            if (hasNewUtms) {
+                sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
+            }
+
+            // Limpeza do asthros_journey antigo para liberar espaço
+            if (localStorage.getItem('asthros_journey')) {
+                localStorage.removeItem('asthros_journey');
+            }
+
+            // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada)
+            const referrer = document.referrer || 'direto';
+            const sourceFromRef = getSourceFromReferrer(referrer);
+            let touchpointSource = 'direto';
+
+            if (hasNewUtms) {
+                touchpointSource = utmsToSave.source;
+            } else if (sourceFromRef !== 'direto') {
+                touchpointSource = sourceFromRef;
+            } else {
+                // Se for visita direta pura, registramos apenas se o primeiro toque estiver vazio
+                if (localStorage.getItem('asthros_first_touch')) return;
+            }
+
+            const touchpoint = {
+                source: touchpointSource,
+                medium: utmsToSave.medium || (hasNewUtms ? 'cpc' : (sourceFromRef !== 'direto' ? 'referência' : 'direto')),
+                campaign: utmsToSave.campaign || 'N/A',
+                timestamp: new Date().toISOString(),
+                page_url: window.location.href,
+                page_title: document.title
+            };
+
+            const firstTouchStr = localStorage.getItem('asthros_first_touch');
+            if (!firstTouchStr) {
+                // Primeiro toque na jornada
+                localStorage.setItem('asthros_first_touch', JSON.stringify(touchpoint));
+                localStorage.setItem('asthros_journey_length', '1');
+            } else {
+                // Toques subsequentes: verifica duplicidade com o último toque salvo
+                let lastTouch = null;
+                try {
+                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
+                    lastTouch = lastTouchStr ? JSON.parse(lastTouchStr) : JSON.parse(firstTouchStr);
+                } catch (e) {}
+
+                if (lastTouch) {
+                    const diff = Date.now() - new Date(lastTouch.timestamp).getTime();
+                    const isSameUrl = lastTouch.page_url === touchpoint.page_url;
+                    // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal e na mesma página em menos de 5 min
+                    if (lastTouch.source === touchpoint.source && diff < 5 * 60 * 1000 && isSameUrl) {
+                        return;
+                    }
+                }
+
+                localStorage.setItem('asthros_last_touch', JSON.stringify(touchpoint));
+                
+                let length = 1;
+                try {
+                    length = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
+                } catch (e) {}
+                localStorage.setItem('asthros_journey_length', (length + 1).toString());
+            }
+        } catch (e) {}
+    }
+
+    function getSourceFromReferrer(ref) {
+        if (!ref || ref === 'direto') return 'direto';
+        const lowerRef = ref.toLowerCase();
+        if (lowerRef.includes('google') || lowerRef.includes('bing') || lowerRef.includes('yahoo')) return 'orgânico';
+        if (lowerRef.includes('facebook') || lowerRef.includes('fb.me')) return 'facebook';
+        if (lowerRef.includes('instagram') || lowerRef.includes('ig.me')) return 'instagram';
+        if (lowerRef.includes('t.co') || lowerRef.includes('twitter.com') || lowerRef.includes('x.com')) return 'twitter';
+        if (lowerRef.includes('linkedin')) return 'linkedin';
+        if (lowerRef.includes('youtube.com') || lowerRef.includes('youtu.be')) return 'youtube';
+        if (lowerRef.includes('whatsapp') || lowerRef.includes('wa.me')) return 'whatsapp';
+        return 'referência';
+    }
+
+    function getUtms() {
+        let utms = {};
+        
+        // 1. Tenta obter da URL atual (query ou hash)
+        const urlUtms = parseUtmsFromUrl();
+        const hasUrlUtms = Object.keys(urlUtms).length > 0;
+        if (hasUrlUtms) {
+            utms = urlUtms;
+        }
+
+        // 2. Se não tiver na URL atual, recupera do sessionStorage
+        if (!hasUrlUtms) {
+            try {
+                const stored = sessionStorage.getItem('asthros_utms');
+                if (stored) {
+                    utms = JSON.parse(stored);
+                }
+            } catch (e) {}
+        }
+
+        // 3. Fallback se não houver UTM em lugar nenhum
+        if (Object.keys(utms).length === 0) {
+            try {
+                const storedReferrer = sessionStorage.getItem('asthros_referrer');
+                utms.source = getSourceFromReferrer(storedReferrer || document.referrer);
+            } catch (e) {
+                utms.source = getSourceFromReferrer(document.referrer);
+            }
+        }
+        
+        return utms;
+    }
+
+    function getReferrerContext() {
+        try {
+            return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
+        } catch (e) {
+            return document.referrer || 'direto';
+        }
+    }
+
+    function getJourneyContext() {
+        try {
+            const ft = localStorage.getItem('asthros_first_touch');
+            return ft ? [JSON.parse(ft)] : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function buildMarketingContext() {
+        let firstTouch = null;
+        let lastTouch = null;
+        let journeyLength = 1;
+        try {
+            const ft = localStorage.getItem('asthros_first_touch');
+            if (ft) firstTouch = JSON.parse(ft);
+
+            const lt = localStorage.getItem('asthros_last_touch');
+            if (lt) lastTouch = JSON.parse(lt);
+
+            journeyLength = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
+        } catch (e) {}
+
+        return {
+            ...getUtms(),
+            referrer: getReferrerContext(),
+            page_title: document.title,
+            page_url: window.location.href,
+            first_touch: firstTouch,
+            last_touch: lastTouch,
+            journey_length: journeyLength
+        };
+    }
+
 
     function queueFailedLead(payload) {
         try {
@@ -156,6 +446,7 @@
             queueFailedLead(safePayload);
         }
     }
+
 
     let isFlushing = false;
     let asthrosChannel = null;
@@ -325,306 +616,6 @@
         }
     }
 
-    function saveUtmsToStorageAndJourney() {
-        try {
-            const utmsToSave = parseUtmsFromUrl();
-            const hasNewUtms = Object.keys(utmsToSave).length > 0;
-
-            // 1. Gravar referrer e UTMs na sessão
-            if (!sessionStorage.getItem('asthros_referrer')) {
-                sessionStorage.setItem('asthros_referrer', document.referrer || 'direto');
-            }
-            if (hasNewUtms) {
-                sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
-            }
-
-            // Limpeza do asthros_journey antigo para liberar espaço
-            if (localStorage.getItem('asthros_journey')) {
-                localStorage.removeItem('asthros_journey');
-            }
-
-            // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada)
-            const referrer = document.referrer || 'direto';
-            const sourceFromRef = getSourceFromReferrer(referrer);
-            let touchpointSource = 'direto';
-
-            if (hasNewUtms) {
-                touchpointSource = utmsToSave.source;
-            } else if (sourceFromRef !== 'direto') {
-                touchpointSource = sourceFromRef;
-            } else {
-                // Se for visita direta pura, registramos apenas se o primeiro toque estiver vazio
-                if (localStorage.getItem('asthros_first_touch')) return;
-            }
-
-            const touchpoint = {
-                source: touchpointSource,
-                medium: utmsToSave.medium || (hasNewUtms ? 'cpc' : (sourceFromRef !== 'direto' ? 'referência' : 'direto')),
-                campaign: utmsToSave.campaign || 'N/A',
-                timestamp: new Date().toISOString(),
-                page_url: window.location.href,
-                page_title: document.title
-            };
-
-            const firstTouchStr = localStorage.getItem('asthros_first_touch');
-            if (!firstTouchStr) {
-                // Primeiro toque na jornada
-                localStorage.setItem('asthros_first_touch', JSON.stringify(touchpoint));
-                localStorage.setItem('asthros_journey_length', '1');
-            } else {
-                // Toques subsequentes: verifica duplicidade com o último toque salvo
-                let lastTouch = null;
-                try {
-                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
-                    lastTouch = lastTouchStr ? JSON.parse(lastTouchStr) : JSON.parse(firstTouchStr);
-                } catch (e) {}
-
-                if (lastTouch) {
-                    const diff = Date.now() - new Date(lastTouch.timestamp).getTime();
-                    const isSameUrl = lastTouch.page_url === touchpoint.page_url;
-                    // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal e na mesma página em menos de 5 min
-                    if (lastTouch.source === touchpoint.source && diff < 5 * 60 * 1000 && isSameUrl) {
-                        return;
-                    }
-                }
-
-                localStorage.setItem('asthros_last_touch', JSON.stringify(touchpoint));
-                
-                let length = 1;
-                try {
-                    length = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
-                } catch (e) {}
-                localStorage.setItem('asthros_journey_length', (length + 1).toString());
-            }
-        } catch (e) {}
-    }
-
-    saveUtmsToStorageAndJourney();
-
-    // Controle de tempo ativo na página e scroll máximo (Page Visibility API e Reset em SPAs)
-    let totalActive = 0;
-    let lastVisible = Date.now();
-    let maxScroll = 0;
-
-    try {
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                totalActive += Date.now() - lastVisible;
-                
-                // Exit intent: enriquece o último touchpoint com dados de saída
-                try {
-                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
-                    if (lastTouchStr) {
-                        const lastTouch = JSON.parse(lastTouchStr);
-                        lastTouch.exit_scroll = maxScroll + '%';
-                        lastTouch.exit_time = getActiveTimeOnPage();
-                        localStorage.setItem('asthros_last_touch', JSON.stringify(lastTouch));
-                    } else {
-                        const firstTouchStr = localStorage.getItem('asthros_first_touch');
-                        if (firstTouchStr) {
-                            const firstTouch = JSON.parse(firstTouchStr);
-                            firstTouch.exit_scroll = maxScroll + '%';
-                            firstTouch.exit_time = getActiveTimeOnPage();
-                            localStorage.setItem('asthros_first_touch', JSON.stringify(firstTouch));
-                        }
-                    }
-                } catch (e) {}
-            } else {
-                lastVisible = Date.now();
-            }
-        });
-    } catch (e) {}
-
-    function getActiveTimeOnPage() {
-        try {
-            const currentActive = totalActive + (document.hidden ? 0 : Date.now() - lastVisible);
-            return Math.round(currentActive / 1000) + 's';
-        } catch (e) {
-            return '0s';
-        }
-    }
-
-    function resetPageContext() {
-        totalActive = 0;
-        lastVisible = Date.now();
-        maxScroll = 0;
-    }
-
-    window.addEventListener('scroll', () => {
-        try {
-            const rawPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
-            const scrollPercent = Math.min(100, Math.round(rawPercent));
-            if (scrollPercent > maxScroll) maxScroll = scrollPercent;
-        } catch (e) {}
-    }, { passive: true });
-
-    // Suporte a SPAs (React, Next.js, Vue) - Interceptação de navegação por History API (event-driven, sem polling)
-    try {
-        const handleRouteChange = () => {
-            saveUtmsToStorageAndJourney();
-            resetPageContext();
-        };
-
-        window.addEventListener('popstate', handleRouteChange);
-
-        // Intercepta pushState e replaceState para detectar navegações programáticas em qualquer framework
-        const originalPushState = history.pushState;
-        const originalReplaceState = history.replaceState;
-
-        history.pushState = function() {
-            originalPushState.apply(this, arguments);
-            handleRouteChange();
-        };
-
-        history.replaceState = function() {
-            originalReplaceState.apply(this, arguments);
-            handleRouteChange();
-        };
-
-        // Expõe uma função de limpeza global (restaura os métodos originais do History API)
-        window._asthrosCleanup = () => {
-            history.pushState = originalPushState;
-            history.replaceState = originalReplaceState;
-            window.removeEventListener('popstate', handleRouteChange);
-        };
-    } catch (e) {}
-
-    /*
-    console.log('[Asthros] Configuração Carregada:', {
-        clientId: config.clientId,
-        apiUrl: config.apiUrl,
-        keywords: config.trackKeywords || [],
-        selectors: config.trackSelectors || [],
-        // Ocultamos parte do secret por segurança no log
-        secret: config.secret.substring(0, 10) + '...'
-    });
-    */
-
-
-
-    function getSourceFromReferrer(ref) {
-        if (!ref || ref === 'direto') return 'direto';
-        const lowerRef = ref.toLowerCase();
-        if (lowerRef.includes('google') || lowerRef.includes('bing') || lowerRef.includes('yahoo')) return 'orgânico';
-        if (lowerRef.includes('facebook') || lowerRef.includes('fb.me')) return 'facebook';
-        if (lowerRef.includes('instagram') || lowerRef.includes('ig.me')) return 'instagram';
-        if (lowerRef.includes('t.co') || lowerRef.includes('twitter.com') || lowerRef.includes('x.com')) return 'twitter';
-        if (lowerRef.includes('linkedin')) return 'linkedin';
-        if (lowerRef.includes('youtube.com') || lowerRef.includes('youtu.be')) return 'youtube';
-        if (lowerRef.includes('whatsapp') || lowerRef.includes('wa.me')) return 'whatsapp';
-        return 'referência';
-    }
-
-    function getUtms() {
-        let utms = {};
-        
-        // 1. Tenta obter da URL atual (query ou hash)
-        const urlUtms = parseUtmsFromUrl();
-        const hasUrlUtms = Object.keys(urlUtms).length > 0;
-        if (hasUrlUtms) {
-            utms = urlUtms;
-        }
-
-        // 2. Se não tiver na URL atual, recupera do sessionStorage
-        if (!hasUrlUtms) {
-            try {
-                const stored = sessionStorage.getItem('asthros_utms');
-                if (stored) {
-                    utms = JSON.parse(stored);
-                }
-            } catch (e) {}
-        }
-
-        // 3. Fallback se não houver UTM em lugar nenhum
-        if (Object.keys(utms).length === 0) {
-            try {
-                const storedReferrer = sessionStorage.getItem('asthros_referrer');
-                utms.source = getSourceFromReferrer(storedReferrer || document.referrer);
-            } catch (e) {
-                utms.source = getSourceFromReferrer(document.referrer);
-            }
-        }
-        
-        return utms;
-    }
-
-    // Cache do contexto de dispositivo — os dados são praticamente estáticos e não precisam ser recalculados a cada lead
-    const cachedDeviceContext = (function() {
-        const ua = navigator.userAgent;
-        return {
-            platform: navigator.platform, // Mantido para compatibilidade histórica do banco
-            // A detecção de Android DEVE vir antes de Linux, pois dispositivos Android também contém 'Linux' no User Agent
-            os: /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'Outro',
-            is_mobile: /Mobi|Android/i.test(ua),
-            language: navigator.language,
-            screen: `${window.screen.width}x${window.screen.height}`,
-            viewport: `${window.innerWidth}x${window.innerHeight}`,
-            user_agent: ua
-        };
-    })();
-
-    function getDeviceContext() {
-        return cachedDeviceContext;
-    }
-
-    function getSessionId() {
-        try {
-            let sessionId = sessionStorage.getItem('asthros_session_id');
-            if (!sessionId) {
-                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                    sessionId = crypto.randomUUID();
-                } else {
-                    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                }
-                sessionStorage.setItem('asthros_session_id', sessionId);
-            }
-            return sessionId;
-        } catch (e) {
-            return 'temp_' + Math.random().toString(36).substring(2, 10);
-        }
-    }
-
-    function getReferrerContext() {
-        try {
-            return sessionStorage.getItem('asthros_referrer') || document.referrer || 'direto';
-        } catch (e) {
-            return document.referrer || 'direto';
-        }
-    }
-
-    function getJourneyContext() {
-        try {
-            const ft = localStorage.getItem('asthros_first_touch');
-            return ft ? [JSON.parse(ft)] : [];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function buildMarketingContext() {
-        let firstTouch = null;
-        let lastTouch = null;
-        let journeyLength = 1;
-        try {
-            const ft = localStorage.getItem('asthros_first_touch');
-            if (ft) firstTouch = JSON.parse(ft);
-
-            const lt = localStorage.getItem('asthros_last_touch');
-            if (lt) lastTouch = JSON.parse(lt);
-
-            journeyLength = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
-        } catch (e) {}
-
-        return {
-            ...getUtms(),
-            referrer: getReferrerContext(),
-            page_title: document.title,
-            page_url: window.location.href,
-            first_touch: firstTouch,
-            last_touch: lastTouch,
-            journey_length: journeyLength
-        };
-    }
 
     function isWhatsAppLink(url) {
         if (!url) return false;
@@ -904,8 +895,10 @@
         }
     };
 
-    // Tenta esvaziar a fila de reenvio offline
+
+    // Tenta esvaziar a fila de reenvio offline na inicialização
     flushQueue();
     // console.log('%c[Asthros] Escuta de eventos ativada com sucesso!', 'color: #25d366;');
 })();
+
 
