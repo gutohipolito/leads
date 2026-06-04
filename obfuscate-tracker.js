@@ -46,6 +46,7 @@ const replacements = [
   { from: 'ref', to: '_rf' },
   { from: 'getDeviceContext', to: '_gd' },
   { from: 'getVisitorId', to: '_gv' },
+  { from: 'getConversionTime', to: '_gc' },
   { from: 'isWhatsAppLink', to: '_iw' },
   { from: 'lowerUrl', to: '_lu' },
   { from: 'extractWhatsAppPhone', to: '_ew' },

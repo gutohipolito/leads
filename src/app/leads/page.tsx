@@ -65,6 +65,18 @@ const formatScrollDepth = (depth: any): string => {
   return `${num}%`;
 };
 
+const formatConversionTime = (seconds: any): string => {
+  if (seconds === undefined || seconds === null) return 'N/A';
+  const sec = parseInt(String(seconds)) || 0;
+  if (sec < 60) return `${sec} segundo${sec !== 1 ? 's' : ''}`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} minuto${min !== 1 ? 's' : ''}`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `${hrs} hora${hrs !== 1 ? 's' : ''}`;
+  const days = Math.floor(hrs / 24);
+  return `${days} dia${days !== 1 ? 's' : ''}`;
+};
+
 const getTimelineItems = (marketing: any): any[] => {
   if (!marketing) return [];
   
@@ -1476,6 +1488,18 @@ export default function LeadsPage() {
                           </div>
                           <span className={styles.behaviorItemValue}>
                             {formatTimeOnPage(selectedLead.data.behavior.time_on_page)}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedLead.data.behavior.conversion_time_seconds !== undefined && (
+                        <div className={styles.behaviorItem}>
+                          <div className={styles.behaviorItemHeader}>
+                            <Zap size={12} />
+                            <span>Velocidade de Conversão</span>
+                          </div>
+                          <span className={styles.behaviorItemValue} style={{ color: '#56D7FD' }}>
+                            {formatConversionTime(selectedLead.data.behavior.conversion_time_seconds)}
                           </span>
                         </div>
                       )}

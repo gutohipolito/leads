@@ -6,6 +6,9 @@
     let maxScroll = 0;
 
     try {
+        if (!localStorage.getItem('asthros_first_seen')) {
+            localStorage.setItem('asthros_first_seen', Date.now().toString());
+        }
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 totalActive += Date.now() - lastVisible;
@@ -131,4 +134,15 @@
         } catch (e) {
             return 'temp_' + Math.random().toString(36).substring(2, 10);
         }
+    }
+
+    function getConversionTime() {
+        try {
+            const firstSeen = localStorage.getItem('asthros_first_seen');
+            if (firstSeen) {
+                const diffMs = Date.now() - parseInt(firstSeen, 10);
+                return Math.max(0, Math.round(diffMs / 1000));
+            }
+        } catch (e) {}
+        return 0;
     }
