@@ -747,10 +747,8 @@
     }
 
     // 4. Captura Inteligente de Formulários no Frontend (Opcional)
-    function trackFormSubmit(e) {
+    function captureFormLead(form, matchType) {
         try {
-            const form = e.target;
-            
             // Proteção contra duplo submit do mesmo formulário (resistente a re-renders em React/Vue)
             const lockKey = [
                 'form',
@@ -812,7 +810,7 @@
                         time_on_page: getActiveTimeOnPage(),
                         scroll_depth: maxScroll + '%',
                         button_text: sanitizeButtonText(form.querySelector('[type="submit"]')?.innerText || 'Enviar Formulário'),
-                        match_type: 'Auto-captura de Formulário'
+                        match_type: matchType
                     },
                     device: getDeviceContext(),
                     timestamp: new Date().toISOString()
@@ -823,12 +821,88 @@
         } catch (err) {}
     }
 
+    function trackFormSubmit(e) {
+        try {
+            const form = e.target;
+            
+            // Se for Contact Form 7 ou Elementor (que possuem AJAX próprio), ignoramos o submit imediato
+            // e aguardamos o evento de sucesso específico para evitar capturar leads inválidos/falsos.
+            if (form.classList.contains('wpcf7-form') || 
+                form.closest('.elementor-form') || 
+                form.getAttribute('data-asthros-ajax') === 'true') {
+                return;
+            }
+
+            captureFormLead(form, 'Auto-captura de Formulário');
+        } catch (err) {}
+    }
+
     document.addEventListener('click', trackLead, { capture: true });
 
     // Habilita a escuta de formulários apenas se configurado explicitamente autoTrackForms: true
     if (config.autoTrackForms === true || config.autoTrackForms === 'true') {
         document.addEventListener('submit', trackFormSubmit, { capture: true });
     }
+
+    // Ouvinte de sucesso para o Contact Form 7 (Nativo)
+    document.addEventListener('wpcf7mailsent', function(event) {
+        try {
+            const form = event.target;
+            if (form) {
+                captureFormLead(form, 'Contact Form 7 (Sucesso AJAX)');
+            }
+        } catch (e) {}
+    }, false);
+
+    // Ouvinte de sucesso para o Elementor Forms (Via jQuery se estiver na página)
+    try {
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document).on('submit_success', function(event) {
+                // Em Elementor, o event.target ou a resposta pode referenciar o form
+                const form = event.target || document.querySelector('.elementor-form');
+                if (form) {
+                    captureFormLead(form, 'Elementor Forms (Sucesso AJAX)');
+                }
+            });
+        }
+    } catch (e) {}
+
+    // Exposição da API Pública Global para desenvolvedores
+    function manualTrackLead(data) {
+        try {
+            if (!data) return;
+            const payload = {
+                source: 'manual',
+                name: sanitize(data.name || data.nome || 'Lead Manual'),
+                email: sanitize(data.email || data.e_mail),
+                phone: sanitize(data.phone || data.telefone || data.whatsapp),
+                fields: data.fields || {},
+                session_fingerprint: getSessionId(),
+                marketing: buildMarketingContext(),
+                behavior: {
+                    time_on_page: getActiveTimeOnPage(),
+                    scroll_depth: maxScroll + '%',
+                    match_type: 'Disparo Manual (API)'
+                },
+                device: getDeviceContext(),
+                timestamp: new Date().toISOString()
+            };
+            
+            if (payload.email && !/^[a-zA-Z0-9._%+\-]{2,}@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,10}$/.test(payload.email)) {
+                payload.email = '';
+            }
+            
+            sendPayload(payload);
+        } catch (e) {}
+    }
+
+    window.Asthros = window.Asthros || {};
+    window.Asthros.trackLead = manualTrackLead;
+    window.Asthros.trackForm = function(formElement) {
+        if (formElement && formElement.tagName === 'FORM') {
+            captureFormLead(formElement, 'Disparo Manual de Formulário (API)');
+        }
+    };
 
     // Tenta esvaziar a fila de reenvio offline
     flushQueue();
