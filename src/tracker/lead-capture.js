@@ -238,6 +238,18 @@
         } catch (e) {}
     }, false);
 
+    // Ouvinte alternativo do Contact Form 7 para quando não dispara e-mail (status 'skipped' ou 'mail_sent')
+    document.addEventListener('wpcf7submit', function(event) {
+        try {
+            const form = event.target;
+            const status = event.detail && event.detail.status;
+            if (form && (status === 'mail_sent' || status === 'skipped')) {
+                captureFormLead(form, 'Contact Form 7 (Sucesso Submit)');
+            }
+        } catch (e) {}
+    }, false);
+
+
     // Ouvinte nativo (Vanilla JS) para versões modernas do Elementor
     try {
         document.addEventListener('submit_success', function(event) {
