@@ -99,6 +99,7 @@
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
+            lead_id: generateUUID(),
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             session_fingerprint: getSessionId(),
@@ -171,6 +172,7 @@
             
             if (leadName && (leadEmail || leadPhone)) {
                 const payload = {
+                    lead_id: generateUUID(),
                     source: 'form',
                     name: leadName,
                     email: leadEmail,
@@ -321,6 +323,7 @@
 
                                 if (leadName && (extractedEmail || extractedPhone)) {
                                     const payload = {
+                                        lead_id: generateUUID(),
                                         source: 'form',
                                         name: leadName,
                                         email: extractedEmail,
@@ -352,6 +355,7 @@
         try {
             if (!data) return;
             const payload = {
+                lead_id: generateUUID(),
                 source: 'manual',
                 name: sanitize(data.name || data.nome || 'Lead Manual'),
                 email: sanitize(data.email || data.e_mail),

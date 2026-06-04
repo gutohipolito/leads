@@ -61,6 +61,18 @@
             .trim();
     }
 
+    function generateUUID() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        // Fallback robusto usando Math.random
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
 
     const trackingLocks = new Set();
 
@@ -551,7 +563,10 @@
                     const mergedQueue = [...failedItems];
                     
                     currentQueue.forEach(item => {
-                        const isDuplicate = failedItems.some(f => f.timestamp === item.timestamp && f.name === item.name);
+                        const isDuplicate = failedItems.some(f => 
+                            (f.lead_id && f.lead_id === item.lead_id) || 
+                            (!f.lead_id && f.timestamp === item.timestamp && f.name === item.name)
+                        );
                         if (!isDuplicate) {
                             mergedQueue.push(item);
                         }
@@ -566,7 +581,10 @@
                     // Limpa apenas os leads que foram enviados com sucesso, mantendo novos leads que entraram no meio do caminho
                     const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
                     const remainingQueue = currentQueue.filter(item => 
-                        !queue.some(q => q.timestamp === item.timestamp && q.name === item.name)
+                        !queue.some(q => 
+                            (q.lead_id && q.lead_id === item.lead_id) || 
+                            (!q.lead_id && q.timestamp === item.timestamp && q.name === item.name)
+                        )
                     );
                     
                     if (remainingQueue.length > 0) {
@@ -748,6 +766,7 @@
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
         const payload = {
+            lead_id: generateUUID(),
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             session_fingerprint: getSessionId(),
@@ -820,6 +839,7 @@
             
             if (leadName && (leadEmail || leadPhone)) {
                 const payload = {
+                    lead_id: generateUUID(),
                     source: 'form',
                     name: leadName,
                     email: leadEmail,
@@ -970,6 +990,7 @@
 
                                 if (leadName && (extractedEmail || extractedPhone)) {
                                     const payload = {
+                                        lead_id: generateUUID(),
                                         source: 'form',
                                         name: leadName,
                                         email: extractedEmail,
@@ -1001,6 +1022,7 @@
         try {
             if (!data) return;
             const payload = {
+                lead_id: generateUUID(),
                 source: 'manual',
                 name: sanitize(data.name || data.nome || 'Lead Manual'),
                 email: sanitize(data.email || data.e_mail),

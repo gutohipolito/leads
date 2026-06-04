@@ -71,7 +71,10 @@
                     const mergedQueue = [...failedItems];
                     
                     currentQueue.forEach(item => {
-                        const isDuplicate = failedItems.some(f => f.timestamp === item.timestamp && f.name === item.name);
+                        const isDuplicate = failedItems.some(f => 
+                            (f.lead_id && f.lead_id === item.lead_id) || 
+                            (!f.lead_id && f.timestamp === item.timestamp && f.name === item.name)
+                        );
                         if (!isDuplicate) {
                             mergedQueue.push(item);
                         }
@@ -86,7 +89,10 @@
                     // Limpa apenas os leads que foram enviados com sucesso, mantendo novos leads que entraram no meio do caminho
                     const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
                     const remainingQueue = currentQueue.filter(item => 
-                        !queue.some(q => q.timestamp === item.timestamp && q.name === item.name)
+                        !queue.some(q => 
+                            (q.lead_id && q.lead_id === item.lead_id) || 
+                            (!q.lead_id && q.timestamp === item.timestamp && q.name === item.name)
+                        )
                     );
                     
                     if (remainingQueue.length > 0) {
