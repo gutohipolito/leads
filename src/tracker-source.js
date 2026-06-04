@@ -875,15 +875,123 @@
         } catch (e) {}
     }, false);
 
+    // Ouvinte nativo (Vanilla JS) para versões modernas do Elementor
+    try {
+        document.addEventListener('submit_success', function(event) {
+            const form = event.target;
+            if (form) {
+                captureFormLead(form, 'Elementor Forms (Nativo AJAX)');
+            }
+        });
+    } catch (e) {}
+
     // Ouvinte de sucesso para o Elementor Forms (Via jQuery se estiver na página)
     try {
         if (typeof jQuery !== 'undefined') {
+            // 1. Ouvinte clássico via evento submit_success do jQuery
             jQuery(document).on('submit_success', function(event) {
-                // Em Elementor, o event.target ou a resposta pode referenciar o form
                 const form = event.target || document.querySelector('.elementor-form');
                 if (form) {
-                    captureFormLead(form, 'Elementor Forms (Sucesso AJAX)');
+                    captureFormLead(form, 'Elementor Forms (submit_success)');
                 }
+            });
+
+            // 2. Ouvinte avançado via ajaxComplete para interceptar o Ajax Handler interno
+            jQuery(document).ajaxComplete(function(event, xhr, settings) {
+                try {
+                    if (settings.data && settings.data.indexOf('action=elementor_pro_forms_send_form') !== -1) {
+                        const response = xhr.responseJSON;
+                        if (response && response.success) {
+                            // Parsear os parâmetros enviados no corpo da requisição AJAX
+                            const params = {};
+                            const pairs = settings.data.split('&');
+                            for (let i = 0; i < pairs.length; i++) {
+                                const pair = pairs[i].split('=');
+                                const key = decodeURIComponent(pair[0]);
+                                const val = decodeURIComponent(pair[1] || '');
+                                if (key) params[key] = val;
+                            }
+
+                            // Evitar duplo disparo se já capturamos por outro método
+                            const formId = params.form_id;
+                            const leadEmail = params['form_fields[email]'] || params['form_fields[e-mail]'] || '';
+                            const leadPhone = params['form_fields[phone]'] || params['form_fields[tel]'] || params['form_fields[whats]'] || params['form_fields[cel]'] || '';
+                            
+                            const lockKey = 'ajax_form|' + (formId || '') + '|' + (leadEmail || leadPhone || '');
+                            if (trackingLocks.has(lockKey)) return;
+                            trackingLocks.add(lockKey);
+                            setTimeout(() => { trackingLocks.delete(lockKey); }, 3000);
+
+                            // Tenta encontrar o formulário no DOM pelo form_id enviado
+                            let form = null;
+                            if (formId) {
+                                form = document.querySelector('input[name="form_id"][value="' + formId + '"]')?.closest('form');
+                            }
+                            if (!form) {
+                                form = document.querySelector('.elementor-form');
+                            }
+
+                            if (form) {
+                                captureFormLead(form, 'Elementor Forms (AJAX Handler)');
+                            } else {
+                                // Fallback: se o form já foi destruído no DOM (ex: popup fechou rápido demais)
+                                // extraímos os dados diretamente do settings.data
+                                let leadName = '';
+                                let extractedEmail = '';
+                                let extractedPhone = '';
+                                const formDataFields = {};
+
+                                for (const key in params) {
+                                    if (key.indexOf('form_fields[') === 0) {
+                                        const fieldNameMatch = key.match(/form_fields\[(.*?)\]/);
+                                        if (fieldNameMatch && fieldNameMatch[1]) {
+                                            const fieldName = fieldNameMatch[1];
+                                            const val = params[key].trim();
+                                            if (!val) continue;
+                                            const cleanValue = sanitize(val);
+                                            const lowerFieldName = fieldName.toLowerCase();
+                                            
+                                            if (lowerFieldName.includes('name') || lowerFieldName.includes('nome')) {
+                                                leadName = cleanValue;
+                                            } else if (lowerFieldName.includes('email') || lowerFieldName.includes('e-mail')) {
+                                                extractedEmail = cleanValue;
+                                            } else if (lowerFieldName.includes('phone') || lowerFieldName.includes('tel') || lowerFieldName.includes('whats') || lowerFieldName.includes('cel')) {
+                                                extractedPhone = cleanValue;
+                                            } else {
+                                                formDataFields[fieldName] = cleanValue;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (extractedEmail && !/^[a-zA-Z0-9._%+\-]{2,}@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,10}$/.test(extractedEmail)) {
+                                    extractedEmail = '';
+                                }
+
+                                if (leadName && (extractedEmail || extractedPhone)) {
+                                    const payload = {
+                                        source: 'form',
+                                        name: leadName,
+                                        email: extractedEmail,
+                                        phone: extractedPhone,
+                                        fields: formDataFields,
+                                        session_fingerprint: getSessionId(),
+                                        marketing: buildMarketingContext(),
+                                        behavior: {
+                                            time_on_page: getActiveTimeOnPage(),
+                                            scroll_depth: maxScroll + '%',
+                                            button_text: 'Enviar Formulário (Popup/AJAX)',
+                                            match_type: 'Elementor Forms (AJAX Fallback)'
+                                        },
+                                        device: getDeviceContext(),
+                                        timestamp: new Date().toISOString()
+                                    };
+                                    sendPayload(payload);
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {}
             });
         }
     } catch (e) {}
