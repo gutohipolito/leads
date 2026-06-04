@@ -84,12 +84,18 @@
         }
 
         // Proteção contra duplo clique e race condition de envio por elemento (resistente a re-renders em React/Vue)
+        const rect = link.getBoundingClientRect();
+        const docTop = Math.round(rect.top + (window.scrollY || window.pageYOffset || 0));
+        const docLeft = Math.round(rect.left + (window.scrollX || window.pageXOffset || 0));
+
         const lockKey = [
             'click',
+            link.id || '',
+            docTop,
+            docLeft,
             link.tagName,
             link.href || '',
-            link.innerText || link.getAttribute('aria-label') || '',
-            link.className || ''
+            link.innerText || link.getAttribute('aria-label') || ''
         ].join('|');
 
         if (trackingLocks.has(lockKey)) return;
