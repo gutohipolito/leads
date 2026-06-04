@@ -103,6 +103,7 @@
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             session_fingerprint: getSessionId(),
+            visitor_id: getVisitorId(),
             marketing: buildMarketingContext(),
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
@@ -179,6 +180,7 @@
                     phone: leadPhone,
                     fields: formDataFields,
                     session_fingerprint: getSessionId(),
+                    visitor_id: getVisitorId(),
                     marketing: buildMarketingContext(),
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),
@@ -330,6 +332,7 @@
                                         phone: extractedPhone,
                                         fields: formDataFields,
                                         session_fingerprint: getSessionId(),
+                                        visitor_id: getVisitorId(),
                                         marketing: buildMarketingContext(),
                                         behavior: {
                                             time_on_page: getActiveTimeOnPage(),
@@ -362,6 +365,7 @@
                 phone: sanitize(data.phone || data.telefone || data.whatsapp),
                 fields: data.fields || {},
                 session_fingerprint: getSessionId(),
+                visitor_id: getVisitorId(),
                 marketing: buildMarketingContext(),
                 behavior: {
                     time_on_page: getActiveTimeOnPage(),

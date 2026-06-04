@@ -187,14 +187,23 @@
         try {
             let sessionId = sessionStorage.getItem('asthros_session_id');
             if (!sessionId) {
-                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                    sessionId = crypto.randomUUID();
-                } else {
-                    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                }
+                sessionId = generateUUID();
                 sessionStorage.setItem('asthros_session_id', sessionId);
             }
             return sessionId;
+        } catch (e) {
+            return 'temp_' + Math.random().toString(36).substring(2, 10);
+        }
+    }
+
+    function getVisitorId() {
+        try {
+            let visitorId = localStorage.getItem('asthros_visitor_id');
+            if (!visitorId) {
+                visitorId = generateUUID();
+                localStorage.setItem('asthros_visitor_id', visitorId);
+            }
+            return visitorId;
         } catch (e) {
             return 'temp_' + Math.random().toString(36).substring(2, 10);
         }
@@ -770,6 +779,7 @@
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             session_fingerprint: getSessionId(),
+            visitor_id: getVisitorId(),
             marketing: buildMarketingContext(),
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
@@ -846,6 +856,7 @@
                     phone: leadPhone,
                     fields: formDataFields,
                     session_fingerprint: getSessionId(),
+                    visitor_id: getVisitorId(),
                     marketing: buildMarketingContext(),
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),
@@ -997,6 +1008,7 @@
                                         phone: extractedPhone,
                                         fields: formDataFields,
                                         session_fingerprint: getSessionId(),
+                                        visitor_id: getVisitorId(),
                                         marketing: buildMarketingContext(),
                                         behavior: {
                                             time_on_page: getActiveTimeOnPage(),
@@ -1029,6 +1041,7 @@
                 phone: sanitize(data.phone || data.telefone || data.whatsapp),
                 fields: data.fields || {},
                 session_fingerprint: getSessionId(),
+                visitor_id: getVisitorId(),
                 marketing: buildMarketingContext(),
                 behavior: {
                     time_on_page: getActiveTimeOnPage(),

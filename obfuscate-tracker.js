@@ -45,6 +45,7 @@ const replacements = [
   { from: 'utms', to: '_ut' },
   { from: 'ref', to: '_rf' },
   { from: 'getDeviceContext', to: '_gd' },
+  { from: 'getVisitorId', to: '_gv' },
   { from: 'isWhatsAppLink', to: '_iw' },
   { from: 'lowerUrl', to: '_lu' },
   { from: 'extractWhatsAppPhone', to: '_ew' },

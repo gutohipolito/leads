@@ -111,14 +111,23 @@
         try {
             let sessionId = sessionStorage.getItem('asthros_session_id');
             if (!sessionId) {
-                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                    sessionId = crypto.randomUUID();
-                } else {
-                    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                }
+                sessionId = generateUUID();
                 sessionStorage.setItem('asthros_session_id', sessionId);
             }
             return sessionId;
+        } catch (e) {
+            return 'temp_' + Math.random().toString(36).substring(2, 10);
+        }
+    }
+
+    function getVisitorId() {
+        try {
+            let visitorId = localStorage.getItem('asthros_visitor_id');
+            if (!visitorId) {
+                visitorId = generateUUID();
+                localStorage.setItem('asthros_visitor_id', visitorId);
+            }
+            return visitorId;
         } catch (e) {
             return 'temp_' + Math.random().toString(36).substring(2, 10);
         }
