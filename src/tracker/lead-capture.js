@@ -162,11 +162,11 @@
                 const cleanValue = sanitize(value);
                 if (!cleanValue) return;
                 
-                if (nameAttr.includes('name') || nameAttr.includes('nome')) {
+                if (nameAttr.includes('name') || nameAttr.includes('nome') || nameAttr.includes('fullname') || nameAttr.includes('full_name') || nameAttr.includes('cliente') || nameAttr.includes('contato')) {
                     leadName = cleanValue;
-                } else if (nameAttr.includes('email') || nameAttr.includes('e-mail') || input.type === 'email') {
+                } else if (nameAttr.includes('email') || nameAttr.includes('e-mail') || nameAttr.includes('mail') || nameAttr.includes('correo') || input.type === 'email') {
                     leadEmail = cleanValue;
-                } else if (nameAttr.includes('phone') || nameAttr.includes('tel') || nameAttr.includes('whats') || nameAttr.includes('cel') || input.type === 'tel') {
+                } else if (nameAttr.includes('phone') || nameAttr.includes('tel') || nameAttr.includes('whats') || nameAttr.includes('cel') || nameAttr.includes('telefone') || nameAttr.includes('celular') || nameAttr.includes('mobile') || input.type === 'tel') {
                     leadPhone = cleanValue;
                 } else {
                     formDataFields[input.name || input.id] = cleanValue;
@@ -289,8 +289,8 @@
 
                             // Evitar duplo disparo se já capturamos por outro método
                             const formId = params.form_id;
-                            const leadEmail = params['form_fields[email]'] || params['form_fields[e-mail]'] || '';
-                            const leadPhone = params['form_fields[phone]'] || params['form_fields[tel]'] || params['form_fields[whats]'] || params['form_fields[cel]'] || '';
+                            const leadEmail = params['form_fields[email]'] || params['form_fields[e-mail]'] || params['form_fields[mail]'] || params['form_fields[correo]'] || '';
+                            const leadPhone = params['form_fields[phone]'] || params['form_fields[tel]'] || params['form_fields[whats]'] || params['form_fields[cel]'] || params['form_fields[telefone]'] || params['form_fields[celular]'] || params['form_fields[mobile]'] || '';
                             
                             const lockKey = 'ajax_form|' + (formId || '') + '|' + (leadEmail || leadPhone || '');
                             if (trackingLocks.has(lockKey)) return;
@@ -326,11 +326,11 @@
                                             const cleanValue = sanitize(val);
                                             const lowerFieldName = fieldName.toLowerCase();
                                             
-                                            if (lowerFieldName.includes('name') || lowerFieldName.includes('nome')) {
+                                            if (lowerFieldName.includes('name') || lowerFieldName.includes('nome') || lowerFieldName.includes('fullname') || lowerFieldName.includes('full_name') || lowerFieldName.includes('cliente') || lowerFieldName.includes('contato')) {
                                                 leadName = cleanValue;
-                                            } else if (lowerFieldName.includes('email') || lowerFieldName.includes('e-mail')) {
+                                            } else if (lowerFieldName.includes('email') || lowerFieldName.includes('e-mail') || lowerFieldName.includes('mail') || lowerFieldName.includes('correo')) {
                                                 extractedEmail = cleanValue;
-                                            } else if (lowerFieldName.includes('phone') || lowerFieldName.includes('tel') || lowerFieldName.includes('whats') || lowerFieldName.includes('cel')) {
+                                            } else if (lowerFieldName.includes('phone') || lowerFieldName.includes('tel') || lowerFieldName.includes('whats') || lowerFieldName.includes('cel') || lowerFieldName.includes('telefone') || lowerFieldName.includes('celular') || lowerFieldName.includes('mobile')) {
                                                 extractedPhone = cleanValue;
                                             } else {
                                                 formDataFields[fieldName] = cleanValue;
@@ -381,9 +381,9 @@
             const payload = {
                 lead_id: generateUUID(),
                 source: 'manual',
-                name: sanitize(data.name || data.nome || 'Lead Manual'),
-                email: sanitize(data.email || data.e_mail),
-                phone: sanitize(data.phone || data.telefone || data.whatsapp),
+                name: sanitize(data.name || data.nome || data.fullname || data.full_name || data.cliente || data.contato || 'Lead Manual'),
+                email: sanitize(data.email || data.e_mail || data.mail || data.correo),
+                phone: sanitize(data.phone || data.telefone || data.whatsapp || data.celular || data.mobile || data.whats || data.cel || data.tel),
                 fields: data.fields || {},
                 session_fingerprint: getSessionId(),
                 visitor_id: getVisitorId(),
