@@ -1680,4 +1680,22 @@
   to { transform: rotate(360deg); }
 }
 
+.timelineIntermediate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(245, 158, 11, 0.02);
+  border: 1px dashed rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.timelineDotIntermediate {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
 

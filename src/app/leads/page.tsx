@@ -1466,32 +1466,113 @@ export default function LeadsPage() {
                 )}
 
                 {/* Jornada do Lead (Atribuição Multitouch) */}
-                {selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0 && (
+                {((selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0) || selectedLead.data?.marketing?.first_touch) && (
                   <div className={styles.detailSection}>
                     <div className={styles.sectionHeader}>
                       <Globe size={16} className={styles.sectionIcon} style={{ color: '#56D7FD' }} />
                       <h4>Jornada de Atribuição (Touchpoints)</h4>
                     </div>
                     <div className={styles.timeline}>
-                      {selectedLead.data.marketing.journey.map((tp: any, index: number) => (
-                        <div key={index} className={styles.timelineItem}>
-                          <div className={styles.timelineDot}></div>
-                          <div className={styles.timelineContent}>
-                            <div className={styles.timelineHeader}>
-                              <span className={styles.timelineSource}>{tp.source} ({tp.medium})</span>
-                              <span className={styles.timelineTime}>
-                                {new Date(tp.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                              </span>
+                      {/* Lógica retrocompatível para jornada clássica (completa) */}
+                      {selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0 ? (
+                        selectedLead.data.marketing.journey.map((tp: any, index: number) => (
+                          <div key={index} className={styles.timelineItem}>
+                            <div className={styles.timelineDot}></div>
+                            <div className={styles.timelineContent}>
+                              <div className={styles.timelineHeader}>
+                                <span className={styles.timelineSource}>{tp.source} ({tp.medium})</span>
+                                <span className={styles.timelineTime}>
+                                  {new Date(tp.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <p className={styles.timelinePage} title={tp.page_url}>
+                                Visualizou: <em>{tp.page_title || 'Página do Site'}</em>
+                              </p>
+                              {tp.campaign && tp.campaign !== 'N/A' && (
+                                <span className={styles.timelineCampaign}>Campanha: {tp.campaign}</span>
+                              )}
+                              {tp.exit_time && (
+                                <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', marginTop: '4px' }}>
+                                  Tempo ativo: {tp.exit_time} | Rolou: {tp.exit_scroll || '0%'}
+                                </div>
+                              )}
                             </div>
-                            <p className={styles.timelinePage} title={tp.page_url}>
-                              Visualizou: <em>{tp.page_title || 'Página do Site'}</em>
-                            </p>
-                            {tp.campaign && tp.campaign !== 'N/A' && (
-                              <span className={styles.timelineCampaign}>Campanha: {tp.campaign}</span>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        /* Lógica otimizada com first_touch, item intermediário e last_touch */
+                        <>
+                          {selectedLead.data.marketing.first_touch && (
+                            <div className={styles.timelineItem}>
+                              <div className={styles.timelineDot}></div>
+                              <div className={styles.timelineContent}>
+                                <div className={styles.timelineHeader}>
+                                  <span className={styles.timelineSource}>
+                                    {selectedLead.data.marketing.first_touch.source} ({selectedLead.data.marketing.first_touch.medium})
+                                  </span>
+                                  <span className={styles.timelineTime}>
+                                    {new Date(selectedLead.data.marketing.first_touch.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
+                                  Primeiro Toque
+                                </div>
+                                <p className={styles.timelinePage} title={selectedLead.data.marketing.first_touch.page_url}>
+                                  Visualizou: <em>{selectedLead.data.marketing.first_touch.page_title || 'Página do Site'}</em>
+                                </p>
+                                {selectedLead.data.marketing.first_touch.campaign && selectedLead.data.marketing.first_touch.campaign !== 'N/A' && (
+                                  <span className={styles.timelineCampaign}>Campanha: {selectedLead.data.marketing.first_touch.campaign}</span>
+                                )}
+                                {selectedLead.data.marketing.first_touch.exit_time && (
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', marginTop: '4px' }}>
+                                    Tempo ativo: {selectedLead.data.marketing.first_touch.exit_time} | Rolou: {selectedLead.data.marketing.first_touch.exit_scroll || '0%'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Item Intermediário se houver mais de 2 touchpoints no total */}
+                          {(selectedLead.data.marketing.journey_length || 1) > 2 && selectedLead.data.marketing.last_touch && (
+                            <div className={styles.timelineItem}>
+                              <div className={`${styles.timelineDot} ${styles.timelineDotIntermediate}`}></div>
+                              <div className={styles.timelineIntermediate}>
+                                ⚡ +{(selectedLead.data.marketing.journey_length || 1) - 2} visitas intermediárias no site
+                              </div>
+                            </div>
+                          )}
+
+                          {selectedLead.data.marketing.last_touch && (
+                            <div className={styles.timelineItem}>
+                              <div className={styles.timelineDot}></div>
+                              <div className={styles.timelineContent}>
+                                <div className={styles.timelineHeader}>
+                                  <span className={styles.timelineSource}>
+                                    {selectedLead.data.marketing.last_touch.source} ({selectedLead.data.marketing.last_touch.medium})
+                                  </span>
+                                  <span className={styles.timelineTime}>
+                                    {new Date(selectedLead.data.marketing.last_touch.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.65rem', color: '#25d366', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
+                                  Último Toque (Conversão)
+                                </div>
+                                <p className={styles.timelinePage} title={selectedLead.data.marketing.last_touch.page_url}>
+                                  Visualizou: <em>{selectedLead.data.marketing.last_touch.page_title || 'Página do Site'}</em>
+                                </p>
+                                {selectedLead.data.marketing.last_touch.campaign && selectedLead.data.marketing.last_touch.campaign !== 'N/A' && (
+                                  <span className={styles.timelineCampaign}>Campanha: {selectedLead.data.marketing.last_touch.campaign}</span>
+                                )}
+                                {selectedLead.data.marketing.last_touch.exit_time && (
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', marginTop: '4px' }}>
+                                    Tempo ativo: {selectedLead.data.marketing.last_touch.exit_time} | Rolou: {selectedLead.data.marketing.last_touch.exit_scroll || '0%'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 )}

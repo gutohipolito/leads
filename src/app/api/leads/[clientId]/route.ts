@@ -226,7 +226,7 @@ export async function POST(
     }
     
     // 5. Visitas anteriores na jornada (Atribuição)
-    const journeyLength = body.marketing?.journey?.length || 0;
+    const journeyLength = body.marketing?.journey_length || body.marketing?.journey?.length || 0;
     if (journeyLength >= 3) leadScore += scoringRules.journey_3;
     else if (journeyLength === 2) leadScore += scoringRules.journey_2;
     

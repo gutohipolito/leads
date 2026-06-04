@@ -310,7 +310,12 @@
                 sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
             }
 
-            // 2. Gravar o Touchpoint na jornada do LocalStorage (Atribuição Multitouch)
+            // Limpeza do asthros_journey antigo para liberar espaço
+            if (localStorage.getItem('asthros_journey')) {
+                localStorage.removeItem('asthros_journey');
+            }
+
+            // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada)
             const referrer = document.referrer || 'direto';
             const sourceFromRef = getSourceFromReferrer(referrer);
             let touchpointSource = 'direto';
@@ -320,8 +325,8 @@
             } else if (sourceFromRef !== 'direto') {
                 touchpointSource = sourceFromRef;
             } else {
-                // Se for visita direta pura, registramos apenas se a jornada estiver vazia
-                if (localStorage.getItem('asthros_journey')) return;
+                // Se for visita direta pura, registramos apenas se o primeiro toque estiver vazio
+                if (localStorage.getItem('asthros_first_touch')) return;
             }
 
             const touchpoint = {
@@ -333,30 +338,36 @@
                 page_title: document.title
             };
 
-            let journey = [];
-            try {
-                const existingJourney = localStorage.getItem('asthros_journey');
-                if (existingJourney) {
-                    journey = JSON.parse(existingJourney);
+            const firstTouchStr = localStorage.getItem('asthros_first_touch');
+            if (!firstTouchStr) {
+                // Primeiro toque na jornada
+                localStorage.setItem('asthros_first_touch', JSON.stringify(touchpoint));
+                localStorage.setItem('asthros_journey_length', '1');
+            } else {
+                // Toques subsequentes: verifica duplicidade com o último toque salvo
+                let lastTouch = null;
+                try {
+                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
+                    lastTouch = lastTouchStr ? JSON.parse(lastTouchStr) : JSON.parse(firstTouchStr);
+                } catch (e) {}
+
+                if (lastTouch) {
+                    const diff = Date.now() - new Date(lastTouch.timestamp).getTime();
+                    const isSameUrl = lastTouch.page_url === touchpoint.page_url;
+                    // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal e na mesma página em menos de 5 min
+                    if (lastTouch.source === touchpoint.source && diff < 5 * 60 * 1000 && isSameUrl) {
+                        return;
+                    }
                 }
-            } catch (e) {}
 
-            // Evitar gravar múltiplos cliques/visitas seguidos no mesmo canal e na mesma página em menos de 5 min
-            if (journey.length > 0) {
-                const last = journey[journey.length - 1];
-                const diff = Date.now() - new Date(last.timestamp).getTime();
-                const isSameUrl = last.page_url === touchpoint.page_url;
-                if (last.source === touchpoint.source && diff < 5 * 60 * 1000 && isSameUrl) {
-                    return;
-                }
+                localStorage.setItem('asthros_last_touch', JSON.stringify(touchpoint));
+                
+                let length = 1;
+                try {
+                    length = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
+                } catch (e) {}
+                localStorage.setItem('asthros_journey_length', (length + 1).toString());
             }
-
-            journey.push(touchpoint);
-            if (journey.length > 10) {
-                journey.shift(); // Limita a jornada em 10 touchpoints
-            }
-
-            localStorage.setItem('asthros_journey', JSON.stringify(journey));
         } catch (e) {}
     }
 
@@ -374,11 +385,20 @@
                 
                 // Exit intent: enriquece o último touchpoint com dados de saída
                 try {
-                    const journey = getJourneyContext();
-                    if (journey.length > 0) {
-                        journey[journey.length - 1].exit_scroll = maxScroll + '%';
-                        journey[journey.length - 1].exit_time = getActiveTimeOnPage();
-                        localStorage.setItem('asthros_journey', JSON.stringify(journey));
+                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
+                    if (lastTouchStr) {
+                        const lastTouch = JSON.parse(lastTouchStr);
+                        lastTouch.exit_scroll = maxScroll + '%';
+                        lastTouch.exit_time = getActiveTimeOnPage();
+                        localStorage.setItem('asthros_last_touch', JSON.stringify(lastTouch));
+                    } else {
+                        const firstTouchStr = localStorage.getItem('asthros_first_touch');
+                        if (firstTouchStr) {
+                            const firstTouch = JSON.parse(firstTouchStr);
+                            firstTouch.exit_scroll = maxScroll + '%';
+                            firstTouch.exit_time = getActiveTimeOnPage();
+                            localStorage.setItem('asthros_first_touch', JSON.stringify(firstTouch));
+                        }
                     }
                 } catch (e) {}
             } else {
@@ -500,7 +520,8 @@
         return utms;
     }
 
-    function getDeviceContext() {
+    // Cache do contexto de dispositivo — os dados são praticamente estáticos e não precisam ser recalculados a cada lead
+    const cachedDeviceContext = (function() {
         const ua = navigator.userAgent;
         return {
             platform: navigator.platform, // Mantido para compatibilidade histórica do banco
@@ -512,6 +533,10 @@
             viewport: `${window.innerWidth}x${window.innerHeight}`,
             user_agent: ua
         };
+    })();
+
+    function getDeviceContext() {
+        return cachedDeviceContext;
     }
 
     function getSessionId() {
@@ -541,19 +566,35 @@
 
     function getJourneyContext() {
         try {
-            return JSON.parse(localStorage.getItem('asthros_journey') || '[]');
+            const ft = localStorage.getItem('asthros_first_touch');
+            return ft ? [JSON.parse(ft)] : [];
         } catch (e) {
             return [];
         }
     }
 
     function buildMarketingContext() {
+        let firstTouch = null;
+        let lastTouch = null;
+        let journeyLength = 1;
+        try {
+            const ft = localStorage.getItem('asthros_first_touch');
+            if (ft) firstTouch = JSON.parse(ft);
+
+            const lt = localStorage.getItem('asthros_last_touch');
+            if (lt) lastTouch = JSON.parse(lt);
+
+            journeyLength = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
+        } catch (e) {}
+
         return {
             ...getUtms(),
             referrer: getReferrerContext(),
             page_title: document.title,
             page_url: window.location.href,
-            journey: getJourneyContext()
+            first_touch: firstTouch,
+            last_touch: lastTouch,
+            journey_length: journeyLength
         };
     }
 
