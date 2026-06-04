@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignorar tracker e seus módulos (são arquivos parciais de JS puro e geram erros no linter do Next.js)
+    "src/tracker/**",
+    "src/tracker-source.js",
+    "public/tracker.js"
   ]),
 ]);
 
