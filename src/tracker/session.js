@@ -101,13 +101,15 @@
             is_mobile: /Mobi|Android/i.test(ua),
             language: navigator.language,
             screen: `${window.screen.width}x${window.screen.height}`,
-            viewport: `${window.innerWidth}x${window.innerHeight}`,
             user_agent: ua
         };
     })();
 
     function getDeviceContext() {
-        return cachedDeviceContext;
+        return {
+            ...cachedDeviceContext,
+            viewport: `${window.innerWidth}x${window.innerHeight}`
+        };
     }
 
     function getSessionId() {
