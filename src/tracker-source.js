@@ -254,12 +254,7 @@
                 sessionStorage.setItem('asthros_utms', JSON.stringify(utmsToSave));
             }
 
-            // Limpeza do asthros_journey antigo para liberar espaço
-            if (localStorage.getItem('asthros_journey')) {
-                localStorage.removeItem('asthros_journey');
-            }
-
-            // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada)
+            // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada - Limite de 5 itens)
             const referrer = document.referrer || 'direto';
             const sourceFromRef = getSourceFromReferrer(referrer);
             let touchpointSource = 'direto';
@@ -286,6 +281,7 @@
             if (!firstTouchStr) {
                 // Primeiro toque na jornada
                 localStorage.setItem('asthros_first_touch', JSON.stringify(touchpoint));
+                localStorage.setItem('asthros_journey', JSON.stringify([touchpoint]));
                 localStorage.setItem('asthros_journey_length', '1');
             } else {
                 // Toques subsequentes: verifica duplicidade com o último toque salvo
@@ -311,6 +307,30 @@
                     length = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
                 } catch (e) {}
                 localStorage.setItem('asthros_journey_length', (length + 1).toString());
+
+                // Atualizar jornada mantendo no máximo os últimos 5 elementos
+                let journey = [];
+                try {
+                    const storedJourney = localStorage.getItem('asthros_journey');
+                    if (storedJourney) {
+                        const parsed = JSON.parse(storedJourney);
+                        if (Array.isArray(parsed)) {
+                            journey = parsed;
+                        }
+                    }
+                } catch (e) {}
+
+                if (journey.length === 0) {
+                    try {
+                        journey.push(JSON.parse(firstTouchStr));
+                    } catch (e) {}
+                }
+
+                journey.push(touchpoint);
+                if (journey.length > 5) {
+                    journey = journey.slice(-5);
+                }
+                localStorage.setItem('asthros_journey', JSON.stringify(journey));
             }
         } catch (e) {}
     }
@@ -371,6 +391,15 @@
 
     function getJourneyContext() {
         try {
+            const j = localStorage.getItem('asthros_journey');
+            if (j) {
+                const parsed = JSON.parse(j);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {}
+        
+        // Fallback para primeiro toque se a jornada não existir/for inválida
+        try {
             const ft = localStorage.getItem('asthros_first_touch');
             return ft ? [JSON.parse(ft)] : [];
         } catch (e) {
@@ -399,7 +428,8 @@
             page_url: window.location.href,
             first_touch: firstTouch,
             last_touch: lastTouch,
-            journey_length: journeyLength
+            journey_length: journeyLength,
+            journey: getJourneyContext()
         };
     }
 
