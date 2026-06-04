@@ -280,6 +280,7 @@
 
     function saveUtmsToStorageAndJourney() {
         try {
+            trackPageVisit();
             const utmsToSave = parseUtmsFromUrl();
             const hasNewUtms = Object.keys(utmsToSave).length > 0;
 
@@ -444,6 +445,39 @@
         }
     }
 
+    function trackPageVisit() {
+        try {
+            const pathname = window.location.pathname || '/';
+            let visited = [];
+            const stored = localStorage.getItem('asthros_pages_visited');
+            if (stored) {
+                visited = JSON.parse(stored);
+            }
+            if (!Array.isArray(visited)) {
+                visited = [];
+            }
+            // Evita registrar a mesma página se ela for idêntica à última registrada (ex: recarregamentos)
+            if (visited.length === 0 || visited[visited.length - 1] !== pathname) {
+                visited.push(pathname);
+                if (visited.length > 10) {
+                    visited = visited.slice(-10);
+                }
+                localStorage.setItem('asthros_pages_visited', JSON.stringify(visited));
+            }
+        } catch (e) {}
+    }
+
+    function getPagesVisitedContext() {
+        try {
+            const stored = localStorage.getItem('asthros_pages_visited');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {}
+        return [window.location.pathname || '/'];
+    }
+
     function buildMarketingContext() {
         let firstTouch = null;
         let lastTouch = null;
@@ -466,7 +500,8 @@
             first_touch: firstTouch,
             last_touch: lastTouch,
             journey_length: journeyLength,
-            journey: getJourneyContext()
+            journey: getJourneyContext(),
+            pages_visited: getPagesVisitedContext()
         };
     }
 

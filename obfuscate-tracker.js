@@ -79,7 +79,9 @@ const replacements = [
   { from: 'currentLock', to: '_cl' },
   { from: 'finalLock', to: '_fl' },
   { from: 'trackingLocks', to: '_tk' },
-  { from: 'candidates', to: '_cd' }
+  { from: 'candidates', to: '_cd' },
+  { from: 'trackPageVisit', to: '_tp' },
+  { from: 'getPagesVisitedContext', to: '_pv' }
 ];
 
 replacements.forEach(r => {
