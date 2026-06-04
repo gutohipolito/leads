@@ -221,7 +221,8 @@ export async function POST(
     
     // 4. Origem de tráfego pago
     const utmSource = body.marketing?.source || '';
-    if (['google', 'facebook', 'instagram', 'cpc', 'ads', 'meta'].includes(utmSource.toLowerCase())) {
+    const hasClickId = !!(body.marketing?.gclid || body.marketing?.fbclid || body.marketing?.ttclid || body.marketing?.msclkid);
+    if (hasClickId || ['google', 'facebook', 'instagram', 'cpc', 'ads', 'meta'].includes(utmSource.toLowerCase())) {
       leadScore += scoringRules.paid_traffic;
     }
     

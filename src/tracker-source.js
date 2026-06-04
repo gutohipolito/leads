@@ -67,11 +67,12 @@
             const hash = window.location.hash || '';
             const hashQueryPart = hash.includes('?') 
                 ? hash.split('?')[1]          // hash com query: #/page?utm_source=...
-                : hash.includes('utm_') 
-                    ? hash.replace(/^#\/?/, '') // hash direto com UTM: #utm_source=...
+                : (hash.includes('utm_') || hash.includes('gclid') || hash.includes('fbclid') || hash.includes('ttclid') || hash.includes('msclkid'))
+                    ? hash.replace(/^#\/?/, '') // hash direto com parâmetros rastreáveis
                     : '';                        // âncora normal: #secao — ignora
             const hashParams = new URLSearchParams(hashQueryPart);
 
+            // 1. Capturar UTMs clássicas
             ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
                 const valQuery = queryParams.get(`utm_${key}`);
                 const valHash = hashParams.get(`utm_${key}`);
@@ -80,6 +81,33 @@
                     utms[key] = val;
                 }
             });
+
+            // 2. Capturar Ad Click IDs modernos
+            ['gclid', 'fbclid', 'ttclid', 'msclkid'].forEach(key => {
+                const valQuery = queryParams.get(key);
+                const valHash = hashParams.get(key);
+                const val = valQuery || valHash;
+                if (val) {
+                    utms[key] = val;
+                }
+            });
+
+            // 3. Atribuição inteligente se faltar source/medium mas tiver Click ID
+            if (!utms.source) {
+                if (utms.gclid) {
+                    utms.source = 'google';
+                    utms.medium = utms.medium || 'cpc';
+                } else if (utms.fbclid) {
+                    utms.source = 'facebook';
+                    utms.medium = utms.medium || 'cpc';
+                } else if (utms.ttclid) {
+                    utms.source = 'tiktok';
+                    utms.medium = utms.medium || 'cpc';
+                } else if (utms.msclkid) {
+                    utms.source = 'bing';
+                    utms.medium = utms.medium || 'cpc';
+                }
+            }
         } catch (e) {}
         return utms;
     }

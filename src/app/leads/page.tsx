@@ -1630,6 +1630,34 @@ export default function LeadsPage() {
                         <span>{selectedLead.data.marketing.referrer}</span>
                       </div>
                     )}
+                    {/* Exibição de Click IDs de Redes de Anúncios */}
+                    {(selectedLead.data?.marketing?.gclid || 
+                      selectedLead.data?.marketing?.fbclid || 
+                      selectedLead.data?.marketing?.ttclid || 
+                      selectedLead.data?.marketing?.msclkid) && (
+                      <div className={styles.clickIdsContainer} style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        {selectedLead.data.marketing.gclid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.gclid} style={{ background: 'rgba(66, 133, 244, 0.1)', color: '#4285f4', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(66, 133, 244, 0.2)' }}>
+                            Google Ads: {selectedLead.data.marketing.gclid.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.fbclid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.fbclid} style={{ background: 'rgba(24, 119, 242, 0.1)', color: '#1877f2', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(24, 119, 242, 0.2)' }}>
+                            Facebook Ads: {selectedLead.data.marketing.fbclid.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.ttclid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.ttclid} style={{ background: 'rgba(0, 0, 0, 0.2)', color: '#00f2fe', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
+                            TikTok Ads: {selectedLead.data.marketing.ttclid.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.msclkid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.msclkid} style={{ background: 'rgba(0, 164, 239, 0.1)', color: '#00a4ef', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(0, 164, 239, 0.2)' }}>
+                            Bing Ads: {selectedLead.data.marketing.msclkid.substring(0, 10)}...
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
