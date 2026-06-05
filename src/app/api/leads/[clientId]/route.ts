@@ -262,6 +262,16 @@ export async function POST(
             { status: 403, headers: getResponseHeaders(isOriginAllowed) }
           );
         }
+
+        // Validar se o timestamp do payload está dentro de uma janela aceitável de 5 minutos (previne replay de requisições antigas)
+        const payloadTime = body.timestamp ? Date.parse(body.timestamp) : 0;
+        if (isNaN(payloadTime) || Math.abs(Date.now() - payloadTime) > 5 * 60 * 1000) {
+          console.warn(`[Anti-Replay] Rejeitando payload por timestamp inválido ou expirado (${body.timestamp}).`);
+          return NextResponse.json(
+            { error: 'Acesso negado: timestamp do payload inválido ou expirado.' },
+            { status: 403, headers: getResponseHeaders(isOriginAllowed) }
+          );
+        }
       } catch (err: any) {
         console.error('[Signature Error] Falha na validação do token/assinatura:', err.message);
         return NextResponse.json(
