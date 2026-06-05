@@ -121,7 +121,7 @@
             }
             return sessionId;
         } catch (e) {
-            return 'temp_' + Math.random().toString(36).substring(2, 10);
+            return 'temp_' + randomId();
         }
     }
 
@@ -134,7 +134,7 @@
             }
             return visitorId;
         } catch (e) {
-            return 'temp_' + Math.random().toString(36).substring(2, 10);
+            return 'temp_' + randomId();
         }
     }
 

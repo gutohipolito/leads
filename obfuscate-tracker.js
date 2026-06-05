@@ -82,7 +82,8 @@ const replacements = [
   { from: 'candidates', to: '_cd' },
   { from: 'trackPageVisit', to: '_tp' },
   { from: 'getPagesVisitedContext', to: '_pv' },
-  { from: 'webhookId', to: '_wi' }
+  { from: 'webhookId', to: '_wi' },
+  { from: 'randomId', to: '_ri' }
 ];
 
 replacements.forEach(r => {

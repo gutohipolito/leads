@@ -23,3 +23,17 @@
             return v.toString(16);
         });
     }
+
+    function randomId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function' && typeof Uint8Array !== 'undefined') {
+            try {
+                const arr = new Uint8Array(16);
+                crypto.getRandomValues(arr);
+                return Array.from(arr)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+            } catch (e) {}
+        }
+        // Fallback robusto usando Math.random se crypto não estiver disponível
+        return 'temp_' + Math.random().toString(36).substring(2, 18);
+    }

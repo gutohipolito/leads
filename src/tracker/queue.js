@@ -143,7 +143,7 @@
 
         // Fallback: Lock baseado em localStorage aprimorado com ID único e delay de verificação para atomicidade artificial
         const lockKey = 'asthros_flush_lock';
-        const myTabId = Math.random().toString(36).substring(2);
+        const myTabId = randomId();
 
         try {
             const existingLock = localStorage.getItem(lockKey);

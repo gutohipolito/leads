@@ -79,6 +79,20 @@
         });
     }
 
+    function randomId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function' && typeof Uint8Array !== 'undefined') {
+            try {
+                const arr = new Uint8Array(16);
+                crypto.getRandomValues(arr);
+                return Array.from(arr)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+            } catch (e) {}
+        }
+        // Fallback robusto usando Math.random se crypto não estiver disponível
+        return 'temp_' + Math.random().toString(36).substring(2, 18);
+    }
+
 
     const trackingLocks = new Set();
 
@@ -203,7 +217,7 @@
             }
             return sessionId;
         } catch (e) {
-            return 'temp_' + Math.random().toString(36).substring(2, 10);
+            return 'temp_' + randomId();
         }
     }
 
@@ -216,7 +230,7 @@
             }
             return visitorId;
         } catch (e) {
-            return 'temp_' + Math.random().toString(36).substring(2, 10);
+            return 'temp_' + randomId();
         }
     }
 
@@ -713,7 +727,7 @@
 
         // Fallback: Lock baseado em localStorage aprimorado com ID único e delay de verificação para atomicidade artificial
         const lockKey = 'asthros_flush_lock';
-        const myTabId = Math.random().toString(36).substring(2);
+        const myTabId = randomId();
 
         try {
             const existingLock = localStorage.getItem(lockKey);
