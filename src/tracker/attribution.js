@@ -91,8 +91,12 @@
             const firstTouch = typeof firstTouchVal === 'string' ? JSON.parse(firstTouchVal) : firstTouchVal;
             if (!firstTouch) {
                 // Primeiro toque na jornada
-                setLocalItem('asthros_first_touch', touchpoint);
-                setLocalItem('asthros_journey', [touchpoint]);
+                const firstTouchTouchpoint = {
+                    ...touchpoint,
+                    landing_page: window.location.href
+                };
+                setLocalItem('asthros_first_touch', firstTouchTouchpoint);
+                setLocalItem('asthros_journey', [firstTouchTouchpoint]);
                 setLocalItem('asthros_journey_length', '1');
             } else {
                 // Toques subsequentes: verifica duplicidade com o último toque salvo
