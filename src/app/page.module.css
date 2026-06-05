@@ -990,8 +990,8 @@
 }
 
 .detailModal {
-  width: 95%;
-  max-width: 1200px;
+  width: 96%;
+  max-width: 1400px;
   max-height: 85vh;
   border-radius: 24px;
   background: rgba(var(--card-rgb), 0.75);
