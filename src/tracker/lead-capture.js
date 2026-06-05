@@ -118,6 +118,7 @@
                 button_text: sanitizeButtonText(link.innerText || link.getAttribute('aria-label') || trackerMatch.label),
                 match_type: trackerMatch.label,
                 conversion_time_seconds: getConversionTime(),
+                session_duration_seconds: getSessionDurationSeconds(),
                 ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
             },
             device: getDeviceContext(),
@@ -198,7 +199,8 @@
                         scroll_depth: maxScroll + '%',
                         button_text: sanitizeButtonText(form.querySelector('[type="submit"]')?.innerText || 'Enviar Formulário'),
                         match_type: matchType,
-                        conversion_time_seconds: getConversionTime()
+                        conversion_time_seconds: getConversionTime(),
+                        session_duration_seconds: getSessionDurationSeconds()
                     },
                     device: getDeviceContext(),
                     timestamp: new Date().toISOString()
@@ -367,7 +369,8 @@
                                             scroll_depth: maxScroll + '%',
                                             button_text: 'Enviar Formulário (Popup/AJAX)',
                                             match_type: 'Elementor Forms (AJAX Fallback)',
-                                            conversion_time_seconds: getConversionTime()
+                                            conversion_time_seconds: getConversionTime(),
+                                            session_duration_seconds: getSessionDurationSeconds()
                                         },
                                         device: getDeviceContext(),
                                         timestamp: new Date().toISOString()
@@ -400,7 +403,8 @@
                     time_on_page: getActiveTimeOnPage(),
                     scroll_depth: maxScroll + '%',
                     match_type: 'Disparo Manual (API)',
-                    conversion_time_seconds: getConversionTime()
+                    conversion_time_seconds: getConversionTime(),
+                    session_duration_seconds: getSessionDurationSeconds()
                 },
                 device: getDeviceContext(),
                 timestamp: new Date().toISOString()

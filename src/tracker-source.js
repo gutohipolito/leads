@@ -161,6 +161,7 @@
     let totalActive = 0;
     let lastVisible = Date.now();
     let maxScroll = 0;
+    const localSessionStart = Date.now();
 
     try {
         if (!getLocalItem('asthros_first_seen')) {
@@ -294,12 +295,23 @@
         };
     }
 
+    function getSessionDurationSeconds() {
+        try {
+            const start = sessionStorage.getItem('asthros_session_start');
+            if (start) {
+                return Math.max(0, Math.round((Date.now() - parseInt(start, 10)) / 1000));
+            }
+        } catch (e) {}
+        return Math.max(0, Math.round((Date.now() - localSessionStart) / 1000));
+    }
+
     function getSessionId() {
         try {
             let sessionId = sessionStorage.getItem('asthros_session_id');
             if (!sessionId) {
                 sessionId = generateUUID();
                 sessionStorage.setItem('asthros_session_id', sessionId);
+                sessionStorage.setItem('asthros_session_start', Date.now().toString());
             }
             return sessionId;
         } catch (e) {
@@ -1010,6 +1022,7 @@
                 button_text: sanitizeButtonText(link.innerText || link.getAttribute('aria-label') || trackerMatch.label),
                 match_type: trackerMatch.label,
                 conversion_time_seconds: getConversionTime(),
+                session_duration_seconds: getSessionDurationSeconds(),
                 ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
             },
             device: getDeviceContext(),
@@ -1090,7 +1103,8 @@
                         scroll_depth: maxScroll + '%',
                         button_text: sanitizeButtonText(form.querySelector('[type="submit"]')?.innerText || 'Enviar Formulário'),
                         match_type: matchType,
-                        conversion_time_seconds: getConversionTime()
+                        conversion_time_seconds: getConversionTime(),
+                        session_duration_seconds: getSessionDurationSeconds()
                     },
                     device: getDeviceContext(),
                     timestamp: new Date().toISOString()
@@ -1259,7 +1273,8 @@
                                             scroll_depth: maxScroll + '%',
                                             button_text: 'Enviar Formulário (Popup/AJAX)',
                                             match_type: 'Elementor Forms (AJAX Fallback)',
-                                            conversion_time_seconds: getConversionTime()
+                                            conversion_time_seconds: getConversionTime(),
+                                            session_duration_seconds: getSessionDurationSeconds()
                                         },
                                         device: getDeviceContext(),
                                         timestamp: new Date().toISOString()
@@ -1292,7 +1307,8 @@
                     time_on_page: getActiveTimeOnPage(),
                     scroll_depth: maxScroll + '%',
                     match_type: 'Disparo Manual (API)',
-                    conversion_time_seconds: getConversionTime()
+                    conversion_time_seconds: getConversionTime(),
+                    session_duration_seconds: getSessionDurationSeconds()
                 },
                 device: getDeviceContext(),
                 timestamp: new Date().toISOString()

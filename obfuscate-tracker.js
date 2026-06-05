@@ -92,7 +92,9 @@ const replacements = [
   { from: 'saveExitData', to: '_sed' },
   { from: 'exists', to: '_ex' },
   { from: 'removeEmpty', to: '_re' },
-  { from: 'priority', to: '_pr' }
+  { from: 'priority', to: '_pr' },
+  { from: 'localSessionStart', to: '_ls' },
+  { from: 'getSessionDurationSeconds', to: '_gds' }
 ];
 
 replacements.forEach(r => {

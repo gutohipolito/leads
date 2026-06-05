@@ -4,6 +4,7 @@
     let totalActive = 0;
     let lastVisible = Date.now();
     let maxScroll = 0;
+    const localSessionStart = Date.now();
 
     try {
         if (!getLocalItem('asthros_first_seen')) {
@@ -137,12 +138,23 @@
         };
     }
 
+    function getSessionDurationSeconds() {
+        try {
+            const start = sessionStorage.getItem('asthros_session_start');
+            if (start) {
+                return Math.max(0, Math.round((Date.now() - parseInt(start, 10)) / 1000));
+            }
+        } catch (e) {}
+        return Math.max(0, Math.round((Date.now() - localSessionStart) / 1000));
+    }
+
     function getSessionId() {
         try {
             let sessionId = sessionStorage.getItem('asthros_session_id');
             if (!sessionId) {
                 sessionId = generateUUID();
                 sessionStorage.setItem('asthros_session_id', sessionId);
+                sessionStorage.setItem('asthros_session_start', Date.now().toString());
             }
             return sessionId;
         } catch (e) {
