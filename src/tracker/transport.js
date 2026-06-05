@@ -21,7 +21,33 @@
         } catch (e) {}
     }
 
+    // Rate Limiting Client-Side: Janela deslizante de 1 minuto
+    const MAX_EVENTS_PER_MINUTE = 30;
+    const eventTimestamps = [];
+
+    function isRateLimited() {
+        const now = Date.now();
+        const windowStart = now - 60 * 1000;
+        
+        // Remove timestamps fora da janela
+        while (eventTimestamps.length > 0 && eventTimestamps[0] < windowStart) {
+            eventTimestamps.shift();
+        }
+        
+        if (eventTimestamps.length >= MAX_EVENTS_PER_MINUTE) {
+            return true;
+        }
+        
+        eventTimestamps.push(now);
+        return false;
+    }
+
     async function sendPayload(payload) {
+        // Bloqueia excessos antes de atingir o servidor
+        if (isRateLimited()) {
+            return;
+        }
+
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
         const cleanPayload = removeEmpty(payload);
         
