@@ -475,34 +475,48 @@ export async function POST(
       url_slug: (webhook as any).url_slug
     };
 
-    // 3. Prevenção de Leads Duplicados (janela de 5 minutos usando lead_id ou event_hash)
+    // 3. Prevenção de Leads Duplicados e Proteção Anti-Replay
     const leadId = body.lead_id;
     const eventHash = body.event_hash;
 
-    if (leadId || eventHash) {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      let deduplicationQuery = supabase
+    // A. Proteção Anti-Replay: Verifica se o lead_id já foi submetido nas últimas 24 horas (Retorna 409)
+    if (leadId) {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: duplicateLead } = await supabase
         .from('leads')
         .select('id')
         .eq('client_id', clientId)
-        .gt('created_at', fiveMinutesAgo);
+        .gt('created_at', twentyFourHoursAgo)
+        .eq('data->>lead_id', leadId)
+        .maybeSingle();
 
-      if (leadId && eventHash) {
-        deduplicationQuery = deduplicationQuery.or(`data->>lead_id.eq.${leadId},data->>event_hash.eq.${eventHash}`);
-      } else if (leadId) {
-        deduplicationQuery = deduplicationQuery.eq('data->>lead_id', leadId);
-      } else if (eventHash) {
-        deduplicationQuery = deduplicationQuery.eq('data->>event_hash', eventHash);
+      if (duplicateLead) {
+        console.warn(`[Anti-Replay] Tentativa de reenvio do lead_id: ${leadId}. Bloqueado.`);
+        return NextResponse.json(
+          { error: 'Lead duplicado detectado (Anti-Replay).' },
+          { status: 409, headers: getResponseHeaders(isOriginAllowed) }
+        );
       }
+    }
 
-      const { data: existingLead } = await deduplicationQuery.maybeSingle();
-      if (existingLead) {
-        console.log(`[Deduplicação] Lead duplicado detectado (lead_id: ${leadId}, event_hash: ${eventHash}) nos últimos 5 minutos. Ignorando inserção.`);
+    // B. Deduplicação por event_hash: Evita reenvios rápidos nos últimos 5 minutos (Retorna 200 de sucesso silencioso)
+    if (eventHash) {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: existingEvent } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('client_id', clientId)
+        .gt('created_at', fiveMinutesAgo)
+        .eq('data->>event_hash', eventHash)
+        .maybeSingle();
+
+      if (existingEvent) {
+        console.log(`[Deduplicação] Evento duplicado detectado (event_hash: ${eventHash}) nos últimos 5 minutos. Ignorando silenciosamente.`);
         return NextResponse.json(
           { 
             status: 'success',
-            message: 'Sinal de Uplink satisfeito (Lead duplicado ignorado).', 
-            lead_id: existingLead.id
+            message: 'Sinal de Uplink satisfeito (Evento duplicado ignorado).', 
+            lead_id: existingEvent.id
           }, 
           { 
             status: 200,
