@@ -140,7 +140,7 @@
 
     function getSessionDurationSeconds() {
         try {
-            const start = sessionStorage.getItem('asthros_session_start');
+            const start = sessionStorage.getItem('asthros_session_started');
             if (start) {
                 return Math.max(0, Math.round((Date.now() - parseInt(start, 10)) / 1000));
             }
@@ -154,7 +154,7 @@
             if (!sessionId) {
                 sessionId = generateUUID();
                 sessionStorage.setItem('asthros_session_id', sessionId);
-                sessionStorage.setItem('asthros_session_start', Date.now().toString());
+                sessionStorage.setItem('asthros_session_started', Date.now().toString());
             }
             return sessionId;
         } catch (e) {
