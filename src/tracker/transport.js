@@ -25,9 +25,18 @@
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
         const cleanPayload = removeEmpty(payload);
         
+        let token = null;
+        if (config.webhookId) {
+            try {
+                token = await getAuthToken();
+            } catch (e) {}
+        }
+        
+        const signedPayload = signPayload(cleanPayload, token);
+
         // Beacon apenas no fechamento
         if (navigator.sendBeacon && document.visibilityState === 'hidden') {
-            const beaconPayload = { ...cleanPayload };
+            const beaconPayload = { ...signedPayload };
             if (config.webhookId) {
                 beaconPayload.webhookId = config.webhookId;
             }
@@ -38,7 +47,7 @@
             if (navigator.sendBeacon(endpoint, blob)) return;
         }
 
-        const safePayload = { ...cleanPayload };
+        const safePayload = { ...signedPayload };
         if (config.webhookId) {
             safePayload.webhookId = config.webhookId;
         }

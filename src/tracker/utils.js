@@ -119,3 +119,120 @@
             return 'hash_' + randomId();
         }
     }
+
+    function sha256(ascii) {
+        function rightRotate(value, amount) {
+            return (value >>> amount) | (value << (32 - amount));
+        }
+        
+        const mathPow = Math.pow;
+        const maxWord = mathPow(2, 32);
+        const lengthProperty = 'length';
+        let i, j;
+        let result = '';
+
+        const words = [];
+        const asciiLength = ascii[lengthProperty] * 8;
+        
+        const hash = sha256.h = sha256.h || [];
+        const k = sha256.k = sha256.k || [];
+        let primeCounter = k[lengthProperty];
+
+        const isComposite = {};
+        for (let candidate = 2; primeCounter < 64; candidate++) {
+            if (!isComposite[candidate]) {
+                for (i = 0; i < 313; i += candidate) {
+                    isComposite[i] = candidate;
+                }
+                hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+                k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+            }
+        }
+        
+        ascii += '\x80';
+        while (ascii[lengthProperty] % 64 - 56) {
+            ascii += '\x00';
+        }
+        for (i = 0; i < ascii[lengthProperty]; i++) {
+            j = ascii.charCodeAt(i);
+            if (j >> 8) return ''; // supports only ASCII
+            words[i >> 2] |= j << ((3 - i % 4) * 8);
+        }
+        words[words[lengthProperty]] = ((asciiLength / maxWord) | 0);
+        words[words[lengthProperty]] = (asciiLength | 0);
+        
+        const hashCurrent = hash.slice(0);
+        for (i = 0; i < words[lengthProperty]; i += 16) {
+            const w = words.slice(i, i + 16);
+            let oldHash = hashCurrent.slice(0);
+            for (j = 0; j < 64; j++) {
+                const w16 = w[j - 16];
+                const w15 = w[j - 15];
+                const w7 = w[j - 7];
+                const w2 = w[j - 2];
+
+                const s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
+                const s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
+                
+                const registerWord = w[j] = j < 16 ? (w[j] || 0) : (
+                    (w16 + s0 + w7 + s1) | 0
+                );
+                
+                const a = oldHash[0], b = oldHash[1], c = oldHash[2], d = oldHash[3];
+                const e = oldHash[4], f = oldHash[5], g = oldHash[6], h = oldHash[7];
+
+                const s0_2 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+                const maj = (a & b) ^ (a & c) ^ (b & c);
+                const t2 = s0_2 + maj;
+                
+                const s1_2 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+                const ch = (e & f) ^ ((~e) & g);
+                const t1 = h + s1_2 + ch + k[j] + registerWord;
+
+                oldHash = [(t1 + t2) | 0, a, b, c, (d + t1) | 0, e, f, g];
+            }
+            
+            for (j = 0; j < 8; j++) {
+                hashCurrent[j] = (hashCurrent[j] + oldHash[j]) | 0;
+            }
+        }
+        
+        for (i = 0; i < 8; i++) {
+            const word = hashCurrent[i];
+            result += ((word >>> 24) & 255).toString(16).padStart(2, '0') +
+                      ((word >>> 16) & 255).toString(16).padStart(2, '0') +
+                      ((word >>> 8) & 255).toString(16).padStart(2, '0') +
+                      (word & 255).toString(16).padStart(2, '0');
+        }
+        return result;
+    }
+
+    function hexToAscii(hex) {
+        let ascii = '';
+        for (let i = 0; i < hex.length; i += 2) {
+            ascii += String.fromCharCode(parseInt(hex.substring(i, i + 2), 16));
+        }
+        return ascii;
+    }
+
+    function hmacSha256(key, message) {
+        const blocksize = 64;
+        if (key.length > blocksize) {
+            key = hexToAscii(sha256(key));
+        }
+        while (key.length < blocksize) {
+            key += '\x00';
+        }
+        
+        let ipad = '';
+        let opad = '';
+        for (let i = 0; i < blocksize; i++) {
+            const charCode = key.charCodeAt(i);
+            ipad += String.fromCharCode(charCode ^ 0x36);
+            opad += String.fromCharCode(charCode ^ 0x5c);
+        }
+        
+        const innerHash = hexToAscii(sha256(ipad + message));
+        return sha256(opad + innerHash);
+    }
+

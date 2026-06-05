@@ -10,6 +10,7 @@ const moduleFiles = [
   'utils.js',
   'session.js',
   'attribution.js',
+  'auth.js',
   'transport.js',
   'queue.js',
   'lead-capture.js',
@@ -95,7 +96,16 @@ const replacements = [
   { from: 'priority', to: '_pr' },
   { from: 'localSessionStart', to: '_ls' },
   { from: 'getSessionDurationSeconds', to: '_gds' },
-  { from: 'generateEventHash', to: '_geh' }
+  { from: 'generateEventHash', to: '_geh' },
+  { from: 'tempToken', to: '_tt' },
+  { from: 'tokenExpiry', to: '_te' },
+  { from: 'authPromise', to: '_ap' },
+  { from: 'getAuthToken', to: '_gat' },
+  { from: 'fetchNewToken', to: '_fnt' },
+  { from: 'signPayload', to: '_spl' },
+  { from: 'sha256', to: '_sha' },
+  { from: 'hexToAscii', to: '_hta' },
+  { from: 'hmacSha256', to: '_hmc' }
 ];
 
 replacements.forEach(r => {

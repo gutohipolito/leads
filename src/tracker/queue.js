@@ -64,6 +64,14 @@
             const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
             const failedItems = [];
 
+            // Força a obtenção de um token temporário fresco para o flush offline
+            let token = null;
+            if (config.webhookId) {
+                try {
+                    token = await getAuthToken();
+                } catch (e) {}
+            }
+
             for (const payload of queue) {
                 try {
                     const headers = { 
@@ -76,10 +84,13 @@
                         headers['X-Asthros-Secret'] = config.secret;
                     }
 
+                    // Aplica uma nova assinatura válida ao lead usando o token atualizado
+                    const finalPayload = config.webhookId ? signPayload(payload, token) : payload;
+
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: headers,
-                        body: JSON.stringify(payload),
+                        body: JSON.stringify(finalPayload),
                         keepalive: true
                     });
                     if (!response.ok) {

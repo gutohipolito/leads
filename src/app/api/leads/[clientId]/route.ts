@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { sendLeadToIntegrations } from '@/utils/integrations';
+import crypto from 'crypto';
 
 /**
  * Rota de Webhook para captura de leads ultra-compatível (Elementor, WPForms, etc).
@@ -126,6 +127,83 @@ export async function POST(
         }
       }
       webhook = data;
+
+      // Validar Assinatura do Payload para Webhook Público
+      const token = body.token;
+      const signature = body.signature;
+
+      if (!token || !signature) {
+        console.warn(`[Assinatura] Tentativa de submissão sem assinatura de payload para o webhook ${webhookId}.`);
+        return NextResponse.json(
+          { error: 'Acesso negado: assinatura de payload ausente.' },
+          { status: 403, headers: corsHeaders }
+        );
+      }
+
+      // Validar o Token
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 2) throw new Error('Formato do token inválido');
+        
+        const payloadBase64 = parts[0];
+        const serverSig = parts[1];
+        
+        const serverSecret = process.env.APP_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'asthros-secret-fallback-token-key-1823901';
+        
+        // Verificar assinatura do token emitida pelo servidor
+        const computedServerSig = crypto.createHmac('sha256', serverSecret).update(payloadBase64).digest('hex');
+        if (computedServerSig !== serverSig) {
+          return NextResponse.json(
+            { error: 'Acesso negado: assinatura do token de autenticação inválida.' },
+            { status: 403, headers: corsHeaders }
+          );
+        }
+
+        // Decodificar o payload
+        const decodedString = Buffer.from(payloadBase64, 'base64').toString('utf8');
+        const tokenPayload = JSON.parse(decodedString);
+
+        // Verificar expiração
+        if (Date.now() > tokenPayload.exp) {
+          return NextResponse.json(
+            { error: 'Acesso negado: token de autenticação temporário expirado.' },
+            { status: 403, headers: corsHeaders }
+          );
+        }
+
+        // Verificar consistência do token
+        if (tokenPayload.clientId !== clientId || tokenPayload.webhookId !== webhookId) {
+          return NextResponse.json(
+            { error: 'Acesso negado: token inconsistente.' },
+            { status: 403, headers: corsHeaders }
+          );
+        }
+
+        // Validar assinatura do payload do lead (lead_id|visitor_id|timestamp)
+        const message = [
+          body.lead_id || '',
+          body.visitor_id || '',
+          body.timestamp || ''
+        ].join('|');
+
+        const computedClientSig = crypto.createHmac('sha256', token).update(message).digest('hex');
+        if (computedClientSig !== signature) {
+          return NextResponse.json(
+            { error: 'Acesso negado: assinatura do payload do lead inválida.' },
+            { status: 403, headers: corsHeaders }
+          );
+        }
+      } catch (err: any) {
+        console.error('[Signature Error] Falha na validação do token/assinatura:', err.message);
+        return NextResponse.json(
+          { error: 'Acesso negado: falha na validação criptográfica.' },
+          { status: 403, headers: corsHeaders }
+        );
+      }
+
+      // Remover tokens e assinaturas do body para evitar gravação de dados desnecessários
+      if (body.token) delete body.token;
+      if (body.signature) delete body.signature;
     }
 
     // Remover o secret do corpo para evitar armazenamento em banco de dados
