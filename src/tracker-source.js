@@ -700,13 +700,33 @@
 
     async function executeFlush() {
         try {
-            const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+            let queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             if (!queue.length) return;
 
             // Só tenta reenviar se tiver passado mais de 1 minuto desde a última tentativa
             const lastTry = parseInt(localStorage.getItem('asthros_queue_last_try') || '0');
             if (Date.now() - lastTry < 60 * 1000) {
                 return;
+            }
+
+            // Expiração da fila offline: remove leads com mais de 7 dias
+            const QUEUE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias
+            const now = Date.now();
+            const originalLength = queue.length;
+
+            queue = queue.filter(item => {
+                const itemTime = item.timestamp ? new Date(item.timestamp).getTime() : now;
+                return (now - itemTime) <= QUEUE_TTL;
+            });
+
+            if (queue.length !== originalLength) {
+                if (queue.length > 0) {
+                    localStorage.setItem('asthros_queue', JSON.stringify(queue));
+                } else {
+                    localStorage.removeItem('asthros_queue');
+                    localStorage.removeItem('asthros_queue_last_try');
+                    return;
+                }
             }
 
             isFlushing = true;
