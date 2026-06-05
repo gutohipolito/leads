@@ -263,9 +263,9 @@ export async function POST(
           );
         }
 
-        // Validar se o timestamp do payload está dentro de uma janela aceitável de 5 minutos (previne replay de requisições antigas)
+        // Validar se o timestamp do payload está dentro de uma janela aceitável de 60 minutos (previne replay de requisições antigas, tolerando relógios de clientes dessincronizados)
         const payloadTime = body.timestamp ? Date.parse(body.timestamp) : 0;
-        if (isNaN(payloadTime) || Math.abs(Date.now() - payloadTime) > 5 * 60 * 1000) {
+        if (isNaN(payloadTime) || Math.abs(Date.now() - payloadTime) > 60 * 60 * 1000) {
           console.warn(`[Anti-Replay] Rejeitando payload por timestamp inválido ou expirado (${body.timestamp}).`);
           return NextResponse.json(
             { error: 'Acesso negado: timestamp do payload inválido ou expirado.' },
