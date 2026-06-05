@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { sendLeadToIntegrations } from '@/utils/integrations';
 import crypto from 'crypto';
+import DOMPurify from 'isomorphic-dompurify';
+
+function sanitizeInput(val: any): any {
+  if (val === null || val === undefined) {
+    return val;
+  }
+  if (typeof val === 'string') {
+    // Limpa tags e atributos perigosos (XSS) e mantem apenas o texto puro
+    return DOMPurify.sanitize(val, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  }
+  if (Array.isArray(val)) {
+    return val.map(sanitizeInput);
+  }
+  if (typeof val === 'object') {
+    const sanitizedObj: any = {};
+    for (const key in val) {
+      if (Object.prototype.hasOwnProperty.call(val, key)) {
+        sanitizedObj[key] = sanitizeInput(val[key]);
+      }
+    }
+    return sanitizedObj;
+  }
+  return val;
+}
 
 /**
  * Rota de Webhook para captura de leads ultra-compatível (Elementor, WPForms, etc).
@@ -210,6 +234,9 @@ export async function POST(
     if (body.secret) {
       delete body.secret;
     }
+
+    // Sanitizar recursivamente todo o body contra injeção de HTML e XSS (DOMPurify)
+    body = sanitizeInput(body);
 
     // Captura de Localização baseada em IP (Vercel Headers)
     const city = request.headers.get('x-vercel-ip-city') || 'Desconhecida';
