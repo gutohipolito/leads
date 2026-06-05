@@ -11,10 +11,11 @@
 
     async function sendPayload(payload) {
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
+        const cleanPayload = removeEmpty(payload);
         
         // Beacon apenas no fechamento
         if (navigator.sendBeacon && document.visibilityState === 'hidden') {
-            const beaconPayload = { ...payload };
+            const beaconPayload = { ...cleanPayload };
             if (config.webhookId) {
                 beaconPayload.webhookId = config.webhookId;
             }
@@ -25,7 +26,7 @@
             if (navigator.sendBeacon(endpoint, blob)) return;
         }
 
-        const safePayload = { ...payload };
+        const safePayload = { ...cleanPayload };
         if (config.webhookId) {
             safePayload.webhookId = config.webhookId;
         }

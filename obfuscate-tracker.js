@@ -90,7 +90,8 @@ const replacements = [
   { from: 'docHeight', to: '_dh' },
   { from: 'scrollTicking', to: '_skt' },
   { from: 'saveExitData', to: '_sed' },
-  { from: 'exists', to: '_ex' }
+  { from: 'exists', to: '_ex' },
+  { from: 'removeEmpty', to: '_re' }
 ];
 
 replacements.forEach(r => {

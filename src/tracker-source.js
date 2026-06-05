@@ -127,6 +127,27 @@
         }
     }
 
+    function removeEmpty(obj) {
+        if (Array.isArray(obj)) {
+            return obj
+                .map(v => (v && typeof v === 'object' ? removeEmpty(v) : v))
+                .filter(v => v !== null && v !== undefined && v !== '' && (!Array.isArray(v) || v.length > 0));
+        }
+        if (obj && typeof obj === 'object') {
+            return Object.fromEntries(
+                Object.entries(obj)
+                    .map(([k, v]) => [k, v && typeof v === 'object' ? removeEmpty(v) : v])
+                    .filter(([_, v]) => {
+                        if (v === null || v === undefined || v === '') return false;
+                        if (Array.isArray(v)) return v.length > 0;
+                        if (typeof v === 'object') return Object.keys(v).length > 0;
+                        return true;
+                    })
+            );
+        }
+        return obj;
+    }
+
     function removeLocalItem(key) {
         try {
             localStorage.removeItem(key);
@@ -600,10 +621,11 @@
 
     async function sendPayload(payload) {
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
+        const cleanPayload = removeEmpty(payload);
         
         // Beacon apenas no fechamento
         if (navigator.sendBeacon && document.visibilityState === 'hidden') {
-            const beaconPayload = { ...payload };
+            const beaconPayload = { ...cleanPayload };
             if (config.webhookId) {
                 beaconPayload.webhookId = config.webhookId;
             }
@@ -614,7 +636,7 @@
             if (navigator.sendBeacon(endpoint, blob)) return;
         }
 
-        const safePayload = { ...payload };
+        const safePayload = { ...cleanPayload };
         if (config.webhookId) {
             safePayload.webhookId = config.webhookId;
         }
