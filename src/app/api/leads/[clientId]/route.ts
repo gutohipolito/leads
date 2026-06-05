@@ -55,13 +55,21 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
-  const origin = request.headers.get('origin') || '*';
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id',
-    'Access-Control-Allow-Credentials': 'true',
+  const requestOrigin = request.headers.get('origin');
+  
+  const getResponseHeaders = (allowed: boolean) => {
+    const headers: Record<string, string> = {
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+    if (allowed && requestOrigin && requestOrigin !== '*') {
+      headers['Access-Control-Allow-Origin'] = requestOrigin;
+    }
+    return headers;
   };
+
+  let isOriginAllowed = true;
 
   try {
     const { clientId } = await params;
@@ -80,7 +88,7 @@ export async function POST(
         console.warn(`[Firewall] Bloqueando requisição do IP ${ip} (Ban ativo)`);
         return NextResponse.json(
           { error: 'Acesso bloqueado temporariamente por medidas de segurança.' },
-          { status: 429, headers: corsHeaders }
+          { status: 429, headers: getResponseHeaders(true) }
         );
       }
     } catch (e) {
@@ -145,17 +153,17 @@ export async function POST(
           .filter((o: string) => o);
 
         if (allowedList.length > 0) {
-          const requestOrigin = request.headers.get('origin') || '';
           const requestReferer = request.headers.get('referer') || '';
 
           if (!requestOrigin && !requestReferer) {
+            isOriginAllowed = false;
             return NextResponse.json(
               { error: 'Acesso bloqueado: requisições do rastreador exigem cabeçalho Origin ou Referer.' },
-              { status: 403, headers: corsHeaders }
+              { status: 403, headers: getResponseHeaders(false) }
             );
           }
 
-          const originDomain = extractDomain(requestOrigin);
+          const originDomain = extractDomain(requestOrigin || '');
           const refererDomain = extractDomain(requestReferer);
 
           const isAllowed = allowedList.some((allowed: string) => {
@@ -175,9 +183,10 @@ export async function POST(
 
           if (!isAllowed) {
             console.warn(`[CORS/Referer] Origem negada para webhook ${webhookId}. Origin: "${requestOrigin}", Referer: "${requestReferer}". Permitidos: "${data.allowed_origins}"`);
+            isOriginAllowed = false;
             return NextResponse.json(
               { error: `Acesso negado: domínio de origem ou referência não autorizado.` },
-              { status: 403, headers: corsHeaders }
+              { status: 403, headers: getResponseHeaders(false) }
             );
           }
         }
@@ -211,7 +220,7 @@ export async function POST(
         if (computedServerSig !== serverSig) {
           return NextResponse.json(
             { error: 'Acesso negado: assinatura do token de autenticação inválida.' },
-            { status: 403, headers: corsHeaders }
+            { status: 403, headers: getResponseHeaders(isOriginAllowed) }
           );
         }
 
@@ -223,7 +232,7 @@ export async function POST(
         if (Date.now() > tokenPayload.exp) {
           return NextResponse.json(
             { error: 'Acesso negado: token de autenticação temporário expirado.' },
-            { status: 403, headers: corsHeaders }
+            { status: 403, headers: getResponseHeaders(isOriginAllowed) }
           );
         }
 
@@ -231,7 +240,7 @@ export async function POST(
         if (tokenPayload.clientId !== clientId || tokenPayload.webhookId !== webhookId) {
           return NextResponse.json(
             { error: 'Acesso negado: token inconsistente.' },
-            { status: 403, headers: corsHeaders }
+            { status: 403, headers: getResponseHeaders(isOriginAllowed) }
           );
         }
 
@@ -246,14 +255,14 @@ export async function POST(
         if (computedClientSig !== signature) {
           return NextResponse.json(
             { error: 'Acesso negado: assinatura do payload do lead inválida.' },
-            { status: 403, headers: corsHeaders }
+            { status: 403, headers: getResponseHeaders(isOriginAllowed) }
           );
         }
       } catch (err: any) {
         console.error('[Signature Error] Falha na validação do token/assinatura:', err.message);
         return NextResponse.json(
           { error: 'Acesso negado: falha na validação criptográfica.' },
-          { status: 403, headers: corsHeaders }
+          { status: 403, headers: getResponseHeaders(isOriginAllowed) }
         );
       }
 
@@ -342,7 +351,7 @@ export async function POST(
 
         return NextResponse.json(
           { error: 'Limite de requisições excedido. IP bloqueado temporariamente por medidas de segurança.' },
-          { status: 429, headers: corsHeaders }
+          { status: 429, headers: getResponseHeaders(isOriginAllowed) }
         );
       }
     } catch (e) {
@@ -497,7 +506,7 @@ export async function POST(
           }, 
           { 
             status: 200,
-            headers: corsHeaders
+            headers: getResponseHeaders(isOriginAllowed)
           }
         );
       }
@@ -531,7 +540,7 @@ export async function POST(
           }, 
           { 
             status: 200,
-            headers: corsHeaders
+            headers: getResponseHeaders(isOriginAllowed)
           }
         );
       }
@@ -651,7 +660,7 @@ export async function POST(
       }, 
       { 
         status: 201,
-        headers: corsHeaders
+        headers: getResponseHeaders(isOriginAllowed)
       }
     );
   } catch (error: any) {
@@ -660,24 +669,24 @@ export async function POST(
       { error: 'Falha no processamento: ' + (error.message || 'Erro interno') },
       { 
         status: 500,
-        headers: { 
-          'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Credentials': 'true'
-        }
+        headers: getResponseHeaders(isOriginAllowed)
       }
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin') || '*';
+  const origin = request.headers.get('origin');
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+  if (origin && origin !== '*') {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id',
-      'Access-Control-Allow-Credentials': 'true',
-    },
+    headers,
   });
 }

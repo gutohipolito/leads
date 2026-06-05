@@ -30,13 +30,21 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
-  const origin = request.headers.get('origin') || '*';
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Webhook-Id',
-    'Access-Control-Allow-Credentials': 'true',
+  const requestOrigin = request.headers.get('origin');
+  
+  const getResponseHeaders = (allowed: boolean) => {
+    const headers: Record<string, string> = {
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Webhook-Id',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+    if (allowed && requestOrigin && requestOrigin !== '*') {
+      headers['Access-Control-Allow-Origin'] = requestOrigin;
+    }
+    return headers;
   };
+
+  let isOriginAllowed = true;
 
   try {
     const { clientId } = await params;
@@ -44,7 +52,7 @@ export async function POST(
     const webhookId = request.headers.get('x-asthros-webhook-id') || body.webhookId;
 
     if (!webhookId) {
-      return NextResponse.json({ error: 'Webhook ID ausente.' }, { status: 400, headers: corsHeaders });
+      return NextResponse.json({ error: 'Webhook ID ausente.' }, { status: 400, headers: getResponseHeaders(true) });
     }
 
     // Buscar o webhook no banco para validar o client_id e o allowed_origins
@@ -57,7 +65,7 @@ export async function POST(
       .maybeSingle();
 
     if (dbError || !webhook) {
-      return NextResponse.json({ error: 'Webhook ID inválido ou inativo para este cliente.' }, { status: 401, headers: corsHeaders });
+      return NextResponse.json({ error: 'Webhook ID inválido ou inativo para este cliente.' }, { status: 401, headers: getResponseHeaders(true) });
     }
 
     // Validar whitelist de origens (CORS)
@@ -68,17 +76,17 @@ export async function POST(
         .filter((o: string) => o);
 
       if (allowedList.length > 0) {
-        const requestOrigin = request.headers.get('origin') || '';
         const requestReferer = request.headers.get('referer') || '';
 
         if (!requestOrigin && !requestReferer) {
+          isOriginAllowed = false;
           return NextResponse.json(
             { error: 'Acesso bloqueado: requisições do rastreador exigem cabeçalho Origin ou Referer.' },
-            { status: 403, headers: corsHeaders }
+            { status: 403, headers: getResponseHeaders(false) }
           );
         }
 
-        const originDomain = extractDomain(requestOrigin);
+        const originDomain = extractDomain(requestOrigin || '');
         const refererDomain = extractDomain(requestReferer);
 
         const isAllowed = allowedList.some((allowed: string) => {
@@ -98,9 +106,10 @@ export async function POST(
 
         if (!isAllowed) {
           console.warn(`[CORS/Referer Auth] Origem negada para emissão de token do webhook ${webhookId}. Origin: "${requestOrigin}", Referer: "${requestReferer}". Permitidos: "${webhook.allowed_origins}"`);
+          isOriginAllowed = false;
           return NextResponse.json(
             { error: `Acesso negado: domínio de origem ou referência não autorizado.` },
-            { status: 403, headers: corsHeaders }
+            { status: 403, headers: getResponseHeaders(false) }
           );
         }
       }
@@ -123,25 +132,28 @@ export async function POST(
     // O token final é "payloadBase64.assinatura"
     const token = `${payloadBase64}.${signature}`;
 
-    return NextResponse.json({ token }, { status: 200, headers: corsHeaders });
+    return NextResponse.json({ token }, { status: 200, headers: getResponseHeaders(isOriginAllowed) });
   } catch (error: any) {
     console.error('[Auth API] Erro ao gerar token:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor: ' + (error.message || '') },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: getResponseHeaders(isOriginAllowed) }
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin') || '*';
+  const origin = request.headers.get('origin');
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Webhook-Id',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+  if (origin && origin !== '*') {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Webhook-Id',
-      'Access-Control-Allow-Credentials': 'true',
-    },
+    headers,
   });
 }
