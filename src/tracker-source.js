@@ -798,17 +798,6 @@
         if (tempToken && Date.now() < tokenExpiry) {
             return Promise.resolve(tempToken);
         }
-        
-        // Tenta obter do sessionStorage para persistir entre recarregamentos
-        try {
-            const cached = sessionStorage.getItem('asthros_auth_token');
-            const expiry = parseInt(sessionStorage.getItem('asthros_token_expiry') || '0', 10);
-            if (cached && Date.now() < expiry) {
-                tempToken = cached;
-                tokenExpiry = expiry;
-                return Promise.resolve(tempToken);
-            }
-        } catch (e) {}
 
         if (authPromise) return authPromise;
 
@@ -816,11 +805,7 @@
             authPromise = null;
             if (data && data.token) {
                 tempToken = data.token;
-                tokenExpiry = Date.now() + 10 * 60 * 1000; // Cache por 10 minutos
-                try {
-                    sessionStorage.setItem('asthros_auth_token', tempToken);
-                    sessionStorage.setItem('asthros_token_expiry', tokenExpiry.toString());
-                } catch (e) {}
+                tokenExpiry = Date.now() + 10 * 60 * 1000; // Cache por 10 minutos (somente em memória)
                 return tempToken;
             }
             return null;
