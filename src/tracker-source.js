@@ -19,7 +19,7 @@
                 'script[src*="tracker.min.js"]:not([data-asthros-initialized])'
             );
             if (candidates.length > 0) {
-                script = candidates[0];
+                script = candidates[candidates.length - 1];
             }
         }
         
