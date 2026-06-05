@@ -35,7 +35,8 @@
                 secret: script.getAttribute('data-secret'),
                 apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br',
                 trackKeywords: script.getAttribute('data-keywords') ? script.getAttribute('data-keywords').split(',') : [],
-                trackSelectors: script.getAttribute('data-selectors') ? script.getAttribute('data-selectors').split(',') : []
+                trackSelectors: script.getAttribute('data-selectors') ? script.getAttribute('data-selectors').split(',') : [],
+                consentGiven: script.getAttribute('data-consent-given')
             };
         }
     }
@@ -1220,6 +1221,27 @@
     }
 
 
+    let consentGivenState = null;
+    let consentTimestampState = null;
+
+    if (config && (config.consentGiven === true || config.consentGiven === 'true' || config.consentGiven === '1')) {
+        consentGivenState = true;
+        consentTimestampState = new Date().toISOString();
+    }
+
+    function setConsent(given) {
+        consentGivenState = given === null ? null : !!given;
+        consentTimestampState = consentGivenState ? new Date().toISOString() : null;
+    }
+
+    function getConsentContext() {
+        if (consentGivenState === null) return {};
+        return {
+            consent_given: consentGivenState,
+            consent_timestamp: consentTimestampState
+        };
+    }
+
     function isWhatsAppLink(url) {
         if (!url) return false;
         const lowerUrl = url.toLowerCase();
@@ -1347,7 +1369,8 @@
                 ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
             },
             device: getDeviceContext(),
-            timestamp: timestamp
+            timestamp: timestamp,
+            ...(getConsentContext())
         };
 
         sendPayload(payload);
@@ -1432,7 +1455,8 @@
                         session_duration_seconds: getSessionDurationSeconds()
                     },
                     device: getDeviceContext(),
-                    timestamp: timestamp
+                    timestamp: timestamp,
+                    ...(getConsentContext())
                 };
                 
                 sendPayload(payload);
@@ -1606,7 +1630,8 @@
                                             session_duration_seconds: getSessionDurationSeconds()
                                         },
                                         device: getDeviceContext(),
-                                        timestamp: timestamp
+                                        timestamp: timestamp,
+                                        ...(getConsentContext())
                                     };
                                     sendPayload(payload);
                                 }
@@ -1644,7 +1669,11 @@
                     session_duration_seconds: getSessionDurationSeconds()
                 },
                 device: getDeviceContext(),
-                timestamp: timestamp
+                timestamp: timestamp,
+                ...((data.consent_given !== undefined) 
+                    ? { consent_given: !!data.consent_given, consent_timestamp: data.consent_timestamp || new Date().toISOString() }
+                    : getConsentContext()
+                )
             };
             
             if (payload.email && !/^[a-zA-Z0-9._%+\-]{2,}@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,10}$/.test(payload.email)) {
@@ -1660,6 +1689,7 @@
 
     window.Asthros = window.Asthros || {};
     window.Asthros.trackLead = manualTrackLead;
+    window.Asthros.setConsent = setConsent;
     window.Asthros.trackForm = function(formElement) {
         if (formElement && formElement.tagName === 'FORM') {
             captureFormLead(formElement, 'Disparo Manual de Formulário (API)');

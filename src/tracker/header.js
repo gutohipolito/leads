@@ -35,7 +35,8 @@
                 secret: script.getAttribute('data-secret'),
                 apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br',
                 trackKeywords: script.getAttribute('data-keywords') ? script.getAttribute('data-keywords').split(',') : [],
-                trackSelectors: script.getAttribute('data-selectors') ? script.getAttribute('data-selectors').split(',') : []
+                trackSelectors: script.getAttribute('data-selectors') ? script.getAttribute('data-selectors').split(',') : [],
+                consentGiven: script.getAttribute('data-consent-given')
             };
         }
     }
