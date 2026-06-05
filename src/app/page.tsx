@@ -895,9 +895,9 @@ export default function Home() {
             
             <div className={styles.modalBody}>
               <div className={styles.sectionGrid}>
-                {/* Dados Principais */}
+                {/* Coluna 1: Perfil & Sistema */}
                 <div className={styles.infoSection}>
-                  <h4>Dados Principais</h4>
+                  <h4>Perfil & Sistema</h4>
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nome</span>
@@ -912,7 +912,58 @@ export default function Home() {
                       <span className={styles.infoVal}>{selectedLead.phone || 'Sem telefone'}</span>
                     </div>
                     <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Origem</span>
+                      <span className={styles.infoLabel}>Data</span>
+                      <span className={styles.infoVal}>
+                        {new Date(selectedLead.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Terminal / Webhook</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.webhooks?.name || selectedLead.data?.captured_by?.name || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>IP</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.location?.ip || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Localização</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.location?.city 
+                          ? `${decodeURIComponent(selectedLead.data.location.city)}/${decodeURIComponent(selectedLead.data.location.region || '')} (${selectedLead.data.location.country || 'BR'})`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Sistema Operacional</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.device?.os || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Dispositivo</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.device?.is_mobile ? 'Mobile' : 'Desktop'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Idioma</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.device?.language || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Timezone</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.device?.timezone || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Resolução</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.device?.screen || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Coluna 2: Comportamento & Consentimento */}
+                <div className={styles.infoSection}>
+                  <h4>Comportamento & Engajamento</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Origem do Lead</span>
                       <span className={styles.infoVal}>
                         <span className={selectedLead.source === 'whatsapp_tracker' ? styles.whatsappTag : (selectedLead.source === 'custom_tracker' ? styles.selectorTag : styles.statusBadge)}>
                           {selectedLead.source === 'whatsapp_tracker' ? 'WhatsApp Click' : (selectedLead.source === 'custom_tracker' ? 'Rastreador' : 'Formulário')}
@@ -920,54 +971,65 @@ export default function Home() {
                       </span>
                     </div>
                     <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Data</span>
-                      <span className={styles.infoVal}>
-                        {new Date(selectedLead.created_at).toLocaleString('pt-BR')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dados de Navegação */}
-                <div className={styles.infoSection}>
-                  <h4>Comportamento & Navegação</h4>
-                  <div className={styles.infoList}>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Página</span>
-                      <span className={styles.infoVal} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }} title={selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}>
+                      <span className={styles.infoLabel}>Página de Origem</span>
+                      <span className={styles.infoVal} title={selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}>
                         {selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Botão Clicado</span>
+                      <span className={styles.infoLabel}>Ação / Botão</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.behavior?.button_text || selectedLead.data?.button_text || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tempo Ativo na Pág.</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.behavior?.time_on_page || selectedLead.data?.time_on_page || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Rolagem Máxima</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.behavior?.scroll_depth || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Duração da Sessão</span>
                       <span className={styles.infoVal}>
-                        {selectedLead.data?.behavior?.button_text || selectedLead.data?.button_text || 'N/A'}
+                        {selectedLead.data?.behavior?.session_duration_seconds !== undefined 
+                          ? `${selectedLead.data.behavior.session_duration_seconds}s`
+                          : 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Tempo Ativo</span>
+                      <span className={styles.infoLabel}>Tempo p/ Conversão</span>
                       <span className={styles.infoVal}>
-                        {selectedLead.data?.behavior?.time_on_page || selectedLead.data?.time_on_page || 'N/A'}
-                      </span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Scroll</span>
-                      <span className={styles.infoVal}>
-                        {selectedLead.data?.behavior?.scroll_depth || 'N/A'}
+                        {selectedLead.data?.behavior?.conversion_time_seconds !== undefined 
+                          ? `${selectedLead.data.behavior.conversion_time_seconds}s`
+                          : 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Score do Lead</span>
-                      <span className={styles.infoVal}>
+                      <span className={styles.infoVal} style={{ fontWeight: '800', color: selectedLead.data?.lead_score >= 70 ? '#2ecc71' : (selectedLead.data?.lead_score >= 40 ? '#f59e0b' : '#3498db') }}>
                         {selectedLead.data?.lead_score !== undefined ? `${selectedLead.data.lead_score}/100` : 'N/A'}
                       </span>
                     </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Consentimento LGPD</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.consent_given !== undefined 
+                          ? (selectedLead.data.consent_given ? '✅ Autorizado' : '❌ Negado')
+                          : 'Não especificado'}
+                      </span>
+                    </div>
+                    {selectedLead.data?.consent_timestamp && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Data Consentimento</span>
+                        <span className={styles.infoVal}>{new Date(selectedLead.data.consent_timestamp).toLocaleString('pt-BR')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Dados de Tráfego (UTMs) */}
+                {/* Coluna 3: Aquisição & UTMs */}
                 <div className={styles.infoSection}>
-                  <h4>Campanha & UTMs</h4>
+                  <h4>Aquisição & UTMs</h4>
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Source</span>
@@ -981,41 +1043,65 @@ export default function Home() {
                       <span className={styles.infoLabel}>UTM Campaign</span>
                       <span className={styles.infoVal}>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Dados Geográficos & Dispositivo */}
-                <div className={styles.infoSection}>
-                  <h4>Sistema & Localização</h4>
-                  <div className={styles.infoList}>
                     <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>IP</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.location?.ip || 'N/A'}</span>
+                      <span className={styles.infoLabel}>UTM Term</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.term || selectedLead.data?.utm_term || 'N/A'}</span>
                     </div>
                     <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Localização</span>
-                      <span className={styles.infoVal}>
-                        {selectedLead.data?.location?.city 
-                          ? `${decodeURIComponent(selectedLead.data.location.city)}/${decodeURIComponent(selectedLead.data.location.region || '')}`
-                          : 'N/A'}
-                      </span>
+                      <span className={styles.infoLabel}>UTM Content</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.content || selectedLead.data?.utm_content || 'N/A'}</span>
                     </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Dispositivo</span>
-                      <span className={styles.infoVal}>
-                        {selectedLead.data?.device?.os || 'N/A'} ({selectedLead.data?.device?.is_mobile ? 'Mobile' : 'Desktop'})
-                      </span>
-                    </div>
+                    {selectedLead.data?.marketing?.gclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Google Ads ID</span>
+                        <span className={styles.infoVal} title={selectedLead.data.marketing.gclid}>GCLID (Ativo)</span>
+                      </div>
+                    )}
+                    {selectedLead.data?.marketing?.fbclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Facebook Ads ID</span>
+                        <span className={styles.infoVal} title={selectedLead.data.marketing.fbclid}>FBCLID (Ativo)</span>
+                      </div>
+                    )}
+                    {selectedLead.data?.marketing?.ttclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>TikTok Ads ID</span>
+                        <span className={styles.infoVal} title={selectedLead.data.marketing.ttclid}>TTCLID (Ativo)</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {/* Jornada de Navegação do Visitante */}
+              {selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0 && (
+                <div className={styles.extraFieldsArea}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Jornada do Visitante (Histórico de Páginas)</h4>
+                  <div className={styles.infoSection}>
+                    <div className={styles.journeyTimeline}>
+                      {selectedLead.data.marketing.journey.map((step: any, index: number) => (
+                        <div key={index} className={styles.journeyStep}>
+                          <div className={styles.journeyDot} />
+                          <span className={styles.journeyUrl}>
+                            {step.url || step.page_url || 'URL desconhecida'}
+                          </span>
+                          <span className={styles.journeyTime}>
+                            {step.timestamp ? new Date(step.timestamp).toLocaleString('pt-BR') : 'Data não registrada'}
+                            {step.referrer && ` • Referência: ${step.referrer}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Campos Extras (Formulário) */}
               {selectedLead.data && Object.keys(selectedLead.data).some(k => 
                 !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)
               ) && (
                 <div className={styles.extraFieldsArea}>
-                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Campos Customizados</h4>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Campos Customizados do Formulário</h4>
                   <div className={styles.infoSection} style={{ gap: '0.75rem' }}>
                     {Object.keys(selectedLead.data).filter(k => 
                       !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)

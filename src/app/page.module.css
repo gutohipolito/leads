@@ -947,201 +947,6 @@
 }
 
 .clientCell {
-  color: var(--foreground);
-  background: rgba(var(--foreground-rgb), 0.03);
-  border: 1px solid var(--border);
-  padding: 0.5rem 2rem 0.5rem 1rem;
-  border-radius: 12px;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 16px;
-}
-
-[data-theme="light"] .webhookSelect {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-}
-
-.webhookSelect:hover, .webhookSelect:focus {
-  border-color: var(--primary);
-  background-color: rgba(86, 215, 253, 0.05);
-  box-shadow: 0 0 10px rgba(86, 215, 253, 0.1);
-}
-
-/* Animações e Tags de WhatsApp */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animateFadeInUp {
-  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 0;
-}
-
-.delay1 { animation-delay: 0.1s; }
-.delay2 { animation-delay: 0.2s; }
-.delay3 { animation-delay: 0.3s; }
-.delay4 { animation-delay: 0.4s; }
-
-.whatsappTag {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: #25d366;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(37, 211, 102, 0.1);
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
-  width: fit-content;
-  border: 1px solid rgba(37, 211, 102, 0.2);
-  white-space: nowrap;
-}
-
-.whatsappIcon {
-  width: 14px;
-  height: 14px;
-}
-
-.selectorTag {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: #a855f7;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(168, 85, 247, 0.1);
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
-  width: fit-content;
-  border: 1px solid rgba(168, 85, 247, 0.2);
-  white-space: nowrap;
-}
-
-.selectorIcon {
-  width: 14px;
-  height: 14px;
-}
-
-.keywordTag {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: #f97316;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(249, 115, 22, 0.1);
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
-  width: fit-content;
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  white-space: nowrap;
-}
-
-
-.keywordIcon {
-  width: 14px;
-  height: 14px;
-}
-
-/* Filtros Rápidos do Dashboard */
-.filterBar {
-  display: flex;
-  gap: 0.75rem;
-  margin: 0.5rem 0 1rem 0;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.filterBtn {
-  font-family: var(--font-outfit), sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted-foreground);
-  background: rgba(var(--foreground-rgb), 0.02);
-  border: 1px solid var(--border);
-  padding: 0.55rem 1.1rem;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-  backdrop-filter: blur(10px);
-}
-
-.filterBtn:hover {
-  background: rgba(var(--foreground-rgb), 0.05);
-  border-color: var(--muted-foreground);
-  transform: translateY(-1px);
-}
-
-/* Estados ativos específicos de cores */
-.filterBtn.activeAll {
-  color: var(--primary);
-  background: rgba(0, 209, 255, 0.08);
-  border-color: var(--primary);
-  box-shadow: 0 0 15px rgba(0, 209, 255, 0.2);
-}
-
-.filterBtn.activeWhatsapp {
-  color: #25d366;
-  background: rgba(37, 211, 102, 0.08);
-  border-color: #25d366;
-  box-shadow: 0 0 15px rgba(37, 211, 102, 0.2);
-}
-
-.filterBtn.activeForms {
-  color: #00D1FF;
-  background: rgba(0, 209, 255, 0.08);
-  border-color: #00D1FF;
-  box-shadow: 0 0 15px rgba(0, 209, 255, 0.2);
-}
-
-.filterBtn.activeSelectors {
-  color: #a855f7;
-  background: rgba(168, 85, 247, 0.08);
-  border-color: #a855f7;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
-}
-
-.filterBtn.activeKeywords {
-  color: #f97316;
-  background: rgba(249, 115, 22, 0.08);
-  border-color: #f97316;
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.2);
-}
-
-.leadTimeWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.leadDate {
-  font-weight: 500;
-  color: var(--foreground);
-}
-
-.leadTime {
-  font-size: 0.72rem;
-  color: var(--muted-foreground);
-  opacity: 0.7;
-}
-
-.clientCell {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1158,9 +963,14 @@
   opacity: 0.8;
 }
 
-/* Modal Centralizado de Detalhes do Lead */
+/* Modal Centralizado de Detalhes do Lead (Largura Aumentada) */
 .clickableRow {
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.clickableRow:hover td {
+  background: rgba(var(--foreground-rgb), 0.04) !important;
 }
 
 .modalOverlay {
@@ -1179,13 +989,13 @@
 }
 
 .detailModal {
-  width: 90%;
-  max-width: 800px;
+  width: 95%;
+  max-width: 1050px;
   max-height: 85vh;
   border-radius: 24px;
   background: rgba(var(--card-rgb), 0.75);
   border: 1px solid var(--border);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1258,8 +1068,14 @@
 
 .sectionGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .infoSection {
@@ -1270,6 +1086,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  height: 100%;
 }
 
 .infoSection h4 {
@@ -1279,7 +1096,7 @@
   color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   padding-bottom: 0.5rem;
 }
 
@@ -1293,7 +1110,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   gap: 1rem;
 }
 
@@ -1313,17 +1130,56 @@
 .extraFieldsArea {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.extraFieldPill {
+.journeyTimeline {
   display: flex;
-  justify-content: space-between;
-  background: rgba(var(--foreground-rgb), 0.02);
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  border: 1px solid var(--border);
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.journeyTimeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.journeyStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.journeyDot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.journeyUrl {
+  color: var(--foreground);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.journeyTime {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
 }
 
 .modalFooter {
@@ -1333,12 +1189,6 @@
   justify-content: space-between;
   align-items: center;
   background: rgba(0, 0, 0, 0.1);
-}
-
-.exportSection {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .exportBtn {
