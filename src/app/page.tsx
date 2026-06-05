@@ -3,11 +3,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
+import jsPDF from 'jspdf';
+import ExportModal from '@/components/ExportModal/ExportModal';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,9 @@ export default function Home() {
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
   const [dashboardPeriod, setDashboardPeriod] = useState<7 | 15 | 30>(7);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [exportType, setExportType] = useState<{ show: boolean; type: string }>({ show: false, type: '' });
+  const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
     let notifChannel: any = null;
@@ -274,6 +279,198 @@ export default function Home() {
     const hours = Math.floor(mins / 60);
     if (hours < 24) return `${hours}h atrás`;
     return `${Math.floor(hours / 24)}d atrás`;
+  };
+
+  const handleExport = (format: string) => {
+    setExportType({ show: true, type: format });
+    setExportOpen(false);
+  };
+
+  const processExport = (password: string | null, selectedFields: string[]) => {
+    if (!selectedLead) return;
+
+    const leadToExport = selectedLead;
+    const clientName = leadToExport.clients?.name || impersonatedName || 'asthros';
+    const formattedClientName = clientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const formattedLeadName = (leadToExport.name || 'lead').toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    let content = '';
+    
+    if (exportType.type === 'pdf') {
+      const doc = new jsPDF({ 
+        orientation: 'portrait',
+        encryption: password ? {
+          userPassword: password,
+          ownerPassword: password,
+          userPermissions: ["print", "modify", "copy", "annot-forms"]
+        } : undefined
+      });
+
+      // Desenho do PDF para um único lead
+      doc.setFillColor(10, 20, 35);
+      doc.rect(0, 0, 210, 30, 'F');
+      doc.setTextColor(86, 215, 253);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ASTHROS LEADS', 15, 20);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 195, 18, { align: 'right' });
+
+      doc.setTextColor(10, 20, 35);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalhes do Lead', 15, 45);
+
+      doc.setDrawColor(220, 220, 220);
+      doc.line(15, 48, 195, 48);
+
+      doc.setFontSize(11);
+      let currentY = 58;
+
+      const addRow = (label: string, value: string) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${label}:`, 15, currentY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(value || 'N/A'), 60, currentY);
+        currentY += 10;
+      };
+
+      if (selectedFields.includes('id')) addRow('ID do Lead', leadToExport.id);
+      if (selectedFields.includes('created_at')) addRow('Data/Hora', new Date(leadToExport.created_at).toLocaleString('pt-BR'));
+      if (selectedFields.includes('name')) addRow('Nome', leadToExport.name);
+      if (selectedFields.includes('email')) addRow('E-mail', leadToExport.email);
+      if (selectedFields.includes('phone')) addRow('Telefone', leadToExport.phone || 'N/A');
+      if (selectedFields.includes('webhook')) addRow('Terminal', leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A');
+      
+      if (leadToExport.data) {
+        if (selectedFields.includes('page_url')) addRow('Página Origem', leadToExport.data.behavior?.page_url || leadToExport.data.page_url || 'N/A');
+        if (selectedFields.includes('button_text')) addRow('Botão Clicado', leadToExport.data.behavior?.button_text || leadToExport.data.button_text || 'N/A');
+        if (selectedFields.includes('time_on_page')) addRow('Tempo na Página', leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page || 'N/A');
+        if (selectedFields.includes('utm')) {
+          const utmStr = `Source: ${leadToExport.data.marketing?.source || leadToExport.data.utm_source || 'N/A'}, Medium: ${leadToExport.data.marketing?.medium || leadToExport.data.utm_medium || 'N/A'}, Campaign: ${leadToExport.data.marketing?.campaign || leadToExport.data.utm_campaign || 'N/A'}`;
+          addRow('UTM (Tráfego)', utmStr);
+        }
+        if (selectedFields.includes('location')) {
+          const locStr = `${leadToExport.data.location?.city || 'N/A'} - ${leadToExport.data.location?.region || 'N/A'} (IP: ${leadToExport.data.location?.ip || 'N/A'})`;
+          addRow('Localização', locStr);
+        }
+        if (selectedFields.includes('custom_fields')) {
+          const extraKeys = Object.keys(leadToExport.data).filter(k => 
+            !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp'].includes(k)
+          );
+          if (extraKeys.length > 0) {
+            currentY += 5;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Campos Extras:', 15, currentY);
+            currentY += 8;
+            extraKeys.forEach(k => {
+              doc.setFont('helvetica', 'bold');
+              doc.text(`  ${k}:`, 15, currentY);
+              doc.setFont('helvetica', 'normal');
+              doc.text(String(leadToExport.data[k]), 60, currentY);
+              currentY += 8;
+            });
+          }
+        }
+      }
+
+      doc.save(`lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.pdf`);
+    } else if (exportType.type === 'csv') {
+      const headers: string[] = [];
+      const row: string[] = [];
+
+      const addField = (header: string, val: string) => {
+        headers.push(header);
+        row.push(`"${String(val || '').replace(/"/g, '""')}"`);
+      };
+
+      if (selectedFields.includes('id')) addField('ID', leadToExport.id);
+      if (selectedFields.includes('created_at')) addField('Data/Hora', new Date(leadToExport.created_at).toLocaleString('pt-BR'));
+      if (selectedFields.includes('name')) addField('Nome', leadToExport.name);
+      if (selectedFields.includes('email')) addField('E-mail', leadToExport.email);
+      if (selectedFields.includes('phone')) addField('Telefone', leadToExport.phone || 'N/A');
+      if (selectedFields.includes('webhook')) addField('Terminal', leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A');
+      
+      if (leadToExport.data) {
+        if (selectedFields.includes('page_url')) addField('Página Origem', leadToExport.data.behavior?.page_url || leadToExport.data.page_url || '');
+        if (selectedFields.includes('button_text')) addField('Botão Clicado', leadToExport.data.behavior?.button_text || leadToExport.data.button_text || '');
+        if (selectedFields.includes('time_on_page')) addField('Tempo na Página', leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page || '');
+        if (selectedFields.includes('utm')) {
+          addField('UTM Source', leadToExport.data.marketing?.source || leadToExport.data.utm_source || '');
+          addField('UTM Medium', leadToExport.data.marketing?.medium || leadToExport.data.utm_medium || '');
+          addField('UTM Campaign', leadToExport.data.marketing?.campaign || leadToExport.data.utm_campaign || '');
+        }
+        if (selectedFields.includes('location')) {
+          addField('Cidade', leadToExport.data.location?.city || '');
+          addField('Estado', leadToExport.data.location?.region || '');
+          addField('IP', leadToExport.data.location?.ip || '');
+        }
+        if (selectedFields.includes('custom_fields')) {
+          Object.keys(leadToExport.data).forEach(k => {
+            if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp'].includes(k)) {
+              addField(k, leadToExport.data[k]);
+            }
+          });
+        }
+      }
+
+      content = "\uFEFF" + [headers.join(','), row.join(',')].join('\n');
+      const blob = new Blob([content], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.csv`;
+      a.click();
+    } else {
+      // JSON
+      const item: any = {};
+      if (selectedFields.includes('id')) item.id = leadToExport.id;
+      if (selectedFields.includes('created_at')) item.created_at = leadToExport.created_at;
+      if (selectedFields.includes('name')) item.name = leadToExport.name;
+      if (selectedFields.includes('email')) item.email = leadToExport.email;
+      if (selectedFields.includes('phone')) item.phone = leadToExport.phone;
+      if (selectedFields.includes('webhook')) item.webhook = leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name;
+      
+      if (leadToExport.data) {
+        item.data = {};
+        if (selectedFields.includes('page_url')) {
+          item.data.page_url = leadToExport.data.behavior?.page_url || leadToExport.data.page_url;
+        }
+        if (selectedFields.includes('button_text')) {
+          item.data.button_text = leadToExport.data.behavior?.button_text || leadToExport.data.button_text;
+        }
+        if (selectedFields.includes('time_on_page')) {
+          item.data.time_on_page = leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page;
+        }
+        if (selectedFields.includes('utm')) {
+          item.data.marketing = leadToExport.data.marketing;
+          if (leadToExport.data.utm_source) item.data.utm_source = leadToExport.data.utm_source;
+        }
+        if (selectedFields.includes('location')) {
+          item.data.location = leadToExport.data.location;
+        }
+        if (selectedFields.includes('custom_fields')) {
+          Object.keys(leadToExport.data).forEach(k => {
+            if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp'].includes(k)) {
+              item.data[k] = leadToExport.data[k];
+            }
+          });
+        }
+      }
+
+      content = JSON.stringify(item, null, 2);
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.json`;
+      a.click();
+    }
+
+    setExportType({ show: false, type: '' });
   };
 
   return (
@@ -623,7 +820,7 @@ export default function Home() {
                     );
 
                     return (
-                      <tr key={lead.id}>
+                      <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
                         {(isAdmin && !impersonatedName) && (
                           <td>
                             <div className={styles.clientCell}>
@@ -683,6 +880,190 @@ export default function Home() {
         </div>
 
       </div>
+      {selectedLead && (
+        <div className={styles.modalOverlay} onClick={() => { setSelectedLead(null); setExportOpen(false); }}>
+          <div className={`${styles.detailModal} glass`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleArea}>
+                <h3>Detalhes do Lead</h3>
+                <span className={styles.modalSubtitle}>ID: {selectedLead.id}</span>
+              </div>
+              <button className={styles.closeBtn} onClick={() => { setSelectedLead(null); setExportOpen(false); }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.sectionGrid}>
+                {/* Dados Principais */}
+                <div className={styles.infoSection}>
+                  <h4>Dados Principais</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Nome</span>
+                      <span className={styles.infoVal}>{selectedLead.name || 'Sem nome'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>E-mail</span>
+                      <span className={styles.infoVal}>{selectedLead.email || 'Sem e-mail'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Telefone</span>
+                      <span className={styles.infoVal}>{selectedLead.phone || 'Sem telefone'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Origem</span>
+                      <span className={styles.infoVal}>
+                        <span className={selectedLead.source === 'whatsapp_tracker' ? styles.whatsappTag : (selectedLead.source === 'custom_tracker' ? styles.selectorTag : styles.statusBadge)}>
+                          {selectedLead.source === 'whatsapp_tracker' ? 'WhatsApp Click' : (selectedLead.source === 'custom_tracker' ? 'Rastreador' : 'Formulário')}
+                        </span>
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Data</span>
+                      <span className={styles.infoVal}>
+                        {new Date(selectedLead.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados de Navegação */}
+                <div className={styles.infoSection}>
+                  <h4>Comportamento & Navegação</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Página</span>
+                      <span className={styles.infoVal} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }} title={selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}>
+                        {selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Botão Clicado</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.behavior?.button_text || selectedLead.data?.button_text || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tempo Ativo</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.behavior?.time_on_page || selectedLead.data?.time_on_page || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Scroll</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.behavior?.scroll_depth || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Score do Lead</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.lead_score !== undefined ? `${selectedLead.data.lead_score}/100` : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados de Tráfego (UTMs) */}
+                <div className={styles.infoSection}>
+                  <h4>Campanha & UTMs</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Source</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto / Orgânico'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Medium</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Campaign</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados Geográficos & Dispositivo */}
+                <div className={styles.infoSection}>
+                  <h4>Sistema & Localização</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>IP</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.location?.ip || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Localização</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.location?.city 
+                          ? `${decodeURIComponent(selectedLead.data.location.city)}/${decodeURIComponent(selectedLead.data.location.region || '')}`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Dispositivo</span>
+                      <span className={styles.infoVal}>
+                        {selectedLead.data?.device?.os || 'N/A'} ({selectedLead.data?.device?.is_mobile ? 'Mobile' : 'Desktop'})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campos Extras (Formulário) */}
+              {selectedLead.data && Object.keys(selectedLead.data).some(k => 
+                !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)
+              ) && (
+                <div className={styles.extraFieldsArea}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Campos Customizados</h4>
+                  <div className={styles.infoSection} style={{ gap: '0.75rem' }}>
+                    {Object.keys(selectedLead.data).filter(k => 
+                      !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)
+                    ).map(k => (
+                      <div key={k} className={styles.infoRow}>
+                        <span className={styles.infoLabel}>{k}</span>
+                        <span className={styles.infoVal}>{String(selectedLead.data[k])}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.modalFooter}>
+              <div className={styles.exportDropdownWrapper}>
+                <button className={styles.exportBtn} onClick={() => setExportOpen(!exportOpen)}>
+                  <Download size={16} />
+                  <span>Exportar Lead</span>
+                </button>
+                <div className={`${styles.exportMenu} ${exportOpen ? styles.open : ''}`}>
+                  <button className={styles.exportMenuItem} onClick={() => handleExport('csv')}>
+                    <TableIcon size={14} /> <span>CSV</span>
+                  </button>
+                  <button className={styles.exportMenuItem} onClick={() => handleExport('json')}>
+                    <FileJson size={14} /> <span>JSON</span>
+                  </button>
+                  <button className={styles.exportMenuItem} onClick={() => handleExport('pdf')}>
+                    <FileDown size={14} /> <span>PDF</span>
+                  </button>
+                </div>
+              </div>
+              <button className={styles.exportBtn} style={{ borderColor: 'rgba(255,255,255,0.1)' }} onClick={() => { setSelectedLead(null); setExportOpen(false); }}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {exportType.show && (
+        <ExportModal 
+          format={exportType.type}
+          leads={[selectedLead]}
+          onConfirm={(password, selectedFields) => processExport(password, selectedFields)}
+          onCancel={() => setExportType({ show: false, type: '' })}
+        />
+      )}
     </DashboardLayout>
   );
 }
