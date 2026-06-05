@@ -148,8 +148,11 @@ export default function LiveMonitorPage() {
     const { data: leadsData } = await leadsQuery;
     const leadsList = leadsData || [];
     
-    setLeadsToday(leadsList);
-    setLeads(leadsList.slice(0, 10));
+    const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+    const decryptedLeads = await decryptLeadsList(leadsList);
+    
+    setLeadsToday(decryptedLeads);
+    setLeads(decryptedLeads.slice(0, 10));
 
     // 2. Índice de Performance (Crescimento hoje vs média 7 dias)
     const sevenDaysAgo = new Date();
@@ -213,9 +216,13 @@ export default function LiveMonitorPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'leads' },
         async (payload) => {
-          const newLeadData = payload.new;
-          const isMatch = selectedClient === 'all' || String(newLeadData.client_id) === String(selectedClient);
+          const newLeadRaw = payload.new;
+          const isMatch = selectedClient === 'all' || String(newLeadRaw.client_id) === String(selectedClient);
           if (!isMatch) return;
+
+          const { decryptLead, fetchEncryptionKey } = await import('@/utils/frontendEncryption');
+          const key = await fetchEncryptionKey();
+          const newLeadData = key ? await decryptLead(newLeadRaw, key) : newLeadRaw;
 
           const tempLead = { ...newLeadData, clients: { name: 'Carregando...' } };
           

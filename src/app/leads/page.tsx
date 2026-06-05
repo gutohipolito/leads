@@ -427,7 +427,11 @@ export default function LeadsPage() {
           }
           
           const { data: leadsData } = await leadsQuery;
-          if (leadsData) setLeads(leadsData);
+          if (leadsData) {
+            const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+            const decryptedLeads = await decryptLeadsList(leadsData);
+            setLeads(decryptedLeads);
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar leads:', error);

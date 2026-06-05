@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { sendLeadToIntegrations } from '@/utils/integrations';
 import crypto from 'crypto';
 import DOMPurify from 'isomorphic-dompurify';
+import { encrypt, decrypt } from '@/utils/encryption';
 
 function sanitizeInput(val: any): any {
   if (val === null || val === undefined) {
@@ -70,6 +71,7 @@ export async function POST(
   };
 
   let isOriginAllowed = true;
+  const encryptionSecret = process.env.LEADS_ENCRYPTION_KEY || 'asthros-default-secret-encryption-key-value-991823901';
 
   try {
     const { clientId } = await params;
@@ -529,35 +531,70 @@ export async function POST(
     // 4. Prevenção Clássica de Leads Duplicados (janela de 5 segundos para o mesmo email/telefone e cliente)
     if (email || phone) {
       const fiveSecondsAgo = new Date(Date.now() - 5 * 1000).toISOString();
-      let deduplicationQuery = supabase
+      const { data: recentLeads } = await supabase
         .from('leads')
-        .select('id')
+        .select('id, email, phone')
         .eq('client_id', clientId)
         .gt('created_at', fiveSecondsAgo);
 
-      if (email && phone) {
-        deduplicationQuery = deduplicationQuery.or(`email.eq.${email},phone.eq.${phone}`);
-      } else if (email) {
-        deduplicationQuery = deduplicationQuery.eq('email', email);
-      } else if (phone) {
-        deduplicationQuery = deduplicationQuery.eq('phone', phone);
-      }
-
-      const { data: existingLead } = await deduplicationQuery.maybeSingle();
-      if (existingLead) {
-        console.log(`[Deduplicação] Lead duplicado detectado por email/telefone nos últimos 5 segundos. Ignorando inserção.`);
-        return NextResponse.json(
-          { 
-            status: 'success',
-            message: 'Sinal de Uplink satisfeito (Lead duplicado ignorado).', 
-            lead_id: existingLead.id
-          }, 
-          { 
-            status: 200,
-            headers: getResponseHeaders(isOriginAllowed)
+      if (recentLeads && recentLeads.length > 0) {
+        let isDuplicate = false;
+        let duplicateId = '';
+        
+        for (const recent of recentLeads) {
+          const decryptedEmail = recent.email ? await decrypt(recent.email, encryptionSecret) : null;
+          const decryptedPhone = recent.phone ? await decrypt(recent.phone, encryptionSecret) : null;
+          
+          const emailMatch = email && decryptedEmail && decryptedEmail.trim().toLowerCase() === email.trim().toLowerCase();
+          const phoneMatch = phone && decryptedPhone && decryptedPhone.trim() === phone.trim();
+          
+          if (emailMatch || phoneMatch) {
+            isDuplicate = true;
+            duplicateId = recent.id;
+            break;
           }
-        );
+        }
+
+        if (isDuplicate) {
+          console.log(`[Deduplicação] Lead duplicado detectado por email/telefone nos últimos 5 segundos. Ignorando inserção.`);
+          return NextResponse.json(
+            { 
+              status: 'success',
+              message: 'Sinal de Uplink satisfeito (Lead duplicado ignorado).', 
+              lead_id: duplicateId
+            }, 
+            { 
+              status: 200,
+              headers: getResponseHeaders(isOriginAllowed)
+            }
+          );
+        }
       }
+    }
+
+    // Criptografar e-mail e telefone para armazenamento seguro no banco (LGPD)
+    const dbEmail = email ? await encrypt(email, encryptionSecret) : null;
+    const dbPhone = phone ? await encrypt(phone, encryptionSecret) : null;
+
+    // Criptografar chaves de dados sensíveis dentro de body (para a coluna data)
+    const dbBody = { ...body };
+    const encryptKeyIfExists = async (obj: any, k: string) => {
+      if (obj && obj[k] && typeof obj[k] === 'string') {
+        obj[k] = await encrypt(obj[k], encryptionSecret);
+      }
+    };
+    await encryptKeyIfExists(dbBody, 'email');
+    await encryptKeyIfExists(dbBody, 'e_mail');
+    await encryptKeyIfExists(dbBody, 'phone');
+    await encryptKeyIfExists(dbBody, 'telefone');
+    await encryptKeyIfExists(dbBody, 'whatsapp');
+    
+    if (dbBody.fields) {
+      dbBody.fields = { ...dbBody.fields };
+      await encryptKeyIfExists(dbBody.fields, 'email');
+      await encryptKeyIfExists(dbBody.fields, 'e_mail');
+      await encryptKeyIfExists(dbBody.fields, 'phone');
+      await encryptKeyIfExists(dbBody.fields, 'telefone');
     }
 
     const { data: lead, error: insertError } = await supabase
@@ -567,9 +604,9 @@ export async function POST(
           client_id: clientId,
           webhook_id: webhook.id,
           name: name,
-          email: email,
-          phone: phone,
-          data: body,
+          email: dbEmail,
+          phone: dbPhone,
+          data: dbBody,
           source: source
         }
       ])
@@ -578,8 +615,13 @@ export async function POST(
 
     if (insertError) throw insertError;
 
-    // [NOVO] Hub de Integrações (Chama o utilitário compartilhado)
-    await sendLeadToIntegrations({ lead, clientId, webhook, body });
+    // [NOVO] Hub de Integrações (Chama o utilitário compartilhado passando dados em texto limpo)
+    const cleanLeadForIntegration = {
+      ...lead,
+      email: email,
+      phone: phone
+    };
+    await sendLeadToIntegrations({ lead: cleanLeadForIntegration, clientId, webhook, body });
 
     if (webhook.notification_email) {
       console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);

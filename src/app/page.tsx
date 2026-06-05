@@ -77,7 +77,9 @@ export default function Home() {
           
           const { data: allLeadsRaw } = await analyticsQuery;
           const leadsList = allLeadsRaw || [];
-          setAllLeads(leadsList);
+          const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+          const decryptedLeads = await decryptLeadsList(leadsList);
+          setAllLeads(decryptedLeads);
 
           const lastLead = leadsList[0];
           const lastSignal = lastLead ? new Date(lastLead.created_at).getTime() : null;
