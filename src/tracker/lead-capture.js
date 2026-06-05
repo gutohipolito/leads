@@ -177,6 +177,10 @@
             if (leadEmail && !/^[a-zA-Z0-9._%+\-]{2,}@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,10}$/.test(leadEmail)) {
                 leadEmail = '';
             }
+
+            if (leadPhone) {
+                leadPhone = leadPhone.replace(/[^\d+]/g, '');
+            }
             
             if (leadName && (leadEmail || leadPhone)) {
                 const payload = {
@@ -343,6 +347,10 @@
                                     extractedEmail = '';
                                 }
 
+                                if (extractedPhone) {
+                                    extractedPhone = extractedPhone.replace(/[^\d+]/g, '');
+                                }
+
                                 if (leadName && (extractedEmail || extractedPhone)) {
                                     const payload = {
                                         lead_id: generateUUID(),
@@ -399,8 +407,11 @@
             };
             
             if (payload.email && !/^[a-zA-Z0-9._%+\-]{2,}@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,10}$/.test(payload.email)) {
-                payload.email = '';
-            }
+                                payload.email = '';
+                            }
+                            if (payload.phone) {
+                                payload.phone = payload.phone.replace(/[^\d+]/g, '');
+                            }
             
             sendPayload(payload);
         } catch (e) {}
