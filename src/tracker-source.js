@@ -270,6 +270,11 @@
     // Cache do contexto de dispositivo — os dados são praticamente estáticos e não precisam ser recalculados a cada lead
     const cachedDeviceContext = (function() {
         const ua = navigator.userAgent;
+        let tz = 'Desconhecido';
+        try {
+            tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch (e) {}
+
         return {
             platform: navigator.platform, // Mantido para compatibilidade histórica do banco
             // A detecção de Android DEVE vir antes de Linux, pois dispositivos Android também contém 'Linux' no User Agent
@@ -277,6 +282,7 @@
             is_mobile: /Mobi|Android/i.test(ua),
             language: navigator.language,
             screen: `${window.screen.width}x${window.screen.height}`,
+            timezone: tz,
             user_agent: ua
         };
     })();
