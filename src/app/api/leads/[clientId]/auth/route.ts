@@ -6,6 +6,26 @@ function generateServerHmac(message: string, secret: string) {
   return crypto.createHmac('sha256', secret).update(message).digest('hex');
 }
 
+function extractDomain(urlStr: string): string | null {
+  if (!urlStr) return null;
+  try {
+    let normUrl = urlStr.trim().toLowerCase();
+    if (!/^https?:\/\//i.test(normUrl)) {
+      normUrl = 'http://' + normUrl;
+    }
+    const url = new URL(normUrl);
+    // Remove "www." para facilitar comparacoes flexiveis e ignorar variacoes de www
+    return url.hostname.replace(/^www\./, '');
+  } catch (e) {
+    try {
+      const clean = urlStr.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0].split(':')[0];
+      return clean.trim().toLowerCase();
+    } catch (err) {
+      return null;
+    }
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
@@ -48,26 +68,38 @@ export async function POST(
         .filter((o: string) => o);
 
       if (allowedList.length > 0) {
-        const requestOrigin = request.headers.get('origin');
-        if (!requestOrigin) {
+        const requestOrigin = request.headers.get('origin') || '';
+        const requestReferer = request.headers.get('referer') || '';
+
+        if (!requestOrigin && !requestReferer) {
           return NextResponse.json(
-            { error: 'Acesso bloqueado: requisições do rastreador exigem cabeçalho Origin.' },
+            { error: 'Acesso bloqueado: requisições do rastreador exigem cabeçalho Origin ou Referer.' },
             { status: 403, headers: corsHeaders }
           );
         }
 
-        const normOrigin = requestOrigin.trim().toLowerCase().replace(/\/$/, '');
+        const originDomain = extractDomain(requestOrigin);
+        const refererDomain = extractDomain(requestReferer);
+
         const isAllowed = allowedList.some((allowed: string) => {
-          const normAllowed = allowed.replace(/\/$/, '');
-          return (
-            normOrigin === normAllowed ||
-            normOrigin.endsWith('.' + normAllowed.replace(/^https?:\/\/(www\.)?/, ''))
-          );
+          const allowedDomain = extractDomain(allowed);
+          if (!allowedDomain) return false;
+
+          const checkMatch = (domain: string | null) => {
+            if (!domain) return false;
+            return (
+              domain === allowedDomain ||
+              domain.endsWith('.' + allowedDomain)
+            );
+          };
+
+          return checkMatch(originDomain) || checkMatch(refererDomain);
         });
 
         if (!isAllowed) {
+          console.warn(`[CORS/Referer Auth] Origem negada para emissão de token do webhook ${webhookId}. Origin: "${requestOrigin}", Referer: "${requestReferer}". Permitidos: "${webhook.allowed_origins}"`);
           return NextResponse.json(
-            { error: `Origem não autorizada: ${requestOrigin}` },
+            { error: `Acesso negado: domínio de origem ou referência não autorizado.` },
             { status: 403, headers: corsHeaders }
           );
         }
