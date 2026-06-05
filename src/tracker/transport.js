@@ -1,6 +1,6 @@
     function queueFailedLead(payload) {
         try {
-            const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+            const queue = getLocalItem('asthros_queue') || [];
             const exists = queue.some(item => item.lead_id === payload.lead_id);
             if (!exists) {
                 let priority = 3;
@@ -16,7 +16,7 @@
                 // Ordenação crescente por importância: prioridade 1 (alta), 2 (média), 3 (baixa)
                 queue.sort((a, b) => (a.priority || 3) - (b.priority || 3));
                 
-                localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(0, 5))); // max 5 mais prioritários
+                setLocalItem('asthros_queue', queue.slice(0, 5)); // max 5 mais prioritários
             }
         } catch (e) {}
     }

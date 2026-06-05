@@ -24,11 +24,11 @@
 
     async function executeFlush() {
         try {
-            let queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+            let queue = getLocalItem('asthros_queue') || [];
             if (!queue.length) return;
 
             // Só tenta reenviar se tiver passado mais de 1 minuto desde a última tentativa
-            const lastTry = parseInt(localStorage.getItem('asthros_queue_last_try') || '0');
+            const lastTry = parseInt(getLocalItem('asthros_queue_last_try') || '0');
             if (Date.now() - lastTry < 60 * 1000) {
                 return;
             }
@@ -45,10 +45,10 @@
 
             if (queue.length !== originalLength) {
                 if (queue.length > 0) {
-                    localStorage.setItem('asthros_queue', JSON.stringify(queue));
+                    setLocalItem('asthros_queue', queue);
                 } else {
-                    localStorage.removeItem('asthros_queue');
-                    localStorage.removeItem('asthros_queue_last_try');
+                    removeLocalItem('asthros_queue');
+                    removeLocalItem('asthros_queue_last_try');
                     return;
                 }
             }
@@ -59,7 +59,7 @@
                     asthrosChannel.postMessage({ action: 'flush_start' });
                 } catch (e) {}
             }
-            localStorage.setItem('asthros_queue_last_try', Date.now().toString());
+            setLocalItem('asthros_queue_last_try', Date.now().toString());
 
             const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
             const failedItems = [];
@@ -94,7 +94,7 @@
             if (failedItems.length > 0) {
                 try {
                     // Mescla os itens que falharam com novos leads que possam ter entrado na fila no meio do caminho
-                    const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+                    const currentQueue = getLocalItem('asthros_queue') || [];
                     const mergedQueue = [...failedItems];
                     
                     currentQueue.forEach(item => {
@@ -110,15 +110,15 @@
                     // Ordenação crescente por importância: prioridade 1 (alta), 2 (média), 3 (baixa)
                     mergedQueue.sort((a, b) => (a.priority || 3) - (b.priority || 3));
                     
-                    localStorage.setItem('asthros_queue', JSON.stringify(mergedQueue.slice(0, 5)));
+                    setLocalItem('asthros_queue', mergedQueue.slice(0, 5));
                 } catch (e) {
                     failedItems.sort((a, b) => (a.priority || 3) - (b.priority || 3));
-                    localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(0, 5)));
+                    setLocalItem('asthros_queue', failedItems.slice(0, 5));
                 }
             } else {
                 try {
                     // Limpa apenas os leads que foram enviados com sucesso, mantendo novos leads que entraram no meio do caminho
-                    const currentQueue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
+                    const currentQueue = getLocalItem('asthros_queue') || [];
                     const remainingQueue = currentQueue.filter(item => 
                         !queue.some(q => 
                             (q.lead_id && q.lead_id === item.lead_id) || 
@@ -127,14 +127,14 @@
                     );
                     
                     if (remainingQueue.length > 0) {
-                        localStorage.setItem('asthros_queue', JSON.stringify(remainingQueue.slice(-5)));
+                        setLocalItem('asthros_queue', remainingQueue.slice(-5));
                     } else {
-                        localStorage.removeItem('asthros_queue');
-                        localStorage.removeItem('asthros_queue_last_try');
+                        removeLocalItem('asthros_queue');
+                        removeLocalItem('asthros_queue_last_try');
                     }
                 } catch (e) {
-                    localStorage.removeItem('asthros_queue');
-                    localStorage.removeItem('asthros_queue_last_try');
+                    removeLocalItem('asthros_queue');
+                    removeLocalItem('asthros_queue_last_try');
                 }
             }
         } catch (err) {
@@ -170,7 +170,7 @@
         const myTabId = randomId();
 
         try {
-            const existingLock = localStorage.getItem(lockKey);
+            const existingLock = getLocalItem(lockKey);
             if (existingLock) {
                 const parts = existingLock.split(':');
                 const lockTime = parseInt(parts[1] || '0');
@@ -180,12 +180,12 @@
             }
 
             const lockValue = `${myTabId}:${Date.now()}`;
-            localStorage.setItem(lockKey, lockValue);
+            setLocalItem(lockKey, lockValue);
 
             // Pequeno delay para verificar se outra aba concorrente gravou por cima
             await new Promise(function(resolve) { setTimeout(resolve, 50); });
 
-            const currentLock = localStorage.getItem(lockKey);
+            const currentLock = getLocalItem(lockKey);
             if (currentLock !== lockValue) {
                 return; // Perdemos a disputa de concorrência
             }
@@ -195,9 +195,9 @@
         } finally {
             // Só remove o lock se ele ainda for nosso (evita remover locks de outras abas)
             try {
-                const finalLock = localStorage.getItem(lockKey);
+                const finalLock = getLocalItem(lockKey);
                 if (finalLock && finalLock.startsWith(myTabId)) {
-                    localStorage.removeItem(lockKey);
+                    removeLocalItem(lockKey);
                 }
             } catch (e) {}
         }
