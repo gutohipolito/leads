@@ -107,13 +107,13 @@
                         }
                     });
                     
-                    // Ordenação decrescente: prioridade 2 (menos importante) vem antes de prioridade 1 (mais importante)
-                    mergedQueue.sort((a, b) => (b.priority || 2) - (a.priority || 2));
+                    // Ordenação crescente por importância: prioridade 1 (alta), 2 (média), 3 (baixa)
+                    mergedQueue.sort((a, b) => (a.priority || 3) - (b.priority || 3));
                     
-                    localStorage.setItem('asthros_queue', JSON.stringify(mergedQueue.slice(-5)));
+                    localStorage.setItem('asthros_queue', JSON.stringify(mergedQueue.slice(0, 5)));
                 } catch (e) {
-                    failedItems.sort((a, b) => (b.priority || 2) - (a.priority || 2));
-                    localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(-5)));
+                    failedItems.sort((a, b) => (a.priority || 3) - (b.priority || 3));
+                    localStorage.setItem('asthros_queue', JSON.stringify(failedItems.slice(0, 5)));
                 }
             } else {
                 try {

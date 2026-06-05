@@ -3,14 +3,20 @@
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             const exists = queue.some(item => item.lead_id === payload.lead_id);
             if (!exists) {
-                const priority = (payload.source === 'form' || payload.source === 'manual') ? 1 : 2;
+                let priority = 3;
+                if (payload.source === 'form' || payload.source === 'manual') {
+                    priority = 1;
+                } else if (payload.source === 'whatsapp_tracker') {
+                    priority = 2;
+                }
+                
                 const itemToQueue = { ...payload, priority };
                 queue.push(itemToQueue);
                 
-                // Ordenação decrescente: prioridade 2 (menos importante) vem antes de prioridade 1 (mais importante)
-                queue.sort((a, b) => (b.priority || 2) - (a.priority || 2));
+                // Ordenação crescente por importância: prioridade 1 (alta), 2 (média), 3 (baixa)
+                queue.sort((a, b) => (a.priority || 3) - (b.priority || 3));
                 
-                localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(-5))); // max 5
+                localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(0, 5))); // max 5 mais prioritários
             }
         } catch (e) {}
     }
