@@ -3,7 +3,13 @@
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
             const exists = queue.some(item => item.lead_id === payload.lead_id);
             if (!exists) {
-                queue.push(payload);
+                const priority = (payload.source === 'form' || payload.source === 'manual') ? 1 : 2;
+                const itemToQueue = { ...payload, priority };
+                queue.push(itemToQueue);
+                
+                // Ordenação decrescente: prioridade 2 (menos importante) vem antes de prioridade 1 (mais importante)
+                queue.sort((a, b) => (b.priority || 2) - (a.priority || 2));
+                
                 localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(-5))); // max 5
             }
         } catch (e) {}

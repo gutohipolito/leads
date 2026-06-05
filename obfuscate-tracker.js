@@ -91,7 +91,8 @@ const replacements = [
   { from: 'scrollTicking', to: '_skt' },
   { from: 'saveExitData', to: '_sed' },
   { from: 'exists', to: '_ex' },
-  { from: 'removeEmpty', to: '_re' }
+  { from: 'removeEmpty', to: '_re' },
+  { from: 'priority', to: '_pr' }
 ];
 
 replacements.forEach(r => {
