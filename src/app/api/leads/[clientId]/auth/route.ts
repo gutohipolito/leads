@@ -56,13 +56,21 @@ export async function POST(
     }
 
     // Buscar o webhook no banco para validar o client_id e o allowed_origins
-    const { data: webhook, error: dbError } = await supabase
+    // Suporta retrocompatibilidade com scripts antigos que enviam a chave secreta legada em webhookId
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(webhookId);
+    let query = supabase
       .from('webhooks')
       .select('id, status, allowed_origins')
       .eq('client_id', clientId)
-      .eq('id', webhookId)
-      .eq('status', 'active')
-      .maybeSingle();
+      .eq('status', 'active');
+
+    if (isUuid) {
+      query = query.eq('id', webhookId);
+    } else {
+      query = query.eq('secret', webhookId);
+    }
+
+    const { data: webhook, error: dbError } = await query.maybeSingle();
 
     if (dbError || !webhook) {
       return NextResponse.json({ error: 'Webhook ID inválido ou inativo para este cliente.' }, { status: 401, headers: getResponseHeaders(true) });

@@ -135,13 +135,21 @@ export async function POST(
       webhook = data;
     } else {
       // Autenticação Pública do Tracker (Webhook ID) + Verificação de Domínio (CORS)
-      const { data, error: authError } = await supabase
+      // Suporta retrocompatibilidade com scripts antigos que enviam a chave secreta legada em webhookId
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(webhookId);
+      let query = supabase
         .from('webhooks')
         .select('id, status, name, outbound_url, notification_email, allowed_origins')
         .eq('client_id', clientId)
-        .eq('id', webhookId)
-        .eq('status', 'active')
-        .maybeSingle();
+        .eq('status', 'active');
+
+      if (isUuid) {
+        query = query.eq('id', webhookId);
+      } else {
+        query = query.eq('secret', webhookId);
+      }
+
+      const { data, error: authError } = await query.maybeSingle();
 
       if (authError || !data) {
         return NextResponse.json({ error: 'Webhook ID inválido ou inativo para este cliente.' }, { status: 401 });
