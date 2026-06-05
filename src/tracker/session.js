@@ -9,32 +9,42 @@
         if (!getLocalItem('asthros_first_seen')) {
             setLocalItem('asthros_first_seen', Date.now().toString());
         }
+
+        const saveExitData = () => {
+            totalActive += Date.now() - lastVisible;
+            lastVisible = Date.now(); // Previne contagem dupla em eventos simultâneos (ex: visibilitychange + pagehide)
+            
+            // Exit intent: enriquece o último touchpoint com dados de saída
+            try {
+                const lastTouchStr = getLocalItem('asthros_last_touch');
+                if (lastTouchStr) {
+                    const lastTouch = typeof lastTouchStr === 'string' ? JSON.parse(lastTouchStr) : lastTouchStr;
+                    lastTouch.exit_scroll = maxScroll + '%';
+                    lastTouch.exit_time = getActiveTimeOnPage();
+                    setLocalItem('asthros_last_touch', lastTouch);
+                } else {
+                    const firstTouchStr = getLocalItem('asthros_first_touch');
+                    if (firstTouchStr) {
+                        const firstTouch = typeof firstTouchStr === 'string' ? JSON.parse(firstTouchStr) : firstTouchStr;
+                        firstTouch.exit_scroll = maxScroll + '%';
+                        firstTouch.exit_time = getActiveTimeOnPage();
+                        setLocalItem('asthros_first_touch', firstTouch);
+                    }
+                }
+            } catch (e) {}
+        };
+
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                totalActive += Date.now() - lastVisible;
-                
-                // Exit intent: enriquece o último touchpoint com dados de saída
-                try {
-                    const lastTouchStr = getLocalItem('asthros_last_touch');
-                    if (lastTouchStr) {
-                        const lastTouch = typeof lastTouchStr === 'string' ? JSON.parse(lastTouchStr) : lastTouchStr;
-                        lastTouch.exit_scroll = maxScroll + '%';
-                        lastTouch.exit_time = getActiveTimeOnPage();
-                        setLocalItem('asthros_last_touch', lastTouch);
-                    } else {
-                        const firstTouchStr = getLocalItem('asthros_first_touch');
-                        if (firstTouchStr) {
-                            const firstTouch = typeof firstTouchStr === 'string' ? JSON.parse(firstTouchStr) : firstTouchStr;
-                            firstTouch.exit_scroll = maxScroll + '%';
-                            firstTouch.exit_time = getActiveTimeOnPage();
-                            setLocalItem('asthros_first_touch', firstTouch);
-                        }
-                    }
-                } catch (e) {}
+                saveExitData();
             } else {
                 lastVisible = Date.now();
             }
         });
+
+        // Suporte robusto para Safari (iOS / macOS) que ignora visibilitychange em alguns fluxos de encerramento
+        window.addEventListener('pagehide', saveExitData);
+        window.addEventListener('beforeunload', saveExitData);
     } catch (e) {}
 
     function getActiveTimeOnPage() {
