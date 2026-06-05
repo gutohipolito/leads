@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS public.webhooks (
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
     secret TEXT NOT NULL,
     validation_type TEXT DEFAULT 'header' CHECK (validation_type IN ('header', 'query')),
+    allowed_origins TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(client_id, url_slug)
 );

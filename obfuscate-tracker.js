@@ -81,7 +81,8 @@ const replacements = [
   { from: 'trackingLocks', to: '_tk' },
   { from: 'candidates', to: '_cd' },
   { from: 'trackPageVisit', to: '_tp' },
-  { from: 'getPagesVisitedContext', to: '_pv' }
+  { from: 'getPagesVisitedContext', to: '_pv' },
+  { from: 'webhookId', to: '_wi' }
 ];
 
 replacements.forEach(r => {

@@ -4,6 +4,11 @@
     // 1. Busca de Configuração
     let config = window.AsthrosConfig || null;
 
+    if (config) {
+        // Compatibilidade com configurações antigas em window.AsthrosConfig
+        config.webhookId = config.webhookId || config.secret;
+    }
+
     if (!config) {
         let script = document.currentScript;
         
@@ -26,6 +31,7 @@
 
             config = {
                 clientId: script.getAttribute('data-client-id'),
+                webhookId: script.getAttribute('data-webhook-id') || script.getAttribute('data-secret'),
                 secret: script.getAttribute('data-secret'),
                 apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br',
                 trackKeywords: script.getAttribute('data-keywords') ? script.getAttribute('data-keywords').split(',') : [],
@@ -34,7 +40,7 @@
         }
     }
 
-    if (!config || !config.clientId || !config.secret) {
+    if (!config || !config.clientId || !config.webhookId) {
         // console.error('[Asthros] CONFIGURAÇÃO NÃO ENCONTRADA! Certifique-se de que window.AsthrosConfig está definido ou a tag <script> tem os atributos data-.');
         return;
     }
@@ -517,26 +523,38 @@
     async function sendPayload(payload) {
         const endpoint = `${config.apiUrl}/api/leads/${config.clientId}`;
         
-        // Beacon apenas no fechamento — com secret no corpo como fallback seguro (o backend já aceita)
+        // Beacon apenas no fechamento
         if (navigator.sendBeacon && document.visibilityState === 'hidden') {
-            const beaconPayload = { ...payload, secret: config.secret };
+            const beaconPayload = { ...payload };
+            if (config.webhookId) {
+                beaconPayload.webhookId = config.webhookId;
+            }
+            if (config.secret) {
+                beaconPayload.secret = config.secret;
+            }
             const blob = new Blob([JSON.stringify(beaconPayload)], { type: 'application/json' });
             if (navigator.sendBeacon(endpoint, blob)) return;
         }
 
-        // Remove o secret do corpo para envio seguro e exclusivo via cabeçalhos HTTP
         const safePayload = { ...payload };
-        if (safePayload.secret) {
-            delete safePayload.secret;
+        if (config.webhookId) {
+            safePayload.webhookId = config.webhookId;
         }
 
         try {
+            const headers = { 
+                'Content-Type': 'application/json'
+            };
+            if (config.webhookId) {
+                headers['X-Asthros-Webhook-Id'] = config.webhookId;
+            }
+            if (config.secret) {
+                headers['X-Asthros-Secret'] = config.secret;
+            }
+
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Asthros-Secret': config.secret
-                },
+                headers: headers,
                 body: JSON.stringify(safePayload),
                 keepalive: true
             });
@@ -598,12 +616,19 @@
 
             for (const payload of queue) {
                 try {
+                    const headers = { 
+                        'Content-Type': 'application/json'
+                    };
+                    if (config.webhookId) {
+                        headers['X-Asthros-Webhook-Id'] = config.webhookId;
+                    }
+                    if (config.secret) {
+                        headers['X-Asthros-Secret'] = config.secret;
+                    }
+
                     const response = await fetch(endpoint, {
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'X-Asthros-Secret': config.secret
-                        },
+                        headers: headers,
                         body: JSON.stringify(payload),
                         keepalive: true
                     });

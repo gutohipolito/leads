@@ -292,7 +292,8 @@ export default function WebhooksManagePage() {
         .from('webhooks')
         .update({
           outbound_url: selectedWebhook.outbound_url,
-          notification_email: selectedWebhook.notification_email
+          notification_email: selectedWebhook.notification_email,
+          allowed_origins: selectedWebhook.allowed_origins || null
         })
         .eq('id', selectedWebhook.id);
 
@@ -520,7 +521,7 @@ export default function WebhooksManagePage() {
                           const keywordsArr = trackerKeywords.split(',').map(k => k.trim()).filter(k => k);
                           const selectorsArr = trackerSelectors.split(',').map(s => s.trim()).filter(s => s);
                           
-                          let configStr = `  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    secret: "${selectedDocsWebhook.secret}",\n    apiUrl: "${window.location.origin}"`;
+                          let configStr = `  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    webhookId: "${selectedDocsWebhook.id}",\n    apiUrl: "${window.location.origin}"`;
                           
                           if (keywordsArr.length > 0) configStr += `,\n    trackKeywords: ${JSON.stringify(keywordsArr)}`;
                           if (selectorsArr.length > 0) configStr += `,\n    trackSelectors: ${JSON.stringify(selectorsArr)}`;
@@ -537,7 +538,7 @@ export default function WebhooksManagePage() {
 {`<script>
   window.AsthrosConfig = {
     clientId: "${selectedDocsWebhook.client_id}",
-    secret: "${selectedDocsWebhook.secret}",
+    webhookId: "${selectedDocsWebhook.id}",
     apiUrl: "${window.location.origin}"${trackerKeywords ? `,\n    trackKeywords: ${JSON.stringify(trackerKeywords.split(',').map(k => k.trim()).filter(k => k))}` : ''}${trackerSelectors ? `,\n    trackSelectors: ${JSON.stringify(trackerSelectors.split(',').map(s => s.trim()).filter(s => s))}` : ''}
   };
 </script>
@@ -732,6 +733,22 @@ export default function WebhooksManagePage() {
                           onChange={(e) => setSelectedWebhook({...selectedWebhook, notification_email: e.target.value})}
                         />
                       </div>
+                    </div>
+
+                    <div className={styles.detailGroup}>
+                      <label>Origens Permitidas (CORS)</label>
+                      <div className={styles.inputWithIcon}>
+                        <Globe size={16} />
+                        <input 
+                          type="text" 
+                          placeholder="https://meusite.com, http://localhost:3000" 
+                          value={selectedWebhook.allowed_origins || ''}
+                          onChange={(e) => setSelectedWebhook({...selectedWebhook, allowed_origins: e.target.value})}
+                        />
+                      </div>
+                      <small className={styles.inputHelp} style={{ color: '#888', display: 'block', marginTop: '4px' }}>
+                        Separe domínios por vírgula. Deixe vazio para permitir qualquer origem.
+                      </small>
                     </div>
                   </div>
 

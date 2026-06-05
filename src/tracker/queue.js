@@ -46,12 +46,19 @@
 
             for (const payload of queue) {
                 try {
+                    const headers = { 
+                        'Content-Type': 'application/json'
+                    };
+                    if (config.webhookId) {
+                        headers['X-Asthros-Webhook-Id'] = config.webhookId;
+                    }
+                    if (config.secret) {
+                        headers['X-Asthros-Secret'] = config.secret;
+                    }
+
                     const response = await fetch(endpoint, {
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'X-Asthros-Secret': config.secret
-                        },
+                        headers: headers,
                         body: JSON.stringify(payload),
                         keepalive: true
                     });

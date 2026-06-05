@@ -4,6 +4,11 @@
     // 1. Busca de Configuração
     let config = window.AsthrosConfig || null;
 
+    if (config) {
+        // Compatibilidade com configurações antigas em window.AsthrosConfig
+        config.webhookId = config.webhookId || config.secret;
+    }
+
     if (!config) {
         let script = document.currentScript;
         
@@ -26,6 +31,7 @@
 
             config = {
                 clientId: script.getAttribute('data-client-id'),
+                webhookId: script.getAttribute('data-webhook-id') || script.getAttribute('data-secret'),
                 secret: script.getAttribute('data-secret'),
                 apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br',
                 trackKeywords: script.getAttribute('data-keywords') ? script.getAttribute('data-keywords').split(',') : [],
@@ -34,7 +40,7 @@
         }
     }
 
-    if (!config || !config.clientId || !config.secret) {
+    if (!config || !config.clientId || !config.webhookId) {
         // console.error('[Asthros] CONFIGURAÇÃO NÃO ENCONTRADA! Certifique-se de que window.AsthrosConfig está definido ou a tag <script> tem os atributos data-.');
         return;
     }

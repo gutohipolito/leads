@@ -14,7 +14,7 @@ export async function POST(
   const corsHeaders = {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id',
     'Access-Control-Allow-Credentials': 'true',
   };
 
@@ -56,21 +56,76 @@ export async function POST(
     }
     
     const secret = request.headers.get('x-asthros-secret') || body.secret || request.nextUrl.searchParams.get('secret');
+    const webhookId = request.headers.get('x-asthros-webhook-id') || body.webhookId || request.nextUrl.searchParams.get('webhookId');
 
-    if (!secret) {
-      return NextResponse.json({ error: 'Chave secreta ausente. Use ?secret= no final da URL, o header X-Asthros-Secret ou envie no corpo da requisição.' }, { status: 401 });
+    if (!secret && !webhookId) {
+      return NextResponse.json({ error: 'Identificador ausente. Forneça o header X-Asthros-Webhook-Id ou X-Asthros-Secret.' }, { status: 401 });
     }
 
-    const { data: webhook, error: authError } = await supabase
-      .from('webhooks')
-      .select('id, status, name, outbound_url, notification_email')
-      .eq('client_id', clientId)
-      .eq('secret', secret)
-      .eq('status', 'active')
-      .single();
+    let webhook: any = null;
 
-    if (authError || !webhook) {
-      return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
+    if (secret) {
+      // Autenticação S2S / Legada
+      const { data, error: authError } = await supabase
+        .from('webhooks')
+        .select('id, status, name, outbound_url, notification_email')
+        .eq('client_id', clientId)
+        .eq('secret', secret)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (authError || !data) {
+        return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
+      }
+      webhook = data;
+    } else {
+      // Autenticação Pública do Tracker (Webhook ID) + Verificação de Domínio (CORS)
+      const { data, error: authError } = await supabase
+        .from('webhooks')
+        .select('id, status, name, outbound_url, notification_email, allowed_origins')
+        .eq('client_id', clientId)
+        .eq('id', webhookId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (authError || !data) {
+        return NextResponse.json({ error: 'Webhook ID inválido ou inativo para este cliente.' }, { status: 401 });
+      }
+
+      // Validar whitelist de origens (se configurado no webhook)
+      if (data.allowed_origins) {
+        const allowedList = data.allowed_origins
+          .split(',')
+          .map((o: string) => o.trim().toLowerCase())
+          .filter((o: string) => o);
+
+        if (allowedList.length > 0) {
+          const requestOrigin = request.headers.get('origin');
+          if (!requestOrigin) {
+            return NextResponse.json(
+              { error: 'Acesso bloqueado: requisições do rastreador exigem cabeçalho Origin.' },
+              { status: 403, headers: corsHeaders }
+            );
+          }
+
+          const normOrigin = requestOrigin.trim().toLowerCase().replace(/\/$/, '');
+          const isAllowed = allowedList.some((allowed: string) => {
+            const normAllowed = allowed.replace(/\/$/, '');
+            return (
+              normOrigin === normAllowed ||
+              normOrigin.endsWith('.' + normAllowed.replace(/^https?:\/\/(www\.)?/, ''))
+            );
+          });
+
+          if (!isAllowed) {
+            return NextResponse.json(
+              { error: `Origem não autorizada: ${requestOrigin}` },
+              { status: 403, headers: corsHeaders }
+            );
+          }
+        }
+      }
+      webhook = data;
     }
 
     // Remover o secret do corpo para evitar armazenamento em banco de dados
@@ -413,7 +468,7 @@ export async function OPTIONS(request: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id',
       'Access-Control-Allow-Credentials': 'true',
     },
   });
