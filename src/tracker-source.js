@@ -188,13 +188,21 @@
         maxScroll = 0;
     }
 
+    let scrollTicking = false;
+
     window.addEventListener('scroll', () => {
-        try {
-            const docHeight = document.documentElement.scrollHeight || 1;
-            const rawPercent = (window.scrollY + window.innerHeight) / docHeight * 100;
-            const scrollPercent = Math.min(100, Math.round(rawPercent));
-            if (scrollPercent > maxScroll) maxScroll = scrollPercent;
-        } catch (e) {}
+        if (scrollTicking) return;
+        scrollTicking = true;
+
+        requestAnimationFrame(() => {
+            try {
+                const docHeight = document.documentElement.scrollHeight || 1;
+                const rawPercent = (window.scrollY + window.innerHeight) / docHeight * 100;
+                const scrollPercent = Math.min(100, Math.round(rawPercent));
+                if (scrollPercent > maxScroll) maxScroll = scrollPercent;
+            } catch (e) {}
+            scrollTicking = false;
+        });
     }, { passive: true });
 
     // Suporte a SPAs (React, Next.js, Vue) - Interceptação de navegação por History API (event-driven, sem polling)
