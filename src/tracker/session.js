@@ -6,8 +6,8 @@
     let maxScroll = 0;
 
     try {
-        if (!localStorage.getItem('asthros_first_seen')) {
-            localStorage.setItem('asthros_first_seen', Date.now().toString());
+        if (!getLocalItem('asthros_first_seen')) {
+            setLocalItem('asthros_first_seen', Date.now().toString());
         }
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
@@ -15,19 +15,19 @@
                 
                 // Exit intent: enriquece o último touchpoint com dados de saída
                 try {
-                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
+                    const lastTouchStr = getLocalItem('asthros_last_touch');
                     if (lastTouchStr) {
-                        const lastTouch = JSON.parse(lastTouchStr);
+                        const lastTouch = typeof lastTouchStr === 'string' ? JSON.parse(lastTouchStr) : lastTouchStr;
                         lastTouch.exit_scroll = maxScroll + '%';
                         lastTouch.exit_time = getActiveTimeOnPage();
-                        localStorage.setItem('asthros_last_touch', JSON.stringify(lastTouch));
+                        setLocalItem('asthros_last_touch', lastTouch);
                     } else {
-                        const firstTouchStr = localStorage.getItem('asthros_first_touch');
+                        const firstTouchStr = getLocalItem('asthros_first_touch');
                         if (firstTouchStr) {
-                            const firstTouch = JSON.parse(firstTouchStr);
+                            const firstTouch = typeof firstTouchStr === 'string' ? JSON.parse(firstTouchStr) : firstTouchStr;
                             firstTouch.exit_scroll = maxScroll + '%';
                             firstTouch.exit_time = getActiveTimeOnPage();
-                            localStorage.setItem('asthros_first_touch', JSON.stringify(firstTouch));
+                            setLocalItem('asthros_first_touch', firstTouch);
                         }
                     }
                 } catch (e) {}
@@ -127,10 +127,10 @@
 
     function getVisitorId() {
         try {
-            let visitorId = localStorage.getItem('asthros_visitor_id');
+            let visitorId = getLocalItem('asthros_visitor_id');
             if (!visitorId) {
                 visitorId = generateUUID();
-                localStorage.setItem('asthros_visitor_id', visitorId);
+                setLocalItem('asthros_visitor_id', visitorId);
             }
             return visitorId;
         } catch (e) {
@@ -140,7 +140,7 @@
 
     function getConversionTime() {
         try {
-            const firstSeen = localStorage.getItem('asthros_first_seen');
+            const firstSeen = getLocalItem('asthros_first_seen');
             if (firstSeen) {
                 const diffMs = Date.now() - parseInt(firstSeen, 10);
                 return Math.max(0, Math.round(diffMs / 1000));

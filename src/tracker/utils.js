@@ -37,3 +37,43 @@
         // Fallback robusto usando Math.random se crypto não estiver disponível
         return 'temp_' + Math.random().toString(36).substring(2, 18);
     }
+
+    const STORAGE_TTL = 90 * 24 * 60 * 60 * 1000; // 90 dias
+
+    function setLocalItem(key, value) {
+        try {
+            const item = {
+                value: value,
+                expiry: Date.now() + STORAGE_TTL
+            };
+            localStorage.setItem(key, JSON.stringify(item));
+        } catch (e) {}
+    }
+
+    function getLocalItem(key) {
+        try {
+            const itemStr = localStorage.getItem(key);
+            if (!itemStr) return null;
+            const item = JSON.parse(itemStr);
+            if (item && typeof item === 'object' && 'expiry' in item) {
+                if (Date.now() > item.expiry) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                return item.value;
+            }
+            return itemStr;
+        } catch (e) {
+            try {
+                return localStorage.getItem(key);
+            } catch (err) {
+                return null;
+            }
+        }
+    }
+
+    function removeLocalItem(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {}
+    }

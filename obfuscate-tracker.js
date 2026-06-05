@@ -83,7 +83,10 @@ const replacements = [
   { from: 'trackPageVisit', to: '_tp' },
   { from: 'getPagesVisitedContext', to: '_pv' },
   { from: 'webhookId', to: '_wi' },
-  { from: 'randomId', to: '_ri' }
+  { from: 'randomId', to: '_ri' },
+  { from: 'setLocalItem', to: '_sli' },
+  { from: 'getLocalItem', to: '_gli' },
+  { from: 'removeLocalItem', to: '_rli' }
 ];
 
 replacements.forEach(r => {

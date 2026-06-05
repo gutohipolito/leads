@@ -93,6 +93,46 @@
         return 'temp_' + Math.random().toString(36).substring(2, 18);
     }
 
+    const STORAGE_TTL = 90 * 24 * 60 * 60 * 1000; // 90 dias
+
+    function setLocalItem(key, value) {
+        try {
+            const item = {
+                value: value,
+                expiry: Date.now() + STORAGE_TTL
+            };
+            localStorage.setItem(key, JSON.stringify(item));
+        } catch (e) {}
+    }
+
+    function getLocalItem(key) {
+        try {
+            const itemStr = localStorage.getItem(key);
+            if (!itemStr) return null;
+            const item = JSON.parse(itemStr);
+            if (item && typeof item === 'object' && 'expiry' in item) {
+                if (Date.now() > item.expiry) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                return item.value;
+            }
+            return itemStr;
+        } catch (e) {
+            try {
+                return localStorage.getItem(key);
+            } catch (err) {
+                return null;
+            }
+        }
+    }
+
+    function removeLocalItem(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {}
+    }
+
 
     const trackingLocks = new Set();
 
@@ -102,8 +142,8 @@
     let maxScroll = 0;
 
     try {
-        if (!localStorage.getItem('asthros_first_seen')) {
-            localStorage.setItem('asthros_first_seen', Date.now().toString());
+        if (!getLocalItem('asthros_first_seen')) {
+            setLocalItem('asthros_first_seen', Date.now().toString());
         }
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
@@ -111,19 +151,19 @@
                 
                 // Exit intent: enriquece o último touchpoint com dados de saída
                 try {
-                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
+                    const lastTouchStr = getLocalItem('asthros_last_touch');
                     if (lastTouchStr) {
-                        const lastTouch = JSON.parse(lastTouchStr);
+                        const lastTouch = typeof lastTouchStr === 'string' ? JSON.parse(lastTouchStr) : lastTouchStr;
                         lastTouch.exit_scroll = maxScroll + '%';
                         lastTouch.exit_time = getActiveTimeOnPage();
-                        localStorage.setItem('asthros_last_touch', JSON.stringify(lastTouch));
+                        setLocalItem('asthros_last_touch', lastTouch);
                     } else {
-                        const firstTouchStr = localStorage.getItem('asthros_first_touch');
+                        const firstTouchStr = getLocalItem('asthros_first_touch');
                         if (firstTouchStr) {
-                            const firstTouch = JSON.parse(firstTouchStr);
+                            const firstTouch = typeof firstTouchStr === 'string' ? JSON.parse(firstTouchStr) : firstTouchStr;
                             firstTouch.exit_scroll = maxScroll + '%';
                             firstTouch.exit_time = getActiveTimeOnPage();
-                            localStorage.setItem('asthros_first_touch', JSON.stringify(firstTouch));
+                            setLocalItem('asthros_first_touch', firstTouch);
                         }
                     }
                 } catch (e) {}
@@ -223,10 +263,10 @@
 
     function getVisitorId() {
         try {
-            let visitorId = localStorage.getItem('asthros_visitor_id');
+            let visitorId = getLocalItem('asthros_visitor_id');
             if (!visitorId) {
                 visitorId = generateUUID();
-                localStorage.setItem('asthros_visitor_id', visitorId);
+                setLocalItem('asthros_visitor_id', visitorId);
             }
             return visitorId;
         } catch (e) {
@@ -236,7 +276,7 @@
 
     function getConversionTime() {
         try {
-            const firstSeen = localStorage.getItem('asthros_first_seen');
+            const firstSeen = getLocalItem('asthros_first_seen');
             if (firstSeen) {
                 const diffMs = Date.now() - parseInt(firstSeen, 10);
                 return Math.max(0, Math.round(diffMs / 1000));
@@ -323,7 +363,7 @@
                 touchpointSource = sourceFromRef;
             } else {
                 // Se for visita direta pura, registramos apenas se o primeiro toque estiver vazio
-                if (localStorage.getItem('asthros_first_touch')) return;
+                if (getLocalItem('asthros_first_touch')) return;
             }
 
             const touchpoint = {
@@ -335,18 +375,19 @@
                 page_title: document.title
             };
 
-            const firstTouchStr = localStorage.getItem('asthros_first_touch');
-            if (!firstTouchStr) {
+            const firstTouchVal = getLocalItem('asthros_first_touch');
+            const firstTouch = typeof firstTouchVal === 'string' ? JSON.parse(firstTouchVal) : firstTouchVal;
+            if (!firstTouch) {
                 // Primeiro toque na jornada
-                localStorage.setItem('asthros_first_touch', JSON.stringify(touchpoint));
-                localStorage.setItem('asthros_journey', JSON.stringify([touchpoint]));
-                localStorage.setItem('asthros_journey_length', '1');
+                setLocalItem('asthros_first_touch', touchpoint);
+                setLocalItem('asthros_journey', [touchpoint]);
+                setLocalItem('asthros_journey_length', '1');
             } else {
                 // Toques subsequentes: verifica duplicidade com o último toque salvo
                 let lastTouch = null;
                 try {
-                    const lastTouchStr = localStorage.getItem('asthros_last_touch');
-                    lastTouch = lastTouchStr ? JSON.parse(lastTouchStr) : JSON.parse(firstTouchStr);
+                    const lastTouchVal = getLocalItem('asthros_last_touch');
+                    lastTouch = lastTouchVal ? (typeof lastTouchVal === 'string' ? JSON.parse(lastTouchVal) : lastTouchVal) : firstTouch;
                 } catch (e) {}
 
                 if (lastTouch) {
@@ -358,20 +399,21 @@
                     }
                 }
 
-                localStorage.setItem('asthros_last_touch', JSON.stringify(touchpoint));
+                setLocalItem('asthros_last_touch', touchpoint);
                 
                 let length = 1;
                 try {
-                    length = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
+                    const lengthVal = getLocalItem('asthros_journey_length');
+                    length = parseInt(lengthVal || '1', 10);
                 } catch (e) {}
-                localStorage.setItem('asthros_journey_length', (length + 1).toString());
+                setLocalItem('asthros_journey_length', (length + 1).toString());
 
                 // Atualizar jornada mantendo no máximo os últimos 5 elementos
                 let journey = [];
                 try {
-                    const storedJourney = localStorage.getItem('asthros_journey');
+                    const storedJourney = getLocalItem('asthros_journey');
                     if (storedJourney) {
-                        const parsed = JSON.parse(storedJourney);
+                        const parsed = typeof storedJourney === 'string' ? JSON.parse(storedJourney) : storedJourney;
                         if (Array.isArray(parsed)) {
                             journey = parsed;
                         }
@@ -379,16 +421,14 @@
                 } catch (e) {}
 
                 if (journey.length === 0) {
-                    try {
-                        journey.push(JSON.parse(firstTouchStr));
-                    } catch (e) {}
+                    journey.push(firstTouch);
                 }
 
                 journey.push(touchpoint);
                 if (journey.length > 5) {
                     journey = journey.slice(-5);
                 }
-                localStorage.setItem('asthros_journey', JSON.stringify(journey));
+                setLocalItem('asthros_journey', journey);
             }
         } catch (e) {}
     }
@@ -449,29 +489,30 @@
 
     function getJourneyContext() {
         try {
-            const j = localStorage.getItem('asthros_journey');
+            const j = getLocalItem('asthros_journey');
             if (j) {
-                const parsed = JSON.parse(j);
+                const parsed = typeof j === 'string' ? JSON.parse(j) : j;
                 if (Array.isArray(parsed)) return parsed;
             }
         } catch (e) {}
         
         // Fallback para primeiro toque se a jornada não existir/for inválida
         try {
-            const ft = localStorage.getItem('asthros_first_touch');
-            return ft ? [JSON.parse(ft)] : [];
-        } catch (e) {
-            return [];
-        }
+            const ft = getLocalItem('asthros_first_touch');
+            if (ft) {
+                return [typeof ft === 'string' ? JSON.parse(ft) : ft];
+            }
+        } catch (e) {}
+        return [];
     }
 
     function trackPageVisit() {
         try {
             const pathname = window.location.pathname || '/';
             let visited = [];
-            const stored = localStorage.getItem('asthros_pages_visited');
+            const stored = getLocalItem('asthros_pages_visited');
             if (stored) {
-                visited = JSON.parse(stored);
+                visited = typeof stored === 'string' ? JSON.parse(stored) : stored;
             }
             if (!Array.isArray(visited)) {
                 visited = [];
@@ -482,16 +523,16 @@
                 if (visited.length > 10) {
                     visited = visited.slice(-10);
                 }
-                localStorage.setItem('asthros_pages_visited', JSON.stringify(visited));
+                setLocalItem('asthros_pages_visited', visited);
             }
         } catch (e) {}
     }
 
     function getPagesVisitedContext() {
         try {
-            const stored = localStorage.getItem('asthros_pages_visited');
+            const stored = getLocalItem('asthros_pages_visited');
             if (stored) {
-                const parsed = JSON.parse(stored);
+                const parsed = typeof stored === 'string' ? JSON.parse(stored) : stored;
                 if (Array.isArray(parsed)) return parsed;
             }
         } catch (e) {}
@@ -503,13 +544,14 @@
         let lastTouch = null;
         let journeyLength = 1;
         try {
-            const ft = localStorage.getItem('asthros_first_touch');
-            if (ft) firstTouch = JSON.parse(ft);
+            const ftVal = getLocalItem('asthros_first_touch');
+            if (ftVal) firstTouch = typeof ftVal === 'string' ? JSON.parse(ftVal) : ftVal;
 
-            const lt = localStorage.getItem('asthros_last_touch');
-            if (lt) lastTouch = JSON.parse(lt);
+            const ltVal = getLocalItem('asthros_last_touch');
+            if (ltVal) lastTouch = typeof ltVal === 'string' ? JSON.parse(ltVal) : ltVal;
 
-            journeyLength = parseInt(localStorage.getItem('asthros_journey_length') || '1', 10);
+            const jlVal = getLocalItem('asthros_journey_length');
+            journeyLength = parseInt(jlVal || '1', 10);
         } catch (e) {}
 
         return {
