@@ -136,9 +136,13 @@ export default function UsersManagementPage() {
         // Se uma nova senha foi digitada, atualizamos via API Admin
         if (newUser.password && newUser.password.length >= 6) {
           console.log('Solicitando atualização de senha administrativa...');
+          const { data: { session } } = await supabase.auth.getSession();
           const response = await fetch('/api/admin/users/update', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token || ''}`
+            },
             body: JSON.stringify({ userId: editingUserId, password: newUser.password })
           });
           const result = await response.json();
@@ -158,9 +162,13 @@ export default function UsersManagementPage() {
         setLoading(true);
         console.log('Solicitando provisionamento administrativo para:', newUser.email);
         
+        const { data: { session } } = await supabase.auth.getSession();
         const response = await fetch('/api/admin/users/create', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || ''}`
+          },
           body: JSON.stringify(newUser)
         });
 
