@@ -938,7 +938,7 @@
             lead_id: generateUUID(),
             source: trackerMatch.source,
             name: 'Lead Identificado via ' + trackerMatch.label,
-            session_fingerprint: getSessionId(),
+            session_id: getSessionId(),
             visitor_id: getVisitorId(),
             marketing: buildMarketingContext(),
             behavior: {
@@ -1016,7 +1016,7 @@
                     email: leadEmail,
                     phone: leadPhone,
                     fields: formDataFields,
-                    session_fingerprint: getSessionId(),
+                    session_id: getSessionId(),
                     visitor_id: getVisitorId(),
                     marketing: buildMarketingContext(),
                     behavior: {
@@ -1181,7 +1181,7 @@
                                         email: extractedEmail,
                                         phone: extractedPhone,
                                         fields: formDataFields,
-                                        session_fingerprint: getSessionId(),
+                                        session_id: getSessionId(),
                                         visitor_id: getVisitorId(),
                                         marketing: buildMarketingContext(),
                                         behavior: {
@@ -1215,7 +1215,7 @@
                 email: sanitize(data.email || data.e_mail || data.mail || data.correo),
                 phone: sanitize(data.phone || data.telefone || data.whatsapp || data.celular || data.mobile || data.whats || data.cel || data.tel),
                 fields: data.fields || {},
-                session_fingerprint: getSessionId(),
+                session_id: getSessionId(),
                 visitor_id: getVisitorId(),
                 marketing: buildMarketingContext(),
                 behavior: {
