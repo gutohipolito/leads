@@ -190,7 +190,8 @@
 
     window.addEventListener('scroll', () => {
         try {
-            const rawPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+            const docHeight = document.documentElement.scrollHeight || 1;
+            const rawPercent = (window.scrollY + window.innerHeight) / docHeight * 100;
             const scrollPercent = Math.min(100, Math.round(rawPercent));
             if (scrollPercent > maxScroll) maxScroll = scrollPercent;
         } catch (e) {}

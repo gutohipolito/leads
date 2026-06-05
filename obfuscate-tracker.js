@@ -86,7 +86,8 @@ const replacements = [
   { from: 'randomId', to: '_ri' },
   { from: 'setLocalItem', to: '_sli' },
   { from: 'getLocalItem', to: '_gli' },
-  { from: 'removeLocalItem', to: '_rli' }
+  { from: 'removeLocalItem', to: '_rli' },
+  { from: 'docHeight', to: '_dh' }
 ];
 
 replacements.forEach(r => {
