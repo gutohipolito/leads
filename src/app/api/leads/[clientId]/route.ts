@@ -142,24 +142,49 @@ export async function POST(
       body.location = { city, region, country, ip };
     }
 
-    // 2. Verificar Rate Limiting (máximo 5 leads em 1 minuto por IP)
+    // 2. Verificar Rate Limiting (100 req/min por IP, 20 req/min por Visitor ID)
     try {
       const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
-      const { count, error: countError } = await supabase
+      let limitExceeded = false;
+      let blockReason = '';
+
+      // A. Contar por IP (Limite: 100)
+      const { count: ipCount, error: ipCountError } = await supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
         .eq('client_id', clientId)
         .gt('created_at', oneMinuteAgo)
         .contains('data', { location: { ip: ip } });
 
-      if (!countError && count !== null && count >= 5) {
+      if (!ipCountError && ipCount !== null && ipCount >= 100) {
+        limitExceeded = true;
+        blockReason = `Rate limit por IP excedido (${ipCount} requisições no último minuto, limite: 100)`;
+      }
+
+      // B. Contar por Visitor ID se fornecido (Limite: 20)
+      const visitorId = body.visitor_id;
+      if (!limitExceeded && visitorId) {
+        const { count: visitorCount, error: vCountError } = await supabase
+          .from('leads')
+          .select('id', { count: 'exact', head: true })
+          .eq('client_id', clientId)
+          .gt('created_at', oneMinuteAgo)
+          .eq('data->>visitor_id', visitorId);
+
+        if (!vCountError && visitorCount !== null && visitorCount >= 20) {
+          limitExceeded = true;
+          blockReason = `Rate limit por visitante excedido (${visitorCount} requisições no último minuto para o visitor_id ${visitorId}, limite: 20)`;
+        }
+      }
+
+      if (limitExceeded) {
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
         
-        console.warn(`[Firewall] Bloqueando IP ${ip} por excesso de requisições. Cadastrando na lista.`);
+        console.warn(`[Firewall] Bloqueando IP ${ip} por excesso de requisições: ${blockReason}. Cadastrando na lista.`);
         
         await supabase.from('ip_firewall').upsert({
           ip_address: ip,
-          reason: 'Rate limit excedido (Mais de 5 leads em 1 minuto)',
+          reason: blockReason,
           expires_at: expiresAt,
           city: city || null,
           country: country || null
@@ -171,7 +196,7 @@ export async function POST(
           entity_id: ip,
           details: { 
             ip: ip,
-            reason: 'Rate limit excedido (Mais de 5 leads em 1 minuto)',
+            reason: blockReason,
             city,
             country
           },
@@ -179,7 +204,7 @@ export async function POST(
         }]);
 
         return NextResponse.json(
-          { error: 'Limite de requisições excedido. IP bloqueado temporariamente.' },
+          { error: 'Limite de requisições excedido. IP bloqueado temporariamente por medidas de segurança.' },
           { status: 429, headers: corsHeaders }
         );
       }
