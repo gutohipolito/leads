@@ -89,7 +89,8 @@ const replacements = [
   { from: 'removeLocalItem', to: '_rli' },
   { from: 'docHeight', to: '_dh' },
   { from: 'scrollTicking', to: '_skt' },
-  { from: 'saveExitData', to: '_sed' }
+  { from: 'saveExitData', to: '_sed' },
+  { from: 'exists', to: '_ex' }
 ];
 
 replacements.forEach(r => {

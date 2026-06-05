@@ -590,8 +590,11 @@
     function queueFailedLead(payload) {
         try {
             const queue = JSON.parse(localStorage.getItem('asthros_queue') || '[]');
-            queue.push(payload);
-            localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(-5))); // max 5
+            const exists = queue.some(item => item.lead_id === payload.lead_id);
+            if (!exists) {
+                queue.push(payload);
+                localStorage.setItem('asthros_queue', JSON.stringify(queue.slice(-5))); // max 5
+            }
         } catch (e) {}
     }
 
