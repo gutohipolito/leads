@@ -39,6 +39,7 @@ export default function ExportModal({ onConfirm, onCancel, format, leads = [] }:
     if (!leads || leads.length === 0) return active;
 
     leads.forEach(l => {
+      if (!l) return;
       if (l.name) active.add('name');
       if (l.email && l.email !== 'N/A') active.add('email');
       

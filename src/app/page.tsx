@@ -1142,7 +1142,7 @@ export default function Home() {
         </div>
       )}
 
-      {exportType.show && (
+      {exportType.show && selectedLead && (
         <ExportModal 
           format={exportType.type}
           leads={[selectedLead]}

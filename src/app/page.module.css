@@ -482,6 +482,7 @@
   align-items: center;
   justify-content: center;
   min-height: 0;
+  min-width: 0;
 }
 
 .svgChart {
@@ -990,7 +991,7 @@
 
 .detailModal {
   width: 95%;
-  max-width: 1050px;
+  max-width: 1200px;
   max-height: 85vh;
   border-radius: 24px;
   background: rgba(var(--card-rgb), 0.75);
