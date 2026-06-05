@@ -47,10 +47,12 @@
 
     async function signPayload(payload, token) {
         if (!token) return payload;
-        // Mensagem baseada em dados chaves do payload para computar a assinatura
+        // Mensagem baseada em dados chaves do payload para computar a assinatura (context-bound)
         const message = [
             payload.lead_id || '',
             payload.visitor_id || '',
+            payload.session_id || '',
+            payload.source || '',
             payload.timestamp || ''
         ].join('|');
         

@@ -246,10 +246,12 @@ export async function POST(
           );
         }
 
-        // Validar assinatura do payload do lead (lead_id|visitor_id|timestamp)
+        // Validar assinatura do payload do lead (context-bound: lead_id|visitor_id|session_id|source|timestamp)
         const message = [
           body.lead_id || '',
           body.visitor_id || '',
+          body.session_id || '',
+          body.source || '',
           body.timestamp || ''
         ].join('|');
 
