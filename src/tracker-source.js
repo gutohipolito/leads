@@ -598,6 +598,9 @@
     function trackPageVisit() {
         try {
             const pathname = window.location.pathname || '/';
+            const title = document.title || '';
+            const ts = new Date().toISOString();
+
             let visited = [];
             const stored = getLocalItem('asthros_pages_visited');
             if (stored) {
@@ -606,9 +609,18 @@
             if (!Array.isArray(visited)) {
                 visited = [];
             }
-            // Evita registrar a mesma página se ela for idêntica à última registrada (ex: recarregamentos)
-            if (visited.length === 0 || visited[visited.length - 1] !== pathname) {
-                visited.push(pathname);
+            
+            // Evita registrar a mesma página se ela for idêntica à última registrada
+            const lastPage = visited[visited.length - 1];
+            const isSamePath = lastPage && typeof lastPage === 'object' && lastPage.path === pathname;
+            const isSamePathLegacy = lastPage && typeof lastPage === 'string' && lastPage === pathname;
+
+            if (visited.length === 0 || (!isSamePath && !isSamePathLegacy)) {
+                visited.push({
+                    path: pathname,
+                    title: title,
+                    ts: ts
+                });
                 if (visited.length > 10) {
                     visited = visited.slice(-10);
                 }
@@ -625,7 +637,11 @@
                 if (Array.isArray(parsed)) return parsed;
             }
         } catch (e) {}
-        return [window.location.pathname || '/'];
+        return [{
+            path: window.location.pathname || '/',
+            title: document.title || '',
+            ts: new Date().toISOString()
+        }];
     }
 
     function buildMarketingContext() {

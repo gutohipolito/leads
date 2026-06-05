@@ -35,7 +35,8 @@ import {
   Copy,
   Check,
   Send,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -1603,6 +1604,56 @@ export default function LeadsPage() {
                                 </div>
                               )}
                             </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Histórico de Páginas Visitadas */}
+                {selectedLead.data?.marketing?.pages_visited && selectedLead.data.marketing.pages_visited.length > 0 && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.sectionHeader}>
+                      <Eye size={16} className={styles.sectionIcon} style={{ color: '#a855f7' }} />
+                      <h4>Páginas Visitadas (Histórico de Navegação)</h4>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+                      {selectedLead.data.marketing.pages_visited.map((page: any, index: number) => {
+                        const isObject = page && typeof page === 'object';
+                        const path = isObject ? page.path : page;
+                        const title = isObject ? page.title : '';
+                        const ts = isObject && page.ts ? new Date(page.ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+
+                        return (
+                          <div 
+                            key={index} 
+                            style={{ 
+                              background: 'rgba(255, 255, 255, 0.01)', 
+                              border: '1px solid var(--border)', 
+                              borderRadius: '10px', 
+                              padding: '0.6rem 0.85rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%', overflow: 'hidden' }}>
+                              <strong style={{ color: 'var(--foreground)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'block' }}>
+                                {title || path}
+                              </strong>
+                              {title && (
+                                <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'block' }}>
+                                  {path}
+                                </span>
+                              )}
+                            </div>
+                            {ts && (
+                              <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>
+                                {ts}
+                              </span>
+                            )}
                           </div>
                         );
                       })}
