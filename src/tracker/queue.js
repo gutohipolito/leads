@@ -85,7 +85,7 @@
                     }
 
                     // Aplica uma nova assinatura válida ao lead usando o token atualizado
-                    const finalPayload = config.webhookId ? signPayload(payload, token) : payload;
+                    const finalPayload = config.webhookId ? await signPayload(payload, token) : payload;
 
                     const response = await fetch(endpoint, {
                         method: 'POST',

@@ -32,7 +32,7 @@
             } catch (e) {}
         }
         
-        const signedPayload = signPayload(cleanPayload, token);
+        const signedPayload = await signPayload(cleanPayload, token);
 
         // Beacon apenas no fechamento
         if (navigator.sendBeacon && document.visibilityState === 'hidden') {

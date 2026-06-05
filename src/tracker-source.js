@@ -852,7 +852,7 @@
         return null;
     }
 
-    function signPayload(payload, token) {
+    async function signPayload(payload, token) {
         if (!token) return payload;
         // Mensagem baseada em dados chaves do payload para computar a assinatura
         const message = [
@@ -861,7 +861,40 @@
             payload.timestamp || ''
         ].join('|');
         
-        const signature = hmacSha256(token, message);
+        let signature = '';
+        
+        // Tenta usar a Web Crypto API nativa do navegador
+        if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+            try {
+                const enc = new TextEncoder();
+                const keyData = enc.encode(token);
+                const messageData = enc.encode(message);
+                
+                const cryptoKey = await window.crypto.subtle.importKey(
+                    'raw',
+                    keyData,
+                    { name: 'HMAC', hash: { name: 'SHA-256' } },
+                    false,
+                    ['sign']
+                );
+                
+                const sigBuffer = await window.crypto.subtle.sign(
+                    'HMAC',
+                    cryptoKey,
+                    messageData
+                );
+                
+                signature = Array.from(new Uint8Array(sigBuffer))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+            } catch (err) {
+                // Em caso de falha na Web Crypto, cai no fallback manual
+                signature = hmacSha256(token, message);
+            }
+        } else {
+            // Fallback manual para navegadores antigos sem crypto.subtle
+            signature = hmacSha256(token, message);
+        }
         
         return {
             ...payload,
@@ -910,7 +943,7 @@
             } catch (e) {}
         }
         
-        const signedPayload = signPayload(cleanPayload, token);
+        const signedPayload = await signPayload(cleanPayload, token);
 
         // Beacon apenas no fechamento
         if (navigator.sendBeacon && document.visibilityState === 'hidden') {
@@ -1044,7 +1077,7 @@
                     }
 
                     // Aplica uma nova assinatura válida ao lead usando o token atualizado
-                    const finalPayload = config.webhookId ? signPayload(payload, token) : payload;
+                    const finalPayload = config.webhookId ? await signPayload(payload, token) : payload;
 
                     const response = await fetch(endpoint, {
                         method: 'POST',
