@@ -203,7 +203,7 @@ export async function POST(
         console.warn(`[Assinatura] Tentativa de submissão sem assinatura de payload para o webhook ${webhookId}.`);
         return NextResponse.json(
           { error: 'Acesso negado: assinatura de payload ausente.' },
-          { status: 403, headers: corsHeaders }
+          { status: 403, headers: getResponseHeaders(isOriginAllowed) }
         );
       }
 
