@@ -154,6 +154,27 @@
         } catch (e) {}
     }
 
+    function generateEventHash(visitorId, source, timestamp) {
+        try {
+            const date = new Date(timestamp);
+            date.setSeconds(0);
+            date.setMilliseconds(0);
+            const roundedTime = date.getTime();
+            
+            const rawString = `${visitorId}:${source}:${roundedTime}`;
+            
+            let hash = 0;
+            for (let i = 0; i < rawString.length; i++) {
+                const char = rawString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(16);
+        } catch (e) {
+            return 'hash_' + randomId();
+        }
+    }
+
 
     const trackingLocks = new Set();
 
@@ -1014,17 +1035,20 @@
 
         // console.log(`%c[Asthros] CAPTURANDO LEAD (${trackerMatch.label})!`, 'color: #56d7fd; font-weight: bold;');
 
+        const timestamp = new Date().toISOString();
+        const visitorId = getVisitorId();
+        const source = trackerMatch.source;
         const payload = {
             lead_id: generateUUID(),
-            source: trackerMatch.source,
+            event_hash: generateEventHash(visitorId, source, timestamp),
+            source: source,
             name: 'Lead Identificado via ' + trackerMatch.label,
             session_id: getSessionId(),
-            visitor_id: getVisitorId(),
+            visitor_id: visitorId,
             marketing: buildMarketingContext(),
             behavior: {
                 time_on_page: getActiveTimeOnPage(),
                 scroll_depth: maxScroll + '%',
-                // Precedência de captura: innerText -> aria-label -> correspondência de rastreamento (funciona como fallback se innerText for undefined/vazio em SVGs/elementos ocultos)
                 button_text: sanitizeButtonText(link.innerText || link.getAttribute('aria-label') || trackerMatch.label),
                 match_type: trackerMatch.label,
                 conversion_time_seconds: getConversionTime(),
@@ -1032,7 +1056,7 @@
                 ...(trackerMatch.whatsapp_destination_phone ? { whatsapp_destination_phone: trackerMatch.whatsapp_destination_phone } : {})
             },
             device: getDeviceContext(),
-            timestamp: new Date().toISOString()
+            timestamp: timestamp
         };
 
         sendPayload(payload);
@@ -1094,15 +1118,19 @@
             }
             
             if (leadName && (leadEmail || leadPhone)) {
+                const timestamp = new Date().toISOString();
+                const visitorId = getVisitorId();
+                const source = 'form';
                 const payload = {
                     lead_id: generateUUID(),
-                    source: 'form',
+                    event_hash: generateEventHash(visitorId, source, timestamp),
+                    source: source,
                     name: leadName,
                     email: leadEmail,
                     phone: leadPhone,
                     fields: formDataFields,
                     session_id: getSessionId(),
-                    visitor_id: getVisitorId(),
+                    visitor_id: visitorId,
                     marketing: buildMarketingContext(),
                     behavior: {
                         time_on_page: getActiveTimeOnPage(),
@@ -1113,7 +1141,7 @@
                         session_duration_seconds: getSessionDurationSeconds()
                     },
                     device: getDeviceContext(),
-                    timestamp: new Date().toISOString()
+                    timestamp: timestamp
                 };
                 
                 sendPayload(payload);
@@ -1264,15 +1292,19 @@
                                 }
 
                                 if (leadName && (extractedEmail || extractedPhone)) {
+                                    const timestamp = new Date().toISOString();
+                                    const visitorId = getVisitorId();
+                                    const source = 'form';
                                     const payload = {
                                         lead_id: generateUUID(),
-                                        source: 'form',
+                                        event_hash: generateEventHash(visitorId, source, timestamp),
+                                        source: source,
                                         name: leadName,
                                         email: extractedEmail,
                                         phone: extractedPhone,
                                         fields: formDataFields,
                                         session_id: getSessionId(),
-                                        visitor_id: getVisitorId(),
+                                        visitor_id: visitorId,
                                         marketing: buildMarketingContext(),
                                         behavior: {
                                             time_on_page: getActiveTimeOnPage(),
@@ -1283,7 +1315,7 @@
                                             session_duration_seconds: getSessionDurationSeconds()
                                         },
                                         device: getDeviceContext(),
-                                        timestamp: new Date().toISOString()
+                                        timestamp: timestamp
                                     };
                                     sendPayload(payload);
                                 }
@@ -1299,15 +1331,19 @@
     function manualTrackLead(data) {
         try {
             if (!data) return;
+            const timestamp = new Date().toISOString();
+            const visitorId = getVisitorId();
+            const source = 'manual';
             const payload = {
                 lead_id: generateUUID(),
-                source: 'manual',
+                event_hash: generateEventHash(visitorId, source, timestamp),
+                source: source,
                 name: sanitize(data.name || data.nome || data.fullname || data.full_name || data.cliente || data.contato || 'Lead Manual'),
                 email: sanitize(data.email || data.e_mail || data.mail || data.correo),
                 phone: sanitize(data.phone || data.telefone || data.whatsapp || data.celular || data.mobile || data.whats || data.cel || data.tel),
                 fields: data.fields || {},
                 session_id: getSessionId(),
-                visitor_id: getVisitorId(),
+                visitor_id: visitorId,
                 marketing: buildMarketingContext(),
                 behavior: {
                     time_on_page: getActiveTimeOnPage(),
@@ -1317,7 +1353,7 @@
                     session_duration_seconds: getSessionDurationSeconds()
                 },
                 device: getDeviceContext(),
-                timestamp: new Date().toISOString()
+                timestamp: timestamp
             };
             
             if (payload.email && !/^[a-zA-Z0-9._%+\-]{2,}@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,10}$/.test(payload.email)) {

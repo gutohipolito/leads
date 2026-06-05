@@ -295,7 +295,44 @@ export async function POST(
       url_slug: (webhook as any).url_slug
     };
 
-    // 3. Prevenção de Leads Duplicados (janela de 5 segundos para o mesmo email/telefone e cliente)
+    // 3. Prevenção de Leads Duplicados (janela de 5 minutos usando lead_id ou event_hash)
+    const leadId = body.lead_id;
+    const eventHash = body.event_hash;
+
+    if (leadId || eventHash) {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      let deduplicationQuery = supabase
+        .from('leads')
+        .select('id')
+        .eq('client_id', clientId)
+        .gt('created_at', fiveMinutesAgo);
+
+      if (leadId && eventHash) {
+        deduplicationQuery = deduplicationQuery.or(`data->>lead_id.eq.${leadId},data->>event_hash.eq.${eventHash}`);
+      } else if (leadId) {
+        deduplicationQuery = deduplicationQuery.eq('data->>lead_id', leadId);
+      } else if (eventHash) {
+        deduplicationQuery = deduplicationQuery.eq('data->>event_hash', eventHash);
+      }
+
+      const { data: existingLead } = await deduplicationQuery.maybeSingle();
+      if (existingLead) {
+        console.log(`[Deduplicação] Lead duplicado detectado (lead_id: ${leadId}, event_hash: ${eventHash}) nos últimos 5 minutos. Ignorando inserção.`);
+        return NextResponse.json(
+          { 
+            status: 'success',
+            message: 'Sinal de Uplink satisfeito (Lead duplicado ignorado).', 
+            lead_id: existingLead.id
+          }, 
+          { 
+            status: 200,
+            headers: corsHeaders
+          }
+        );
+      }
+    }
+
+    // 4. Prevenção Clássica de Leads Duplicados (janela de 5 segundos para o mesmo email/telefone e cliente)
     if (email || phone) {
       const fiveSecondsAgo = new Date(Date.now() - 5 * 1000).toISOString();
       let deduplicationQuery = supabase
@@ -314,7 +351,7 @@ export async function POST(
 
       const { data: existingLead } = await deduplicationQuery.maybeSingle();
       if (existingLead) {
-        console.log(`[Deduplicação] Lead duplicado detectado nos últimos 5 segundos. Ignorando inserção.`);
+        console.log(`[Deduplicação] Lead duplicado detectado por email/telefone nos últimos 5 segundos. Ignorando inserção.`);
         return NextResponse.json(
           { 
             status: 'success',

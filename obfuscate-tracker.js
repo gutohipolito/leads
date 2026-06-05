@@ -94,7 +94,8 @@ const replacements = [
   { from: 'removeEmpty', to: '_re' },
   { from: 'priority', to: '_pr' },
   { from: 'localSessionStart', to: '_ls' },
-  { from: 'getSessionDurationSeconds', to: '_gds' }
+  { from: 'getSessionDurationSeconds', to: '_gds' },
+  { from: 'generateEventHash', to: '_geh' }
 ];
 
 replacements.forEach(r => {

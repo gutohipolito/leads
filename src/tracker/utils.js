@@ -98,3 +98,24 @@
             localStorage.removeItem(key);
         } catch (e) {}
     }
+
+    function generateEventHash(visitorId, source, timestamp) {
+        try {
+            const date = new Date(timestamp);
+            date.setSeconds(0);
+            date.setMilliseconds(0);
+            const roundedTime = date.getTime();
+            
+            const rawString = `${visitorId}:${source}:${roundedTime}`;
+            
+            let hash = 0;
+            for (let i = 0; i < rawString.length; i++) {
+                const char = rawString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(16);
+        } catch (e) {
+            return 'hash_' + randomId();
+        }
+    }
