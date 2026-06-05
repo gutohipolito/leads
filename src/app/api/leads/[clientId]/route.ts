@@ -276,7 +276,16 @@ export async function POST(
     
     // 4. Origem de tráfego pago
     const utmSource = body.marketing?.source || '';
-    const hasClickId = !!(body.marketing?.gclid || body.marketing?.fbclid || body.marketing?.ttclid || body.marketing?.msclkid);
+    const hasClickId = !!(
+      body.marketing?.gclid || 
+      body.marketing?.fbclid || 
+      body.marketing?.ttclid || 
+      body.marketing?.msclkid ||
+      body.marketing?.gbraid ||
+      body.marketing?.wbraid ||
+      body.marketing?.li_fat_id ||
+      body.marketing?.twclid
+    );
     if (hasClickId || ['google', 'facebook', 'instagram', 'cpc', 'ads', 'meta'].includes(utmSource.toLowerCase())) {
       leadScore += scoringRules.paid_traffic;
     }

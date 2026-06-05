@@ -372,7 +372,7 @@
             const hash = window.location.hash || '';
             const hashQueryPart = hash.includes('?') 
                 ? hash.split('?')[1]          // hash com query: #/page?utm_source=...
-                : (hash.includes('utm_') || hash.includes('gclid') || hash.includes('fbclid') || hash.includes('ttclid') || hash.includes('msclkid'))
+                : (hash.includes('utm_') || hash.includes('gclid') || hash.includes('fbclid') || hash.includes('ttclid') || hash.includes('msclkid') || hash.includes('gbraid') || hash.includes('wbraid') || hash.includes('li_fat_id') || hash.includes('twclid'))
                     ? hash.replace(/^#\/?/, '') // hash direto com parâmetros rastreáveis
                     : '';                        // âncora normal: #secao — ignora
             const hashParams = new URLSearchParams(hashQueryPart);
@@ -388,7 +388,7 @@
             });
 
             // 2. Capturar Ad Click IDs modernos
-            ['gclid', 'fbclid', 'ttclid', 'msclkid'].forEach(key => {
+            ['gclid', 'fbclid', 'ttclid', 'msclkid', 'gbraid', 'wbraid', 'li_fat_id', 'twclid'].forEach(key => {
                 const valQuery = queryParams.get(key);
                 const valHash = hashParams.get(key);
                 const val = valQuery || valHash;
@@ -399,7 +399,7 @@
 
             // 3. Atribuição inteligente se faltar source/medium mas tiver Click ID
             if (!utms.source) {
-                if (utms.gclid) {
+                if (utms.gclid || utms.gbraid || utms.wbraid) {
                     utms.source = 'google';
                     utms.medium = utms.medium || 'cpc';
                 } else if (utms.fbclid) {
@@ -410,6 +410,12 @@
                     utms.medium = utms.medium || 'cpc';
                 } else if (utms.msclkid) {
                     utms.source = 'bing';
+                    utms.medium = utms.medium || 'cpc';
+                } else if (utms.li_fat_id) {
+                    utms.source = 'linkedin';
+                    utms.medium = utms.medium || 'cpc';
+                } else if (utms.twclid) {
+                    utms.source = 'twitter';
                     utms.medium = utms.medium || 'cpc';
                 }
             }

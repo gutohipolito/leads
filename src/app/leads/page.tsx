@@ -1667,11 +1667,25 @@ export default function LeadsPage() {
                     {(selectedLead.data?.marketing?.gclid || 
                       selectedLead.data?.marketing?.fbclid || 
                       selectedLead.data?.marketing?.ttclid || 
-                      selectedLead.data?.marketing?.msclkid) && (
+                      selectedLead.data?.marketing?.msclkid ||
+                      selectedLead.data?.marketing?.gbraid ||
+                      selectedLead.data?.marketing?.wbraid ||
+                      selectedLead.data?.marketing?.li_fat_id ||
+                      selectedLead.data?.marketing?.twclid) && (
                       <div className={styles.clickIdsContainer} style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                         {selectedLead.data.marketing.gclid && (
                           <div className={styles.clickIdBadge} title={selectedLead.data.marketing.gclid} style={{ background: 'rgba(66, 133, 244, 0.1)', color: '#4285f4', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(66, 133, 244, 0.2)' }}>
                             Google Ads: {selectedLead.data.marketing.gclid.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.gbraid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.gbraid} style={{ background: 'rgba(244, 180, 0, 0.1)', color: '#f4b400', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(244, 180, 0, 0.2)' }}>
+                            Google Ads (iOS): {selectedLead.data.marketing.gbraid.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.wbraid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.wbraid} style={{ background: 'rgba(15, 157, 88, 0.1)', color: '#0f9d58', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(15, 157, 88, 0.2)' }}>
+                            Google Ads (Web/iOS): {selectedLead.data.marketing.wbraid.substring(0, 10)}...
                           </div>
                         )}
                         {selectedLead.data.marketing.fbclid && (
@@ -1687,6 +1701,16 @@ export default function LeadsPage() {
                         {selectedLead.data.marketing.msclkid && (
                           <div className={styles.clickIdBadge} title={selectedLead.data.marketing.msclkid} style={{ background: 'rgba(0, 164, 239, 0.1)', color: '#00a4ef', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(0, 164, 239, 0.2)' }}>
                             Bing Ads: {selectedLead.data.marketing.msclkid.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.li_fat_id && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.li_fat_id} style={{ background: 'rgba(10, 102, 194, 0.1)', color: '#0a66c2', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(10, 102, 194, 0.2)' }}>
+                            LinkedIn Ads: {selectedLead.data.marketing.li_fat_id.substring(0, 10)}...
+                          </div>
+                        )}
+                        {selectedLead.data.marketing.twclid && (
+                          <div className={styles.clickIdBadge} title={selectedLead.data.marketing.twclid} style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#ffffff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 'bold', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                            X/Twitter Ads: {selectedLead.data.marketing.twclid.substring(0, 10)}...
                           </div>
                         )}
                       </div>
