@@ -30,7 +30,9 @@ import {
   FileJson,
   Users,
   Clock,
-  X
+  X,
+  Eraser,
+  ArrowLeft
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -66,7 +68,7 @@ export default function ClientsPage() {
   const [archivedLeads, setArchivedLeads] = useState<any[]>([]);
   const [loadingArchived, setLoadingArchived] = useState(false);
   const [searchArchived, setSearchArchived] = useState('');
-  const [clientFilterArchived, setClientFilterArchived] = useState('');
+  const [selectedClientForArchivedLeads, setSelectedClientForArchivedLeads] = useState<string | null>(null);
   const [currentPageArchived, setCurrentPageArchived] = useState(1);
   const [selectedArchivedLeadForDetails, setSelectedArchivedLeadForDetails] = useState<any | null>(null);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
@@ -169,7 +171,7 @@ export default function ClientsPage() {
       (lead.email || '').toLowerCase().includes(searchArchived.toLowerCase()) ||
       (lead.phone || '').toLowerCase().includes(searchArchived.toLowerCase());
     
-    const matchesClient = clientFilterArchived ? lead.client_id === clientFilterArchived : true;
+    const matchesClient = selectedClientForArchivedLeads ? lead.client_id === selectedClientForArchivedLeads : true;
     
     return matchesSearch && matchesClient;
   });
@@ -457,8 +459,8 @@ export default function ClientsPage() {
   };
 
   const handleClearArchivedLeads = async () => {
-    const filteredClientName = clients.find(c => c.id === clientFilterArchived)?.name;
-    const queryMsg = clientFilterArchived 
+    const filteredClientName = clients.find(c => c.id === selectedClientForArchivedLeads)?.name;
+    const queryMsg = selectedClientForArchivedLeads 
       ? `Deseja excluir permanentemente TODOS os leads arquivados do cliente "${filteredClientName}"?`
       : 'Deseja excluir permanentemente TODOS os leads arquivados de TODOS os clientes?';
     
@@ -471,8 +473,8 @@ export default function ClientsPage() {
       cancelLabel: 'Cancelar',
       onConfirm: async () => {
         let query = supabase.from('archived_leads').delete();
-        if (clientFilterArchived) {
-          query = query.eq('client_id', clientFilterArchived);
+        if (selectedClientForArchivedLeads) {
+          query = query.eq('client_id', selectedClientForArchivedLeads);
         } else {
           query = query.neq('id', '00000000-0000-0000-0000-000000000000');
         }
@@ -481,8 +483,8 @@ export default function ClientsPage() {
         
         if (!error) {
           showAlert('Sucesso', 'Histórico limpo com sucesso!', 'success');
-          if (clientFilterArchived) {
-            setArchivedLeads(prev => prev.filter(l => l.client_id !== clientFilterArchived));
+          if (selectedClientForArchivedLeads) {
+            setArchivedLeads(prev => prev.filter(l => l.client_id !== selectedClientForArchivedLeads));
           } else {
             setArchivedLeads([]);
           }
@@ -667,7 +669,7 @@ export default function ClientsPage() {
                             setIsResetModalOpen(true);
                           }}
                         >
-                          <RotateCcw size={18} />
+                          <Eraser size={18} />
                         </button>
                         <button 
                           className={styles.iconAction} 
@@ -759,7 +761,7 @@ export default function ClientsPage() {
                       className={styles.btnReset}
                       title="Resetar Resultados (Leads)"
                     >
-                      <RotateCcw size={18} />
+                      <Eraser size={18} />
                     </button>
                     <button onClick={() => handleDeleteClient(client)} className={styles.colorDanger} title="Excluir"><Trash2 size={18} /></button>
                   </div>
@@ -808,167 +810,248 @@ export default function ClientsPage() {
           </>
         ) : (
           <div className={styles.leadsTableWrapper}>
-            <div className={styles.filtersBar}>
-              <div className={styles.filterField}>
-                <label>Buscar por Nome/Email/Telefone</label>
-                <input 
-                  type="text" 
-                  placeholder="Filtrar por nome, e-mail..." 
-                  className={styles.filterInput}
-                  value={searchArchived}
-                  onChange={(e) => { setSearchArchived(e.target.value); setCurrentPageArchived(1); }}
-                />
-              </div>
-              <div className={styles.filterField}>
-                <label>Filtrar por Cliente</label>
-                <select 
-                  className={styles.filterInput}
-                  value={clientFilterArchived}
-                  onChange={(e) => { setClientFilterArchived(e.target.value); setCurrentPageArchived(1); }}
-                >
-                  <option value="">Todos os Clientes</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <button 
-                className={styles.clearAllBtn}
-                onClick={handleClearArchivedLeads}
-                disabled={filteredArchivedLeads.length === 0}
-              >
-                <Trash2 size={16} />
-                <span>{clientFilterArchived ? 'Limpar Leads deste Cliente' : 'Limpar Todos Salvos'}</span>
-              </button>
-            </div>
-
-            {loadingArchived ? (
-              <div className={styles.loadingState}>
-                <RefreshCcw className={styles.spin} size={28} />
-                <span>Carregando leads arquivados...</span>
-              </div>
-            ) : (
+            {selectedClientForArchivedLeads === null ? (
+              // Visualização Inicial: Grade com todos os clientes e contagem de leads salvos
               <>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Lead</th>
-                      <th>Contato</th>
-                      <th>Origem</th>
-                      <th>Data de Captura</th>
-                      <th>Arquivado em</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedArchivedLeads.map((lead) => {
-                      const clientName = clients.find(c => c.id === lead.client_id)?.name || 'Removido';
-                      const isSelector = lead.source === 'custom_tracker' && (
-                        lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
-                        lead.data?.match_type?.toLowerCase().includes('selector') || 
-                        lead.name?.toLowerCase().includes('selector')
-                      );
-                      const isKeyword = lead.source === 'custom_tracker' && (
-                        lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
-                        lead.data?.match_type?.toLowerCase().includes('keyword') || 
-                        lead.name?.toLowerCase().includes('keyword')
-                      );
+                <div className={styles.archivedTitleBar}>
+                  <div className={styles.archivedTitleText}>
+                    <h3>Clientes com Leads Salvos</h3>
+                    <p>Selecione um cliente para explorar os leads arquivados separadamente.</p>
+                  </div>
+                  <button 
+                    className={styles.clearAllBtn}
+                    onClick={() => {
+                      setSelectedClientForArchivedLeads(null);
+                      handleClearArchivedLeads();
+                    }}
+                    disabled={archivedLeads.length === 0}
+                  >
+                    <Trash2 size={16} />
+                    <span>Limpar Todo o Histórico</span>
+                  </button>
+                </div>
 
+                {loadingArchived ? (
+                  <div className={styles.loadingState}>
+                    <RefreshCcw className={styles.spin} size={28} />
+                    <span>Carregando dados históricos...</span>
+                  </div>
+                ) : (
+                  <div className={styles.archivedClientsGrid}>
+                    {clients.map(client => {
+                      const count = archivedLeads.filter(l => l.client_id === client.id).length;
                       return (
-                        <tr key={lead.id}>
-                          <td><strong>{clientName}</strong></td>
-                          <td>
-                            <div className={styles.clientCell}>
-                              <span className={styles.clientName}>{lead.name || 'Sem nome'}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className={styles.contactCell}>
-                              <span className={styles.contactEmail}>{lead.email || 'N/A'}</span>
-                              {lead.phone && <span className={styles.contactPhone}>{lead.phone}</span>}
-                            </div>
-                          </td>
-                          <td>
-                            {lead.source === 'whatsapp_tracker' ? (
-                              <span className={`${styles.sourceBadge} ${styles.sourceWhatsApp}`}>WhatsApp</span>
-                            ) : isSelector ? (
-                              <span className={`${styles.sourceBadge} ${styles.sourceCustom}`} style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}>Seletor</span>
-                            ) : isKeyword ? (
-                              <span className={`${styles.sourceBadge} ${styles.sourceCustom}`} style={{ background: 'rgba(249, 115, 22, 0.1)', color: '#f97316' }}>Palavra-Chave</span>
-                            ) : lead.source === 'custom_tracker' ? (
-                              <span className={`${styles.sourceBadge} ${styles.sourceCustom}`}>Botão</span>
+                        <div 
+                          key={client.id} 
+                          className={styles.archivedClientCard}
+                          onClick={() => setSelectedClientForArchivedLeads(client.id)}
+                        >
+                          <div 
+                            className={styles.archivedClientAvatar}
+                            style={{ backgroundColor: client.logo_bg || 'rgba(86, 215, 253, 0.1)' }}
+                          >
+                            {client.logo_url && !failedLogos[client.id] ? (
+                              <img 
+                                src={client.logo_url} 
+                                alt={client.name} 
+                                className={styles.avatarImg} 
+                                onError={() => handleLogoError(client.id)}
+                              />
                             ) : (
-                              <span className={`${styles.sourceBadge} ${styles.sourceForm}`}>Formulário</span>
+                              <span className={styles.avatarInitial}>{client.name.charAt(0)}</span>
                             )}
-                          </td>
-                          <td>{lead.created_at ? new Date(lead.created_at).toLocaleString('pt-BR') : 'N/A'}</td>
-                          <td>{new Date(lead.archived_at).toLocaleString('pt-BR')}</td>
-                          <td>
-                            <div className={styles.actionGrid}>
-                              <button 
-                                className={styles.iconAction} 
-                                title="Ver Detalhes do Lead"
-                                onClick={() => {
-                                  setSelectedArchivedLeadForDetails(lead);
-                                  setIsJsonModalOpen(true);
-                                }}
-                              >
-                                <Eye size={18} />
-                              </button>
-                              <button 
-                                className={`${styles.iconAction} ${styles.btnDelete}`} 
-                                title="Excluir Lead"
-                                onClick={() => handleDeleteArchivedLead(lead.id)}
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                          </div>
+                          
+                          <div className={styles.archivedClientInfo}>
+                            <span className={styles.archivedClientName}>{client.name}</span>
+                            <span className={styles.archivedClientCount}>
+                              {count} {count === 1 ? 'lead salvo' : 'leads salvos'}
+                            </span>
+                          </div>
+
+                          <button className={styles.viewArchivedBtn}>
+                            Ver Leads Salvos
+                          </button>
+                        </div>
                       );
                     })}
-                    {paginatedArchivedLeads.length === 0 && (
-                      <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>
-                          Nenhum lead arquivado encontrado.
-                        </td>
-                      </tr>
+                    {clients.length === 0 && (
+                      <div className={styles.emptyGrid}>Nenhum cliente cadastrado no sistema.</div>
                     )}
-                  </tbody>
-                </table>
-
-                {totalPagesArchived > 1 && (
-                  <div className={styles.pagination}>
-                    <div className={styles.pageInfo}>
-                      Mostrando <strong>{startIndexArchived + 1}</strong> - <strong>{Math.min(startIndexArchived + ARCHIVED_ITEMS_PER_PAGE, filteredArchivedLeads.length)}</strong> de <strong>{filteredArchivedLeads.length}</strong> leads
-                    </div>
-                    <div className={styles.pageControls}>
-                      <button 
-                        className={styles.pageBtn} 
-                        onClick={() => setCurrentPageArchived(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPageArchived === 1}
-                      >
-                        Anterior
-                      </button>
-                      {Array.from({ length: totalPagesArchived }, (_, i) => i + 1).map(page => (
-                        <button 
-                          key={page}
-                          className={`${styles.pageBtn} ${currentPageArchived === page ? styles.activePage : ''}`}
-                          onClick={() => setCurrentPageArchived(page)}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                      <button 
-                        className={styles.pageBtn} 
-                        onClick={() => setCurrentPageArchived(prev => Math.min(prev + 1, totalPagesArchived))}
-                        disabled={currentPageArchived === totalPagesArchived}
-                      >
-                        Próximo
-                      </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              // Visualização Detalhada: Tabela de leads do cliente selecionado
+              <>
+                <div className={styles.archivedTitleBar}>
+                  <div className={styles.archivedTitleInfo}>
+                    <button 
+                      className={styles.backBtn}
+                      onClick={() => {
+                        setSelectedClientForArchivedLeads(null);
+                        setSearchArchived('');
+                      }}
+                    >
+                      <ArrowLeft size={16} />
+                      <span>Voltar para Clientes</span>
+                    </button>
+                    <div className={styles.archivedTitleText}>
+                      <h3>Leads Salvos de {clients.find(c => c.id === selectedClientForArchivedLeads)?.name}</h3>
+                      <p>
+                        Total de {archivedLeads.filter(l => l.client_id === selectedClientForArchivedLeads).length} leads arquivados.
+                      </p>
                     </div>
                   </div>
+                  <button 
+                    className={styles.clearAllBtn}
+                    onClick={handleClearArchivedLeads}
+                    disabled={filteredArchivedLeads.length === 0}
+                  >
+                    <Trash2 size={16} />
+                    <span>Limpar Leads deste Cliente</span>
+                  </button>
+                </div>
+
+                <div className={styles.filtersBar}>
+                  <div className={styles.filterField} style={{ maxWidth: '400px' }}>
+                    <label>Buscar por Nome/Email/Telefone</label>
+                    <input 
+                      type="text" 
+                      placeholder="Filtrar por nome, e-mail..." 
+                      className={styles.filterInput}
+                      value={searchArchived}
+                      onChange={(e) => { setSearchArchived(e.target.value); setCurrentPageArchived(1); }}
+                    />
+                  </div>
+                </div>
+
+                {loadingArchived ? (
+                  <div className={styles.loadingState}>
+                    <RefreshCcw className={styles.spin} size={28} />
+                    <span>Carregando leads arquivados...</span>
+                  </div>
+                ) : (
+                  <>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Lead</th>
+                          <th>Contato</th>
+                          <th>Origem</th>
+                          <th>Data de Captura</th>
+                          <th>Arquivado em</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedArchivedLeads.map((lead) => {
+                          const isSelector = lead.source === 'custom_tracker' && (
+                            lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+                            lead.data?.match_type?.toLowerCase().includes('selector') || 
+                            lead.name?.toLowerCase().includes('selector')
+                          );
+                          const isKeyword = lead.source === 'custom_tracker' && (
+                            lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+                            lead.data?.match_type?.toLowerCase().includes('keyword') || 
+                            lead.name?.toLowerCase().includes('keyword')
+                          );
+
+                          return (
+                            <tr key={lead.id}>
+                              <td>
+                                <div className={styles.clientCell}>
+                                  <span className={styles.clientName}>{lead.name || 'Sem nome'}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <div className={styles.contactCell}>
+                                  <span className={styles.contactEmail}>{lead.email || 'N/A'}</span>
+                                  {lead.phone && <span className={styles.contactPhone}>{lead.phone}</span>}
+                                </div>
+                              </td>
+                              <td>
+                                {lead.source === 'whatsapp_tracker' ? (
+                                  <span className={`${styles.sourceBadge} ${styles.sourceWhatsApp}`}>WhatsApp</span>
+                                ) : isSelector ? (
+                                  <span className={`${styles.sourceBadge} ${styles.sourceCustom}`} style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}>Seletor</span>
+                                ) : isKeyword ? (
+                                  <span className={`${styles.sourceBadge} ${styles.sourceCustom}`} style={{ background: 'rgba(249, 115, 22, 0.1)', color: '#f97316' }}>Palavra-Chave</span>
+                                ) : lead.source === 'custom_tracker' ? (
+                                  <span className={`${styles.sourceBadge} ${styles.sourceCustom}`}>Botão</span>
+                                ) : (
+                                  <span className={`${styles.sourceBadge} ${styles.sourceForm}`}>Formulário</span>
+                                )}
+                              </td>
+                              <td>{lead.created_at ? new Date(lead.created_at).toLocaleString('pt-BR') : 'N/A'}</td>
+                              <td>{new Date(lead.archived_at).toLocaleString('pt-BR')}</td>
+                              <td>
+                                <div className={styles.actionGrid}>
+                                  <button 
+                                    className={styles.iconAction} 
+                                    title="Ver Detalhes do Lead"
+                                    onClick={() => {
+                                      setSelectedArchivedLeadForDetails(lead);
+                                      setIsJsonModalOpen(true);
+                                    }}
+                                  >
+                                    <Eye size={18} />
+                                  </button>
+                                  <button 
+                                    className={`${styles.iconAction} ${styles.btnDelete}`} 
+                                    title="Excluir Lead"
+                                    onClick={() => handleDeleteArchivedLead(lead.id)}
+                                  >
+                                    <Trash2 size={18} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {paginatedArchivedLeads.length === 0 && (
+                          <tr>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>
+                              Nenhum lead arquivado encontrado para este cliente.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+
+                    {totalPagesArchived > 1 && (
+                      <div className={styles.pagination}>
+                        <div className={styles.pageInfo}>
+                          Mostrando <strong>{startIndexArchived + 1}</strong> - <strong>{Math.min(startIndexArchived + ARCHIVED_ITEMS_PER_PAGE, filteredArchivedLeads.length)}</strong> de <strong>{filteredArchivedLeads.length}</strong> leads
+                        </div>
+                        <div className={styles.pageControls}>
+                          <button 
+                            className={styles.pageBtn} 
+                            onClick={() => setCurrentPageArchived(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPageArchived === 1}
+                          >
+                            Anterior
+                          </button>
+                          {Array.from({ length: totalPagesArchived }, (_, i) => i + 1).map(page => (
+                            <button 
+                              key={page}
+                              className={`${styles.pageBtn} ${currentPageArchived === page ? styles.activePage : ''}`}
+                              onClick={() => setCurrentPageArchived(page)}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                          <button 
+                            className={styles.pageBtn} 
+                            onClick={() => setCurrentPageArchived(prev => Math.min(prev + 1, totalPagesArchived))}
+                            disabled={currentPageArchived === totalPagesArchived}
+                          >
+                            Próximo
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

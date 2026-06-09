@@ -293,10 +293,154 @@
 /* Grid View Styles */
 .clientsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   padding: 1rem 0;
 }
+
+@media (max-width: 1400px) {
+  .clientsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .clientsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .clientsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Estilos para a seleção de clientes nos Leads Salvos */
+.archivedClientsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.archivedClientCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-align: center;
+  backdrop-filter: blur(20px);
+}
+
+.archivedClientCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(86, 215, 253, 0.15);
+}
+
+.archivedClientAvatar {
+  width: 60px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.archivedClientInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.archivedClientName {
+  font-weight: 700;
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.archivedClientCount {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+.viewArchivedBtn {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.archivedClientCard:hover .viewArchivedBtn {
+  background: var(--primary);
+  color: #000;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backBtn:hover {
+  background: rgba(var(--foreground-rgb), 0.08);
+  border-color: var(--primary);
+}
+
+.archivedTitleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--foreground-rgb), 0.01);
+}
+
+.archivedTitleInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.archivedTitleText h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.archivedTitleText p {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
 
 .clientCard {
   padding: 1rem !important;
