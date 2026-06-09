@@ -10,6 +10,8 @@ function extractDomain(urlStr: string): string | null {
   if (!urlStr) return null;
   try {
     let normUrl = urlStr.trim().toLowerCase();
+    // Remover prefixo de wildcard *. se presente no início para que *.dominio.com vire dominio.com
+    normUrl = normUrl.replace(/^\*\./, '');
     if (!/^https?:\/\//i.test(normUrl)) {
       normUrl = 'http://' + normUrl;
     }
@@ -18,7 +20,7 @@ function extractDomain(urlStr: string): string | null {
     return url.hostname.replace(/^www\./, '');
   } catch (e) {
     try {
-      const clean = urlStr.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0].split(':')[0];
+      const clean = urlStr.replace(/^\*\./, '').replace(/^https?:\/\/(www\.)?/i, '').split('/')[0].split(':')[0];
       return clean.trim().toLowerCase();
     } catch (err) {
       return null;

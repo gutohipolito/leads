@@ -2,6 +2,23 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Interceptar e responder imediatamente a requisições de preflight CORS (OPTIONS)
+  if (request.method === 'OPTIONS') {
+    const origin = request.headers.get('origin')
+    const headers: Record<string, string> = {
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+    }
+    if (origin && origin !== '*') {
+      headers['Access-Control-Allow-Origin'] = origin
+    }
+    return new NextResponse(null, {
+      status: 204,
+      headers,
+    })
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,

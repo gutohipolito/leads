@@ -32,6 +32,8 @@ function extractDomain(urlStr: string): string | null {
   if (!urlStr) return null;
   try {
     let normUrl = urlStr.trim().toLowerCase();
+    // Remover prefixo de wildcard *. se presente no início para que *.dominio.com vire dominio.com
+    normUrl = normUrl.replace(/^\*\./, '');
     if (!/^https?:\/\//i.test(normUrl)) {
       normUrl = 'http://' + normUrl;
     }
@@ -40,7 +42,7 @@ function extractDomain(urlStr: string): string | null {
     return url.hostname.replace(/^www\./, '');
   } catch (e) {
     try {
-      const clean = urlStr.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0].split(':')[0];
+      const clean = urlStr.replace(/^\*\./, '').replace(/^https?:\/\/(www\.)?/i, '').split('/')[0].split(':')[0];
       return clean.trim().toLowerCase();
     } catch (err) {
       return null;
@@ -114,7 +116,10 @@ export async function POST(
     const webhookId = request.headers.get('x-asthros-webhook-id') || body.webhookId || request.nextUrl.searchParams.get('webhookId');
 
     if (!secret && !webhookId) {
-      return NextResponse.json({ error: 'Identificador ausente. Forneça o header X-Asthros-Webhook-Id ou X-Asthros-Secret.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Identificador ausente. Forneça o header X-Asthros-Webhook-Id ou X-Asthros-Secret.' },
+        { status: 401, headers: getResponseHeaders(isOriginAllowed) }
+      );
     }
 
     let webhook: any = null;
@@ -130,7 +135,10 @@ export async function POST(
         .maybeSingle();
 
       if (authError || !data) {
-        return NextResponse.json({ error: 'Chave secreta inválida ou webhook inativo para este cliente.' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Chave secreta inválida ou webhook inativo para este cliente.' },
+          { status: 401, headers: getResponseHeaders(isOriginAllowed) }
+        );
       }
       webhook = data;
     } else {
@@ -152,7 +160,10 @@ export async function POST(
       const { data, error: authError } = await query.maybeSingle();
 
       if (authError || !data) {
-        return NextResponse.json({ error: 'Webhook ID inválido ou inativo para este cliente.' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Webhook ID inválido ou inativo para este cliente.' },
+          { status: 401, headers: getResponseHeaders(isOriginAllowed) }
+        );
       }
 
       // Validar whitelist de origens (se configurado no webhook)
