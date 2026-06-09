@@ -15,7 +15,7 @@ const nextConfig = {
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com;
       connect-src 'self' https://rwtjkvwccxpsfoxmueuo.supabase.co wss://rwtjkvwccxpsfoxmueuo.supabase.co;
-      img-src 'self' data: https://api.dicebear.com https://rwtjkvwccxpsfoxmueuo.supabase.co;
+      img-src 'self' data: https: http:;
       style-src 'self' 'unsafe-inline';
       frame-src 'self' https://challenges.cloudflare.com;
       media-src 'self' https://assets.mixkit.co;
