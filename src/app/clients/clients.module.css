@@ -695,3 +695,218 @@
   outline: none;
   text-transform: uppercase;
 }
+
+/* Novos estilos para abas, filtros e listagem de leads arquivados */
+.tabsContainer {
+  display: flex;
+  background: rgba(var(--foreground-rgb), 0.03);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabBtn:hover {
+  color: var(--foreground);
+  background: rgba(var(--foreground-rgb), 0.03);
+}
+
+.activeTab {
+  background: rgba(var(--foreground-rgb), 0.05) !important;
+  color: var(--primary) !important;
+  border: 1px solid var(--border);
+}
+
+.btnReset:hover {
+  background: rgba(243, 156, 18, 0.1) !important;
+  color: #f39c12 !important;
+  border-color: rgba(243, 156, 18, 0.2) !important;
+}
+
+.checkboxGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkboxGroup input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkboxText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.checkboxTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.checkboxDesc {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.filtersBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  background: rgba(var(--foreground-rgb), 0.02);
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  align-items: end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filterField label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filterInput {
+  background: rgba(var(--foreground-rgb), 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: var(--foreground);
+  outline: none;
+  font-size: 0.85rem;
+  height: 38px;
+}
+
+.clearAllBtn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 0 1rem;
+  height: 38px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.clearAllBtn:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.clearAllBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leadsTableWrapper {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.contactCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.contactEmail {
+  font-size: 0.85rem;
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.contactPhone {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-family: monospace;
+}
+
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sourceForm {
+  background: rgba(86, 215, 253, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(86, 215, 253, 0.2);
+}
+
+.sourceWhatsApp {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366;
+  border: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.sourceCustom {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.jsonDetailsModal {
+  max-width: 650px !important;
+}
+
+.jsonPre {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  color: #a6e22e;
+  overflow: auto;
+  max-height: 400px;
+}

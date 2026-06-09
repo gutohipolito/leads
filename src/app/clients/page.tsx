@@ -23,7 +23,14 @@ import {
   Trash2,
   Edit2,
   LayoutGrid,
-  List
+  List,
+  RotateCcw,
+  Database,
+  Eye,
+  FileJson,
+  Users,
+  Clock,
+  X
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -51,6 +58,25 @@ export default function ClientsPage() {
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Estados para Abas
+  const [activeTab, setActiveTab] = useState<'clients' | 'archived_leads'>('clients');
+
+  // Estados para Leads Arquivados
+  const [archivedLeads, setArchivedLeads] = useState<any[]>([]);
+  const [loadingArchived, setLoadingArchived] = useState(false);
+  const [searchArchived, setSearchArchived] = useState('');
+  const [clientFilterArchived, setClientFilterArchived] = useState('');
+  const [currentPageArchived, setCurrentPageArchived] = useState(1);
+  const [selectedArchivedLeadForDetails, setSelectedArchivedLeadForDetails] = useState<any | null>(null);
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+
+  // Estados para Modal de Reset de Resultados
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetClientId, setResetClientId] = useState<string | null>(null);
+  const [resetClientName, setResetClientName] = useState('');
+  const [archiveBeforeReset, setArchiveBeforeReset] = useState(true);
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleLogoError = (clientId: string) => {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
@@ -133,6 +159,24 @@ export default function ClientsPage() {
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedClients = filteredClients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Paginação e Filtros para Leads Arquivados
+  const ARCHIVED_ITEMS_PER_PAGE = 10;
+
+  const filteredArchivedLeads = archivedLeads.filter(lead => {
+    const matchesSearch = 
+      (lead.name || '').toLowerCase().includes(searchArchived.toLowerCase()) ||
+      (lead.email || '').toLowerCase().includes(searchArchived.toLowerCase()) ||
+      (lead.phone || '').toLowerCase().includes(searchArchived.toLowerCase());
+    
+    const matchesClient = clientFilterArchived ? lead.client_id === clientFilterArchived : true;
+    
+    return matchesSearch && matchesClient;
+  });
+
+  const totalPagesArchived = Math.ceil(filteredArchivedLeads.length / ARCHIVED_ITEMS_PER_PAGE);
+  const startIndexArchived = (currentPageArchived - 1) * ARCHIVED_ITEMS_PER_PAGE;
+  const paginatedArchivedLeads = filteredArchivedLeads.slice(startIndexArchived, startIndexArchived + ARCHIVED_ITEMS_PER_PAGE);
 
   // Resetar para página 1 ao buscar
   useEffect(() => {
@@ -315,6 +359,140 @@ export default function ClientsPage() {
     });
   };
 
+  const loadArchivedLeads = async () => {
+    setLoadingArchived(true);
+    try {
+      const { data, error } = await supabase
+        .from('archived_leads')
+        .select('*')
+        .order('archived_at', { ascending: false });
+      
+      if (error) throw error;
+
+      if (data) {
+        const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+        const decrypted = await decryptLeadsList(data);
+        setArchivedLeads(decrypted);
+      } else {
+        setArchivedLeads([]);
+      }
+    } catch (e: any) {
+      console.error('Erro ao carregar leads arquivados:', e);
+      showAlert('Erro ao Carregar', 'Não foi possível carregar os leads arquivados: ' + e.message, 'danger');
+    } finally {
+      setLoadingArchived(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'archived_leads') {
+      loadArchivedLeads();
+    }
+  }, [activeTab]);
+
+  const handleResetClientResults = async () => {
+    if (!resetClientId || isResetting) return;
+    setIsResetting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        showAlert('Não autorizado', 'Sessão expirada. Faça login novamente.', 'danger');
+        return;
+      }
+
+      const response = await fetch('/api/admin/clients/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          clientId: resetClientId,
+          archive: archiveBeforeReset
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showAlert('Sucesso', result.message || 'Resultados resetados com sucesso!', 'success');
+        setIsResetModalOpen(false);
+        loadClients();
+        if (activeTab === 'archived_leads') {
+          loadArchivedLeads();
+        }
+      } else {
+        showAlert('Erro ao Resetar', result.error || 'Ocorreu um erro no servidor.', 'danger');
+      }
+    } catch (err: any) {
+      showAlert('Erro de Conexão', err.message || 'Falha ao se conectar à API.', 'danger');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleDeleteArchivedLead = async (leadId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Lead Arquivado',
+      message: 'Tem certeza que deseja excluir permanentemente este lead arquivado? Esta ação é irreversível.',
+      type: 'danger',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from('archived_leads')
+          .delete()
+          .eq('id', leadId);
+        
+        if (!error) {
+          showAlert('Sucesso', 'Lead arquivado excluído com sucesso!', 'success');
+          setArchivedLeads(prev => prev.filter(l => l.id !== leadId));
+        } else {
+          showAlert('Erro ao Excluir', 'Não foi possível excluir o lead: ' + error.message, 'danger');
+        }
+      }
+    });
+  };
+
+  const handleClearArchivedLeads = async () => {
+    const filteredClientName = clients.find(c => c.id === clientFilterArchived)?.name;
+    const queryMsg = clientFilterArchived 
+      ? `Deseja excluir permanentemente TODOS os leads arquivados do cliente "${filteredClientName}"?`
+      : 'Deseja excluir permanentemente TODOS os leads arquivados de TODOS os clientes?';
+    
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Limpar Leads Arquivados',
+      message: `${queryMsg} Esta ação é irreversível e removerá permanentemente os registros salvos.`,
+      type: 'danger',
+      confirmLabel: 'Excluir Todos',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        let query = supabase.from('archived_leads').delete();
+        if (clientFilterArchived) {
+          query = query.eq('client_id', clientFilterArchived);
+        } else {
+          query = query.neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+
+        const { error } = await query;
+        
+        if (!error) {
+          showAlert('Sucesso', 'Histórico limpo com sucesso!', 'success');
+          if (clientFilterArchived) {
+            setArchivedLeads(prev => prev.filter(l => l.client_id !== clientFilterArchived));
+          } else {
+            setArchivedLeads([]);
+          }
+        } else {
+          showAlert('Erro ao Limpar', 'Não foi possível limpar o histórico: ' + error.message, 'danger');
+        }
+      }
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className={styles.container}>
@@ -339,7 +517,27 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        <div className={styles.headerActions}>
+        {/* Navegação por Abas */}
+        <div className={styles.tabsContainer}>
+          <button 
+            className={`${styles.tabBtn} ${activeTab === 'clients' ? styles.activeTab : ''}`} 
+            onClick={() => setActiveTab('clients')}
+          >
+            <Users size={18} />
+            <span>Gestão de Clientes</span>
+          </button>
+          <button 
+            className={`${styles.tabBtn} ${activeTab === 'archived_leads' ? styles.activeTab : ''}`} 
+            onClick={() => setActiveTab('archived_leads')}
+          >
+            <Database size={18} />
+            <span>Leads Salvos (Histórico)</span>
+          </button>
+        </div>
+
+        {activeTab === 'clients' ? (
+          <>
+            <div className={styles.headerActions}>
             <div className={styles.searchBox}>
               <Search size={20} />
               <input 
@@ -460,6 +658,18 @@ export default function ClientsPage() {
                           <RefreshCcw size={18} />
                         </button>
                         <button 
+                          className={`${styles.iconAction} ${styles.btnReset}`} 
+                          title="Resetar Resultados (Leads)"
+                          onClick={() => {
+                            setResetClientId(client.id);
+                            setResetClientName(client.name);
+                            setArchiveBeforeReset(true);
+                            setIsResetModalOpen(true);
+                          }}
+                        >
+                          <RotateCcw size={18} />
+                        </button>
+                        <button 
                           className={styles.iconAction} 
                           title="Estatísticas"
                           onClick={() => {
@@ -539,6 +749,18 @@ export default function ClientsPage() {
                     >
                       {client.status === 'active' ? <Power size={18} /> : <PowerOff size={18} />}
                     </button>
+                    <button 
+                      onClick={() => {
+                        setResetClientId(client.id);
+                        setResetClientName(client.name);
+                        setArchiveBeforeReset(true);
+                        setIsResetModalOpen(true);
+                      }}
+                      className={styles.btnReset}
+                      title="Resetar Resultados (Leads)"
+                    >
+                      <RotateCcw size={18} />
+                    </button>
                     <button onClick={() => handleDeleteClient(client)} className={styles.colorDanger} title="Excluir"><Trash2 size={18} /></button>
                   </div>
                 </div>
@@ -581,6 +803,175 @@ export default function ClientsPage() {
                 Próximo
               </button>
             </div>
+          </div>
+        )}
+          </>
+        ) : (
+          <div className={styles.leadsTableWrapper}>
+            <div className={styles.filtersBar}>
+              <div className={styles.filterField}>
+                <label>Buscar por Nome/Email/Telefone</label>
+                <input 
+                  type="text" 
+                  placeholder="Filtrar por nome, e-mail..." 
+                  className={styles.filterInput}
+                  value={searchArchived}
+                  onChange={(e) => { setSearchArchived(e.target.value); setCurrentPageArchived(1); }}
+                />
+              </div>
+              <div className={styles.filterField}>
+                <label>Filtrar por Cliente</label>
+                <select 
+                  className={styles.filterInput}
+                  value={clientFilterArchived}
+                  onChange={(e) => { setClientFilterArchived(e.target.value); setCurrentPageArchived(1); }}
+                >
+                  <option value="">Todos os Clientes</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button 
+                className={styles.clearAllBtn}
+                onClick={handleClearArchivedLeads}
+                disabled={filteredArchivedLeads.length === 0}
+              >
+                <Trash2 size={16} />
+                <span>{clientFilterArchived ? 'Limpar Leads deste Cliente' : 'Limpar Todos Salvos'}</span>
+              </button>
+            </div>
+
+            {loadingArchived ? (
+              <div className={styles.loadingState}>
+                <RefreshCcw className={styles.spin} size={28} />
+                <span>Carregando leads arquivados...</span>
+              </div>
+            ) : (
+              <>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Lead</th>
+                      <th>Contato</th>
+                      <th>Origem</th>
+                      <th>Data de Captura</th>
+                      <th>Arquivado em</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedArchivedLeads.map((lead) => {
+                      const clientName = clients.find(c => c.id === lead.client_id)?.name || 'Removido';
+                      const isSelector = lead.source === 'custom_tracker' && (
+                        lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
+                        lead.data?.match_type?.toLowerCase().includes('selector') || 
+                        lead.name?.toLowerCase().includes('selector')
+                      );
+                      const isKeyword = lead.source === 'custom_tracker' && (
+                        lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
+                        lead.data?.match_type?.toLowerCase().includes('keyword') || 
+                        lead.name?.toLowerCase().includes('keyword')
+                      );
+
+                      return (
+                        <tr key={lead.id}>
+                          <td><strong>{clientName}</strong></td>
+                          <td>
+                            <div className={styles.clientCell}>
+                              <span className={styles.clientName}>{lead.name || 'Sem nome'}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className={styles.contactCell}>
+                              <span className={styles.contactEmail}>{lead.email || 'N/A'}</span>
+                              {lead.phone && <span className={styles.contactPhone}>{lead.phone}</span>}
+                            </div>
+                          </td>
+                          <td>
+                            {lead.source === 'whatsapp_tracker' ? (
+                              <span className={`${styles.sourceBadge} ${styles.sourceWhatsApp}`}>WhatsApp</span>
+                            ) : isSelector ? (
+                              <span className={`${styles.sourceBadge} ${styles.sourceCustom}`} style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}>Seletor</span>
+                            ) : isKeyword ? (
+                              <span className={`${styles.sourceBadge} ${styles.sourceCustom}`} style={{ background: 'rgba(249, 115, 22, 0.1)', color: '#f97316' }}>Palavra-Chave</span>
+                            ) : lead.source === 'custom_tracker' ? (
+                              <span className={`${styles.sourceBadge} ${styles.sourceCustom}`}>Botão</span>
+                            ) : (
+                              <span className={`${styles.sourceBadge} ${styles.sourceForm}`}>Formulário</span>
+                            )}
+                          </td>
+                          <td>{lead.created_at ? new Date(lead.created_at).toLocaleString('pt-BR') : 'N/A'}</td>
+                          <td>{new Date(lead.archived_at).toLocaleString('pt-BR')}</td>
+                          <td>
+                            <div className={styles.actionGrid}>
+                              <button 
+                                className={styles.iconAction} 
+                                title="Ver Detalhes do Lead"
+                                onClick={() => {
+                                  setSelectedArchivedLeadForDetails(lead);
+                                  setIsJsonModalOpen(true);
+                                }}
+                              >
+                                <Eye size={18} />
+                              </button>
+                              <button 
+                                className={`${styles.iconAction} ${styles.btnDelete}`} 
+                                title="Excluir Lead"
+                                onClick={() => handleDeleteArchivedLead(lead.id)}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {paginatedArchivedLeads.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>
+                          Nenhum lead arquivado encontrado.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                {totalPagesArchived > 1 && (
+                  <div className={styles.pagination}>
+                    <div className={styles.pageInfo}>
+                      Mostrando <strong>{startIndexArchived + 1}</strong> - <strong>{Math.min(startIndexArchived + ARCHIVED_ITEMS_PER_PAGE, filteredArchivedLeads.length)}</strong> de <strong>{filteredArchivedLeads.length}</strong> leads
+                    </div>
+                    <div className={styles.pageControls}>
+                      <button 
+                        className={styles.pageBtn} 
+                        onClick={() => setCurrentPageArchived(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPageArchived === 1}
+                      >
+                        Anterior
+                      </button>
+                      {Array.from({ length: totalPagesArchived }, (_, i) => i + 1).map(page => (
+                        <button 
+                          key={page}
+                          className={`${styles.pageBtn} ${currentPageArchived === page ? styles.activePage : ''}`}
+                          onClick={() => setCurrentPageArchived(page)}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button 
+                        className={styles.pageBtn} 
+                        onClick={() => setCurrentPageArchived(prev => Math.min(prev + 1, totalPagesArchived))}
+                        disabled={currentPageArchived === totalPagesArchived}
+                      >
+                        Próximo
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -807,6 +1198,95 @@ export default function ClientsPage() {
         onConfirm={confirmConfig.onConfirm}
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
+
+      {/* Modal de Reset de Resultados */}
+      {isResetModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setIsResetModalOpen(false)}>
+          <div className={`${styles.modal} glass`} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Resetar Resultados - {resetClientName}</h3>
+              <p>Esta ação irá remover todos os leads capturados ativos deste cliente do dashboard principal.</p>
+            </div>
+            
+            <div className={styles.form} style={{ gap: '1rem' }}>
+              <div className={styles.checkboxGroup} onClick={() => setArchiveBeforeReset(!archiveBeforeReset)}>
+                <input 
+                  type="checkbox" 
+                  checked={archiveBeforeReset} 
+                  onChange={(e) => {}} 
+                />
+                <div className={styles.checkboxText}>
+                  <span className={styles.checkboxTitle}>Salvar cópia histórica na aba de Leads Salvos</span>
+                  <span className={styles.checkboxDesc}>Os leads serão movidos para o histórico antes de serem zerados.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.cancelBtn} onClick={() => setIsResetModalOpen(false)}>Cancelar</button>
+              <button 
+                type="button" 
+                className={`${styles.submitBtn} ${styles.colorDanger}`} 
+                onClick={handleResetClientResults}
+                disabled={isResetting}
+                style={{
+                  background: '#ef4444',
+                  color: '#ffffff'
+                }}
+              >
+                {isResetting ? 'Resetando...' : 'Resetar Dados'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes JSON do Lead */}
+      {isJsonModalOpen && selectedArchivedLeadForDetails && (
+        <div className={styles.modalOverlay} onClick={() => setIsJsonModalOpen(false)}>
+          <div className={`${styles.modal} ${styles.jsonDetailsModal} glass`} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Detalhes do Lead Arquivado</h3>
+              <p>Metadados, parâmetros UTM e comportamento do rastreador.</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '60vh', overflowY: 'auto', paddingRight: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
+                <div>
+                  <strong>Nome:</strong> <span style={{ color: 'var(--muted-foreground)' }}>{selectedArchivedLeadForDetails.name || 'Sem nome'}</span>
+                </div>
+                <div>
+                  <strong>E-mail:</strong> <span style={{ color: 'var(--muted-foreground)' }}>{selectedArchivedLeadForDetails.email || 'N/A'}</span>
+                </div>
+                <div>
+                  <strong>Telefone:</strong> <span style={{ color: 'var(--muted-foreground)' }}>{selectedArchivedLeadForDetails.phone || 'N/A'}</span>
+                </div>
+                <div>
+                  <strong>Origem:</strong> <span style={{ color: 'var(--muted-foreground)' }}>{selectedArchivedLeadForDetails.source}</span>
+                </div>
+                <div>
+                  <strong>Captura:</strong> <span style={{ color: 'var(--muted-foreground)' }}>{selectedArchivedLeadForDetails.created_at ? new Date(selectedArchivedLeadForDetails.created_at).toLocaleString('pt-BR') : 'N/A'}</span>
+                </div>
+                <div>
+                  <strong>Arquivamento:</strong> <span style={{ color: 'var(--muted-foreground)' }}>{selectedArchivedLeadForDetails.archived_at ? new Date(selectedArchivedLeadForDetails.archived_at).toLocaleString('pt-BR') : 'N/A'}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                <FileJson size={16} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Metadados e Variáveis do Lead (JSON)</span>
+              </div>
+              <pre className={styles.jsonPre}>
+                <code>
+                  {JSON.stringify(selectedArchivedLeadForDetails.data || {}, null, 2)}
+                </code>
+              </pre>
+            </div>
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.submitBtn} onClick={() => setIsJsonModalOpen(false)}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
