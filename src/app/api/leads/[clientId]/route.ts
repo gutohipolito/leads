@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { sendLeadToIntegrations } from '@/utils/integrations';
 import crypto from 'crypto';
-import DOMPurify from 'isomorphic-dompurify';
 import { encrypt, decrypt } from '@/utils/encryption';
 
 function sanitizeInput(val: any): any {
@@ -10,8 +9,15 @@ function sanitizeInput(val: any): any {
     return val;
   }
   if (typeof val === 'string') {
-    // Limpa tags e atributos perigosos (XSS) e mantem apenas o texto puro
-    return DOMPurify.sanitize(val, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    // Remove qualquer tag HTML (padrão <...>) e higieniza caracteres potencialmente perigosos para XSS
+    const noTags = val.replace(/<[^>]*>/g, '');
+    return noTags
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
   }
   if (Array.isArray(val)) {
     return val.map(sanitizeInput);

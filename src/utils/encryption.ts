@@ -1,14 +1,40 @@
 const ALGORITHM = 'AES-GCM';
 const IV_LENGTH = 12;
 
-async function getCryptoKey(secret: string): Promise<CryptoKey> {
+// Função utilitária para obter a Web Crypto API de forma robusta e transparente
+// em ambientes do navegador (window.crypto) e do servidor (Node.js/Vercel)
+function getWebCrypto(): any {
+  if (typeof window !== 'undefined' && window.crypto) {
+    return window.crypto;
+  }
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    return globalThis.crypto;
+  }
+  try {
+    // Evita que o bundler do frontend tente resolver ou empacotar o módulo 'crypto'
+    const req = typeof eval !== 'undefined' ? eval('require') : require;
+    const nodeCrypto = req('crypto');
+    return nodeCrypto.webcrypto || nodeCrypto;
+  } catch (e) {
+    // Fallback silencioso
+  }
+  return null;
+}
+
+const webCrypto = getWebCrypto();
+
+async function getCryptoKey(secret: string): Promise<CryptoKey | null> {
+  if (!webCrypto || !webCrypto.subtle) {
+    console.error('Web Crypto API não disponível no ambiente atual.');
+    return null;
+  }
   const enc = new TextEncoder();
   const rawKeyMaterial = enc.encode(secret);
   
   // Utiliza SHA-256 para derivar determinísticamente uma chave de 32 bytes (256 bits)
-  const hash = await crypto.subtle.digest('SHA-256', rawKeyMaterial);
+  const hash = await webCrypto.subtle.digest('SHA-256', rawKeyMaterial);
   
-  return await crypto.subtle.importKey(
+  return await webCrypto.subtle.importKey(
     'raw',
     hash,
     { name: ALGORITHM },
@@ -21,9 +47,11 @@ export async function encrypt(text: string, secret: string): Promise<string> {
   if (!text) return '';
   try {
     const cryptoKey = await getCryptoKey(secret);
-    const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+    if (!cryptoKey || !webCrypto) return text;
+
+    const iv = webCrypto.getRandomValues(new Uint8Array(IV_LENGTH));
     const enc = new TextEncoder();
-    const encrypted = await crypto.subtle.encrypt(
+    const encrypted = await webCrypto.subtle.encrypt(
       {
         name: ALGORITHM,
         iv: iv
@@ -55,7 +83,9 @@ export async function decrypt(cipherText: string, secret: string): Promise<strin
     const encrypted = new Uint8Array(encryptedHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
     
     const cryptoKey = await getCryptoKey(secret);
-    const decrypted = await crypto.subtle.decrypt(
+    if (!cryptoKey || !webCrypto) return cipherText;
+
+    const decrypted = await webCrypto.subtle.decrypt(
       {
         name: ALGORITHM,
         iv: iv
