@@ -84,7 +84,6 @@ const replacements = [
   { from: 'candidates', to: '_cd' },
   { from: 'trackPageVisit', to: '_tp' },
   { from: 'getPagesVisitedContext', to: '_pv' },
-  { from: 'webhookId', to: '_wi' },
   { from: 'randomId', to: '_ri' },
   { from: 'setLocalItem', to: '_sli' },
   { from: 'getLocalItem', to: '_gli' },

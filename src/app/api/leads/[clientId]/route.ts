@@ -652,7 +652,10 @@ export async function POST(
       email: email,
       phone: phone
     };
-    await sendLeadToIntegrations({ lead: cleanLeadForIntegration, clientId, webhook, body });
+    // Processa o repasse das integrações de forma assíncrona em background para otimizar o tempo de resposta da API
+    sendLeadToIntegrations({ lead: cleanLeadForIntegration, clientId, webhook, body }).catch(err => {
+      console.error('[Integrations Background Error]:', err);
+    });
 
     if (webhook.notification_email) {
       console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);
