@@ -119,7 +119,8 @@ export default function WebhooksManagePage() {
   const [newWebhook, setNewWebhook] = useState({
     name: '',
     client_id: '',
-    validation_type: 'header' as 'header' | 'query'
+    validation_type: 'header' as 'header' | 'query',
+    allowed_origins: ''
   });
 
   const handleTestOutboundWebhook = async () => {
@@ -325,7 +326,8 @@ export default function WebhooksManagePage() {
         url_slug: slug,
         secret: secret,
         validation_type: newWebhook.validation_type,
-        status: 'active'
+        status: 'active',
+        allowed_origins: newWebhook.allowed_origins || null
       }]).select().single();
       
       if (error) {
@@ -333,7 +335,7 @@ export default function WebhooksManagePage() {
       } else if (data) {
         await logAction('Webhook Ativado', 'webhook', data.id, { name: newWebhook.name });
         setIsModalOpen(false);
-        setNewWebhook({ name: '', client_id: isAdmin ? '' : userClientId || '', validation_type: 'header' });
+        setNewWebhook({ name: '', client_id: isAdmin ? '' : userClientId || '', validation_type: 'header', allowed_origins: '' });
         loadWebhooksData();
       }
     } catch (err: any) {
@@ -670,6 +672,18 @@ export default function WebhooksManagePage() {
                 <div className={styles.inputGroup}><label>Nome do Ponto</label><input type="text" placeholder="Ex: Site Principal" value={newWebhook.name} onChange={e => setNewWebhook({...newWebhook, name: e.target.value})} required /></div>
                 {isAdmin && (<div className={styles.inputGroup}><label>Cliente</label><select value={newWebhook.client_id} onChange={e => setNewWebhook({...newWebhook, client_id: e.target.value})} required><option value="">Selecionar...</option>{clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div>)}
                 <div className={styles.inputGroup}><label>Autenticação</label><select value={newWebhook.validation_type} onChange={e => setNewWebhook({...newWebhook, validation_type: e.target.value})}><option value="header">Header (Recomendado)</option><option value="query">URL Parameter</option></select></div>
+                <div className={styles.inputGroup}>
+                  <label>Origens Permitidas (CORS)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://meusite.com, http://localhost:3000" 
+                    value={newWebhook.allowed_origins} 
+                    onChange={e => setNewWebhook({...newWebhook, allowed_origins: e.target.value})} 
+                  />
+                  <small className={styles.inputHelp} style={{ color: '#888', display: 'block', marginTop: '4px' }}>
+                    Separe domínios por vírgula. Deixe vazio para permitir qualquer origem.
+                  </small>
+                </div>
                  <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>
                   <button type="submit" className={styles.modalSubmitBtn} disabled={isSubmitting}>
