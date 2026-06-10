@@ -652,10 +652,8 @@ export async function POST(
       email: email,
       phone: phone
     };
-    // Processa o repasse das integrações de forma assíncrona em background para otimizar o tempo de resposta da API
-    sendLeadToIntegrations({ lead: cleanLeadForIntegration, clientId, webhook, body }).catch(err => {
-      console.error('[Integrations Background Error]:', err);
-    });
+    // [NOVO] Hub de Integrações (Chama o utilitário compartilhado passando dados em texto limpo)
+    await sendLeadToIntegrations({ lead: cleanLeadForIntegration, clientId, webhook, body });
 
     if (webhook.notification_email) {
       console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);
