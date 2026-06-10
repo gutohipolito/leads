@@ -4,6 +4,7 @@ const path = require('path');
 const trackerDir = path.join(__dirname, 'src', 'tracker');
 const sourcePath = path.join(__dirname, 'src', 'tracker-source.js');
 const outputPath = path.join(__dirname, 'public', 'tracker.js');
+const outputPathMin = path.join(__dirname, 'public', 'tracker.min.js');
 
 const moduleFiles = [
   'header.js',
@@ -132,4 +133,5 @@ code = code
 code += '\n//# sourceURL=QXN0aHJvcyBMZWFkcw==';
 
 fs.writeFileSync(outputPath, code, 'utf8');
-console.log('Tracker ofuscado e minificado com sucesso em public/tracker.js');
+fs.writeFileSync(outputPathMin, code, 'utf8');
+console.log('Tracker ofuscado e minificado com sucesso em public/tracker.js e public/tracker.min.js');

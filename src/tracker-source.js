@@ -36,7 +36,8 @@
                 apiUrl: script.getAttribute('data-api-url') || 'https://leads.asthros.com.br',
                 trackKeywords: script.getAttribute('data-keywords') ? script.getAttribute('data-keywords').split(',') : [],
                 trackSelectors: script.getAttribute('data-selectors') ? script.getAttribute('data-selectors').split(',') : [],
-                consentGiven: script.getAttribute('data-consent-given')
+                consentGiven: script.getAttribute('data-consent-given'),
+                autoTrackForms: script.getAttribute('data-auto-track-forms')
             };
         }
     }
@@ -47,7 +48,14 @@
     }
 
     // Validação de segurança da URL da API (deve utilizar HTTPS para prevenir sequestro de requisição ou injeção XSS)
-    if (config.apiUrl && !config.apiUrl.startsWith('https://')) {
+    // Permite conexões HTTP apenas para fins de desenvolvimento em localhost, 127.0.0.1 ou IPs locais
+    const isLocal = config.apiUrl && (
+        config.apiUrl.startsWith('http://localhost') || 
+        config.apiUrl.startsWith('http://127.0.0.1') || 
+        config.apiUrl.startsWith('http://192.168.')
+    );
+
+    if (config.apiUrl && !config.apiUrl.startsWith('https://') && !isLocal) {
         config.apiUrl = 'https://leads.asthros.com.br';
     } else if (!config.apiUrl) {
         config.apiUrl = 'https://leads.asthros.com.br';
