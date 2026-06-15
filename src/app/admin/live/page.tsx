@@ -649,7 +649,7 @@ export default function LiveMonitorPage() {
               </div>
             </div>
             <div className={styles.chartContainer}>
-              <ResponsiveContainer width="100%" height={170}>
+              <ResponsiveContainer width="100%" height={170} minWidth={0} minHeight={0}>
                 <AreaChart data={statsSummary.hourlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
@@ -681,7 +681,7 @@ export default function LiveMonitorPage() {
             </div>
             <div className={styles.donutGrid}>
               <div className={styles.donutChart}>
-                <ResponsiveContainer width="100%" height={150}>
+                <ResponsiveContainer width="100%" height={150} minWidth={0} minHeight={0}>
                   <PieChart>
                     <Pie
                       data={statsSummary.sourceData}

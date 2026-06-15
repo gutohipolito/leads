@@ -942,7 +942,14 @@ export default function UptimePage() {
     if (monitors.length === 0) return;
     setChecking(true);
     try {
-      const res = await fetch('/api/uptime/check');
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || '';
+
+      const res = await fetch('/api/uptime/check', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success && activeClientId) {
         await loadMonitors(activeClientId);

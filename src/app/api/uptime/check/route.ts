@@ -6,11 +6,41 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // Validação de segurança opcional com Vercel Cron Secret
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get('authorization') || '';
+    const token = authHeader.replace('Bearer ', '').trim();
+
     const cronSecret = process.env.CRON_SECRET;
     const hasCronSecret = cronSecret && cronSecret !== 'undefined' && cronSecret !== 'null' && cronSecret.trim() !== '';
-    if (hasCronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    
+    let isAuthorized = false;
+
+    // 1. Verificar se coincide com o Cron Secret
+    if (hasCronSecret && token === cronSecret) {
+      isAuthorized = true;
+    }
+
+    // 2. Se não coincide com o Cron Secret, verificar se é um token de sessão de Admin
+    if (!isAuthorized && token) {
+      try {
+        const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+        if (!authError && authUser) {
+          const { data: profile } = await supabaseAdmin
+            .from('system_users')
+            .select('role')
+            .eq('email', authUser.email)
+            .single();
+
+          if (profile?.role === 'admin') {
+            isAuthorized = true;
+          }
+        }
+      } catch (err) {
+        console.error('Erro na validação do token do usuário:', err);
+      }
+    }
+
+    // Retorna 401 se não for autorizado por nenhuma das duas formas
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
@@ -29,21 +59,23 @@ export async function GET(request: Request) {
 
     // 2. Disparar pings em paralelo para todas as URLs
     const pingPromises = monitors.map(async (monitor) => {
-      const startTime = Date.now();
+      const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      let startTime = Date.now();
       let status: 'online' | 'offline' = 'offline';
       let responseTimeMs = 0;
       let statusCode: number | null = null;
       let errorMessage: string | null = null;
+      let success = false;
 
+      // Tentar HEAD primeiro (mais rápido e econômico)
       try {
-        // Envia uma requisição HTTP GET rápida com timeout de 6 segundos
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
         const response = await fetch(monitor.url, {
-          method: 'GET',
+          method: 'HEAD',
           headers: {
-            'User-Agent': 'AsthrosUptimeBot/1.0',
+            'User-Agent': userAgent,
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
           },
@@ -52,20 +84,57 @@ export async function GET(request: Request) {
         });
 
         clearTimeout(timeoutId);
-        
         responseTimeMs = Date.now() - startTime;
         statusCode = response.status;
 
         if (response.ok) {
           status = 'online';
+          success = true;
         } else {
-          status = 'offline';
-          errorMessage = `HTTP Status ${response.status}`;
+          // Se retornar status que comumente rejeita HEAD, forçar fallback para GET
+          if ([405, 403, 400, 501].includes(response.status)) {
+            throw new Error(`FallbackToGet: Status ${response.status}`);
+          } else {
+            status = 'offline';
+            errorMessage = `HTTP Status ${response.status}`;
+            success = true; // Não tenta fallback se for erro definitivo do servidor
+          }
         }
       } catch (err: any) {
-        responseTimeMs = Date.now() - startTime;
-        status = 'offline';
-        errorMessage = err.name === 'AbortError' ? 'Timeout (6s)' : (err.message || 'Erro de rede');
+        // Se falhou ou exige fallback
+        if (!success) {
+          startTime = Date.now();
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+            const response = await fetch(monitor.url, {
+              method: 'GET',
+              headers: {
+                'User-Agent': userAgent,
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              },
+              signal: controller.signal,
+              next: { revalidate: 0 } // Desativa o cache do Next.js
+            });
+
+            clearTimeout(timeoutId);
+            responseTimeMs = Date.now() - startTime;
+            statusCode = response.status;
+
+            if (response.ok) {
+              status = 'online';
+            } else {
+              status = 'offline';
+              errorMessage = `HTTP Status ${response.status}`;
+            }
+          } catch (getErr: any) {
+            responseTimeMs = Date.now() - startTime;
+            status = 'offline';
+            errorMessage = getErr.name === 'AbortError' ? 'Timeout (15s)' : (getErr.message || 'Erro de rede');
+          }
+        }
       }
 
       // Salva log de histórico
