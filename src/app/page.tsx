@@ -28,6 +28,7 @@ export default function Home() {
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [exportType, setExportType] = useState<{ show: boolean; type: string }>({ show: false, type: '' });
   const [exportOpen, setExportOpen] = useState(false);
+  const [recentLeadsPeriod, setRecentLeadsPeriod] = useState<7 | 15 | 30>(7);
 
   useEffect(() => {
     let notifChannel: any = null;
@@ -254,7 +255,8 @@ export default function Home() {
       };
     });
 
-    const recentLeads = leadsInPeriod.slice(0, 5);
+    const cardPeriodStart = new Date(now.getTime() - recentLeadsPeriod * 24 * 60 * 60 * 1000).toISOString();
+    const recentLeads = filteredLeads.filter(l => l.created_at >= cardPeriodStart);
 
     return {
       totalLeads,
@@ -267,7 +269,7 @@ export default function Home() {
       recentLeads,
       performanceData
     };
-  }, [filteredLeads, activeFilter, dashboardPeriod]);
+  }, [filteredLeads, activeFilter, dashboardPeriod, recentLeadsPeriod]);
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : "";
 
@@ -794,6 +796,29 @@ export default function Home() {
           <div className={`${styles.logsCard} glass`}>
             <div className={styles.cardHeader}>
               <h3>Últimos Leads Recebidos</h3>
+              <div className={styles.cardPeriodSelector}>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${recentLeadsPeriod === 7 ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setRecentLeadsPeriod(7)}
+                >
+                  07
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${recentLeadsPeriod === 15 ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setRecentLeadsPeriod(15)}
+                >
+                  15
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${recentLeadsPeriod === 30 ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setRecentLeadsPeriod(30)}
+                >
+                  30
+                </button>
+              </div>
             </div>
             <div className={styles.tableWrapper}>
               <table className={styles.table}>

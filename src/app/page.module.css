@@ -1277,3 +1277,37 @@
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+.cardPeriodSelector {
+  display: flex;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid var(--border);
+  padding: 0.15rem;
+  border-radius: 8px;
+  gap: 0.15rem;
+}
+
+.cardPeriodBtn {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.cardPeriodBtn:hover {
+  color: var(--foreground);
+  background: rgba(var(--foreground-rgb), 0.03);
+}
+
+.cardPeriodBtn.activeCardPeriod {
+  color: var(--primary);
+  background: rgba(0, 209, 255, 0.08);
+  box-shadow: 0 0 10px rgba(0, 209, 255, 0.12);
+}
