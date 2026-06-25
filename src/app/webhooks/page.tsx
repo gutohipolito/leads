@@ -181,6 +181,7 @@ export default function WebhooksManagePage() {
 
   const [trackerKeywords, setTrackerKeywords] = useState('');
   const [trackerSelectors, setTrackerSelectors] = useState('');
+  const [autoTrackForms, setAutoTrackForms] = useState(true);
 
   useEffect(() => {
     loadWebhooksData();
@@ -507,6 +508,21 @@ export default function WebhooksManagePage() {
                           />
                         </div>
                       </div>
+                      <div className={styles.customizationOptions}>
+                        <label className={styles.checkboxLabel}>
+                          <input 
+                            type="checkbox" 
+                            checked={autoTrackForms} 
+                            onChange={(e) => setAutoTrackForms(e.target.checked)} 
+                          />
+                          <span className={styles.checkboxText}>
+                            <strong>Capturar Formulários Automaticamente</strong>
+                            <small style={{ color: '#888', display: 'block', marginTop: '2px', fontWeight: 'normal' }}>
+                              Detecta e captura leads preenchidos em formulários do site.
+                            </small>
+                          </span>
+                        </label>
+                      </div>
                     </div>
 
                     <div className={styles.codeHeader}>
@@ -527,6 +543,7 @@ export default function WebhooksManagePage() {
                           
                           if (keywordsArr.length > 0) configStr += `,\n    trackKeywords: ${JSON.stringify(keywordsArr)}`;
                           if (selectorsArr.length > 0) configStr += `,\n    trackSelectors: ${JSON.stringify(selectorsArr)}`;
+                          if (autoTrackForms) configStr += `,\n    autoTrackForms: true`;
                           
                           configStr += `\n  };`;
 
@@ -541,7 +558,7 @@ export default function WebhooksManagePage() {
   window.AsthrosConfig = {
     clientId: "${selectedDocsWebhook.client_id}",
     webhookId: "${selectedDocsWebhook.id}",
-    apiUrl: "${window.location.origin}"${trackerKeywords ? `,\n    trackKeywords: ${JSON.stringify(trackerKeywords.split(',').map(k => k.trim()).filter(k => k))}` : ''}${trackerSelectors ? `,\n    trackSelectors: ${JSON.stringify(trackerSelectors.split(',').map(s => s.trim()).filter(s => s))}` : ''}
+    apiUrl: "${window.location.origin}"${trackerKeywords ? `,\n    trackKeywords: ${JSON.stringify(trackerKeywords.split(',').map(k => k.trim()).filter(k => k))}` : ''}${trackerSelectors ? `,\n    trackSelectors: ${JSON.stringify(trackerSelectors.split(',').map(s => s.trim()).filter(s => s))}` : ''}${autoTrackForms ? `,\n    autoTrackForms: true` : ''}
   };
 </script>
 <script src="${window.location.origin}/tracker.js" async></script>`}

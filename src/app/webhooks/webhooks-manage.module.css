@@ -1668,3 +1668,38 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* Customização de opções do tracker */
+.customizationOptions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--foreground);
+  user-select: none;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  accent-color: #25d366;
+  margin-top: 2px;
+}
+
+.checkboxText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
