@@ -770,6 +770,295 @@ export default function LeadsPage() {
     setExportType({ show: false, type: '' });
   };
 
+  const exportSingleLeadPDF = (leadToExport: any) => {
+    if (!leadToExport) return;
+
+    const clientName = currentClient?.name || 'asthros';
+    const formattedClientName = clientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const formattedLeadName = (leadToExport.name || 'lead').toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    const doc = new jsPDF({ 
+      orientation: 'portrait'
+    });
+
+    // 1. Cabeçalho Escuro Padrão
+    doc.setFillColor(10, 20, 35);
+    doc.rect(0, 0, 210, 30, 'F');
+    doc.setTextColor(86, 215, 253);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ASTHROS LEADS', 15, 20);
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 195, 18, { align: 'right' });
+
+    // Subtítulo do relatório
+    doc.setTextColor(10, 20, 35);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Detalhes do Lead', 15, 42);
+
+    // Separador principal
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(15, 45, 195, 45);
+
+    let currentY = 52;
+    const isPaid = isPaidMedia(leadToExport);
+
+    // Função de Desenhar Cards Estruturados (2 colunas)
+    const drawCard = (title: string, items: { label: string, value: string, highlight?: boolean, isFallback?: boolean }[], borderGold: boolean = false) => {
+      if (items.length === 0) return;
+
+      const half = Math.ceil(items.length / 2);
+      const cardHeight = 15 + (half * 8) + 5;
+
+      // Quebra de página se passar de Y = 275
+      if (currentY + cardHeight > 275) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      // Fundo e Borda do Card
+      if (borderGold) {
+        doc.setDrawColor(245, 158, 11); // Gold
+        doc.setFillColor(254, 252, 232); // Fundo dourado sutil
+      } else {
+        doc.setDrawColor(226, 232, 240); // Borda neutra
+        doc.setFillColor(248, 250, 252); // Fundo neutro sutil
+      }
+      doc.rect(15, currentY, 180, cardHeight - 5, 'FD');
+
+      // Título da Seção
+      if (borderGold) {
+        doc.setTextColor(217, 119, 6);
+      } else {
+        doc.setTextColor(14, 165, 233);
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      
+      let titleText = title.toUpperCase();
+      if (borderGold) titleText += "  [ MÍDIA PAGA ]";
+      doc.text(titleText, 20, currentY + 8);
+
+      // Separador interno
+      if (borderGold) {
+        doc.setDrawColor(253, 230, 138);
+      } else {
+        doc.setDrawColor(230, 235, 240);
+      }
+      doc.line(20, currentY + 11, 190, currentY + 11);
+
+      // Renderização dos campos em 2 colunas
+      doc.setFontSize(8.5);
+      let itemY = currentY + 16;
+
+      for (let i = 0; i < half; i++) {
+        // Coluna 1
+        const item1 = items[i];
+        if (item1) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(100, 116, 139); // Label cor cinza médio
+          doc.text(`${item1.label}:`, 20, itemY);
+
+          doc.setFont('helvetica', item1.highlight ? 'bold' : 'normal');
+          if (item1.isFallback) {
+            doc.setTextColor(160, 174, 192); // Fallback cor cinza apagado
+          } else if (item1.highlight && borderGold) {
+            doc.setTextColor(217, 119, 6); // Destaque gold
+          } else {
+            doc.setTextColor(15, 23, 42); // Valor padrão
+          }
+          doc.text(String(item1.value || 'N/A'), 55, itemY);
+        }
+
+        // Coluna 2
+        const item2 = items[i + half];
+        if (item2) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(100, 116, 139);
+          doc.text(`${item2.label}:`, 110, itemY);
+
+          doc.setFont('helvetica', item2.highlight ? 'bold' : 'normal');
+          if (item2.isFallback) {
+            doc.setTextColor(160, 174, 192);
+          } else if (item2.highlight && borderGold) {
+            doc.setTextColor(217, 119, 6);
+          } else {
+            doc.setTextColor(15, 23, 42);
+          }
+          doc.text(String(item2.value || 'N/A'), 145, itemY);
+        }
+
+        itemY += 8;
+      }
+
+      currentY += cardHeight;
+    };
+
+    // Função de Desenhar a Jornada do Visitante (Timeline)
+    const drawJourneyCard = (journey: any[]) => {
+      if (!journey || journey.length === 0) return;
+
+      const cardHeight = 15 + (journey.length * 12) + 5;
+
+      if (currentY + cardHeight > 275) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, currentY, 180, cardHeight - 5, 'FD');
+
+      doc.setTextColor(14, 165, 233);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('JORNADA DO VISITANTE (HISTÓRICO)', 20, currentY + 8);
+
+      doc.setDrawColor(230, 235, 240);
+      doc.line(20, currentY + 11, 190, currentY + 11);
+
+      // Linha do tempo vertical
+      doc.setDrawColor(186, 230, 253);
+      doc.setLineWidth(0.5);
+      doc.line(24, currentY + 17, 24, currentY + 15 + ((journey.length - 1) * 12));
+
+      let stepY = currentY + 18;
+      doc.setFontSize(8);
+
+      journey.forEach((step: any) => {
+        // Marcador da timeline
+        doc.setFillColor(14, 165, 233);
+        doc.circle(24, stepY - 1, 1.2, 'FD');
+
+        // URL formatada
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        const urlStr = decodeHtml(step.url || step.page_url || 'URL desconhecida');
+        doc.text(urlStr, 29, stepY - 1);
+
+        // Data/Hora & Referrer
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        const timeStr = step.timestamp ? new Date(step.timestamp).toLocaleString('pt-BR') : 'Data não registrada';
+        const refStr = step.referrer ? `  •  Referência: ${decodeHtml(step.referrer)}` : '';
+        doc.text(`${timeStr}${refStr}`, 29, stepY + 2.5);
+
+        stepY += 12;
+      });
+
+      currentY += cardHeight;
+    };
+
+    // 1. Perfil & Sistema
+    const perfilItems = [
+      { label: 'ID do Lead', value: leadToExport.id },
+      { label: 'Data', value: new Date(leadToExport.created_at).toLocaleString('pt-BR') },
+      { label: 'Nome', value: leadToExport.name || 'Sem nome', isFallback: !leadToExport.name },
+      { label: 'E-mail', value: leadToExport.email || 'Sem e-mail', isFallback: !leadToExport.email },
+      { label: 'Telefone', value: leadToExport.phone || 'Sem telefone', isFallback: !leadToExport.phone },
+      { label: 'Terminal', value: leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A', isFallback: !leadToExport.webhooks?.name && !leadToExport.data?.captured_by?.name }
+    ];
+    
+    if (leadToExport.data) {
+      perfilItems.push({ label: 'IP', value: leadToExport.data.location?.ip || 'N/A', isFallback: !leadToExport.data.location?.ip });
+      const locStr = leadToExport.data.location?.city 
+        ? `${decodeHtml(decodeURIComponent(leadToExport.data.location.city))}/${decodeHtml(decodeURIComponent(leadToExport.data.location.region || ''))} (${leadToExport.data.location.country || 'BR'})`
+        : 'N/A';
+      perfilItems.push({ label: 'Localização', value: locStr, isFallback: !leadToExport.data.location?.city });
+      
+      if (leadToExport.data.device) {
+        const device = leadToExport.data.device;
+        perfilItems.push({ label: 'SO', value: device.os || 'N/A', isFallback: !device.os });
+        perfilItems.push({ label: 'Dispositivo', value: device.is_mobile ? 'Mobile' : 'Desktop' });
+        perfilItems.push({ label: 'Idioma', value: device.language || 'N/A', isFallback: !device.language });
+        perfilItems.push({ label: 'Timezone', value: device.timezone ? decodeHtml(device.timezone) : 'N/A', isFallback: !device.timezone });
+        perfilItems.push({ label: 'Resolução', value: device.screen || 'N/A', isFallback: !device.screen });
+      }
+    }
+    drawCard('Perfil & Sistema', perfilItems);
+
+    // 2. Comportamento & Engajamento
+    const comportamentoItems = [];
+    const sourceLabel = leadToExport.source === 'whatsapp_tracker' ? 'WhatsApp Click' : (leadToExport.source === 'custom_tracker' ? 'Rastreador' : 'Formulário');
+    comportamentoItems.push({ label: 'Origem', value: sourceLabel });
+    
+    if (leadToExport.data) {
+      comportamentoItems.push({ label: 'Pág. Origem', value: decodeHtml(leadToExport.data.behavior?.page_url || leadToExport.data.page_url || 'N/A'), isFallback: !leadToExport.data.behavior?.page_url && !leadToExport.data.page_url });
+      comportamentoItems.push({ label: 'Ação / Botão', value: leadToExport.data.behavior?.button_text || leadToExport.data.button_text || 'N/A', isFallback: !leadToExport.data.behavior?.button_text && !leadToExport.data.button_text });
+      comportamentoItems.push({ label: 'Tempo Pág.', value: leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page || 'N/A', isFallback: !leadToExport.data.behavior?.time_on_page && !leadToExport.data.time_on_page });
+      
+      if (leadToExport.data.behavior) {
+        const behavior = leadToExport.data.behavior;
+        comportamentoItems.push({ label: 'Scroll Máx.', value: behavior.scroll_depth || 'N/A', isFallback: !behavior.scroll_depth });
+        const sessionDur = behavior.session_duration_seconds !== undefined ? `${behavior.session_duration_seconds}s` : 'N/A';
+        comportamentoItems.push({ label: 'Dur. Sessão', value: sessionDur, isFallback: behavior.session_duration_seconds === undefined });
+        const convTime = behavior.conversion_time_seconds !== undefined ? `${behavior.conversion_time_seconds}s` : 'N/A';
+        comportamentoItems.push({ label: 'Tempo Conv.', value: convTime, isFallback: behavior.conversion_time_seconds === undefined });
+      }
+      if (leadToExport.data.lead_score !== undefined) {
+        comportamentoItems.push({ label: 'Lead Score', value: `${leadToExport.data.lead_score}/100`, highlight: true });
+      }
+      const consentVal = leadToExport.data.consent_given !== undefined 
+        ? (leadToExport.data.consent_given ? 'Autorizado' : 'Negado') 
+        : 'Não especificado';
+      comportamentoItems.push({ label: 'Consent. LGPD', value: consentVal, isFallback: leadToExport.data.consent_given === undefined });
+    }
+    drawCard('Comportamento & Engajamento', comportamentoItems);
+
+    // 3. Aquisição & UTMs (Destaque Dourado)
+    const marketingItems = [];
+    const marketing = leadToExport.data?.marketing || {};
+    const sourceVal = marketing.source || leadToExport.data?.utm_source || 'Direto / Orgânico';
+    const isSourceEmpty = !marketing.source && !leadToExport.data?.utm_source;
+    marketingItems.push({ label: 'UTM Source', value: sourceVal, highlight: isPaid && !isSourceEmpty, isFallback: isSourceEmpty });
+
+    const mediumVal = marketing.medium || leadToExport.data?.utm_medium || 'N/A';
+    const isMediumEmpty = !marketing.medium && !leadToExport.data?.utm_medium;
+    marketingItems.push({ label: 'UTM Medium', value: mediumVal, highlight: isPaid && !isMediumEmpty, isFallback: isMediumEmpty });
+
+    const campaignVal = marketing.campaign || leadToExport.data?.utm_campaign || 'N/A';
+    const isCampaignEmpty = !marketing.campaign && !leadToExport.data?.utm_campaign;
+    marketingItems.push({ label: 'UTM Campaign', value: campaignVal, highlight: isPaid && !isCampaignEmpty, isFallback: isCampaignEmpty });
+
+    const termVal = marketing.term || 'N/A';
+    marketingItems.push({ label: 'UTM Term', value: termVal, highlight: isPaid && marketing.term, isFallback: !marketing.term });
+
+    const contentVal = marketing.content || 'N/A';
+    marketingItems.push({ label: 'UTM Content', value: contentVal, highlight: isPaid && marketing.content, isFallback: !marketing.content });
+
+    if (marketing.gclid) marketingItems.push({ label: 'Google Ads ID', value: 'Ativo (GCLID)', highlight: true });
+    if (marketing.fbclid) marketingItems.push({ label: 'Facebook Ads ID', value: 'Ativo (FBCLID)', highlight: true });
+    if (marketing.ttclid) marketingItems.push({ label: 'TikTok Ads ID', value: 'Ativo (TTCLID)', highlight: true });
+    drawCard('Aquisição & UTMs', marketingItems, isPaid);
+
+    // 4. Jornada do Visitante (Histórico)
+    if (leadToExport.data?.marketing?.journey && leadToExport.data.marketing.journey.length > 0) {
+      drawJourneyCard(leadToExport.data.marketing.journey);
+    }
+
+    // 5. Campos Extras/Customizados
+    if (leadToExport.data) {
+      const extraFields: any[] = [];
+      Object.keys(leadToExport.data).forEach(k => {
+        if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)) {
+          extraFields.push({ label: k, value: String(leadToExport.data[k]) });
+        }
+      });
+      drawCard('Campos Customizados do Formulário', extraFields);
+    }
+
+    doc.save(`lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.pdf`);
+    logAction('Exportação Lead Individual', 'lead', leadToExport.id, { 
+      format: 'pdf',
+      paid: isPaid
+    });
+  };
+
   const convertToCSV = (data: any[], selectedFields: string[]) => {
     const dynamicKeys = new Set<string>();
     if (selectedFields.includes('custom_fields')) {
@@ -2018,6 +2307,14 @@ export default function LeadsPage() {
                       <Send size={16} />
                     )}
                     <span>{retrying ? 'Repassando...' : 'Reenviar para CRM'}</span>
+                  </button>
+                  <button 
+                    className={styles.secondaryBtn} 
+                    style={{ background: 'rgba(0, 209, 255, 0.08)', color: 'var(--primary)', border: '1px solid rgba(0, 209, 255, 0.2)' }}
+                    onClick={() => exportSingleLeadPDF(selectedLead)}
+                  >
+                    <Download size={16} />
+                    <span>Exportar PDF</span>
                   </button>
                   {isAdmin && (
                     <button 
