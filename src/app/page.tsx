@@ -10,6 +10,29 @@ import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
 import jsPDF from 'jspdf';
 import ExportModal from '@/components/ExportModal/ExportModal';
+import { decodeHtml } from '@/utils/decode';
+
+const isPaidMedia = (lead: any): boolean => {
+  if (!lead || !lead.data) return false;
+  
+  const marketing = lead.data.marketing || {};
+  const medium = (marketing.medium || lead.data.utm_medium || '').toLowerCase();
+  const source = (marketing.source || lead.data.utm_source || '').toLowerCase();
+  
+  const paidMediums = ['cpc', 'ppc', 'paid', 'ads', 'traffic', 'cmp-paid'];
+  const hasClickId = !!(
+    marketing.gclid || 
+    marketing.fbclid || 
+    marketing.ttclid || 
+    marketing.msclkid ||
+    marketing.gbraid ||
+    marketing.wbraid ||
+    marketing.twclid ||
+    marketing.li_fat_id
+  );
+  
+  return paidMediums.includes(medium) || hasClickId || source.includes('ads') || medium.includes('ads');
+};
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -26,6 +49,7 @@ export default function Home() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
   const [dashboardPeriod, setDashboardPeriod] = useState<7 | 15 | 30>(7);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const isPaid = useMemo(() => selectedLead ? isPaidMedia(selectedLead) : false, [selectedLead]);
   const [exportType, setExportType] = useState<{ show: boolean; type: string }>({ show: false, type: '' });
   const [exportOpen, setExportOpen] = useState(false);
   const [recentLeadsPeriod, setRecentLeadsPeriod] = useState<7 | 15 | 30>(7);
@@ -926,15 +950,21 @@ export default function Home() {
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nome</span>
-                      <span className={styles.infoVal}>{selectedLead.name || 'Sem nome'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.name ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.name || 'Sem nome'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>E-mail</span>
-                      <span className={styles.infoVal}>{selectedLead.email || 'Sem e-mail'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.email ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.email || 'Sem e-mail'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Telefone</span>
-                      <span className={styles.infoVal}>{selectedLead.phone || 'Sem telefone'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.phone ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.phone || 'Sem telefone'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Data</span>
@@ -944,25 +974,29 @@ export default function Home() {
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Terminal / Webhook</span>
-                      <span className={styles.infoVal}>
+                      <span className={`${styles.infoVal} ${(!selectedLead.webhooks?.name && !selectedLead.data?.captured_by?.name) ? styles.infoValEmpty : ''}`}>
                         {selectedLead.webhooks?.name || selectedLead.data?.captured_by?.name || 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>IP</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.location?.ip || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.location?.ip ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.location?.ip || 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Localização</span>
-                      <span className={styles.infoVal}>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.location?.city ? styles.infoValEmpty : ''}`}>
                         {selectedLead.data?.location?.city 
-                          ? `${decodeURIComponent(selectedLead.data.location.city)}/${decodeURIComponent(selectedLead.data.location.region || '')} (${selectedLead.data.location.country || 'BR'})`
+                          ? `${decodeHtml(decodeURIComponent(selectedLead.data.location.city))}/${decodeHtml(decodeURIComponent(selectedLead.data.location.region || ''))} (${selectedLead.data.location.country || 'BR'})`
                           : 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Sistema Operacional</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.device?.os || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.os ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.os || 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Dispositivo</span>
@@ -970,15 +1004,21 @@ export default function Home() {
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Idioma</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.device?.language || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.language ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.language || 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Timezone</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.device?.timezone || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.timezone ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.timezone ? decodeHtml(selectedLead.data.device.timezone) : 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Resolução</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.device?.screen || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.screen ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.screen || 'N/A'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -997,25 +1037,31 @@ export default function Home() {
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Página de Origem</span>
-                      <span className={styles.infoVal} title={selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}>
-                        {selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A'}
+                      <span className={`${styles.infoVal} ${(!selectedLead.data?.behavior?.page_url && !selectedLead.data?.page_url) ? styles.infoValEmpty : ''}`} title={decodeHtml(selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A')}>
+                        {decodeHtml(selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A')}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Ação / Botão</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.behavior?.button_text || selectedLead.data?.button_text || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${(!selectedLead.data?.behavior?.button_text && !selectedLead.data?.button_text) ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.button_text || selectedLead.data?.button_text || 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Tempo Ativo na Pág.</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.behavior?.time_on_page || selectedLead.data?.time_on_page || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${(!selectedLead.data?.behavior?.time_on_page && !selectedLead.data?.time_on_page) ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.time_on_page || selectedLead.data?.time_on_page || 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Rolagem Máxima</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.behavior?.scroll_depth || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.behavior?.scroll_depth ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.scroll_depth || 'N/A'}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Duração da Sessão</span>
-                      <span className={styles.infoVal}>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.behavior?.session_duration_seconds === undefined ? styles.infoValEmpty : ''}`}>
                         {selectedLead.data?.behavior?.session_duration_seconds !== undefined 
                           ? `${selectedLead.data.behavior.session_duration_seconds}s`
                           : 'N/A'}
@@ -1023,7 +1069,7 @@ export default function Home() {
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Tempo p/ Conversão</span>
-                      <span className={styles.infoVal}>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.behavior?.conversion_time_seconds === undefined ? styles.infoValEmpty : ''}`}>
                         {selectedLead.data?.behavior?.conversion_time_seconds !== undefined 
                           ? `${selectedLead.data.behavior.conversion_time_seconds}s`
                           : 'N/A'}
@@ -1031,13 +1077,13 @@ export default function Home() {
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Score do Lead</span>
-                      <span className={styles.infoVal} style={{ fontWeight: '800', color: selectedLead.data?.lead_score >= 70 ? '#2ecc71' : (selectedLead.data?.lead_score >= 40 ? '#f59e0b' : '#3498db') }}>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.lead_score === undefined ? styles.infoValEmpty : ''}`} style={{ fontWeight: '800', color: selectedLead.data?.lead_score >= 70 ? '#2ecc71' : (selectedLead.data?.lead_score >= 40 ? '#f59e0b' : (selectedLead.data?.lead_score !== undefined ? '#3498db' : undefined)) }}>
                         {selectedLead.data?.lead_score !== undefined ? `${selectedLead.data.lead_score}/100` : 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Consentimento LGPD</span>
-                      <span className={styles.infoVal}>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.consent_given === undefined ? styles.infoValEmpty : ''}`}>
                         {selectedLead.data?.consent_given !== undefined 
                           ? (selectedLead.data.consent_given ? '✅ Autorizado' : '❌ Negado')
                           : 'Não especificado'}
@@ -1053,45 +1099,48 @@ export default function Home() {
                 </div>
 
                 {/* Coluna 3: Aquisição & UTMs */}
-                <div className={styles.infoSection}>
-                  <h4>Aquisição & UTMs</h4>
+                <div className={`${styles.infoSection} ${isPaid ? styles.paidMediaSection : ''}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
+                    <h4 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}>Aquisição & UTMs</h4>
+                    {isPaid && <span className={styles.paidMediaBadge}>🎯 Mídia Paga</span>}
+                  </div>
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Source</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto / Orgânico'}</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${(!selectedLead.data?.marketing?.source && !selectedLead.data?.utm_source) ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto / Orgânico'}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Medium</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${(!selectedLead.data?.marketing?.medium && !selectedLead.data?.utm_medium) ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Campaign</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${(!selectedLead.data?.marketing?.campaign && !selectedLead.data?.utm_campaign) ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Term</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.term || selectedLead.data?.utm_term || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.term ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.term || 'N/A'}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Content</span>
-                      <span className={styles.infoVal}>{selectedLead.data?.marketing?.content || selectedLead.data?.utm_content || 'N/A'}</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.content ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.content || 'N/A'}</span>
                     </div>
                     {selectedLead.data?.marketing?.gclid && (
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Google Ads ID</span>
-                        <span className={styles.infoVal} title={selectedLead.data.marketing.gclid}>GCLID (Ativo)</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={selectedLead.data.marketing.gclid}>GCLID (Ativo)</span>
                       </div>
                     )}
                     {selectedLead.data?.marketing?.fbclid && (
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Facebook Ads ID</span>
-                        <span className={styles.infoVal} title={selectedLead.data.marketing.fbclid}>FBCLID (Ativo)</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={selectedLead.data.marketing.fbclid}>FBCLID (Ativo)</span>
                       </div>
                     )}
                     {selectedLead.data?.marketing?.ttclid && (
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>TikTok Ads ID</span>
-                        <span className={styles.infoVal} title={selectedLead.data.marketing.ttclid}>TTCLID (Ativo)</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={selectedLead.data.marketing.ttclid}>TTCLID (Ativo)</span>
                       </div>
                     )}
                   </div>
@@ -1108,11 +1157,11 @@ export default function Home() {
                         <div key={index} className={styles.journeyStep}>
                           <div className={styles.journeyDot} />
                           <span className={styles.journeyUrl}>
-                            {step.url || step.page_url || 'URL desconhecida'}
+                            {decodeHtml(step.url || step.page_url || 'URL desconhecida')}
                           </span>
                           <span className={styles.journeyTime}>
                             {step.timestamp ? new Date(step.timestamp).toLocaleString('pt-BR') : 'Data não registrada'}
-                            {step.referrer && ` • Referência: ${step.referrer}`}
+                            {step.referrer && ` • Referência: ${decodeHtml(step.referrer)}`}
                           </span>
                         </div>
                       ))}

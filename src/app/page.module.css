@@ -1311,3 +1311,34 @@
   background: rgba(0, 209, 255, 0.08);
   box-shadow: 0 0 10px rgba(0, 209, 255, 0.12);
 }
+
+/* Estilos de Destaque Dourado para Leads de Mídia Paga */
+.paidMediaSection {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.05);
+}
+
+.paidMediaBadge {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+}
+
+.paidHighlight {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+
+/* Estilo para Dados Ausentes / Fallback */
+.infoValEmpty {
+  color: var(--muted-foreground) !important;
+  opacity: 0.65;
+  font-weight: 500 !important;
+}

@@ -45,6 +45,30 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ExportModal from '@/components/ExportModal/ExportModal';
 import DeleteModal from '@/components/DeleteModal/DeleteModal';
+import { decodeHtml } from '@/utils/decode';
+
+const isPaidMedia = (lead: any): boolean => {
+  if (!lead || !lead.data) return false;
+  
+  const marketing = lead.data.marketing || {};
+  const medium = (marketing.medium || lead.data.utm_medium || '').toLowerCase();
+  const source = (marketing.source || lead.data.utm_source || '').toLowerCase();
+  
+  const paidMediums = ['cpc', 'ppc', 'paid', 'ads', 'traffic', 'cmp-paid'];
+  const hasClickId = !!(
+    marketing.gclid || 
+    marketing.fbclid || 
+    marketing.ttclid || 
+    marketing.msclkid ||
+    marketing.gbraid ||
+    marketing.wbraid ||
+    marketing.twclid ||
+    marketing.li_fat_id
+  );
+  
+  return paidMediums.includes(medium) || hasClickId || source.includes('ads') || medium.includes('ads');
+};
+
 
 const formatPhone = (phone: string | null | undefined): string => {
   if (!phone) return 'N/A';
@@ -171,6 +195,7 @@ export default function LeadsPage() {
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const isPaid = useMemo(() => selectedLead ? isPaidMedia(selectedLead) : false, [selectedLead]);
   const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
 
   // Status de reenvio e logs de integração
@@ -1299,12 +1324,24 @@ export default function LeadsPage() {
                               {getLeadIcon(lead.source, 20)}
                             </div>
                             <div>
-                              <p className={styles.name}>{lead.name || 'Sem nome'}</p>
+                              <p className={styles.name} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                {lead.name || 'Sem nome'}
+                                {isPaidMedia(lead) && (
+                                  <span className={styles.tablePaidIcon} title="Mídia Paga (Campanha / Ads)">
+                                    🎯
+                                  </span>
+                                )}
+                              </p>
                               <p className={styles.id}>ID: {lead.id.substring(0, 8)}</p>
                             </div>
                           </div>
                         </td>
-                         <td><div className={styles.leadInfoMini}><span>{lead.email || 'N/A'}</span><span className={styles.leadEmail}>{formatPhone(lead.phone)}</span></div></td>
+                         <td>
+                           <div className={styles.leadInfoMini}>
+                             <span className={!lead.email ? styles.leadEmailEmpty : ''}>{lead.email || 'N/A'}</span>
+                             <span className={`${styles.leadEmail} ${!lead.phone ? styles.leadEmailEmpty : ''}`}>{formatPhone(lead.phone)}</span>
+                           </div>
+                         </td>
                         <td>
                           {lead.source === 'test_simulation' ? (
                             <div className={styles.sourceBadgeTest}><Database size={12} /> <span>Simulação</span></div>
@@ -1554,7 +1591,6 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 )}
-
                 {/* Jornada do Lead (Atribuição Multitouch) */}
                 {((selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0) || selectedLead.data?.marketing?.first_touch) && (
                   <div className={styles.detailSection}>
@@ -1596,8 +1632,8 @@ export default function LeadsPage() {
                                   {item.label}
                                 </div>
                               )}
-                              <p className={styles.timelinePage} title={item.page_url}>
-                                Visualizou: <em>{item.page_title || 'Página do Site'}</em>
+                              <p className={styles.timelinePage} title={decodeHtml(item.page_url)}>
+                                Visualizou: <em>{decodeHtml(item.page_title) || 'Página do Site'}</em>
                               </p>
                               {item.campaign && item.campaign !== 'N/A' && (
                                 <span className={styles.timelineCampaign}>Campanha: {item.campaign}</span>
@@ -1645,11 +1681,11 @@ export default function LeadsPage() {
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%', overflow: 'hidden' }}>
                               <strong style={{ color: 'var(--foreground)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'block' }}>
-                                {title || path}
+                                {decodeHtml(title) || decodeHtml(path)}
                               </strong>
                               {title && (
                                 <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'block' }}>
-                                  {path}
+                                  {decodeHtml(path)}
                                 </span>
                               )}
                             </div>
@@ -1693,29 +1729,32 @@ export default function LeadsPage() {
 
                 {/* Seção de Marketing (UTMs) */}
                 {(selectedLead.data?.marketing || selectedLead.data?.utm_source) && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.sectionHeader}>
-                      <Globe size={16} className={styles.sectionIcon} />
-                      <h4>Inteligência de Marketing</h4>
+                  <div className={`${styles.detailSection} ${isPaid ? styles.paidMediaSection : ''}`}>
+                    <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Globe size={16} className={styles.sectionIcon} style={{ color: isPaid ? '#f59e0b' : undefined }} />
+                        <h4>Inteligência de Marketing</h4>
+                      </div>
+                      {isPaid && <span className={styles.paidMediaBadge}>🎯 Mídia Paga</span>}
                     </div>
                     <div className={styles.marketingBadges}>
-                      <div className={styles.mktBadge}>
+                      <div className={`${styles.mktBadge} ${(!selectedLead.data?.marketing?.source && !selectedLead.data?.utm_source) ? styles.mktBadgeEmpty : ''}`}>
                         <label>Fonte</label>
-                        <span>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto'}</span>
+                        <span className={isPaid ? styles.paidHighlight : ''}>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto'}</span>
                       </div>
-                      <div className={styles.mktBadge}>
+                      <div className={`${styles.mktBadge} ${(!selectedLead.data?.marketing?.medium && !selectedLead.data?.utm_medium) ? styles.mktBadgeEmpty : ''}`}>
                         <label>Meio</label>
-                        <span>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
+                        <span className={isPaid ? styles.paidHighlight : ''}>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
                       </div>
-                      <div className={styles.mktBadge}>
+                      <div className={`${styles.mktBadge} ${(!selectedLead.data?.marketing?.campaign && !selectedLead.data?.utm_campaign) ? styles.mktBadgeEmpty : ''}`}>
                         <label>Campanha</label>
-                        <span>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
+                        <span className={isPaid ? styles.paidHighlight : ''}>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
                       </div>
                     </div>
                     {selectedLead.data?.marketing?.referrer && (
                       <div className={styles.referrerInfo}>
                         <label>Vindo de:</label>
-                        <span>{selectedLead.data.marketing.referrer}</span>
+                        <span>{decodeHtml(selectedLead.data.marketing.referrer)}</span>
                       </div>
                     )}
                     {/* Exibição de Click IDs de Redes de Anúncios */}

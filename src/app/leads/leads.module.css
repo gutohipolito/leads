@@ -1698,4 +1698,50 @@
   box-shadow: 0 0 8px #f59e0b;
 }
 
+/* Destaques de Mídia Paga no Drawer e na Tabela */
+.paidMediaSection {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.05);
+}
+
+.paidMediaBadge {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+}
+
+.paidHighlight {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+  font-weight: 700 !important;
+}
+
+.tablePaidIcon {
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+}
+
+/* Estilo para fallbacks vazios */
+.leadEmailEmpty {
+  color: var(--muted-foreground) !important;
+  opacity: 0.55;
+  font-weight: normal !important;
+}
+
+.mktBadgeEmpty span {
+  color: var(--muted-foreground) !important;
+  opacity: 0.65;
+  font-weight: normal !important;
+}
+
 
