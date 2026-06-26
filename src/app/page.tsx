@@ -312,13 +312,14 @@ export default function Home() {
     setExportOpen(false);
   };
 
-  const processExport = (password: string | null, selectedFields: string[]) => {
+  const processExport = async (password: string | null, selectedFields: string[]) => {
     if (!selectedLead) return;
 
     const leadToExport = selectedLead;
     const clientName = leadToExport.clients?.name || impersonatedName || 'asthros';
     const formattedClientName = clientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
     const formattedLeadName = (leadToExport.name || 'lead').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const webhookName = leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A';
 
     let content = '';
     
@@ -332,31 +333,51 @@ export default function Home() {
         } : undefined
       });
 
-      // 1. Cabeçalho Escuro Padrão
+      // 1. Cabeçalho Escuro Padrão (Altura de 40mm)
       doc.setFillColor(10, 20, 35);
-      doc.rect(0, 0, 210, 30, 'F');
-      doc.setTextColor(86, 215, 253);
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text('ASTHROS LEADS', 15, 20);
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      try {
+        const logoUrl = '/asthros-leads.png';
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = (e) => reject(e);
+          image.src = logoUrl;
+        });
+        const logoWidth = 40;
+        const logoHeight = (img.height * logoWidth) / img.width;
+        const logoY = (40 - logoHeight) / 2;
+        doc.addImage(img, 'PNG', 15, logoY, logoWidth, logoHeight);
+      } catch (err) {
+        doc.setTextColor(86, 215, 253);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ASTHROS', 15, 25);
+      }
 
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório de Lead Único', 195, 16, { align: 'right' });
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 195, 18, { align: 'right' });
+      doc.text(`Cliente: ${clientName}`, 195, 22, { align: 'right' });
+      doc.text(`Terminal: ${webhookName}`, 195, 28, { align: 'right' });
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 195, 34, { align: 'right' });
 
       // Subtítulo do relatório
       doc.setTextColor(10, 20, 35);
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Relatório de Detalhes do Lead', 15, 42);
+      doc.text('Relatório de Detalhes do Lead', 15, 52);
 
       // Separador principal
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.5);
-      doc.line(15, 45, 195, 45);
+      doc.line(15, 55, 195, 55);
 
-      let currentY = 52;
+      let currentY = 62;
       const isPaid = isPaidMedia(leadToExport);
 
       // Função de Desenhar Cards Estruturados (2 colunas)
@@ -608,6 +629,16 @@ export default function Home() {
           }
         });
         drawCard('Campos Customizados do Formulário', extraFields);
+      }
+
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Asthros | CO-B. - Relatório de Leads - Confidencial`, 15, 285);
+        doc.text(`Página ${i} de ${pageCount}`, 195, 285, { align: 'right' });
       }
 
       doc.save(`lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.pdf`);
