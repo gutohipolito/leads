@@ -692,6 +692,87 @@
   gap: 1rem;
 }
 
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.refreshSelectorBar {
+  display: flex;
+  align-items: center;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+  border-radius: 12px;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
+  height: 38px;
+}
+
+.pulseContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.refreshPulse {
+  width: 8px;
+  height: 8px;
+  background-color: #2ecc71;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+  animation: pulseGreen 2s infinite;
+}
+
+.refreshPulseOff {
+  width: 8px;
+  height: 8px;
+  background-color: var(--muted-foreground);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+@keyframes pulseGreen {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(46, 204, 113, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+  }
+}
+
+.refreshSelect {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  padding-right: 0.25rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.refreshSelect option {
+  background: var(--background);
+  color: var(--foreground);
+}
+
 .dashboardHeader h2 {
   font-family: var(--font-outfit), sans-serif;
   font-size: 1.5rem;

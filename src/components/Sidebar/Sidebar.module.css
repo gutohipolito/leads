@@ -10,6 +10,7 @@
   left: 0;
   top: 0;
   z-index: 100;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logoContainer {
@@ -250,5 +251,80 @@
   .sidebarCloseBtn:hover {
     background: rgba(var(--foreground-rgb), 0.05);
     color: var(--foreground);
+  }
+}
+
+/* Botão de Toggle flutuante na borda do Sidebar */
+.sidebarToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  position: absolute;
+  right: -12px;
+  top: 32px;
+  z-index: 101;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarToggleBtn:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  transform: scale(1.1);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+@media (max-width: 768px) {
+  .sidebarToggleBtn {
+    display: none !important;
+  }
+}
+
+/* Modificações para o modo colapsado em desktop */
+@media (min-width: 769px) {
+  .sidebarCollapsed {
+    width: 80px !important;
+    padding: 1.5rem 0.5rem 1rem !important;
+    align-items: center;
+  }
+
+  .logoContainerCollapsed {
+    justify-content: center;
+    padding-left: 0 !important;
+    width: 100%;
+  }
+
+  .logoContainerCollapsed .logoIcon {
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+
+  .logoImgCollapsed {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .navLinkCollapsed {
+    justify-content: center;
+    padding: 0.5rem 0 !important;
+    gap: 0 !important;
+    width: 44px;
+    height: 44px;
+    border-radius: 50% !important;
+    margin: 0 auto;
+  }
+
+  .navLinkCollapsed .iconCircle {
+    margin: 0;
   }
 }

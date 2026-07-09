@@ -53,9 +53,17 @@ export default function Home() {
   const [exportType, setExportType] = useState<{ show: boolean; type: string }>({ show: false, type: '' });
   const [exportOpen, setExportOpen] = useState(false);
   const [recentLeadsPeriod, setRecentLeadsPeriod] = useState<7 | 15 | 30>(7);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('asthros_homepage_refresh_interval');
+      return saved ? parseInt(saved, 10) : 300; // Padrão 5 minutos
+    }
+    return 300;
+  });
 
   useEffect(() => {
     let notifChannel: any = null;
+    let refreshTimer: any = null;
 
     async function loadDashboardData() {
       try {
@@ -139,12 +147,21 @@ export default function Home() {
 
     loadDashboardData();
 
+    if (autoRefreshInterval > 0) {
+      refreshTimer = setInterval(() => {
+        loadDashboardData();
+      }, autoRefreshInterval * 1000);
+    }
+
     return () => {
       if (notifChannel) {
         supabase.removeChannel(notifChannel);
       }
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
     };
-  }, []);
+  }, [autoRefreshInterval]);
 
   // Filtro de leads e computação reativa na memória
   const filteredLeads = useMemo(() => {
@@ -749,25 +766,55 @@ export default function Home() {
         {/* Cabeçalho do Dashboard */}
         <div className={styles.dashboardHeader}>
           <h2>{dashboardTitle || 'Visão Geral'}</h2>
-          <div className={styles.periodSelectorBar}>
-            <button 
-              className={`${styles.periodBtn} ${dashboardPeriod === 7 ? styles.activePeriod : ''}`}
-              onClick={() => setDashboardPeriod(7)}
-            >
-              07 dias
-            </button>
-            <button 
-              className={`${styles.periodBtn} ${dashboardPeriod === 15 ? styles.activePeriod : ''}`}
-              onClick={() => setDashboardPeriod(15)}
-            >
-              15 dias
-            </button>
-            <button 
-              className={`${styles.periodBtn} ${dashboardPeriod === 30 ? styles.activePeriod : ''}`}
-              onClick={() => setDashboardPeriod(30)}
-            >
-              30 dias
-            </button>
+          <div className={styles.headerControls}>
+            <div className={styles.periodSelectorBar}>
+              <button 
+                className={`${styles.periodBtn} ${dashboardPeriod === 7 ? styles.activePeriod : ''}`}
+                onClick={() => setDashboardPeriod(7)}
+              >
+                07 dias
+              </button>
+              <button 
+                className={`${styles.periodBtn} ${dashboardPeriod === 15 ? styles.activePeriod : ''}`}
+                onClick={() => setDashboardPeriod(15)}
+              >
+                15 dias
+              </button>
+              <button 
+                className={`${styles.periodBtn} ${dashboardPeriod === 30 ? styles.activePeriod : ''}`}
+                onClick={() => setDashboardPeriod(30)}
+              >
+                30 dias
+              </button>
+            </div>
+
+            <div className={styles.refreshSelectorBar}>
+              {autoRefreshInterval > 0 ? (
+                <div className={styles.pulseContainer}>
+                  <span className={styles.refreshPulse} />
+                </div>
+              ) : (
+                <div className={styles.pulseContainer}>
+                  <span className={styles.refreshPulseOff} />
+                </div>
+              )}
+              <select
+                className={styles.refreshSelect}
+                value={autoRefreshInterval}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setAutoRefreshInterval(val);
+                  localStorage.setItem('asthros_homepage_refresh_interval', String(val));
+                }}
+              >
+                <option value={0}>Sem Auto-atualizar</option>
+                <option value={30}>Auto: 30 seg</option>
+                <option value={60}>Auto: 1 min</option>
+                <option value={300}>Auto: 5 min</option>
+                <option value={600}>Auto: 10 min</option>
+                <option value={900}>Auto: 15 min</option>
+              </select>
+            </div>
           </div>
         </div>
 

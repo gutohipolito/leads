@@ -18,6 +18,24 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasUser, setHasUser] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('asthros_sidebar_collapsed');
+      if (saved === 'true') {
+        setIsSidebarCollapsed(true);
+      }
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('asthros_sidebar_collapsed', String(newVal));
+    }
+  };
 
   useEffect(() => {
     let activeChannel: any = null;
@@ -185,8 +203,13 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
 
   return (
     <div className={styles.layoutWrapper}>
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <div className={styles.mainContainer}>
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        isCollapsed={isSidebarCollapsed}
+        onToggle={toggleSidebar}
+      />
+      <div className={`${styles.mainContainer} ${isSidebarCollapsed ? styles.mainContainerCollapsed : ''}`}>
         {impersonatedClient && (
           <div className={styles.impersonationBanner}>
             <div className={styles.bannerContent}>

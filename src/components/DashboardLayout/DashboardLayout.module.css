@@ -13,6 +13,11 @@
   background: var(--background);
   height: 100vh;
   overflow: hidden;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mainContainerCollapsed {
+  margin-left: 80px;
 }
 
 .main {
@@ -94,7 +99,7 @@
 
 @media (max-width: 768px) {
   .mainContainer {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
   .pageContent {
     padding: 1rem 1rem 1.5rem;
