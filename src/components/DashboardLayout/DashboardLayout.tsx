@@ -7,6 +7,8 @@ import Header from '../Header/Header';
 import styles from './DashboardLayout.module.css';
 import { supabase } from '@/lib/supabase';
 import Loader from '../Loader/Loader';
+import { decryptLead, fetchEncryptionKey } from '@/utils/frontendEncryption';
+import FunnyLeadModal from '../FunnyLeadModal/FunnyLeadModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,8 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   const [loading, setLoading] = useState(true);
   const [hasUser, setHasUser] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeLeadNotif, setActiveLeadNotif] = useState<any>(null);
+  const [activeLeadClient, setActiveLeadClient] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -40,6 +44,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   useEffect(() => {
     let activeChannel: any = null;
     let verificationChannel: BroadcastChannel | null = null;
+    let leadsChannel: any = null;
 
     const checkSessionAndSetup = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -126,6 +131,55 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
       });
 
       activeChannel = channel;
+
+      // Criar canal de Leads em tempo real para o modal engraçado
+      const lChannel = supabase.channel('realtime-funny-leads')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'leads' },
+          async (payload) => {
+            const newLeadRaw = payload.new;
+            if (!newLeadRaw) return;
+
+            const cachedRole = localStorage.getItem('user_role');
+            const cachedClientId = localStorage.getItem('user_client_id') || null;
+            const isUserAdmin = cachedRole === 'admin';
+            const impersonated = localStorage.getItem('impersonated_client');
+            let activeClientId = cachedClientId;
+            let isImpersonating = false;
+
+            if (isUserAdmin && impersonated) {
+              const impData = JSON.parse(impersonated);
+              activeClientId = impData.id;
+              isImpersonating = true;
+            }
+
+            const canSee = (isUserAdmin && !isImpersonating) ? true : (newLeadRaw.client_id === activeClientId);
+            if (!canSee) return;
+
+            try {
+              const key = await fetchEncryptionKey();
+              let decryptedLead = newLeadRaw;
+              if (key) {
+                decryptedLead = await decryptLead(newLeadRaw, key);
+              }
+
+              const { data: clientData } = await supabase
+                .from('clients')
+                .select('name, logo_url, primary_color')
+                .eq('id', newLeadRaw.client_id)
+                .single();
+
+              setActiveLeadClient(clientData || { name: 'Cliente Geral' });
+              setActiveLeadNotif(decryptedLead);
+            } catch (e) {
+              console.error('Erro ao processar nova notificação de lead:', e);
+            }
+          }
+        );
+      
+      lChannel.subscribe();
+      leadsChannel = lChannel;
     };
 
     const fetchProfileInBackground = async (email: string) => {
@@ -174,6 +228,9 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
       if (activeChannel) {
         activeChannel.unsubscribe();
       }
+      if (leadsChannel) {
+        supabase.removeChannel(leadsChannel);
+      }
     };
   }, []);
 
@@ -203,6 +260,16 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
 
   return (
     <div className={styles.layoutWrapper}>
+      {activeLeadNotif && (
+        <FunnyLeadModal 
+          lead={activeLeadNotif} 
+          client={activeLeadClient} 
+          onClose={() => {
+            setActiveLeadNotif(null);
+            setActiveLeadClient(null);
+          }} 
+        />
+      )}
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
