@@ -91,10 +91,14 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
     setMessage(randomMsg);
 
     // Tocar o efeito sonoro do tema correspondente
-    const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
-    if (isSoundEnabled) {
+    try {
       const audio = new Audio(chosenTheme.soundUrl);
-      audio.play().catch(() => {});
+      audio.volume = 0.8;
+      audio.play().catch((err) => {
+        console.warn("Erro ao reproduzir som do modal (Autoplay restrito):", err);
+      });
+    } catch (e) {
+      console.error("Falha ao inicializar áudio:", e);
     }
 
     // Gerar confete de emojis
