@@ -12,9 +12,9 @@ interface FunnyLeadModalProps {
 
 interface ThemeConfig {
   name: string;
-  badge: string;
+  badge?: string;
   emoji: string;
-  title: string;
+  title?: string;
   messages: string[];
   emojis: string[];
   soundUrl: string;
@@ -23,9 +23,7 @@ interface ThemeConfig {
 const THEMES: Record<string, ThemeConfig> = {
   pix: {
     name: 'pix',
-    badge: '',
     emoji: '🤑',
-    title: '',
     messages: [
       'Entrou um lead fresquinho! Corre para garantir essa comissão!',
       'Alerta de Pix em potencial! Não deixa esse cliente esfriar!',
@@ -71,6 +69,12 @@ function hexToRgb(hex: string) {
 }
 
 export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModalProps) {
+  const onCloseRef = React.useRef(onClose);
+  
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   const [theme, setTheme] = useState<ThemeConfig>(THEMES.pix);
   const [message, setMessage] = useState('');
   const [particles, setParticles] = useState<Array<{ id: number; left: number; emoji: string; delay: number; duration: number; size: number }>>([]);
@@ -110,13 +114,13 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
 
     // Fechar automaticamente após 5 segundos
     const timer = setTimeout(() => {
-      onClose();
+      onCloseRef.current();
     }, 5000);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [lead, onClose]);
+  }, [lead]);
 
   if (!lead) return null;
 
@@ -195,7 +199,6 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
         <div className={styles.themeHeader}>
           {theme.badge && (
             <div className={styles.themeBadge}>
-              {theme.name === 'pix' && <Sparkles size={14} />}
               {theme.name === 'fbi' && <Zap size={14} />}
               {theme.name === 'panic' && <AlertCircle size={14} />}
               {theme.badge}
