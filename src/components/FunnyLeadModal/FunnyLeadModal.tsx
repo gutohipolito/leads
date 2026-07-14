@@ -23,9 +23,9 @@ interface ThemeConfig {
 const THEMES: Record<string, ThemeConfig> = {
   pix: {
     name: 'pix',
-    badge: 'Chuva de Capimuni 💸',
+    badge: '',
     emoji: '🤑',
-    title: 'VAI QUE É TUA, RICA VÍRUS!',
+    title: '',
     messages: [
       'Entrou um lead fresquinho! Corre para garantir essa comissão!',
       'Alerta de Pix em potencial! Não deixa esse cliente esfriar!',
@@ -107,7 +107,16 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
       });
     }
     setParticles(tempParticles);
-  }, [lead]);
+
+    // Fechar automaticamente após 5 segundos
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [lead, onClose]);
 
   if (!lead) return null;
 
@@ -184,16 +193,18 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
 
       <div className={getContainerClass()} style={containerStyle}>
         <div className={styles.themeHeader}>
-          <div className={styles.themeBadge}>
-            {theme.name === 'pix' && <Sparkles size={14} />}
-            {theme.name === 'fbi' && <Zap size={14} />}
-            {theme.name === 'panic' && <AlertCircle size={14} />}
-            {theme.badge}
-          </div>
+          {theme.badge && (
+            <div className={styles.themeBadge}>
+              {theme.name === 'pix' && <Sparkles size={14} />}
+              {theme.name === 'fbi' && <Zap size={14} />}
+              {theme.name === 'panic' && <AlertCircle size={14} />}
+              {theme.badge}
+            </div>
+          )}
           <span className={theme.name === 'fbi' ? styles.fbiEmoji : styles.mainEmoji}>
             {theme.emoji}
           </span>
-          <h2 className={styles.title}>{theme.title}</h2>
+          {theme.title && <h2 className={styles.title}>{theme.title}</h2>}
         </div>
 
         {/* Informações do Cliente parceiro */}
