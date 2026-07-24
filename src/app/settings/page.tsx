@@ -32,6 +32,7 @@ import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'next/navigation';
 
 const soundsList = [
+  { id: 'animewow', name: 'Efeito WOW (Anime WOW)', url: '/anime-wow-sound-effect-mp3cut.mp3' },
   { id: 'bubble', name: 'Sinal Suave (Bubble)', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
   { id: 'digital', name: 'Bip Digital (Click)', url: 'https://assets.mixkit.co/active_storage/sfx/911/911-preview.mp3' },
   { id: 'chime', name: 'Sino Moderno (Chime)', url: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3' },
@@ -332,7 +333,7 @@ export default function SettingsPage() {
     setIsSoundModalOpen(false);
     
     if (pendingSound) {
-      const savedUrl = localStorage.getItem('asthros-sound-url') || 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+      const savedUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
       const audio = new Audio(savedUrl);
       audio.play().catch(() => {});
     }

@@ -97,25 +97,8 @@ export default function LiveMonitorPage() {
     const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
     if (!isSoundEnabled) return;
 
-    const customSoundUrl = localStorage.getItem('asthros-sound-url');
-    if (customSoundUrl) {
-      new Audio(customSoundUrl).play().catch(() => {});
-      return;
-    }
-
-    const sounds = [
-      'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
-      'https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3',
-      'https://assets.mixkit.co/active_storage/sfx/2867/2867-preview.mp3',
-      'https://assets.mixkit.co/active_storage/sfx/2866/2866-preview.mp3',
-      'https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3'
-    ];
-    let hash = 0;
-    for (let i = 0; i < clientId.length; i++) {
-      hash = clientId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % sounds.length;
-    new Audio(sounds[index]).play().catch(() => {});
+    const customSoundUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
+    new Audio(customSoundUrl).play().catch(() => {});
   };
 
   const triggerCelebration = (lead: any) => {

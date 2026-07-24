@@ -182,7 +182,7 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
 
               const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
               if (isSoundEnabled) {
-                const savedUrl = localStorage.getItem('asthros-sound-url') || 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+                const savedUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
                 const audio = new Audio(savedUrl);
                 audio.play().catch(() => {});
               }

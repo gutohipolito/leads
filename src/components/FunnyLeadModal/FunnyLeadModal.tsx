@@ -1,64 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ExternalLink, MessageSquare, AlertCircle, Sparkles, Check, Zap } from 'lucide-react';
+import { ExternalLink, MessageSquare, Phone, Mail, Sparkles, X, UserCheck, Clock, ArrowRight } from 'lucide-react';
 import styles from './FunnyLeadModal.module.css';
 
-interface FunnyLeadModalProps {
+interface LeadModalProps {
   lead: any;
   client: any;
   onClose: () => void;
 }
-
-interface ThemeConfig {
-  name: string;
-  badge?: string;
-  emoji: string;
-  title?: string;
-  messages: string[];
-  emojis: string[];
-  soundUrl: string;
-}
-
-const THEMES: Record<string, ThemeConfig> = {
-  pix: {
-    name: 'pix',
-    emoji: '🤑',
-    messages: [
-      'Entrou um lead fresquinho! Corre para garantir essa comissão!',
-      'Alerta de Pix em potencial! Não deixa esse cliente esfriar!',
-      'Dinheiro na mesa! O comercial que lute, mas esse lead é ouro!'
-    ],
-    emojis: ['💸', '💰', '🤑', '💎', '📈', '✨'],
-    soundUrl: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3' // Cash register
-  },
-  fbi: {
-    name: 'fbi',
-    badge: 'ALERTA MÁXIMO 🚨',
-    emoji: '🚨',
-    title: 'HUMANO DETECTADO NA ÁREA!',
-    messages: [
-      'Isso NÃO é um treinamento! Um lead real acabou de morder a isca!',
-      'Mãos no teclado! O espécime está pronto para ser abordado!',
-      'Detectamos atividade humana de altíssimo interesse comercial!'
-    ],
-    emojis: ['🚨', '🕵️‍♂️', '🛸', '🛰️', '📡', '⚠️'],
-    soundUrl: 'https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3' // Sci-Fi Alarm
-  },
-  panic: {
-    name: 'panic',
-    badge: 'Desespero Comercial 🏃‍♂️',
-    emoji: '🏃‍♂️',
-    title: 'CORRE QUE O LEAD TÁ FUGINDO!',
-    messages: [
-      'Rápido, mande mensagem antes que ele desista e vá ver TikTok!',
-      'Atenção operador, o lead está esfriando a cada segundo! AGILIZA!',
-      'Não durma no ponto! Tem um cliente querendo atenção agora mesmo!'
-    ],
-    emojis: ['🏃‍♂️', '🔥', '⏰', '⚡', '💣', '🐱'],
-    soundUrl: 'https://assets.mixkit.co/active_storage/sfx/1344/1344-preview.mp3' // Boing/Slip
-  }
-};
 
 function hexToRgb(hex: string) {
   if (!hex) return '168, 85, 247';
@@ -68,31 +18,19 @@ function hexToRgb(hex: string) {
   return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '168, 85, 247';
 }
 
-export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModalProps) {
+export default function FunnyLeadModal({ lead, client, onClose }: LeadModalProps) {
   const onCloseRef = React.useRef(onClose);
   
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  const [theme, setTheme] = useState<ThemeConfig>(THEMES.pix);
-  const [message, setMessage] = useState('');
-  const [particles, setParticles] = useState<Array<{ id: number; left: number; emoji: string; delay: number; duration: number; size: number }>>([]);
+  const [particles, setParticles] = useState<Array<{ id: number; left: number; symbol: string; delay: number; duration: number; size: number }>>([]);
 
   useEffect(() => {
-    // Escolhe um tema aleatório ao abrir
-    const themeKeys = Object.keys(THEMES);
-    const randomKey = themeKeys[Math.floor(Math.random() * themeKeys.length)];
-    const chosenTheme = THEMES[randomKey];
-    setTheme(chosenTheme);
-
-    // Escolhe uma mensagem aleatória
-    const randomMsg = chosenTheme.messages[Math.floor(Math.random() * chosenTheme.messages.length)];
-    setMessage(randomMsg);
-
-    // Tocar o efeito sonoro do tema correspondente
+    // Tocar o efeito sonoro anime-wow do lead
     try {
-      const audio = new Audio(chosenTheme.soundUrl);
+      const audio = new Audio('/anime-wow-sound-effect-mp3cut.mp3');
       audio.volume = 0.8;
       audio.play().catch((err) => {
         console.warn("Erro ao reproduzir som do modal (Autoplay restrito):", err);
@@ -101,25 +39,26 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
       console.error("Falha ao inicializar áudio:", e);
     }
 
-    // Gerar confete de emojis
+    // Gerar partículas elegantes de brilho de fundo
+    const sparkSymbols = ['✨', '✦', '⚡', '💫', '🌟'];
     const tempParticles = [];
-    for (let i = 0; i < 25; i++) {
-      const randomEmoji = chosenTheme.emojis[Math.floor(Math.random() * chosenTheme.emojis.length)];
+    for (let i = 0; i < 20; i++) {
+      const randomSymbol = sparkSymbols[Math.floor(Math.random() * sparkSymbols.length)];
       tempParticles.push({
         id: i,
-        left: Math.random() * 100, // porcentagem da largura da tela
-        emoji: randomEmoji,
-        delay: Math.random() * 2, // segundos de delay
-        duration: 3 + Math.random() * 3, // segundos de queda
-        size: 1.2 + Math.random() * 1.5 // tamanho do emoji em rem
+        left: Math.random() * 100,
+        symbol: randomSymbol,
+        delay: Math.random() * 2,
+        duration: 3 + Math.random() * 3,
+        size: 0.9 + Math.random() * 1.2
       });
     }
     setParticles(tempParticles);
 
-    // Fechar automaticamente após 5 segundos
+    // Fechar automaticamente após 6 segundos
     const timer = setTimeout(() => {
       onCloseRef.current();
-    }, 5000);
+    }, 6000);
 
     return () => {
       clearTimeout(timer);
@@ -128,14 +67,23 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
 
   if (!lead) return null;
 
+  // Extrai informações do lead
+  const getPhone = () => {
+    return lead.phone || lead.data?.phone || lead.data?.fields?.phone || lead.data?.behavior?.whatsapp || null;
+  };
+
+  const getEmail = () => {
+    return lead.email || lead.data?.email || lead.data?.fields?.email || null;
+  };
+
   // Formata o link do WhatsApp se houver telefone
   const getWhatsAppLink = () => {
-    const phone = lead.phone || lead.data?.phone || lead.data?.fields?.phone || lead.data?.behavior?.whatsapp;
+    const phone = getPhone();
     if (!phone) return null;
     const cleanPhone = String(phone).replace(/\D/g, '');
     if (!cleanPhone) return null;
     const finalPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
-    const msg = encodeURIComponent(`Olá ${lead.name || ''}, como posso te ajudar?`);
+    const msg = encodeURIComponent(`Olá ${lead.name || ''}, vi seu interesse! Como posso te ajudar?`);
     return `https://wa.me/${finalPhone}?text=${msg}`;
   };
 
@@ -146,11 +94,13 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
       const matchType = lead.data?.behavior?.match_type || lead.data?.match_type || lead.name;
       if (String(matchType).toLowerCase().includes('selector')) return 'Seletor Personalizado';
       if (String(matchType).toLowerCase().includes('keyword')) return 'Palavra-Chave';
-      return 'Botão de Clique';
+      return 'Clique no Botão';
     }
     return 'Formulário / Integração';
   };
 
+  const phone = getPhone();
+  const email = getEmail();
   const waLink = getWhatsAppLink();
   const clientColor = client?.primary_color || '#a855f7';
   const clientColorRgb = hexToRgb(clientColor);
@@ -164,25 +114,14 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
     if (waLink) {
       window.open(waLink, '_blank');
     } else {
-      // Redireciona para a página de leads
       window.location.href = `/leads?search=${encodeURIComponent(lead.name || '')}`;
     }
     onClose();
   };
 
-  const getOverlayClass = () => {
-    if (theme.name === 'fbi') return styles.overlayFbi;
-    return styles.overlay;
-  };
-
-  const getContainerClass = () => {
-    if (theme.name === 'panic') return styles.modalContainerShake;
-    return styles.modalContainer;
-  };
-
   return (
-    <div className={getOverlayClass()}>
-      {/* Raining particles */}
+    <div className={styles.overlay}>
+      {/* Efeito de partículas/brilhos suaves no fundo */}
       {particles.map(p => (
         <span
           key={p.id}
@@ -192,51 +131,69 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,
             fontSize: `${p.size}rem`,
-            top: '-50px'
+            top: '-40px'
           }}
         >
-          {p.emoji}
+          {p.symbol}
         </span>
       ))}
 
-      <div className={getContainerClass()} style={containerStyle}>
-        <div className={styles.themeHeader}>
-          {theme.badge && (
-            <div className={styles.themeBadge}>
-              {theme.name === 'fbi' && <Zap size={14} />}
-              {theme.name === 'panic' && <AlertCircle size={14} />}
-              {theme.badge}
-            </div>
-          )}
-          <span className={theme.name === 'fbi' ? styles.fbiEmoji : styles.mainEmoji}>
-            {theme.emoji}
-          </span>
-          {theme.title && <h2 className={styles.title}>{theme.title}</h2>}
+      <div className={styles.modalContainer} style={containerStyle}>
+        {/* Botão fechar no topo */}
+        <button className={styles.closeIconButton} onClick={onClose} title="Fechar">
+          <X size={18} />
+        </button>
+
+        {/* Badges e Título Superior */}
+        <div className={styles.headerSection}>
+          <div className={styles.liveBadge}>
+            <span className={styles.liveDot} />
+            <span>NOVO LEAD DETECTADO</span>
+          </div>
+          <h2 className={styles.title}>Captura em Tempo Real</h2>
         </div>
 
-        {/* Informações do Cliente parceiro */}
-        <div className={styles.clientContainer}>
-          {client?.logo_url ? (
-            <img src={client.logo_url} alt={client.name} className={styles.clientLogo} />
-          ) : (
-            <div className={styles.clientLogoPlaceholder}>
-              {client?.name ? client.name.substring(0, 2).toUpperCase() : 'PT'}
+        {/* Detalhes do Lead (Clean & Profissional) */}
+        <div className={styles.leadCardBody}>
+          <div className={styles.leadAvatarRow}>
+            <div className={styles.leadAvatarIcon}>
+              <UserCheck size={24} />
             </div>
-          )}
-          <div className={styles.clientMeta}>
-            <span className={styles.clientLabel}>Parceiro</span>
-            <span className={styles.clientName}>{client?.name || 'Cliente Geral'}</span>
+            <div className={styles.leadTitleGroup}>
+              <h3 className={styles.leadName}>{lead.name || 'Lead sem Nome'}</h3>
+              {client?.name && (
+                <span className={styles.clientMetaText}>
+                  Parceiro: <strong>{client.name}</strong>
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Detalhes do Lead */}
-        <div className={styles.leadDetails}>
-          <h3 className={styles.leadName}>{lead.name || 'Sem Nome'}</h3>
-          <div className={styles.leadSource}>
-            <span className={styles.sourceDot} />
-            {getSourceLabel()}
+          <div className={styles.detailsGrid}>
+            {phone && (
+              <div className={styles.detailRow}>
+                <Phone size={15} className={styles.detailIcon} />
+                <span className={styles.detailValue}>{phone}</span>
+              </div>
+            )}
+            {email && (
+              <div className={styles.detailRow}>
+                <Mail size={15} className={styles.detailIcon} />
+                <span className={styles.detailValue}>{email}</span>
+              </div>
+            )}
           </div>
-          <p className={styles.funnyMessage}>"{message}"</p>
+
+          <div className={styles.leadFooterMeta}>
+            <div className={styles.sourceBadge}>
+              <span className={styles.sourceDot} />
+              <span>{getSourceLabel()}</span>
+            </div>
+            <div className={styles.timeTag}>
+              <Clock size={13} />
+              <span>Agora mesmo</span>
+            </div>
+          </div>
         </div>
 
         {/* Ações */}
@@ -245,7 +202,7 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
             {waLink ? (
               <>
                 <MessageSquare size={18} />
-                <span>Chamar no WhatsApp!</span>
+                <span>Chamar no WhatsApp</span>
               </>
             ) : (
               <>
@@ -255,7 +212,7 @@ export default function FunnyLeadModal({ lead, client, onClose }: FunnyLeadModal
             )}
           </button>
           <button className={styles.secondaryBtn} onClick={onClose}>
-            Dispensar (Vou deixar ele fugir...)
+            Fechar
           </button>
         </div>
       </div>
