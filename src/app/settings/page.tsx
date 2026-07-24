@@ -50,7 +50,7 @@ export default function SettingsPage() {
   
   const [newName, setNewName] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [soundType, setSoundType] = useState('bubble');
+  const [soundType, setSoundType] = useState('animewow');
   const [isSoundModalOpen, setIsSoundModalOpen] = useState(false);
   const [pendingSound, setPendingSound] = useState(true);
   const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
@@ -150,8 +150,14 @@ export default function SettingsPage() {
       const savedSound = localStorage.getItem('asthros-sound-enabled');
       setSoundEnabled(savedSound === null ? true : savedSound === 'true');
       
-      const savedSoundType = localStorage.getItem('asthros-sound-type') || 'bubble';
-      setSoundType(savedSoundType);
+      const savedSoundType = localStorage.getItem('asthros-sound-type');
+      if (!savedSoundType || savedSoundType === 'bubble' || localStorage.getItem('asthros-sound-url')?.includes('mixkit.co')) {
+        localStorage.setItem('asthros-sound-type', 'animewow');
+        localStorage.setItem('asthros-sound-url', '/anime-wow-sound-effect-mp3cut.mp3');
+        setSoundType('animewow');
+      } else {
+        setSoundType(savedSoundType);
+      }
     }
   }, [router]);
 
