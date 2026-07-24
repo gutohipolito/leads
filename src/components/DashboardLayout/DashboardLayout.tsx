@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import Loader from '../Loader/Loader';
 import { decryptLead, fetchEncryptionKey } from '@/utils/frontendEncryption';
 import FunnyLeadModal from '../FunnyLeadModal/FunnyLeadModal';
+import { primeAudio } from '@/utils/audio';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -259,7 +260,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   }
 
   return (
-    <div className={styles.layoutWrapper}>
+    <div className={styles.layoutWrapper} onPointerDown={primeAudio}>
       {activeLeadNotif && (
         <FunnyLeadModal 
           lead={activeLeadNotif} 

@@ -1,103 +1,107 @@
 /**
- * Utilitário robusto para tocar áudio de notificação de novos leads.
- * Utiliza um elemento de áudio compartilhado (Singleton) desbloqueado no primeiro clique/toque,
- * evita colisões de som simultâneos (debouncing) e contorna bloqueios de Autoplay dos navegadores.
+ * Utilitário de áudio para notificações de novos leads.
+ *
+ * ESTRATÉGIA:
+ * A Política de Autoplay dos navegadores modernos bloqueia o `.play()` em
+ * elementos de áudio criados fora de uma interação do usuário (clique/toque).
+ * A solução é pré-carregar o arquivo de som NO MOMENTO do primeiro clique
+ * (criando e pausando o elemento nessa interação), então simplesmente chamar
+ * `.play()` mais tarde — o navegador reconhece o elemento como "autorizado".
  */
 
-let sharedAudio: HTMLAudioElement | null = null;
-let isUnlocked = false;
+const SOUND_URL = '/anime-wow-sound-effect-mp3cut.mp3';
+
+// Elemento singleton pré-carregado e autorizado pelo navegador
+let preloadedAudio: HTMLAudioElement | null = null;
 let lastPlayTimestamp = 0;
 
-function getSharedAudio(): HTMLAudioElement | null {
-  if (typeof window === 'undefined') return null;
-  if (!sharedAudio) {
-    sharedAudio = new Audio();
-    sharedAudio.volume = 1.0;
-  }
-  return sharedAudio;
+function getAbsoluteUrl(url: string): string {
+  if (typeof window === 'undefined') return url;
+  return url.startsWith('/') ? window.location.origin + url : url;
 }
 
-// Desbloqueia o elemento de áudio compartilhado na primeira interação do usuário na página
-if (typeof window !== 'undefined') {
-  const unlock = () => {
-    const audio = getSharedAudio();
-    if (audio && !isUnlocked) {
-      try {
-        audio.src = window.location.origin + '/anime-wow-sound-effect-mp3cut.mp3';
-        audio.volume = 0.001; // Praticamente inaudível no desbloqueio
-        const p = audio.play();
-        if (p !== undefined) {
-          p.then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.volume = 1.0;
-            isUnlocked = true;
-          }).catch(() => {});
-        }
-      } catch (e) {}
-    }
-    window.removeEventListener('click', unlock);
-    window.removeEventListener('keydown', unlock);
-    window.removeEventListener('touchstart', unlock);
-  };
+function resolveTargetUrl(): string {
+  const saved = typeof window !== 'undefined'
+    ? localStorage.getItem('asthros-sound-url')
+    : null;
 
-  window.addEventListener('click', unlock, { once: true });
-  window.addEventListener('keydown', unlock, { once: true });
-  window.addEventListener('touchstart', unlock, { once: true });
-}
-
-export function playBoostedAudio(soundUrl?: string, gainMultiplier: number = 3.5) {
-  if (typeof window === 'undefined') return;
-
-  // Evita disparar múltiplos sons idênticos simultaneamente (debouncing de 600ms)
-  const now = Date.now();
-  if (now - lastPlayTimestamp < 600) {
-    return;
-  }
-  lastPlayTimestamp = now;
-
-  try {
-    const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
-    if (!isSoundEnabled) return;
-
-    let targetUrl = soundUrl;
-    const savedUrl = localStorage.getItem('asthros-sound-url');
-
-    // Auto-migração: se for o link antigo mixkit.co ou nulo, migra para o Anime WOW
-    if (!targetUrl || targetUrl.includes('mixkit.co') || (savedUrl && savedUrl.includes('mixkit.co'))) {
-      targetUrl = '/anime-wow-sound-effect-mp3cut.mp3';
-      localStorage.setItem('asthros-sound-url', '/anime-wow-sound-effect-mp3cut.mp3');
+  // Se o som salvo for o antigo mixkit, ignora e usa o Anime WOW
+  if (!saved || saved.includes('mixkit.co')) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('asthros-sound-url', SOUND_URL);
       localStorage.setItem('asthros-sound-type', 'animewow');
     }
+    return getAbsoluteUrl(SOUND_URL);
+  }
 
-    if (!targetUrl) {
-      targetUrl = savedUrl || '/anime-wow-sound-effect-mp3cut.mp3';
-    }
+  return getAbsoluteUrl(saved);
+}
 
-    if (targetUrl.startsWith('/')) {
-      targetUrl = window.location.origin + targetUrl;
-    }
+/**
+ * Pré-carrega e autoriza o elemento de áudio.
+ * Deve ser chamado durante uma interação do usuário (clique, toque, tecla).
+ */
+export function primeAudio() {
+  if (typeof window === 'undefined') return;
+  if (preloadedAudio) return; // já pronto
 
-    const audio = getSharedAudio();
-    if (audio) {
-      audio.src = targetUrl;
+  const url = resolveTargetUrl();
+  const audio = new Audio(url);
+  audio.volume = 0.001; // quase inaudível, só para obter autorização do navegador
+
+  const p = audio.play();
+  if (p !== undefined) {
+    p.then(() => {
+      audio.pause();
       audio.currentTime = 0;
       audio.volume = 1.0;
-      
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn("Aviso de Autoplay do navegador (requer clique prévio na tela):", err);
-          // Fallback para novo elemento caso o singleton falhe
-          try {
-            const fallback = new Audio(targetUrl);
-            fallback.volume = 1.0;
-            fallback.play().catch(() => {});
-          } catch (e) {}
-        });
-      }
-    }
-  } catch (err) {
-    console.error('Erro ao tocar áudio de notificação:', err);
+      preloadedAudio = audio; // armazena o elemento já autorizado
+    }).catch(() => {
+      // se falhar mesmo assim, guarda o elemento para tentar depois
+      preloadedAudio = audio;
+    });
+  } else {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = 1.0;
+    preloadedAudio = audio;
+  }
+}
+
+/**
+ * Toca o áudio de notificação de novo lead.
+ * Se o elemento já foi pré-autorizado (primeAudio foi chamado), toca imediatamente.
+ * Caso contrário, tenta criar um novo elemento (pode ser bloqueado pelo navegador).
+ */
+export function playBoostedAudio(_soundUrl?: string, _gainMultiplier: number = 3.5) {
+  if (typeof window === 'undefined') return;
+
+  const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
+  if (!isSoundEnabled) return;
+
+  // Debouncing: evita disparar o mesmo som múltiplas vezes em < 800ms
+  const now = Date.now();
+  if (now - lastPlayTimestamp < 800) return;
+  lastPlayTimestamp = now;
+
+  const url = resolveTargetUrl();
+
+  if (preloadedAudio) {
+    // Caminho ideal: element já autorizado, só reinicia e toca
+    preloadedAudio.src = url;
+    preloadedAudio.currentTime = 0;
+    preloadedAudio.volume = 1.0;
+    preloadedAudio.play().catch(() => {
+      // último recurso
+      const fallback = new Audio(url);
+      fallback.volume = 1.0;
+      fallback.play().catch(() => {});
+    });
+  } else {
+    // Elemento ainda não pré-carregado (usuário não clicou antes)
+    // Tenta tocar direto — pode ser bloqueado, mas é o melhor que se pode fazer
+    const audio = new Audio(url);
+    audio.volume = 1.0;
+    audio.play().catch(() => {});
   }
 }
