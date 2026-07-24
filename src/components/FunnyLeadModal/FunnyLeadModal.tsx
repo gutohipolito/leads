@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ExternalLink, MessageSquare, Phone, Mail, Sparkles, X, UserCheck, Clock, ArrowRight } from 'lucide-react';
 import styles from './FunnyLeadModal.module.css';
+import { playBoostedAudio } from '@/utils/audio';
 
 interface LeadModalProps {
   lead: any;
@@ -28,16 +29,8 @@ export default function FunnyLeadModal({ lead, client, onClose }: LeadModalProps
   const [particles, setParticles] = useState<Array<{ id: number; left: number; symbol: string; delay: number; duration: number; size: number }>>([]);
 
   useEffect(() => {
-    // Tocar o efeito sonoro anime-wow do lead
-    try {
-      const audio = new Audio('/anime-wow-sound-effect-mp3cut.mp3');
-      audio.volume = 0.8;
-      audio.play().catch((err) => {
-        console.warn("Erro ao reproduzir som do modal (Autoplay restrito):", err);
-      });
-    } catch (e) {
-      console.error("Falha ao inicializar áudio:", e);
-    }
+    // Tocar o efeito sonoro anime-wow do lead com volume amplificado
+    playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5);
 
     // Gerar partículas elegantes de brilho de fundo
     const sparkSymbols = ['✨', '✦', '⚡', '💫', '🌟'];

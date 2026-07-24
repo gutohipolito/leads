@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'next/navigation';
+import { playBoostedAudio } from '@/utils/audio';
 
 const soundsList = [
   { id: 'animewow', name: 'Efeito WOW (Anime WOW)', url: '/anime-wow-sound-effect-mp3cut.mp3' },
@@ -334,8 +335,7 @@ export default function SettingsPage() {
     
     if (pendingSound) {
       const savedUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
-      const audio = new Audio(savedUrl);
-      audio.play().catch(() => {});
+      playBoostedAudio(savedUrl, 3.5);
     }
   };
 
@@ -524,7 +524,7 @@ export default function SettingsPage() {
                             if (selected) {
                               localStorage.setItem('asthros-sound-type', selected.id);
                               localStorage.setItem('asthros-sound-url', selected.url);
-                              new Audio(selected.url).play().catch(() => {});
+                              playBoostedAudio(selected.url, 3.5);
                             }
                           }}
                         >
@@ -538,7 +538,7 @@ export default function SettingsPage() {
                           onClick={() => {
                             const selected = soundsList.find(s => s.id === soundType);
                             if (selected) {
-                              new Audio(selected.url).play().catch(() => {});
+                              playBoostedAudio(selected.url, 3.5);
                             }
                           }}
                         >

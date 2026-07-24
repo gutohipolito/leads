@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './live.module.css';
+import { playBoostedAudio } from '@/utils/audio';
 import { 
   Database, 
   Zap, 
@@ -98,7 +99,7 @@ export default function LiveMonitorPage() {
     if (!isSoundEnabled) return;
 
     const customSoundUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
-    new Audio(customSoundUrl).play().catch(() => {});
+    playBoostedAudio(customSoundUrl, 3.5);
   };
 
   const triggerCelebration = (lead: any) => {
