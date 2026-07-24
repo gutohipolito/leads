@@ -113,7 +113,7 @@ export default function FunnyLeadModal({ lead, client, onClose }: LeadModalProps
   };
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.overlay} onClick={() => playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5)}>
       {/* Efeito de partículas/brilhos suaves no fundo */}
       {particles.map(p => (
         <span
