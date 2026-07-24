@@ -6,7 +6,6 @@ import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, Che
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
-import { playBoostedAudio } from '@/utils/audio';
 
 interface HeaderProps {
   title: React.ReactNode;
@@ -180,12 +179,6 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
               });
               
               setUnreadCount(prev => prev + 1);
-
-              const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
-              if (isSoundEnabled) {
-                const savedUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
-                playBoostedAudio(savedUrl, 3.5);
-              }
 
               const saved = localStorage.getItem('push_notifications_enabled');
               const pushPref = saved === null ? true : saved === 'true';

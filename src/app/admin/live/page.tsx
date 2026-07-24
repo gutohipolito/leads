@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './live.module.css';
-import { playBoostedAudio } from '@/utils/audio';
 import { 
   Database, 
   Zap, 
@@ -93,14 +92,6 @@ export default function LiveMonitorPage() {
     };
   }, []);
 
-  // Som de notificação
-  const playNotificationSound = (clientId: string) => {
-    const isSoundEnabled = localStorage.getItem('asthros-sound-enabled') !== 'false';
-    if (!isSoundEnabled) return;
-
-    const customSoundUrl = localStorage.getItem('asthros-sound-url') || '/anime-wow-sound-effect-mp3cut.mp3';
-    playBoostedAudio(customSoundUrl, 3.5);
-  };
 
   const triggerCelebration = (lead: any) => {
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
@@ -220,7 +211,6 @@ export default function LiveMonitorPage() {
           });
 
           triggerCelebration(tempLead);
-          playNotificationSound(newLeadData.client_id);
 
           const { data: client } = await supabase.from('clients').select('name, primary_color, logo_url').eq('id', newLeadData.client_id).single();
           if (client) {
