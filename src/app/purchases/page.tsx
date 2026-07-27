@@ -16,7 +16,18 @@ import {
   X,
   Package,
   Store,
-  Filter
+  Sparkles,
+  User,
+  Mail,
+  Receipt,
+  Tag,
+  CreditCard,
+  ExternalLink,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Play
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -40,7 +51,7 @@ export default function PurchasesPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        // Verificar perfil e permissões do usuário
+        // Verificar perfil do usuário
         const { data: profile } = await supabase
           .from('system_users')
           .select('*')
@@ -68,11 +79,9 @@ export default function PurchasesPage() {
         const { data: whData } = await whQuery;
         if (whData && whData.length > 0) {
           setWebhooksList(whData);
-          // Selecionar o primeiro webhook por padrão se houver
-          setSelectedWebhookId(whData[0].id);
         }
 
-        // 2. Buscar vendas gravadas
+        // 2. Buscar vendas no Supabase
         let pQuery = supabase
           .from('purchases')
           .select('*')
@@ -97,7 +106,7 @@ export default function PurchasesPage() {
     loadData();
   }, []);
 
-  // Inscrição Realtime no Supabase para receber compras em tempo real
+  // Realtime Supabase Subscription
   useEffect(() => {
     const channel = supabase
       .channel('purchases-realtime')
@@ -116,13 +125,13 @@ export default function PurchasesPage() {
     };
   }, []);
 
-  // Webhook atualmente selecionado no dropdown
+  // Webhook selecionado
   const currentWebhook = useMemo(() => {
-    if (selectedWebhookId === 'all') return webhooksList[0] || null;
+    if (selectedWebhookId === 'all') return null;
     return webhooksList.find((w) => w.id === selectedWebhookId) || null;
   }, [selectedWebhookId, webhooksList]);
 
-  // URL do Webhook calculada para o selecionado
+  // URL do Webhook calculada (apenas para webhook selecionado)
   const webhookUrl = useMemo(() => {
     if (typeof window === 'undefined' || !currentWebhook) return '';
     const origin = window.location.origin;
@@ -137,12 +146,39 @@ export default function PurchasesPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Filtragem de compras por webhook, pesquisa, gateway e status
+  // Botão de Simulação de Venda de Teste
+  const handleSimulateTestOrder = () => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const mockOrder = {
+      id: `test-${Date.now()}`,
+      order_id: `YAMPI-${randomNum}`,
+      gateway: 'yampi',
+      customer_name: 'Ana Clara Silva',
+      customer_email: 'ana.clara@exemplo.com.br',
+      visitor_id: 'v_asthros_98f21a7c',
+      total_amount: 389.70,
+      status: 'approved',
+      currency: 'BRL',
+      items: [
+        { name: 'Kit SkinCare Glow Premium', quantity: 2, price: 149.90 },
+        { name: 'Sérum Facial Hialurônico 30ml', quantity: 1, price: 89.90 }
+      ],
+      utm_source: 'instagram_ads',
+      utm_medium: 'cpc',
+      utm_campaign: 'campanha_verao_2026',
+      created_at: new Date().toISOString()
+    };
+
+    // Adiciona na lista temporária e abre o modal imediatamente
+    setPurchases((prev) => [mockOrder, ...prev]);
+    setSelectedOrder(mockOrder);
+  };
+
+  // Filtragem de compras
   const filteredPurchases = useMemo(() => {
     return purchases.filter((item) => {
-      // Filtrar por Webhook se um específico estiver selecionado
       if (selectedWebhookId !== 'all' && currentWebhook) {
-        if (item.client_id !== currentWebhook.client_id) return false;
+        if (item.client_id && item.client_id !== currentWebhook.client_id) return false;
       }
 
       const matchSearch =
@@ -158,9 +194,9 @@ export default function PurchasesPage() {
     });
   }, [purchases, selectedWebhookId, currentWebhook, searchTerm, gatewayFilter, statusFilter]);
 
-  // Cálculo de KPIs
+  // KPIs
   const metrics = useMemo(() => {
-    const approved = filteredPurchases.filter((p) => p.status === 'approved');
+    const approved = filteredPurchases.filter((p) => p.status === 'approved' || p.status === 'paid');
     const totalRevenue = approved.reduce((acc, p) => acc + (parseFloat(p.total_amount) || 0), 0);
     const avgTicket = approved.length > 0 ? totalRevenue / approved.length : 0;
     const approvalRate = filteredPurchases.length > 0 ? (approved.length / filteredPurchases.length) * 100 : 0;
@@ -191,6 +227,13 @@ export default function PurchasesPage() {
     return <span className={styles.statusCanceled}>Cancelado</span>;
   };
 
+  const getCustomerInitials = (name: string) => {
+    if (!name) return 'C';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return parts[0][0].toUpperCase();
+  };
+
   return (
     <DashboardLayout title="Gestão de Vendas & Conversões">
       <div className={styles.container}>
@@ -205,6 +248,11 @@ export default function PurchasesPage() {
               Acompanhe faturamento, pedidos e integre seu checkout (Yampi, Shopify) via Webhook.
             </p>
           </div>
+
+          <button className={styles.testBtn} onClick={handleSimulateTestOrder} title="Testar recibo de venda e modal de e-commerce">
+            <Sparkles size={18} />
+            <span>Simular Venda de Teste</span>
+          </button>
         </div>
 
         {/* Seleção de Webhook & Card de Integração */}
@@ -229,7 +277,8 @@ export default function PurchasesPage() {
             </select>
           </div>
 
-          {currentWebhook ? (
+          {/* Oculta a URL se estiver em "Todas as Lojas" */}
+          {selectedWebhookId !== 'all' && currentWebhook && (
             <div className={styles.urlBox}>
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', display: 'block', marginBottom: '0.2rem' }}>
@@ -241,10 +290,6 @@ export default function PurchasesPage() {
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 <span>{copied ? 'Copiado!' : 'Copiar URL'}</span>
               </button>
-            </div>
-          ) : (
-            <div style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>
-              Nenhum webhook ativo cadastrado. Crie um webhook na aba "Webhooks" para vincular sua loja.
             </div>
           )}
         </div>
@@ -342,7 +387,7 @@ export default function PurchasesPage() {
                   <th>Pedido</th>
                   <th>Gateway</th>
                   <th>Cliente</th>
-                  <th>Valor</th>
+                  <th>Valor Total</th>
                   <th>Status</th>
                   <th>Origem (UTM)</th>
                   <th>Data</th>
@@ -382,10 +427,10 @@ export default function PurchasesPage() {
                       <button
                         className={styles.detailsBtn}
                         onClick={() => setSelectedOrder(item)}
-                        title="Ver Detalhes do Pedido"
+                        title="Ver Recibo do Pedido"
                       >
-                        <Eye size={14} />
-                        <span>Detalhes</span>
+                        <Receipt size={14} />
+                        <span>Recibo</span>
                       </button>
                     </td>
                   </tr>
@@ -395,67 +440,131 @@ export default function PurchasesPage() {
           ) : (
             <div className={styles.emptyState}>
               <ShoppingBag size={48} opacity={0.2} />
-              <h3 style={{ margin: 0 }}>Nenhuma venda registrada para este filtro</h3>
+              <h3 style={{ margin: 0 }}>Nenhuma venda encontrada</h3>
               <p style={{ maxWidth: '420px', fontSize: '0.9rem', margin: 0 }}>
-                Selecione seu webhook acima e cole a URL nas configurações do seu checkout (Yampi / Shopify) para receber pedidos automaticamente.
+                Clique no botão <strong>"Simular Venda de Teste"</strong> no topo para testar a experiência e visualizar o recibo e-commerce!
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Modal de Detalhes do Pedido */}
+      {/* MODAL PREMIUIM E-COMMERCE (RECIBO DE COMPRA) */}
       {selectedOrder && (
         <div className={styles.modalOverlay} onClick={() => setSelectedOrder(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--foreground)' }}>
-                <Package size={20} color="var(--primary)" />
-                Detalhes do Pedido #{selectedOrder.order_id}
-              </h3>
-              <button className={styles.modalClose} onClick={() => setSelectedOrder(null)}>
-                <X size={20} />
+          <div className={styles.ecommerceModal} onClick={(e) => e.stopPropagation()}>
+            {/* Header do Recibo */}
+            <div className={styles.modalReceiptHeader}>
+              <div className={styles.receiptBrand}>
+                <div className={styles.receiptIconBox}>
+                  <Receipt size={24} />
+                </div>
+                <div className={styles.receiptOrderInfo}>
+                  <div className={styles.receiptOrderTitle}>
+                    <span>Pedido #{selectedOrder.order_id}</span>
+                    {getGatewayBadge(selectedOrder.gateway)}
+                  </div>
+                  <span className={styles.receiptOrderDate}>
+                    {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+              </div>
+
+              <button className={styles.modalCloseBtn} onClick={() => setSelectedOrder(null)} aria-label="Fechar">
+                <X size={18} />
               </button>
             </div>
 
-            <div className={styles.modalSection}>
-              <span className={styles.sectionTitle}>Informações do Cliente</span>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem', border: '1px solid var(--border)' }}>
-                <div><strong>Nome:</strong> {selectedOrder.customer_name}</div>
-                <div><strong>E-mail:</strong> {selectedOrder.customer_email || 'N/A'}</div>
-                <div><strong>Visitor ID:</strong> <code style={{ color: '#a7f3d0' }}>{selectedOrder.visitor_id || 'N/A'}</code></div>
-              </div>
-            </div>
-
-            <div className={styles.modalSection}>
-              <span className={styles.sectionTitle}>Resumo da Compra</span>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem', border: '1px solid var(--border)' }}>
-                <div><strong>Gateway:</strong> {selectedOrder.gateway?.toUpperCase()}</div>
-                <div><strong>Status:</strong> {selectedOrder.status}</div>
-                <div><strong>Valor Total:</strong> <span style={{ color: '#2ecc71', fontWeight: 700 }}>{formatCurrency(parseFloat(selectedOrder.total_amount || 0))}</span></div>
-              </div>
-            </div>
-
-            {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 && (
-              <div className={styles.modalSection}>
-                <span className={styles.sectionTitle}>Itens Comprados</span>
-                <div className={styles.itemsList}>
-                  {selectedOrder.items.map((item: any, idx: number) => (
-                    <div key={idx} className={styles.itemRow}>
-                      <span>{item.quantity}x {item.name}</span>
-                      <span style={{ fontWeight: 600 }}>{formatCurrency(parseFloat(item.price || 0))}</span>
-                    </div>
-                  ))}
+            {/* Hero Summary Card */}
+            <div className={styles.heroSummary}>
+              <div>
+                <span className={styles.heroPriceLabel}>Valor Total Pago</span>
+                <div className={styles.heroPriceValue}>
+                  {formatCurrency(parseFloat(selectedOrder.total_amount || 0))}
                 </div>
               </div>
-            )}
 
-            <div className={styles.modalSection}>
-              <span className={styles.sectionTitle}>Atribuição & Marketing</span>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }}>
-                <div><strong>UTM Source:</strong> {selectedOrder.utm_source || 'Direto'}</div>
-                <div><strong>UTM Medium:</strong> {selectedOrder.utm_medium || 'N/A'}</div>
-                <div><strong>UTM Campaign:</strong> {selectedOrder.utm_campaign || 'N/A'}</div>
+              <div className={styles.heroBadges}>
+                {getStatusBadge(selectedOrder.status)}
+                <span className={styles.gatewayBadge} style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
+                  <CreditCard size={12} style={{ marginRight: '0.2rem' }} /> Aprovado
+                </span>
+              </div>
+            </div>
+
+            {/* Card do Cliente */}
+            <div className={styles.customerCard}>
+              <div className={styles.customerAvatar}>
+                {getCustomerInitials(selectedOrder.customer_name)}
+              </div>
+              <div className={styles.customerDetails}>
+                <span className={styles.customerName}>{selectedOrder.customer_name || 'Cliente'}</span>
+                <div className={styles.customerMeta}>
+                  <span><Mail size={12} style={{ marginRight: '0.2rem' }} />{selectedOrder.customer_email || 'E-mail não informado'}</span>
+                  {selectedOrder.visitor_id && (
+                    <span>• VID: <code style={{ color: '#a7f3d0' }}>{selectedOrder.visitor_id}</code></span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de Produtos / Itens Comprados */}
+            <div className={styles.itemsCard}>
+              <div className={styles.itemsHeader}>
+                <span>Produto(s) no Pedido</span>
+                <span>Subtotal</span>
+              </div>
+
+              {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                selectedOrder.items.map((prod: any, idx: number) => (
+                  <div key={idx} className={styles.productRow}>
+                    <div className={styles.productMain}>
+                      <div className={styles.productThumb}>
+                        <Package size={18} />
+                      </div>
+                      <div>
+                        <div className={styles.productName}>{prod.name}</div>
+                        <div className={styles.productQty}>Qtd: {prod.quantity || 1}x</div>
+                      </div>
+                    </div>
+                    <div className={styles.productPrice}>
+                      {formatCurrency(parseFloat(prod.price || 0) * (prod.quantity || 1))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.productRow}>
+                  <div className={styles.productMain}>
+                    <div className={styles.productThumb}><Package size={18} /></div>
+                    <span className={styles.productName}>Pedido de Item Único</span>
+                  </div>
+                  <div className={styles.productPrice}>{formatCurrency(parseFloat(selectedOrder.total_amount || 0))}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Card de Atribuição & Origem */}
+            <div className={styles.attributionCard}>
+              <span className={styles.attrTitle}>
+                <Tag size={14} /> Atribuição & Origem da Compra
+              </span>
+              <div className={styles.attrPillsGroup}>
+                <div className={styles.attrPill}>
+                  <span>Fonte:</span> <strong>{selectedOrder.utm_source || 'Direto'}</strong>
+                </div>
+                {selectedOrder.utm_medium && (
+                  <div className={styles.attrPill}>
+                    <span>Meio:</span> <strong>{selectedOrder.utm_medium}</strong>
+                  </div>
+                )}
+                {selectedOrder.utm_campaign && (
+                  <div className={styles.attrPill}>
+                    <span>Campanha:</span> <strong>{selectedOrder.utm_campaign}</strong>
+                  </div>
+                )}
+                <div className={styles.attrPill}>
+                  <span>Gateway:</span> <strong style={{ textTransform: 'uppercase' }}>{selectedOrder.gateway}</strong>
+                </div>
               </div>
             </div>
           </div>

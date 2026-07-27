@@ -36,6 +36,28 @@
   margin: 0;
 }
 
+.testBtn {
+  background: linear-gradient(135deg, rgba(86, 215, 253, 0.15) 0%, rgba(59, 130, 246, 0.25) 100%);
+  border: 1px solid rgba(86, 215, 253, 0.4);
+  color: var(--foreground);
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+}
+
+.testBtn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(86, 215, 253, 0.3) 0%, rgba(59, 130, 246, 0.4) 100%);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
 /* KPI Cards */
 .kpiGrid {
   display: grid;
@@ -152,6 +174,12 @@
   word-break: break-all;
   justify-content: space-between;
   gap: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .copyBtn {
@@ -354,57 +382,203 @@
   background: rgba(var(--foreground-rgb), 0.1);
 }
 
-/* Modal */
+/* ==========================================
+   E-COMMERCE ORDER DETAILS MODAL (PREMIUM)
+   ========================================== */
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  animation: fadeInOverlay 0.25s ease;
 }
 
-.modal {
-  background: #121319;
-  border: 1px solid var(--border);
-  border-radius: 20px;
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ecommerceModal {
+  background: linear-gradient(145deg, #14161f 0%, #0d0e14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
   width: 100%;
-  max-width: 600px;
+  max-width: 680px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.1);
+  position: relative;
 }
 
-.modalHeader {
+.modalReceiptHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.modalClose {
-  background: transparent;
-  border: none;
-  color: var(--muted-foreground);
-  cursor: pointer;
-  padding: 0.25rem;
+.receiptBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.modalSection {
+.receiptIconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2ecc71;
+}
+
+.receiptOrderInfo {
   display: flex;
   flex-direction: column;
+}
+
+.receiptOrderTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.sectionTitle {
+.receiptOrderDate {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.modalCloseBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--muted-foreground);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modalCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Big Hero Banner inside Receipt */
+.heroSummary {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.heroPriceLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #a7f3d0;
+  letter-spacing: 0.05em;
+}
+
+.heroPriceValue {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #2ecc71;
+  letter-spacing: -0.03em;
+}
+
+.heroBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Customer Card */
+.customerCard {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.customerAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.customerDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.customerName {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.customerMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  flex-wrap: wrap;
+}
+
+/* E-commerce Items List */
+.itemsCard {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.itemsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.8rem;
   text-transform: uppercase;
   color: var(--muted-foreground);
@@ -412,19 +586,97 @@
   letter-spacing: 0.05em;
 }
 
-.itemsList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.75rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-}
-
-.itemRow {
+.productRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.875rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  gap: 1rem;
+}
+
+.productRow:last-child {
+  border-bottom: none;
+}
+
+.productMain {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.productThumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.productName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #eee;
+}
+
+.productQty {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.15rem;
+}
+
+.productPrice {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* Attribution Card */
+.attributionCard {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.attrTitle {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.attrPillsGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.attrPill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.attrPill strong {
+  color: #60a5fa;
 }
