@@ -464,6 +464,58 @@
         } catch (e) {}
     }
 
+    function isCheckoutLink(url) {
+        if (!url) return false;
+        const lowerUrl = String(url).toLowerCase();
+        return /yampi\.com|pay\.yampi|kiwify\.com|hotmart\.com|cartpanda\.com|eduzz\.com|monetizze\.com|checkout\.shopify\.com|\/checkout/.test(lowerUrl);
+    }
+
+    function decorateCheckoutLinks() {
+        if (typeof document === 'undefined') return;
+        const visitorId = getVisitorId();
+        const utms = getUtms();
+        if (!visitorId) return;
+
+        const links = document.querySelectorAll('a[href]');
+        links.forEach(function(link) {
+            const href = link.getAttribute('href');
+            if (href && isCheckoutLink(href)) {
+                try {
+                    const url = new URL(href, window.location.origin);
+                    let updated = false;
+                    if (!url.searchParams.has('asthros_vid')) {
+                        url.searchParams.set('asthros_vid', visitorId);
+                        updated = true;
+                    }
+                    if (!url.searchParams.has('src')) {
+                        url.searchParams.set('src', visitorId);
+                        updated = true;
+                    }
+                    if (utms) {
+                        for (const k in utms) {
+                            if (utms[k] && !url.searchParams.has(k)) {
+                                url.searchParams.set(k, utms[k]);
+                                updated = true;
+                            }
+                        }
+                    }
+                    if (updated) {
+                        link.setAttribute('href', url.toString());
+                    }
+                } catch (e) {}
+            }
+        });
+    }
+
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', decorateCheckoutLinks);
+        } else {
+            decorateCheckoutLinks();
+        }
+        setInterval(decorateCheckoutLinks, 3000);
+    }
+
     window.Asthros = window.Asthros || {};
     window.Asthros.trackLead = manualTrackLead;
     window.Asthros.setConsent = setConsent;
@@ -472,3 +524,4 @@
             captureFormLead(formElement, 'Disparo Manual de Formulário (API)');
         }
     };
+    window.Asthros.decorateCheckoutLinks = decorateCheckoutLinks;

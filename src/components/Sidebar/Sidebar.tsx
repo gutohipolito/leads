@@ -19,6 +19,7 @@ import {
   Tv,
   X,
   Plug,
+  ShoppingBag,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -93,6 +94,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false, onToggle
       icon: Users
     },
     { name: 'Leads', path: '/leads', icon: Database },
+    { name: 'Vendas', path: '/purchases', icon: ShoppingBag },
     { name: 'Relatórios', path: '/reports', icon: FileText },
     { name: 'Webhooks', path: '/webhooks', icon: Webhook },
     { name: 'Integrações', path: '/integrations', icon: Plug },
@@ -105,7 +107,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false, onToggle
       return false;
     }
     if (isImpersonating) {
-      return ['Geral', 'Leads', 'Integrações', 'Uptime'].includes(item.name);
+      return ['Geral', 'Leads', 'Vendas', 'Integrações', 'Uptime'].includes(item.name);
     }
     return true;
   });
