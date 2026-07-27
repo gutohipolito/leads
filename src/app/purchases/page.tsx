@@ -8,29 +8,25 @@ import {
   TrendingUp, 
   DollarSign, 
   CheckCircle, 
-  Clock, 
-  XCircle, 
   Search, 
-  Filter, 
   Copy, 
   Check, 
   Webhook, 
-  ExternalLink, 
   Eye, 
   X,
   Package,
-  User,
-  Mail,
-  Tag
+  Store,
+  Filter
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
+  const [webhooksList, setWebhooksList] = useState<any[]>([]);
+  const [selectedWebhookId, setSelectedWebhookId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-  const [clientId, setClientId] = useState<string>('');
-  const [clientSecret, setClientSecret] = useState<string>('');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [gatewayFilter, setGatewayFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -44,82 +40,95 @@ export default function PurchasesPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        // Buscar o cliente ativo (ou impersonated)
+        // Verificar perfil e permissões do usuário
+        const { data: profile } = await supabase
+          .from('system_users')
+          .select('*')
+          .eq('email', session.user.email)
+          .single();
+
+        const isUserAdmin = profile?.role === 'admin';
         const impersonated = typeof window !== 'undefined' ? localStorage.getItem('impersonated_client') : null;
-        let targetClientId = impersonated;
-
-        if (!targetClientId) {
-          const { data: client } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (client) targetClientId = client.id;
-        }
-
-        if (targetClientId) {
-          setClientId(targetClientId);
-
-          // Buscar webhook/secret do cliente
-          const { data: wh } = await supabase
-            .from('webhooks')
-            .select('secret')
-            .eq('client_id', targetClientId)
-            .limit(1)
-            .maybeSingle();
-
-          if (wh?.secret) setClientSecret(wh.secret);
-
-          // Buscar compras do cliente no Supabase
-          const { data: dbPurchases, error } = await supabase
-            .from('purchases')
-            .select('*')
-            .eq('client_id', targetClientId)
-            .order('created_at', { ascending: false });
-
-          if (!error && dbPurchases) {
-            setPurchases(dbPurchases);
+        
+        let activeClientId = profile?.client_id;
+        if (isUserAdmin && impersonated) {
+          try {
+            activeClientId = JSON.parse(impersonated).id;
+          } catch (e) {
+            activeClientId = impersonated;
           }
         }
+
+        // 1. Buscar a lista de Webhooks disponíveis
+        let whQuery = supabase.from('webhooks').select('*, clients(name)').eq('status', 'active');
+        if (activeClientId) {
+          whQuery = whQuery.eq('client_id', activeClientId);
+        }
+
+        const { data: whData } = await whQuery;
+        if (whData && whData.length > 0) {
+          setWebhooksList(whData);
+          // Selecionar o primeiro webhook por padrão se houver
+          setSelectedWebhookId(whData[0].id);
+        }
+
+        // 2. Buscar vendas gravadas
+        let pQuery = supabase
+          .from('purchases')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (activeClientId) {
+          pQuery = pQuery.eq('client_id', activeClientId);
+        }
+
+        const { data: dbPurchases, error: pError } = await pQuery;
+
+        if (!pError && dbPurchases) {
+          setPurchases(dbPurchases);
+        }
       } catch (err) {
-        console.error('Erro ao carregar compras:', err);
+        console.error('Erro ao carregar dados de vendas:', err);
       } finally {
         setLoading(false);
       }
     }
 
     loadData();
+  }, []);
 
-    // Inscrever no Supabase Realtime para receber novas vendas em tempo real
-    let channel: any;
-    if (clientId) {
-      channel = supabase
-        .channel(`purchases-${clientId}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'purchases', filter: `client_id=eq.${clientId}` },
-          (payload) => {
-            const newPurchase = payload.new;
-            setPurchases((prev) => [newPurchase, ...prev]);
-          }
-        )
-        .subscribe();
-    }
+  // Inscrição Realtime no Supabase para receber compras em tempo real
+  useEffect(() => {
+    const channel = supabase
+      .channel('purchases-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'purchases' },
+        (payload) => {
+          const newPurchase = payload.new;
+          setPurchases((prev) => [newPurchase, ...prev]);
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [clientId]);
+  }, []);
 
-  // Webhook URL calculada para exibição
+  // Webhook atualmente selecionado no dropdown
+  const currentWebhook = useMemo(() => {
+    if (selectedWebhookId === 'all') return webhooksList[0] || null;
+    return webhooksList.find((w) => w.id === selectedWebhookId) || null;
+  }, [selectedWebhookId, webhooksList]);
+
+  // URL do Webhook calculada para o selecionado
   const webhookUrl = useMemo(() => {
-    if (typeof window === 'undefined' || !clientId) return '';
+    if (typeof window === 'undefined' || !currentWebhook) return '';
     const origin = window.location.origin;
-    const secParam = clientSecret ? `?secret=${clientSecret}` : '';
-    return `${origin}/api/webhooks/purchases/${clientId}${secParam}`;
-  }, [clientId, clientSecret]);
+    const secParam = currentWebhook.secret ? `?secret=${currentWebhook.secret}` : '';
+    return `${origin}/api/webhooks/purchases/${currentWebhook.client_id}${secParam}`;
+  }, [currentWebhook]);
 
   const copyWebhookUrl = () => {
     if (!webhookUrl) return;
@@ -128,9 +137,14 @@ export default function PurchasesPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Filtragem de compras por pesquisa, gateway e status
+  // Filtragem de compras por webhook, pesquisa, gateway e status
   const filteredPurchases = useMemo(() => {
     return purchases.filter((item) => {
+      // Filtrar por Webhook se um específico estiver selecionado
+      if (selectedWebhookId !== 'all' && currentWebhook) {
+        if (item.client_id !== currentWebhook.client_id) return false;
+      }
+
       const matchSearch =
         !searchTerm ||
         item.order_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,14 +156,14 @@ export default function PurchasesPage() {
 
       return matchSearch && matchGateway && matchStatus;
     });
-  }, [purchases, searchTerm, gatewayFilter, statusFilter]);
+  }, [purchases, selectedWebhookId, currentWebhook, searchTerm, gatewayFilter, statusFilter]);
 
-  // Cálculos de KPIs
+  // Cálculo de KPIs
   const metrics = useMemo(() => {
-    const approved = purchases.filter((p) => p.status === 'approved');
+    const approved = filteredPurchases.filter((p) => p.status === 'approved');
     const totalRevenue = approved.reduce((acc, p) => acc + (parseFloat(p.total_amount) || 0), 0);
     const avgTicket = approved.length > 0 ? totalRevenue / approved.length : 0;
-    const approvalRate = purchases.length > 0 ? (approved.length / purchases.length) * 100 : 0;
+    const approvalRate = filteredPurchases.length > 0 ? (approved.length / filteredPurchases.length) * 100 : 0;
 
     return {
       totalRevenue,
@@ -157,7 +171,7 @@ export default function PurchasesPage() {
       avgTicket,
       approvalRate,
     };
-  }, [purchases]);
+  }, [filteredPurchases]);
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -180,6 +194,61 @@ export default function PurchasesPage() {
   return (
     <DashboardLayout title="Gestão de Vendas & Conversões">
       <div className={styles.container}>
+        {/* Cabeçalho da Página */}
+        <div className={styles.headerBar}>
+          <div className={styles.headerTitleGroup}>
+            <h1 className={styles.title}>
+              <Store size={26} color="var(--primary)" />
+              Gestão de Vendas & E-commerce
+            </h1>
+            <p className={styles.subtitle}>
+              Acompanhe faturamento, pedidos e integre seu checkout (Yampi, Shopify) via Webhook.
+            </p>
+          </div>
+        </div>
+
+        {/* Seleção de Webhook & Card de Integração */}
+        <div className={styles.webhookSelectorCard}>
+          <div className={styles.selectorHeader}>
+            <div className={styles.selectorLabelGroup}>
+              <Webhook size={20} color="var(--primary)" />
+              <span>Selecione a Loja / Webhook para Integração:</span>
+            </div>
+
+            <select
+              className={styles.selectDropdown}
+              value={selectedWebhookId}
+              onChange={(e) => setSelectedWebhookId(e.target.value)}
+            >
+              <option value="all">Todas as Lojas (Visão Geral)</option>
+              {webhooksList.map((wh) => (
+                <option key={wh.id} value={wh.id}>
+                  {wh.name} {wh.clients?.name ? `(${wh.clients.name})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {currentWebhook ? (
+            <div className={styles.urlBox}>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', display: 'block', marginBottom: '0.2rem' }}>
+                  URL do Webhook de Compras ({currentWebhook.name}):
+                </span>
+                <span>{webhookUrl}</span>
+              </div>
+              <button className={styles.copyBtn} onClick={copyWebhookUrl}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copied ? 'Copiado!' : 'Copiar URL'}</span>
+              </button>
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>
+              Nenhum webhook ativo cadastrado. Crie um webhook na aba "Webhooks" para vincular sua loja.
+            </div>
+          )}
+        </div>
+
         {/* KPI Cards */}
         <div className={styles.kpiGrid}>
           <div className={styles.kpiCard}>
@@ -223,29 +292,10 @@ export default function PurchasesPage() {
           </div>
         </div>
 
-        {/* Webhook Info Card */}
-        {webhookUrl && (
-          <div className={styles.webhookInfoCard}>
-            <div className={styles.webhookHeader}>
-              <div className={styles.webhookTitle}>
-                <Webhook size={18} />
-                <span>URL do Webhook para Checkout (Yampi / Shopify)</span>
-              </div>
-            </div>
-            <div className={styles.urlBox}>
-              <span>{webhookUrl}</span>
-              <button className={styles.copyBtn} onClick={copyWebhookUrl}>
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                <span>{copied ? 'Copiado!' : 'Copiar URL'}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Toolbar de Busca e Filtros */}
+        {/* Toolbar de Pesquisa e Filtros */}
         <div className={styles.toolbar}>
           <div className={styles.searchGroup}>
-            <Search size={18} color="#888" />
+            <Search size={18} color="var(--muted-foreground)" />
             <input
               type="text"
               placeholder="Buscar por Pedido, Nome ou E-mail..."
@@ -282,7 +332,7 @@ export default function PurchasesPage() {
         {/* Tabela de Vendas */}
         <div className={styles.tableWrapper}>
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center' }}>
+            <div style={{ padding: '4rem', textAlign: 'center' }}>
               <Loader />
             </div>
           ) : filteredPurchases.length > 0 ? (
@@ -307,7 +357,7 @@ export default function PurchasesPage() {
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontWeight: 600 }}>{item.customer_name || 'Cliente'}</span>
-                        <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
                           {item.customer_email || 'Não informado'}
                         </span>
                       </div>
@@ -322,10 +372,10 @@ export default function PurchasesPage() {
                           {item.utm_source}
                         </span>
                       ) : (
-                        <span style={{ color: '#666', fontSize: '0.8rem' }}>Direto</span>
+                        <span style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem' }}>Direto</span>
                       )}
                     </td>
-                    <td style={{ fontSize: '0.85rem', color: '#aaa' }}>
+                    <td style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>
                       {new Date(item.created_at).toLocaleString('pt-BR')}
                     </td>
                     <td>
@@ -344,10 +394,10 @@ export default function PurchasesPage() {
             </table>
           ) : (
             <div className={styles.emptyState}>
-              <ShoppingBag size={48} opacity={0.3} />
-              <h3>Nenhuma venda registrada até o momento</h3>
-              <p style={{ maxWidth: '400px', fontSize: '0.9rem' }}>
-                Conecte seu gateway (Yampi/Shopify) usando o webhook acima para rastrear vendas em tempo real.
+              <ShoppingBag size={48} opacity={0.2} />
+              <h3 style={{ margin: 0 }}>Nenhuma venda registrada para este filtro</h3>
+              <p style={{ maxWidth: '420px', fontSize: '0.9rem', margin: 0 }}>
+                Selecione seu webhook acima e cole a URL nas configurações do seu checkout (Yampi / Shopify) para receber pedidos automaticamente.
               </p>
             </div>
           )}
@@ -359,8 +409,8 @@ export default function PurchasesPage() {
         <div className={styles.modalOverlay} onClick={() => setSelectedOrder(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Package size={20} color="#60a5fa" />
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--foreground)' }}>
+                <Package size={20} color="var(--primary)" />
                 Detalhes do Pedido #{selectedOrder.order_id}
               </h3>
               <button className={styles.modalClose} onClick={() => setSelectedOrder(null)}>
@@ -370,7 +420,7 @@ export default function PurchasesPage() {
 
             <div className={styles.modalSection}>
               <span className={styles.sectionTitle}>Informações do Cliente</span>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem', border: '1px solid var(--border)' }}>
                 <div><strong>Nome:</strong> {selectedOrder.customer_name}</div>
                 <div><strong>E-mail:</strong> {selectedOrder.customer_email || 'N/A'}</div>
                 <div><strong>Visitor ID:</strong> <code style={{ color: '#a7f3d0' }}>{selectedOrder.visitor_id || 'N/A'}</code></div>
@@ -379,7 +429,7 @@ export default function PurchasesPage() {
 
             <div className={styles.modalSection}>
               <span className={styles.sectionTitle}>Resumo da Compra</span>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem', border: '1px solid var(--border)' }}>
                 <div><strong>Gateway:</strong> {selectedOrder.gateway?.toUpperCase()}</div>
                 <div><strong>Status:</strong> {selectedOrder.status}</div>
                 <div><strong>Valor Total:</strong> <span style={{ color: '#2ecc71', fontWeight: 700 }}>{formatCurrency(parseFloat(selectedOrder.total_amount || 0))}</span></div>
@@ -402,7 +452,7 @@ export default function PurchasesPage() {
 
             <div className={styles.modalSection}>
               <span className={styles.sectionTitle}>Atribuição & Marketing</span>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: '#ccc' }}>
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }}>
                 <div><strong>UTM Source:</strong> {selectedOrder.utm_source || 'Direto'}</div>
                 <div><strong>UTM Medium:</strong> {selectedOrder.utm_medium || 'N/A'}</div>
                 <div><strong>UTM Campaign:</strong> {selectedOrder.utm_campaign || 'N/A'}</div>
