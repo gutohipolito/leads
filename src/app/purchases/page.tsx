@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
+import { playBoostedAudio } from '@/utils/audio';
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -44,6 +45,9 @@ export default function PurchasesPage() {
   const [copied, setCopied] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
+  // Partículas de E-commerce ativadas ao abrir o recibo
+  const [particles, setParticles] = useState<Array<{ id: number; left: number; symbol: string; delay: number; duration: number; size: number }>>([]);
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -51,7 +55,6 @@ export default function PurchasesPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        // Verificar perfil do usuário
         const { data: profile } = await supabase
           .from('system_users')
           .select('*')
@@ -105,6 +108,33 @@ export default function PurchasesPage() {
 
     loadData();
   }, []);
+
+  // Efeito sonoro & partículas ao selecionar/abrir um recibo de compra
+  useEffect(() => {
+    if (selectedOrder) {
+      // 1. Tocar som de celebração de venda (Anime WOW com volume amplificado)
+      try {
+        playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5);
+      } catch (e) {}
+
+      // 2. Gerar partículas festivas e-commerce (moedas, sacolas, notas de dinheiro, brilho)
+      const ecomSymbols = ['💸', '✨', '🛍️', '💰', '🎉', '🌟', '🛒', '💵'];
+      const tempParticles = [];
+      for (let i = 0; i < 22; i++) {
+        tempParticles.push({
+          id: i,
+          left: Math.random() * 100,
+          symbol: ecomSymbols[Math.floor(Math.random() * ecomSymbols.length)],
+          delay: Math.random() * 1.2,
+          duration: 3 + Math.random() * 2.5,
+          size: 0.9 + Math.random() * 1.3
+        });
+      }
+      setParticles(tempParticles);
+    } else {
+      setParticles([]);
+    }
+  }, [selectedOrder]);
 
   // Realtime Supabase Subscription
   useEffect(() => {
@@ -169,7 +199,6 @@ export default function PurchasesPage() {
       created_at: new Date().toISOString()
     };
 
-    // Adiciona na lista temporária e abre o modal imediatamente
     setPurchases((prev) => [mockOrder, ...prev]);
     setSelectedOrder(mockOrder);
   };
@@ -449,9 +478,26 @@ export default function PurchasesPage() {
         </div>
       </div>
 
-      {/* MODAL PREMIUIM E-COMMERCE (RECIBO DE COMPRA) */}
+      {/* MODAL PREMIUIM E-COMMERCE (RECIBO DE COMPRA COM PARTÍCULAS E SOM) */}
       {selectedOrder && (
         <div className={styles.modalOverlay} onClick={() => setSelectedOrder(null)}>
+          {/* Partículas flutuantes festivas de E-commerce */}
+          {particles.map((p) => (
+            <span
+              key={p.id}
+              className={styles.particle}
+              style={{
+                left: `${p.left}%`,
+                top: '-20px',
+                animationDelay: `${p.delay}s`,
+                animationDuration: `${p.duration}s`,
+                fontSize: `${p.size}rem`
+              }}
+            >
+              {p.symbol}
+            </span>
+          ))}
+
           <div className={styles.ecommerceModal} onClick={(e) => e.stopPropagation()}>
             {/* Header do Recibo */}
             <div className={styles.modalReceiptHeader}>

@@ -383,19 +383,21 @@
 }
 
 /* ==========================================
-   E-COMMERCE ORDER DETAILS MODAL (PREMIUM)
+   E-COMMERCE ORDER DETAILS MODAL (PREMIUM & PARTICLES)
    ========================================== */
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(12px);
+  background: rgba(8, 9, 14, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  animation: fadeInOverlay 0.25s ease;
+  overflow: hidden;
+  animation: fadeInOverlay 0.3s ease;
 }
 
 @keyframes fadeInOverlay {
@@ -404,8 +406,8 @@
 }
 
 .ecommerceModal {
-  background: linear-gradient(145deg, #14161f 0%, #0d0e14 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(145deg, rgba(20, 22, 31, 0.95) 0%, rgba(13, 14, 20, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 24px;
   width: 100%;
   max-width: 680px;
@@ -415,8 +417,22 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7),
+              0 0 50px rgba(34, 197, 94, 0.2);
   position: relative;
+  z-index: 10;
+  animation: popInModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes popInModal {
+  from {
+    transform: scale(0.88) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
 .modalReceiptHeader {
@@ -434,15 +450,16 @@
 }
 
 .receiptIconBox {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #2ecc71;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
 }
 
 .receiptOrderInfo {
@@ -482,19 +499,21 @@
 .modalCloseBtn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
+  transform: rotate(90deg);
 }
 
-/* Big Hero Banner inside Receipt */
+/* Hero Summary */
 .heroSummary {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.14) 0%, rgba(15, 23, 42, 0.7) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 18px;
   padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+  box-shadow: inset 0 0 30px rgba(34, 197, 94, 0.05);
 }
 
 .heroPriceLabel {
@@ -506,10 +525,11 @@
 }
 
 .heroPriceValue {
-  font-size: 1.8rem;
+  font-size: 1.85rem;
   font-weight: 900;
   color: #2ecc71;
   letter-spacing: -0.03em;
+  text-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
 }
 
 .heroBadges {
@@ -530,8 +550,8 @@
 }
 
 .customerAvatar {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   display: flex;
@@ -541,6 +561,7 @@
   font-weight: 800;
   font-size: 1.1rem;
   flex-shrink: 0;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
 }
 
 .customerDetails {
@@ -590,7 +611,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 0;
+  padding: 0.65rem 0;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
   gap: 1rem;
 }
@@ -606,9 +627,9 @@
 }
 
 .productThumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
@@ -679,4 +700,28 @@
 
 .attrPill strong {
   color: #60a5fa;
+}
+
+/* Dynamic Floating E-commerce Particles */
+.particle {
+  position: absolute;
+  user-select: none;
+  pointer-events: none;
+  animation: fallEcom linear forwards;
+  z-index: 5;
+  opacity: 0.75;
+}
+
+@keyframes fallEcom {
+  0% {
+    transform: translateY(-40px) rotate(0deg);
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh) rotate(360deg);
+    opacity: 0;
+  }
 }
