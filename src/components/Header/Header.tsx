@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck, Radio, Menu } from 'lucide-react';
+import { Bell, Search, Settings, LogOut, Key, ShieldAlert, Clock, X, Trash2, CheckCheck, Radio, Menu, Maximize, Minimize } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
@@ -72,6 +72,33 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [pushPreference, setPushPreference] = useState(true);
   const [isPushModalOpen, setIsPushModalOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (typeof window === 'undefined') return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Erro ao ativar tela cheia: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.error(`Erro ao sair da tela cheia: ${err.message}`);
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -323,6 +350,15 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
         </div>
 
         <div className={styles.notifWrapper}>
+          <button 
+            className={styles.actionBtn} 
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
+            aria-label={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
+            style={{ marginRight: '0.5rem' }}
+          >
+            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+          </button>
           <button 
             className={`${styles.actionBtn} ${pushPreference ? styles.pushEnabled : ''}`} 
             onClick={handleTogglePush}
