@@ -475,8 +475,18 @@ export default function WebhooksManagePage() {
                   <label className={styles.areaLabel}>Origens de Captura</label>
                   <div className={styles.compactTrackerGrid}>
                     {webhooks.map(w => (
-                      <div key={w.id} className={`${styles.trackerMiniCard} ${selectedDocsWebhook?.id === w.id ? styles.activeTracker : ''} glass`} onClick={() => setSelectedDocsWebhook(selectedDocsWebhook?.id === w.id ? null : w)}>
-                        <div className={styles.dotIndicator} /><span>{w.name}</span>
+                      <div 
+                        key={w.id} 
+                        className={`${styles.trackerMiniCard} ${selectedDocsWebhook?.id === w.id ? styles.activeTracker : ''} glass`} 
+                        onClick={() => setSelectedDocsWebhook(selectedDocsWebhook?.id === w.id ? null : w)}
+                      >
+                        <div className={styles.dotIndicator} />
+                        <div className={styles.trackerCardTextGroup}>
+                          <span className={styles.trackerCardTitle}>{w.name}</span>
+                          {w.clientName && w.clientName !== 'N/A' && (
+                            <span className={styles.trackerCardClient}>{w.clientName}</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
