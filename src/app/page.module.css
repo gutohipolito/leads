@@ -111,8 +111,13 @@
   --icon-border: rgba(245, 158, 11, 0.2);
 }
 
-.statCard:hover,
 .statCard.activeAutoGlow {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px var(--icon-glow);
+  border-color: var(--icon-border) !important;
+}
+
+.statCard:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 30px var(--icon-glow);
   border-color: var(--icon-color) !important;
@@ -125,7 +130,7 @@
   left: -100%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent);
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
   transform: skewX(-20deg);
   transition: all 0.7s ease;
 }
@@ -136,9 +141,8 @@
 }
 
 .statCard.activeAutoGlow .statIcon {
-  transform: scale(1.1);
-  box-shadow: 0 0 15px var(--icon-glow);
-  border-color: var(--icon-color);
+  transform: scale(1.06);
+  box-shadow: 0 0 12px var(--icon-glow);
 }
 
 .statIcon {
