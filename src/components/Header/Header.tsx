@@ -402,15 +402,19 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
               {notifications.length > 0 ? notifications.map(n => (
                 <div key={n.id} className={`${styles.notifItem} ${n.read ? '' : styles.unread}`}>
                   <div className={styles.notifIndicator} />
-                  <div className={styles.notifContent} style={{ width: '100%' }}>
-                    <p className={styles.notifTitle}>{n.title}</p>
-                    {n.client?.name && (
-                      <span className={styles.clientTag}>{n.client.name}</span>
-                    )}
+                  <div className={styles.notifContent}>
+                    <div className={styles.notifHeaderRow}>
+                      <p className={styles.notifTitle}>{n.title}</p>
+                      {n.client?.name && (
+                        <span className={styles.clientTag} title={n.client.name}>
+                          {n.client.name}
+                        </span>
+                      )}
+                    </div>
                     <p className={styles.notifMsg}>{n.message}</p>
                     <span className={styles.notifTime}>
                       <Clock size={12} />
-                      {new Date(n.created_at).toLocaleString()}
+                      {new Date(n.created_at).toLocaleString('pt-BR')}
                     </span>
                   </div>
                 </div>

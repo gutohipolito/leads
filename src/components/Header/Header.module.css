@@ -197,7 +197,8 @@
 }
 
 .notifDrawer {
-  width: 420px;
+  width: 440px;
+  max-width: 90vw;
   height: 100vh;
   background: var(--card);
   backdrop-filter: blur(20px);
@@ -331,7 +332,18 @@
 .notifContent {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.notifHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .notifTitle {
@@ -339,12 +351,35 @@
   font-weight: 700;
   color: var(--foreground);
   margin: 0;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.clientTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(86, 215, 253, 0.12);
+  color: var(--primary);
+  border: 1px solid rgba(86, 215, 253, 0.25);
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .notifMsg {
   font-size: 0.8rem;
   color: var(--muted-foreground);
   line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .notifTime {
