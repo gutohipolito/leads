@@ -225,25 +225,25 @@
 .originsWrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.65rem;
   width: 100%;
 }
 
 .heroOriginsRow {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.65rem;
   width: 100%;
 }
 
 .heroSourceCard {
   background: rgba(var(--foreground-rgb), 0.025);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 1.15rem;
+  border-radius: 14px;
+  padding: 0.75rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.5rem;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -311,22 +311,27 @@
   flex-wrap: wrap;
 }
 
+.heroValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
 .heroSourceValue {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 1.85rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: var(--foreground);
   margin: 0;
   line-height: 1;
-  display: flex;
-  align-items: baseline;
 }
 
 .unitLabel {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--muted-foreground);
-  margin-left: 6px;
+  white-space: nowrap;
 }
 
 .heroRevenueTag {

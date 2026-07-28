@@ -1087,9 +1087,12 @@ export default function Home() {
 
                         <div className={styles.heroCardBody}>
                           <div className={styles.heroValueGroup}>
-                            <h3 className={styles.heroSourceValue}>
-                              {s.value} <small className={styles.unitLabel}>{s.name === 'E-commerce' ? 'vendas registradas' : 'leads capturados'}</small>
-                            </h3>
+                            <div className={styles.heroValueRow}>
+                              <span className={styles.heroSourceValue}>{s.value}</span>
+                              <span className={styles.unitLabel}>
+                                {s.name === 'E-commerce' ? 'vendas registradas' : 'leads capturados'}
+                              </span>
+                            </div>
 
                             {s.name === 'E-commerce' && s.revenue !== undefined && s.revenue > 0 ? (
                               <div className={styles.heroRevenueTag}>
@@ -1097,8 +1100,15 @@ export default function Home() {
                                 <strong className={styles.revenueAmount}>R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                               </div>
                             ) : (
-                              <div className={styles.heroShareTag}>
-                                <span>Canal de Alta Conversão</span>
+                              <div 
+                                className={styles.heroShareTag}
+                                style={{
+                                  color: s.color,
+                                  background: `${s.color}15`,
+                                  borderColor: `${s.color}35`
+                                }}
+                              >
+                                <span>{s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}</span>
                               </div>
                             )}
                           </div>
