@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './webhooks-manage.module.css';
 import { 
@@ -182,6 +182,8 @@ export default function WebhooksManagePage() {
   const [trackerKeywords, setTrackerKeywords] = useState('');
   const [trackerSelectors, setTrackerSelectors] = useState('');
   const [autoTrackForms, setAutoTrackForms] = useState(true);
+  const [trackerProjectSearch, setTrackerProjectSearch] = useState('');
+  const [scriptFormatTab, setScriptFormatTab] = useState<'config' | 'single'>('config');
 
   useEffect(() => {
     loadWebhooksData();
@@ -222,6 +224,15 @@ export default function WebhooksManagePage() {
       setLoading(false);
     }
   }
+
+  const filteredWebhooksForTracker = useMemo(() => {
+    if (!trackerProjectSearch) return webhooks;
+    const term = trackerProjectSearch.toLowerCase();
+    return webhooks.filter((w) =>
+      w.name?.toLowerCase().includes(term) ||
+      w.clientName?.toLowerCase().includes(term)
+    );
+  }, [webhooks, trackerProjectSearch]);
 
   const toggleSecret = (id: string) => setShowSecret(prev => ({ ...prev, [id]: !prev[id] }));
   const handleCopy = (text: string) => {
@@ -472,31 +483,60 @@ export default function WebhooksManagePage() {
               <div className={`${styles.trackerCard} glass`}>
                 <div className={styles.cardHeader}><Terminal size={18} /><h4>Configuração de Instalação</h4></div>
                 <div className={styles.trackerSelectionArea}>
-                  <label className={styles.areaLabel}>Origens de Captura</label>
+                  <div className={styles.trackerSelectionHeader}>
+                    <div className={styles.areaLabelGroup}>
+                      <label className={styles.areaLabel}>Selecione a Origem / Projeto de Captura:</label>
+                      <span className={styles.trackerCountBadge}>{filteredWebhooksForTracker.length} terminais</span>
+                    </div>
+
+                    <div className={styles.trackerSearchBox}>
+                      <Search size={14} color="var(--muted-foreground)" />
+                      <input 
+                        type="text" 
+                        placeholder="Filtrar por projeto ou cliente..." 
+                        value={trackerProjectSearch} 
+                        onChange={(e) => setTrackerProjectSearch(e.target.value)} 
+                      />
+                      {trackerProjectSearch && (
+                        <X size={14} style={{ cursor: 'pointer' }} onClick={() => setTrackerProjectSearch('')} />
+                      )}
+                    </div>
+                  </div>
+
                   <div className={styles.compactTrackerGrid}>
-                    {webhooks.map(w => (
-                      <div 
-                        key={w.id} 
-                        className={`${styles.trackerMiniCard} ${selectedDocsWebhook?.id === w.id ? styles.activeTracker : ''} glass`} 
-                        onClick={() => setSelectedDocsWebhook(selectedDocsWebhook?.id === w.id ? null : w)}
-                      >
-                        <div className={styles.dotIndicator} />
-                        <div className={styles.trackerCardTextGroup}>
-                          <span className={styles.trackerCardTitle}>{w.name}</span>
-                          {w.clientName && w.clientName !== 'N/A' && (
-                            <span className={styles.trackerCardClient}>{w.clientName}</span>
-                          )}
+                    {filteredWebhooksForTracker.map(w => {
+                      const isSelected = selectedDocsWebhook?.id === w.id;
+                      return (
+                        <div 
+                          key={w.id} 
+                          className={`${styles.trackerMiniCard} ${isSelected ? styles.activeTracker : ''} glass`} 
+                          onClick={() => setSelectedDocsWebhook(isSelected ? null : w)}
+                        >
+                          <div className={styles.dotIndicator} />
+                          <div className={styles.trackerCardTextGroup}>
+                            <span className={styles.trackerCardTitle}>{w.name}</span>
+                            {w.clientName && w.clientName !== 'N/A' && (
+                              <span className={styles.trackerCardClient}>{w.clientName}</span>
+                            )}
+                          </div>
+                          {isSelected && <CheckCircle2 size={16} color="var(--primary)" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
                         </div>
+                      );
+                    })}
+                    {filteredWebhooksForTracker.length === 0 && (
+                      <div className={styles.emptyTrackerSearch}>
+                        Nenhum projeto encontrado para o filtro "{trackerProjectSearch}".
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
+
                 {selectedDocsWebhook ? (
                   <div className={styles.codeWrapper}>
                     <div className={styles.customizationArea}>
                       <div className={styles.customizationHeader}>
                         <Zap size={16} />
-                        <span>Personalizar Rastreamento</span>
+                        <span>Personalizar Rastreamento ({selectedDocsWebhook.name})</span>
                       </div>
                       <div className={styles.customizationGrid}>
                         <div className={styles.inputGroupMini}>
@@ -509,10 +549,10 @@ export default function WebhooksManagePage() {
                           />
                         </div>
                         <div className={styles.inputGroupMini}>
-                          <label>Seletores CSS (ex: .btn-buy, #finalizar)</label>
+                          <label>Seletores CSS de Botões (ex: .btn-buy, #whatsapp)</label>
                           <input 
                             type="text" 
-                            placeholder=".btn-primary, #checkout-button" 
+                            placeholder="a[href*='wa.me'], .btn-whatsapp, #checkout" 
                             value={trackerSelectors}
                             onChange={(e) => setTrackerSelectors(e.target.value)}
                           />
@@ -535,57 +575,97 @@ export default function WebhooksManagePage() {
                       </div>
                     </div>
 
+                    {/* Abas de Formato de Código */}
                     <div className={styles.codeHeader}>
-                      <div className={styles.titleWithHelp}>
-                        <span>Código de Integração (HTML/JS)</span>
-                        <div className={styles.helpTooltip}>
-                          <Info size={14} />
-                          <span className={styles.tooltipText}>Instalação Global</span>
-                        </div>
+                      <div className={styles.scriptFormatTabs}>
+                        <button 
+                          type="button"
+                          className={`${styles.formatTabBtn} ${scriptFormatTab === 'config' ? styles.activeFormatTab : ''}`}
+                          onClick={() => setScriptFormatTab('config')}
+                        >
+                          <Code2 size={14} />
+                          <span>Padrão (AsthrosConfig)</span>
+                        </button>
+                        <button 
+                          type="button"
+                          className={`${styles.formatTabBtn} ${scriptFormatTab === 'single' ? styles.activeFormatTab : ''}`}
+                          onClick={() => setScriptFormatTab('single')}
+                        >
+                          <Zap size={14} />
+                          <span>Tag Única Shopify / HTML</span>
+                        </button>
                       </div>
+
                       <button 
                         className={styles.copyCodeBtn} 
                         onClick={() => {
+                          const origin = window.location.origin;
                           const keywordsArr = trackerKeywords.split(',').map(k => k.trim()).filter(k => k);
                           const selectorsArr = trackerSelectors.split(',').map(s => s.trim()).filter(s => s);
-                          
-                          let configStr = `  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    webhookId: "${selectedDocsWebhook.id}",\n    apiUrl: "${window.location.origin}"`;
-                          
-                          if (keywordsArr.length > 0) configStr += `,\n    trackKeywords: ${JSON.stringify(keywordsArr)}`;
-                          if (selectorsArr.length > 0) configStr += `,\n    trackSelectors: ${JSON.stringify(selectorsArr)}`;
-                          if (autoTrackForms) configStr += `,\n    autoTrackForms: true`;
-                          
-                          configStr += `\n  };`;
 
-                          handleCopy(`<script>\n${configStr}\n</script>\n<script src="${window.location.origin}/tracker.js" async></script>`);
+                          if (scriptFormatTab === 'single') {
+                            let attrs = `src="${origin}/tracker.js"\n  data-client-id="${selectedDocsWebhook.client_id}"\n  data-webhook-id="${selectedDocsWebhook.id}"\n  data-api-url="${origin}"`;
+                            if (autoTrackForms) attrs += `\n  data-auto-track-forms="true"`;
+                            if (selectorsArr.length > 0) attrs += `\n  data-selectors="${selectorsArr.join(', ')}"`;
+                            if (keywordsArr.length > 0) attrs += `\n  data-keywords="${keywordsArr.join(', ')}"`;
+                            handleCopy(`<script \n  ${attrs}\n  async>\n</script>`);
+                          } else {
+                            let configStr = `  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    webhookId: "${selectedDocsWebhook.id}",\n    apiUrl: "${origin}"`;
+                            if (keywordsArr.length > 0) configStr += `,\n    trackKeywords: ${JSON.stringify(keywordsArr)}`;
+                            if (selectorsArr.length > 0) configStr += `,\n    trackSelectors: ${JSON.stringify(selectorsArr)}`;
+                            if (autoTrackForms) configStr += `,\n    autoTrackForms: true`;
+                            configStr += `\n  };`;
+
+                            handleCopy(`<script>\n${configStr}\n</script>\n<script src="${origin}/tracker.js" async></script>`);
+                          }
                         }}
                       >
-                        <Copy size={14} /><span>Copiar Script Completo</span>
+                        <Copy size={14} /><span>Copiar Script</span>
                       </button>
                     </div>
+
                     <pre className={styles.codeBlock}>
-{`<script>
-  window.AsthrosConfig = {
-    clientId: "${selectedDocsWebhook.client_id}",
-    webhookId: "${selectedDocsWebhook.id}",
-    apiUrl: "${window.location.origin}"${trackerKeywords ? `,\n    trackKeywords: ${JSON.stringify(trackerKeywords.split(',').map(k => k.trim()).filter(k => k))}` : ''}${trackerSelectors ? `,\n    trackSelectors: ${JSON.stringify(trackerSelectors.split(',').map(s => s.trim()).filter(s => s))}` : ''}${autoTrackForms ? `,\n    autoTrackForms: true` : ''}
-  };
-</script>
-<script src="${window.location.origin}/tracker.js" async></script>`}
+                      {(() => {
+                        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://leads.asthros.com.br';
+                        const keywordsArr = trackerKeywords.split(',').map(k => k.trim()).filter(k => k);
+                        const selectorsArr = trackerSelectors.split(',').map(s => s.trim()).filter(s => s);
+
+                        if (scriptFormatTab === 'single') {
+                          let attrs = `src="${origin}/tracker.js"\n  data-client-id="${selectedDocsWebhook.client_id}"\n  data-webhook-id="${selectedDocsWebhook.id}"\n  data-api-url="${origin}"`;
+                          if (autoTrackForms) attrs += `\n  data-auto-track-forms="true"`;
+                          if (selectorsArr.length > 0) attrs += `\n  data-selectors="${selectorsArr.join(', ')}"`;
+                          if (keywordsArr.length > 0) attrs += `\n  data-keywords="${keywordsArr.join(', ')}"`;
+                          return `<script \n  ${attrs}\n  async>\n</script>`;
+                        }
+
+                        let configStr = `  window.AsthrosConfig = {\n    clientId: "${selectedDocsWebhook.client_id}",\n    webhookId: "${selectedDocsWebhook.id}",\n    apiUrl: "${origin}"`;
+                        if (keywordsArr.length > 0) configStr += `,\n    trackKeywords: ${JSON.stringify(keywordsArr)}`;
+                        if (selectorsArr.length > 0) configStr += `,\n    trackSelectors: ${JSON.stringify(selectorsArr)}`;
+                        if (autoTrackForms) configStr += `,\n    autoTrackForms: true`;
+                        configStr += `\n  };`;
+
+                        return `<script>\n${configStr}\n</script>\n<script src="${origin}/tracker.js" async></script>`;
+                      })()}
                     </pre>
 
                     <div className={styles.installGuide}>
                       <div className={styles.guideHeader}>
                         <Globe size={14} />
-                        <span>Onde instalar este código?</span>
+                        <span>Onde colar este código?</span>
                       </div>
-                      <p>Para um rastreamento preciso, cole este código em todas as páginas do seu site, preferencialmente logo antes da tag <strong>&lt;/body&gt;</strong> ou utilize o <strong>Google Tag Manager</strong>.</p>
+                      <p>
+                        {scriptFormatTab === 'single' ? (
+                          <>Na Shopify, cole no arquivo <code>theme.liquid</code> logo antes da tag <strong>&lt;/head&gt;</strong> ou <strong>&lt;/body&gt;</strong>.</>
+                        ) : (
+                          <>Para sites em geral ou WordPress/Elementor, cole em todas as páginas logo antes de <strong>&lt;/body&gt;</strong> ou via <strong>Google Tag Manager</strong>.</>
+                        )}
+                      </p>
                     </div>
                   </div>
                 ) : (
                   <div className={styles.noWebhookSelectedInline}>
-                    <AlertTriangle size={18} />
-                    <p>Selecione uma das origens acima para visualizar as credenciais.</p>
+                    <AlertTriangle size={18} color="#f59e0b" />
+                    <p>Selecione uma das origens acima para gerar o código de instalação.</p>
                   </div>
                 )}
               </div>
