@@ -247,10 +247,10 @@ export default function Home() {
 
     const sourceData = [
       { name: 'WhatsApp', value: wppCount, color: '#25d366' },
+      { name: 'E-commerce', value: ecommerceCount, revenue: ecommerceRevenue, color: '#ec4899' },
       { name: 'Formulários', value: formCount, color: '#56d7fd' },
       { name: 'Seletores', value: selectorCount, color: '#a855f7' },
-      { name: 'Palavras-Chave', value: keywordCount, color: '#f97316' },
-      { name: 'E-commerce', value: ecommerceCount, revenue: ecommerceRevenue, color: '#ec4899' }
+      { name: 'Palavras-Chave', value: keywordCount, color: '#f97316' }
     ].filter(s => {
       if (activeFilter === 'ecommerce') return s.name === 'E-commerce';
       if (activeFilter === 'all') return true;
@@ -1028,6 +1028,7 @@ export default function Home() {
               <div className={styles.heroOriginsRow}>
                 {statsSummary.sourceData
                   .filter((s: any) => s.name === 'WhatsApp' || s.name === 'E-commerce')
+                  .sort((a: any, b: any) => (a.name === 'WhatsApp' ? -1 : 1))
                   .map((s: any) => {
                     const totalVol = statsSummary.totalVolume || 1;
                     const percentage = ((s.value / totalVol) * 100).toFixed(0);
