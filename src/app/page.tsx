@@ -1050,24 +1050,31 @@ export default function Home() {
                             >
                               {s.name === 'WhatsApp' ? <MessageCircle size={20} /> : <ShoppingBag size={20} />}
                             </div>
-                            <span className={styles.heroCardBadge} style={{ color: s.color, background: `${s.color}15`, borderColor: `${s.color}30` }}>
-                              {s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}
-                            </span>
+                            <div className={styles.heroTitleGroup}>
+                              <span className={styles.sourceName}>{s.name}</span>
+                              <span className={styles.heroCardBadge} style={{ color: s.color, background: `${s.color}15`, borderColor: `${s.color}30` }}>
+                                {s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}
+                              </span>
+                            </div>
                           </div>
 
-                          <span className={styles.sourcePercent} style={{ color: s.color, fontSize: '0.85rem' }}>{percentage}%</span>
+                          <span className={styles.sourcePercent} style={{ color: s.color }}>{percentage}% do volume</span>
                         </div>
 
                         <div className={styles.heroCardBody}>
-                          <span className={styles.sourceName}>{s.name}</span>
                           <div className={styles.heroValueGroup}>
                             <h3 className={styles.heroSourceValue}>
-                              {s.value} <small style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted-foreground)' }}>{s.name === 'E-commerce' ? 'vendas' : 'leads'}</small>
+                              {s.value} <small className={styles.unitLabel}>{s.name === 'E-commerce' ? 'vendas registradas' : 'leads capturados'}</small>
                             </h3>
-                            {s.revenue !== undefined && s.revenue > 0 && (
+
+                            {s.name === 'E-commerce' && s.revenue !== undefined && s.revenue > 0 ? (
                               <div className={styles.heroRevenueTag}>
-                                <span>Faturamento:</span>
-                                <strong>R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                <span className={styles.revenueLabel}>Faturamento Total:</span>
+                                <strong className={styles.revenueAmount}>R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                              </div>
+                            ) : (
+                              <div className={styles.heroShareTag}>
+                                <span>Canal de Alta Conversão</span>
                               </div>
                             )}
                           </div>
@@ -1079,7 +1086,7 @@ export default function Home() {
                             style={{ 
                               width: `${percentage}%`, 
                               background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
-                              boxShadow: `0 0 12px ${s.color}60`
+                              boxShadow: `0 0 14px ${s.color}60`
                             }}
                           />
                         </div>
