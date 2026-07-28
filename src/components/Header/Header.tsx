@@ -208,10 +208,6 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
               
               setUnreadCount(prev => prev + 1);
 
-              try {
-                playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5);
-              } catch (audioErr) {}
-
               const saved = localStorage.getItem('push_notifications_enabled');
               const pushPref = saved === null ? true : saved === 'true';
               if (Notification.permission === 'granted' && pushPref) {

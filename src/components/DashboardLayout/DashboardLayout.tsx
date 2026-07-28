@@ -143,8 +143,71 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
 
       activeChannel = channel;
 
-      // Criar canal de Leads em tempo real para o modal engraçado
-      const lChannel = supabase.channel('realtime-funny-leads')
+      const processedLeadIds = new Set<string>();
+
+      const triggerFunnyModal = async (clientId: string | null, rawLead?: any, notifPayload?: any) => {
+        try {
+          let leadObj = rawLead;
+          const targetClientId = clientId || rawLead?.client_id || notifPayload?.client_id;
+
+          if (!leadObj && targetClientId) {
+            const { data: latestLead } = await supabase
+              .from('leads')
+              .select('*')
+              .eq('client_id', targetClientId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            leadObj = latestLead;
+          }
+
+          if (!leadObj && notifPayload) {
+            leadObj = {
+              name: notifPayload.title || 'Novo Lead',
+              source: 'custom_tracker',
+              data: {
+                phone: notifPayload.message || '',
+              }
+            };
+          }
+
+          if (!leadObj) return;
+
+          const dedupeKey = leadObj.id || `${notifPayload?.id || notifPayload?.title}`;
+          if (dedupeKey && processedLeadIds.has(dedupeKey)) return;
+          if (dedupeKey) {
+            processedLeadIds.add(dedupeKey);
+            setTimeout(() => processedLeadIds.delete(dedupeKey), 4000);
+          }
+
+          const key = await fetchEncryptionKey();
+          let decryptedLead = leadObj;
+          if (key && leadObj.data) {
+            try {
+              decryptedLead = await decryptLead(leadObj, key);
+            } catch (decErr) {}
+          }
+
+          let clientInfo = null;
+          if (targetClientId) {
+            const { data: clientData } = await supabase
+              .from('clients')
+              .select('name, logo_url, primary_color')
+              .eq('id', targetClientId)
+              .single();
+            clientInfo = clientData;
+          }
+
+          setActiveLeadClient(clientInfo || { name: 'Cliente Geral' });
+          setActiveLeadNotif(decryptedLead);
+        } catch (e) {
+          console.error('Erro ao processar FunnyLeadModal:', e);
+        }
+      };
+
+      // Criar canal de Leads/Notificações em tempo real para o modal engraçado
+      const channelName = `realtime-funny-${user.id}-${Math.random().toString(36).substring(2, 7)}`;
+      const lChannel = supabase.channel(channelName)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'leads' },
@@ -160,33 +223,27 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
             let isImpersonating = false;
 
             if (isUserAdmin && impersonated) {
-              const impData = JSON.parse(impersonated);
-              activeClientId = impData.id;
-              isImpersonating = true;
+              try {
+                const impData = JSON.parse(impersonated);
+                activeClientId = impData.id;
+                isImpersonating = true;
+              } catch (e) {}
             }
 
-            const canSee = (isUserAdmin && !isImpersonating) ? true : (newLeadRaw.client_id === activeClientId);
-            if (!canSee) return;
-
-            try {
-              const key = await fetchEncryptionKey();
-              let decryptedLead = newLeadRaw;
-              if (key) {
-                decryptedLead = await decryptLead(newLeadRaw, key);
-              }
-
-              const { data: clientData } = await supabase
-                .from('clients')
-                .select('name, logo_url, primary_color')
-                .eq('id', newLeadRaw.client_id)
-                .single();
-
-              playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5);
-              setActiveLeadClient(clientData || { name: 'Cliente Geral' });
-              setActiveLeadNotif(decryptedLead);
-            } catch (e) {
-              console.error('Erro ao processar nova notificação de lead:', e);
+            const canSee = (isUserAdmin && !isImpersonating) || (newLeadRaw.client_id === activeClientId);
+            if (canSee) {
+              await triggerFunnyModal(newLeadRaw.client_id, newLeadRaw);
             }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications' },
+          async (payload) => {
+            const newNotif = payload.new;
+            if (!newNotif) return;
+            if (newNotif.user_id && newNotif.user_id !== user.id) return;
+            await triggerFunnyModal(newNotif.client_id || null, null, newNotif);
           }
         );
       
