@@ -36,7 +36,8 @@ import {
   Compass,
   Smartphone,
   Activity,
-  Lock
+  Lock,
+  Search
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
