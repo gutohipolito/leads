@@ -320,8 +320,8 @@ export default function IntegrationsPage() {
 
   const [formCustomIconUrl, setFormCustomIconUrl] = useState('');
 
-  // Controle de Mini Manual / Guia de Configuração
-  const [isGuideOpen, setIsGuideOpen] = useState(true);
+  // Controle de Mini Manual / Guia de Configuração (Começa fechado)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [guideModalProvider, setGuideModalProvider] = useState<string | null>(null);
 
   const handleLogoError = (clientId: string) => {
@@ -564,6 +564,7 @@ export default function IntegrationsPage() {
     
     setFormCustomIconUrl('');
     setTestResult(null); // Reseta testes
+    setIsGuideOpen(false); // Começa fechado por padrão
     setActiveModal('create');
   };
 
@@ -611,6 +612,7 @@ export default function IntegrationsPage() {
     }
     setFormCustomIconUrl(integration.config?.customIconUrl || '');
     setTestResult(null); // Reseta testes
+    setIsGuideOpen(false); // Começa fechado por padrão
     setActiveModal('edit');
   };
 
@@ -1649,22 +1651,23 @@ export default function IntegrationsPage() {
 
               <div className={styles.modalBody}>
 
-                {/* Mini Manual / Guia Passo a Passo de Configuração */}
+                {/* Botão Retrátil de Guia Rápido de Configuração */}
                 {selectedProvider && PROVIDER_GUIDES[selectedProvider] && (
-                  <div className={styles.guideAccordion}>
-                    <div 
-                      className={styles.guideAccordionHeader}
+                  <div className={styles.guideToggleContainer}>
+                    <button 
+                      type="button" 
+                      className={styles.guideToggleBtn}
                       onClick={() => setIsGuideOpen(!isGuideOpen)}
                     >
-                      <div className={styles.guideAccordionTitle}>
-                        <BookOpen size={15} />
-                        <span>💡 Guia Rápido: {PROVIDER_GUIDES[selectedProvider].title}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <BookOpen size={14} />
+                        <span>{isGuideOpen ? 'Ocultar Guia Passo a Passo' : '💡 Guia Rápido: Como encontrar as chaves nesta ferramenta'}</span>
                       </div>
-                      {isGuideOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </div>
+                      {isGuideOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
                     {isGuideOpen && (
-                      <div>
-                        <div className={styles.guideStepsList}>
+                      <div className={styles.guideAccordionContent}>
+                        <div className={styles.guideStepsList} style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
                           {PROVIDER_GUIDES[selectedProvider].steps.map((step, idx) => (
                             <div key={idx} className={styles.guideStepItem}>
                               <span className={styles.guideStepBadge}>{idx + 1}</span>
