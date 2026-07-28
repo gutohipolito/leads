@@ -181,6 +181,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
                 .eq('id', newLeadRaw.client_id)
                 .single();
 
+              playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5);
               setActiveLeadClient(clientData || { name: 'Cliente Geral' });
               setActiveLeadNotif(decryptedLead);
             } catch (e) {
