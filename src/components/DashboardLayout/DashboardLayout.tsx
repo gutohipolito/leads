@@ -43,6 +43,16 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   };
 
   useEffect(() => {
+    // Autoriza o áudio do navegador na primeira interação do usuário (clique, toque, tecla)
+    const handleFirstUserInteraction = () => {
+      primeAudio();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('click', handleFirstUserInteraction, { once: true });
+      window.addEventListener('keydown', handleFirstUserInteraction, { once: true });
+      window.addEventListener('touchstart', handleFirstUserInteraction, { once: true });
+    }
+
     let activeChannel: any = null;
     let verificationChannel: BroadcastChannel | null = null;
     let leadsChannel: any = null;
