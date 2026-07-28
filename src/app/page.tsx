@@ -1022,68 +1022,122 @@ export default function Home() {
                 <h3>Divisão de Origens</h3>
               </div>
             </div>
-            <div className={styles.sourcesContainer}>
-              {statsSummary.sourceData.map((s: any) => {
-                const totalVol = statsSummary.totalVolume || 1;
-                const percentage = ((s.value / totalVol) * 100).toFixed(0);
 
-                const renderIcon = () => {
-                  switch (s.name) {
-                    case 'WhatsApp':
-                      return <MessageCircle size={18} />;
-                    case 'Seletores':
-                      return <MousePointerClick size={18} />;
-                    case 'Palavras-Chave':
-                      return <Type size={18} />;
-                    case 'E-commerce':
-                      return <ShoppingBag size={18} />;
-                    case 'Formulários':
-                    default:
-                      return <FileText size={18} />;
-                  }
-                };
+            <div className={styles.originsWrapper}>
+              {/* Nível 1: Canais Principais de Conversão (WhatsApp & E-commerce no Topo com Destaque) */}
+              <div className={styles.heroOriginsRow}>
+                {statsSummary.sourceData
+                  .filter((s: any) => s.name === 'WhatsApp' || s.name === 'E-commerce')
+                  .map((s: any) => {
+                    const totalVol = statsSummary.totalVolume || 1;
+                    const percentage = ((s.value / totalVol) * 100).toFixed(0);
 
-                return (
-                  <div key={s.name} className={styles.sourcePerformanceCard}>
-                    <div className={styles.sourceCardHeader}>
+                    return (
                       <div 
-                        className={styles.sourceIconWrapper} 
-                        style={{ 
-                          color: s.color, 
-                          background: `${s.color}15`,
-                          borderColor: `${s.color}30` 
-                        }}
+                        key={s.name} 
+                        className={`${styles.heroSourceCard} ${s.name === 'E-commerce' ? styles.heroEcommerceCard : styles.heroWhatsappCard}`}
                       >
-                        {renderIcon()}
-                      </div>
-                      <span className={styles.sourcePercent} style={{ color: s.color }}>{percentage}%</span>
-                    </div>
-                    
-                    <div className={styles.sourceCardBody}>
-                      <span className={styles.sourceName}>{s.name}</span>
-                      <div className={styles.sourceValueRow}>
-                        <h4 className={styles.sourceValue}>{s.value}</h4>
-                        {s.revenue !== undefined && s.revenue > 0 && (
-                          <span className={styles.sourceRevenueTag} style={{ color: s.color }}>
-                            R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                        <div className={styles.sourceCardHeader}>
+                          <div className={styles.heroIconBadgeGroup}>
+                            <div 
+                              className={styles.sourceIconWrapper} 
+                              style={{ 
+                                color: s.color, 
+                                background: `${s.color}20`,
+                                borderColor: `${s.color}40` 
+                              }}
+                            >
+                              {s.name === 'WhatsApp' ? <MessageCircle size={20} /> : <ShoppingBag size={20} />}
+                            </div>
+                            <span className={styles.heroCardBadge} style={{ color: s.color, background: `${s.color}15`, borderColor: `${s.color}30` }}>
+                              {s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}
+                            </span>
+                          </div>
 
-                    <div className={styles.sourceBarContainer}>
-                      <div 
-                        className={styles.sourceBarFill} 
-                        style={{ 
-                          width: `${percentage}%`, 
-                          background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
-                          boxShadow: `0 0 10px ${s.color}40`
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                          <span className={styles.sourcePercent} style={{ color: s.color, fontSize: '0.85rem' }}>{percentage}%</span>
+                        </div>
+
+                        <div className={styles.heroCardBody}>
+                          <span className={styles.sourceName}>{s.name}</span>
+                          <div className={styles.heroValueGroup}>
+                            <h3 className={styles.heroSourceValue}>
+                              {s.value} <small style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted-foreground)' }}>{s.name === 'E-commerce' ? 'vendas' : 'leads'}</small>
+                            </h3>
+                            {s.revenue !== undefined && s.revenue > 0 && (
+                              <div className={styles.heroRevenueTag}>
+                                <span>Faturamento:</span>
+                                <strong>R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={styles.sourceBarContainer}>
+                          <div 
+                            className={styles.sourceBarFill} 
+                            style={{ 
+                              width: `${percentage}%`, 
+                              background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
+                              boxShadow: `0 0 12px ${s.color}60`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {/* Nível 2: Canais Complementares (Formulários, Seletores, Palavras-Chave em Grid de 3 Colunas) */}
+              <div className={styles.secondaryOriginsGrid}>
+                {statsSummary.sourceData
+                  .filter((s: any) => s.name !== 'WhatsApp' && s.name !== 'E-commerce')
+                  .map((s: any) => {
+                    const totalVol = statsSummary.totalVolume || 1;
+                    const percentage = ((s.value / totalVol) * 100).toFixed(0);
+
+                    const renderIcon = () => {
+                      switch (s.name) {
+                        case 'Seletores':
+                          return <MousePointerClick size={16} />;
+                        case 'Palavras-Chave':
+                          return <Type size={16} />;
+                        case 'Formulários':
+                        default:
+                          return <FileText size={16} />;
+                      }
+                    };
+
+                    return (
+                      <div key={s.name} className={styles.secondarySourceCard}>
+                        <div className={styles.sourceCardHeader}>
+                          <div 
+                            className={styles.miniIconWrapper} 
+                            style={{ color: s.color, background: `${s.color}15` }}
+                          >
+                            {renderIcon()}
+                          </div>
+                          <span className={styles.sourcePercent} style={{ color: s.color, fontSize: '0.7rem' }}>{percentage}%</span>
+                        </div>
+                        
+                        <div className={styles.secondaryCardBody}>
+                          <span className={styles.secondarySourceName}>{s.name}</span>
+                          <h4 className={styles.secondarySourceValue}>{s.value}</h4>
+                        </div>
+
+                        <div className={styles.sourceBarContainer}>
+                          <div 
+                            className={styles.sourceBarFill} 
+                            style={{ 
+                              width: `${percentage}%`, 
+                              background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
+                              boxShadow: `0 0 8px ${s.color}30`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           </div>
         </div>
