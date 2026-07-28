@@ -18,8 +18,118 @@ import {
   Save,
   MessageSquare,
   Image as ImageIcon,
-  Pencil
+  Pencil,
+  HelpCircle,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  BookOpen
 } from 'lucide-react';
+
+const PROVIDER_GUIDES: Record<string, { title: string; steps: string[]; tip?: string }> = {
+  meta_capi: {
+    title: 'Como conectar a Meta Conversions API (Meta CAPI)',
+    steps: [
+      'Acesse o Gerenciador de Eventos da Meta (Events Manager) na conta do cliente.',
+      'Selecione a fonte de dados (Pixel) desejada e clique na aba "Configurações".',
+      'Copie o "ID do Pixel" (código numérico) e cole no campo Pixel ID abaixo.',
+      'Na mesma tela, role até a seção "API de Conversões" e clique em "Gerar token de acesso".',
+      'Copie o token gerado (começa com EAAG...) e cole no campo Token de Acesso.',
+      '(Opcional) Para testar em tempo real, acesse a aba "Testar Eventos", copie o código de teste e cole abaixo.'
+    ],
+    tip: 'O Meta CAPI roda 100% server-side e envia dados criptografados com SHA-256, aumentando a nota de correspondência e reduzindo custos de tráfego pago.'
+  },
+  webhook: {
+    title: 'Como conectar um Webhook Customizado',
+    steps: [
+      'Acesse sua plataforma de automação (Make.com, n8n, Zapier ou seu servidor próprio).',
+      'Crie um novo cenário e selecione o gatilho "Custom Webhook" (POST).',
+      'Copie a URL gerada pela ferramenta de automação (ex: https://hook.make.com/xyz...).',
+      'Cole a URL no campo "URL de Envio (Endpoint)".',
+      'Clique em "Testar Conexão" para validar o envio de payload de teste JSON.'
+    ],
+    tip: 'Todos os disparos enviam o payload completo em formato JSON contendo dados do lead, UTMs, Lead Score e dados do dispositivo.'
+  },
+  hubspot: {
+    title: 'Como conectar ao HubSpot CRM',
+    steps: [
+      'Faça login na sua conta do HubSpot CRM.',
+      'O "HubSpot Portal ID" (Hub ID) pode ser copiado no canto superior direito do painel (ex: 1234567).',
+      'Para o "Form ID", acesse Marketing > Formulários no HubSpot e edite o formulário desejado.',
+      'Copie o código GUID que aparece no final da URL do navegador (ex: 6a82c4eb-73b0-466d-8693...).',
+      'Cole o Portal ID e o Form ID nos campos indicados.'
+    ],
+    tip: 'A integração utiliza a API oficial de submissão de formulários da HubSpot, mapeando automaticamente nome, e-mail e telefone.'
+  },
+  activecampaign: {
+    title: 'Como conectar ao ActiveCampaign',
+    steps: [
+      'No ActiveCampaign, acesse Configurações > Desenvolvedor.',
+      'Copie a "URL da API" (ex: https://suaconta.activehosted.com) e a "Chave da API" (Key).',
+      'Cole a URL e a Chave nos campos abaixo.',
+      '(Opcional) Se desejar adicionar os novos leads direto em uma lista, informe o "ID da Lista" (ex: 1).'
+    ],
+    tip: 'Novos leads são cadastrados instantaneamente como contatos e podem acionar automações de e-mail na mesma hora.'
+  },
+  zapi: {
+    title: 'Como conectar ao WhatsApp via Z-API',
+    steps: [
+      'Acesse o painel do Z-API (z-api.io) e selecione sua instância conectada.',
+      'Copie o "ID da Instância" e o "Token da Instância".',
+      'No campo "Telefone do Destinatário", informe o número de celular da sua equipe de vendas com DDI e DDD (ex: 5511999999999).',
+      'Salve e faça um teste de envio para confirmar o recebimento no WhatsApp.'
+    ],
+    tip: 'O Z-API enviará uma notificação formatada com nome, e-mail, telefone, origem e Lead Score a cada nova conversão.'
+  },
+  rdstation: {
+    title: 'Como conectar ao RD Station Platform',
+    steps: [
+      'No RD Station Platform, acesse Configurações > Integrações > Chaves de API.',
+      'Copie o seu "Token de API" (Token de Conversão).',
+      'No campo "Identificador do Evento", informe uma tag identificadora (ex: conversao_asthros).',
+      'Cole o Token de API e salve a integração.'
+    ],
+    tip: 'Cada conversão criará um evento de conversão no RD Station e atualizará os dados do lead na base.'
+  },
+  pipedrive: {
+    title: 'Como conectar ao Pipedrive CRM',
+    steps: [
+      'No Pipedrive, vá em Configurações Pessoais > Preferências Pessoais > API.',
+      'Copie seu "API Token" pessoal.',
+      'Cole o Token no campo indicado abaixo.',
+      '(Opcional) Para definir em qual etapa do funil o negócio deve ser criado, informe o "ID do Estágio" (Stage ID).'
+    ],
+    tip: 'A integração cria o contato da pessoa e gera uma nova oportunidade (Deal) no pipeline de vendas.'
+  },
+  piperun: {
+    title: 'Como conectar ao PipeRun CRM',
+    steps: [
+      'No PipeRun, acesse Configurações > Central de Integrações > Tokens de API.',
+      'Gere e copie o seu "Token de Integração".',
+      'Cole o Token no campo abaixo e insira o ID do Estágio (opcional).'
+    ],
+    tip: 'Leads capturados serão inseridos diretamente no funil comercial configurado no PipeRun.'
+  },
+  kommo: {
+    title: 'Como conectar ao Kommo CRM (antigo amoCRM)',
+    steps: [
+      'No Kommo, copie o seu "Subdomínio" que aparece na URL (ex: minhamarca.kommo.com -> subdomínio minhamarca).',
+      'Vá em Configurações > Ferramentas de Desenvolvedor e gere um Token de Acesso de Longa Duração.',
+      'Cole o Subdomínio e o Token nos campos abaixo.'
+    ],
+    tip: 'Cria o contato e o card do negócio completo dentro do Kommo CRM em tempo real.'
+  },
+  leadlovers: {
+    title: 'Como conectar ao Leadlovers',
+    steps: [
+      'No Leadlovers, acesse Configurações > Chaves de API.',
+      'Copie o seu "Token da Conta".',
+      'Informe o Código da Máquina (MachineCode) e o Código da Sequência de E-mails (EmailSequenceCode).',
+      'Salve a integração para que os novos leads entrem na máquina de automação.'
+    ],
+    tip: 'Insere os contatos diretamente no nível e máquina escolhidos para disparos automáticos de e-mail/funil.'
+  }
+};
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
@@ -209,6 +319,10 @@ export default function IntegrationsPage() {
   const [configMetaTestCode, setConfigMetaTestCode] = useState('');
 
   const [formCustomIconUrl, setFormCustomIconUrl] = useState('');
+
+  // Controle de Mini Manual / Guia de Configuração
+  const [isGuideOpen, setIsGuideOpen] = useState(true);
+  const [guideModalProvider, setGuideModalProvider] = useState<string | null>(null);
 
   const handleLogoError = (clientId: string) => {
     setFailedLogos(prev => ({ ...prev, [clientId]: true }));
@@ -892,8 +1006,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>Meta Conversions API (CAPI)</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('meta_capi'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {metaCapiIntegration?.status === 'active' && (
@@ -948,8 +1070,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>Webhook Customizado</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('webhook'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {webhookIntegration?.status === 'active' && (
@@ -1004,8 +1134,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>HubSpot CRM</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('hubspot'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {hubspotIntegration?.status === 'active' && (
@@ -1060,8 +1198,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>ActiveCampaign</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('activecampaign'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {activecampaignIntegration?.status === 'active' && (
@@ -1116,8 +1262,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>WhatsApp (Z-API)</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('zapi'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {zapiIntegration?.status === 'active' && (
@@ -1172,8 +1326,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>RD Station Platform</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('rdstation'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {rdstationIntegration?.status === 'active' && (
@@ -1228,8 +1390,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>Pipedrive CRM</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('pipedrive'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {pipedriveIntegration?.status === 'active' && (
@@ -1284,8 +1454,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>PipeRun CRM</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('piperun'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {piperunIntegration?.status === 'active' && (
@@ -1340,8 +1518,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>Kommo CRM</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('kommo'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {kommoIntegration?.status === 'active' && (
@@ -1396,8 +1582,16 @@ export default function IntegrationsPage() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.providerTitleContainer}>
+                    <div className={styles.providerTitleContainer} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <h3>Leadlovers</h3>
+                      <button 
+                        type="button" 
+                        className={styles.guideBadgeBtn} 
+                        onClick={(e) => { e.stopPropagation(); setGuideModalProvider('leadlovers'); }} 
+                        title="Ver Mini Manual de Configuração"
+                      >
+                        <BookOpen size={12} /> <span>Guia</span>
+                      </button>
                     </div>
                   </div>
                   {leadloversIntegration?.status === 'active' && (
@@ -1454,6 +1648,41 @@ export default function IntegrationsPage() {
               </div>
 
               <div className={styles.modalBody}>
+
+                {/* Mini Manual / Guia Passo a Passo de Configuração */}
+                {selectedProvider && PROVIDER_GUIDES[selectedProvider] && (
+                  <div className={styles.guideAccordion}>
+                    <div 
+                      className={styles.guideAccordionHeader}
+                      onClick={() => setIsGuideOpen(!isGuideOpen)}
+                    >
+                      <div className={styles.guideAccordionTitle}>
+                        <BookOpen size={15} />
+                        <span>💡 Guia Rápido: {PROVIDER_GUIDES[selectedProvider].title}</span>
+                      </div>
+                      {isGuideOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                    {isGuideOpen && (
+                      <div>
+                        <div className={styles.guideStepsList}>
+                          {PROVIDER_GUIDES[selectedProvider].steps.map((step, idx) => (
+                            <div key={idx} className={styles.guideStepItem}>
+                              <span className={styles.guideStepBadge}>{idx + 1}</span>
+                              <span>{step}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {PROVIDER_GUIDES[selectedProvider].tip && (
+                          <div className={styles.guideTipBox}>
+                            <Info size={14} style={{ minWidth: '14px', marginTop: '2px' }} />
+                            <span><strong>Dica do Especialista:</strong> {PROVIDER_GUIDES[selectedProvider].tip}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className={styles.field}>
                   <label>Apelido / Identificação</label>
                   <input 
@@ -1858,6 +2087,61 @@ export default function IntegrationsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* Modal Dedicado de Mini Manual de Configuração */}
+        {guideModalProvider && PROVIDER_GUIDES[guideModalProvider] && (
+          <div className={styles.modalOverlay} onClick={() => setGuideModalProvider(null)}>
+            <div className={`${styles.modalContent} glass`} onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
+              <div className={styles.modalHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <BookOpen size={20} style={{ color: '#56d7fd' }} />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{PROVIDER_GUIDES[guideModalProvider].title}</h3>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Passo a passo oficial para conexão e extração de chaves
+                    </span>
+                  </div>
+                </div>
+                <button type="button" className={styles.closeBtn} onClick={() => setGuideModalProvider(null)}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.guideStepsList} style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+                  {PROVIDER_GUIDES[guideModalProvider].steps.map((step, idx) => (
+                    <div key={idx} className={styles.guideStepItem}>
+                      <span className={styles.guideStepBadge}>{idx + 1}</span>
+                      <span style={{ fontSize: '0.85rem' }}>{step}</span>
+                    </div>
+                  ))}
+                </div>
+                {PROVIDER_GUIDES[guideModalProvider].tip && (
+                  <div className={styles.guideTipBox} style={{ marginTop: '1.25rem', fontSize: '0.8rem' }}>
+                    <Info size={16} style={{ minWidth: '16px', marginTop: '2px' }} />
+                    <span><strong>Dica do Especialista:</strong> {PROVIDER_GUIDES[guideModalProvider].tip}</span>
+                  </div>
+                )}
+              </div>
+              <div className={styles.modalFooter}>
+                <button 
+                  type="button" 
+                  className={styles.connectBtn} 
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => {
+                    const provider = guideModalProvider as any;
+                    setGuideModalProvider(null);
+                    const existing = integrations.find(i => i.type === provider);
+                    if (existing) {
+                      openEditModal(existing);
+                    } else {
+                      openCreateModal(provider);
+                    }
+                  }}
+                >
+                  <Plus size={15} /> <span>Configurar Agora esta Integração</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
