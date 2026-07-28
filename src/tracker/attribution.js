@@ -294,6 +294,8 @@
 
         return {
             ...getUtms(),
+            fbc: getCookie('_fbc') || null,
+            fbp: getCookie('_fbp') || null,
             referrer: getReferrerContext(),
             page_title: document.title,
             page_url: window.location.href,

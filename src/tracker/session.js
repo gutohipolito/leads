@@ -164,16 +164,35 @@
 
     function getVisitorId() {
         try {
-            let visitorId = getLocalItem('asthros_visitor_id');
+            let visitorId = getCookie('_asthros_vid') || getLocalItem('asthros_visitor_id');
             if (!visitorId) {
                 visitorId = generateUUID();
-                setLocalItem('asthros_visitor_id', visitorId);
             }
+            setLocalItem('asthros_visitor_id', visitorId);
+            setCookie('_asthros_vid', visitorId, 365);
             return visitorId;
         } catch (e) {
             return 'temp_' + randomId();
         }
     }
+
+    function initMetaCookies() {
+        try {
+            // Meta _fbp (Browser ID)
+            if (!getCookie('_fbp')) {
+                const fbpValue = `fb.1.${Date.now()}.${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+                setCookie('_fbp', fbpValue, 365);
+            }
+            // Meta _fbc (Click ID from fbclid query string)
+            const queryParams = new URLSearchParams(window.location.search);
+            const fbclid = queryParams.get('fbclid');
+            if (fbclid) {
+                const fbcValue = `fb.1.${Date.now()}.${fbclid}`;
+                setCookie('_fbc', fbcValue, 365);
+            }
+        } catch (e) {}
+    }
+    initMetaCookies();
 
     function getConversionTime() {
         try {

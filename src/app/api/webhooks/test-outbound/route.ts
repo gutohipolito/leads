@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendMetaCapiEvent } from '@/lib/capiService';
 
 /**
  * Endpoint de teste de envio de webhook externo (outbound).
@@ -321,6 +322,49 @@ export async function POST(request: NextRequest) {
           }),
           signal: controller.signal
         });
+      }
+      else if (type === 'meta_capi') {
+        const pixelId = config?.pixelId?.trim();
+        const accessToken = config?.accessToken?.trim();
+        const testEventCode = config?.testEventCode?.trim();
+
+        if (!pixelId || !accessToken) {
+          throw new Error('Pixel ID ou Access Token do Meta CAPI ausentes.');
+        }
+
+        const capiResult = await sendMetaCapiEvent({
+          pixelId,
+          accessToken,
+          eventName: 'Lead',
+          eventId: payload.lead_id,
+          eventSourceUrl: 'https://leads.asthros.com.br/teste',
+          userData: {
+            email: payload.email,
+            phone: payload.phone,
+            name: payload.name,
+            ipAddress: '189.10.20.30',
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Asthros-CAPI-Test/1.0',
+            fbc: 'fb.1.1554763741205.IwAR123456789',
+            fbp: 'fb.1.1554763741205.1098272494'
+          },
+          testEventCode
+        });
+
+        if (capiResult.success) {
+          return NextResponse.json({
+            success: true,
+            durationMs: Date.now() - startTime,
+            status: 200,
+            responseBody: JSON.stringify(capiResult.response)
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            durationMs: Date.now() - startTime,
+            status: 400,
+            error: capiResult.error
+          }, { status: 400 });
+        }
       }
       else {
         throw new Error(`Provedor de integração '${type}' não é suportado.`);

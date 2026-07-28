@@ -92,11 +92,18 @@ const LeadloversLogo = () => (
   </svg>
 );
 
+const MetaLogo = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(0, 129, 251, 0.4))', display: 'block' }}>
+    <path d="M12 16.5c-2.3 0-4.3-1.6-4.9-3.8-.5-1.9.1-3.9 1.5-5.1 1.4-1.2 3.4-1.4 5-.5 1.6.9 2.5 2.6 2.4 4.4 0 2.8-2.2 5-4 5z" fill="none" />
+    <path d="M17.1 7.2c-1.6-.9-3.6-.7-5 .5-1.4 1.2-2 3.2-1.5 5.1.6 2.2 2.6 3.8 4.9 3.8 2.6 0 4.8-2 5-4.6.3-2.9-1.6-5.4-4.5-5.8M6.9 16.8c1.6.9 3.6.7 5-.5 1.4-1.2 2-3.2 1.5-5.1-.6-2.2-2.6-3.8-4.9-3.8-2.6 0-4.8 2-5 4.6-.3 2.9 1.6 5.4 4.5 5.8" stroke="#0081FB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 interface Integration {
   id: string;
   client_id: string;
   name: string;
-  type: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers';
+  type: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers' | 'meta_capi';
   config: any;
   status: 'active' | 'inactive';
   created_at: string;
@@ -116,6 +123,7 @@ export default function IntegrationsPage() {
 
   // Mapeamento de nomes amigáveis para os provedores
   const providerNames: Record<string, string> = {
+    meta_capi: 'Meta Conversions API (Meta CAPI)',
     webhook: 'Webhook Customizado',
     hubspot: 'HubSpot CRM',
     activecampaign: 'ActiveCampaign',
@@ -129,7 +137,7 @@ export default function IntegrationsPage() {
 
   // Modais de Criação/Edição
   const [activeModal, setActiveModal] = useState<'create' | 'edit' | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers' | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers' | 'meta_capi' | null>(null);
   const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
 
   // Controle de falha no carregamento dos logotipos dos clientes
@@ -194,6 +202,11 @@ export default function IntegrationsPage() {
   const [configLlMachine, setConfigLlMachine] = useState('');
   const [configLlSequence, setConfigLlSequence] = useState('');
   const [configLlLevel, setConfigLlLevel] = useState('');
+
+  // Meta CAPI
+  const [configMetaPixelId, setConfigMetaPixelId] = useState('');
+  const [configMetaAccessToken, setConfigMetaAccessToken] = useState('');
+  const [configMetaTestCode, setConfigMetaTestCode] = useState('');
 
   const [formCustomIconUrl, setFormCustomIconUrl] = useState('');
 
@@ -264,6 +277,7 @@ export default function IntegrationsPage() {
     }
 
     switch (type) {
+      case 'meta_capi': return <MetaLogo />;
       case 'webhook': return <Webhook size={24} />;
       case 'hubspot': return <HubSpotLogo />;
       case 'activecampaign': return <ActiveCampaignLogo />;
@@ -402,7 +416,7 @@ export default function IntegrationsPage() {
   };
 
   // Abrir Modal de Criação
-  const openCreateModal = (provider: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers') => {
+  const openCreateModal = (provider: 'webhook' | 'hubspot' | 'activecampaign' | 'zapi' | 'rdstation' | 'pipedrive' | 'piperun' | 'kommo' | 'leadlovers' | 'meta_capi') => {
     setSelectedProvider(provider);
     setFormName(providerNames[provider] || 'Nova Integração');
     setConfigWebhookUrl('');
@@ -428,6 +442,11 @@ export default function IntegrationsPage() {
     setConfigLlMachine('');
     setConfigLlSequence('');
     setConfigLlLevel('');
+
+    // Reset Meta CAPI
+    setConfigMetaPixelId('');
+    setConfigMetaAccessToken('');
+    setConfigMetaTestCode('');
     
     setFormCustomIconUrl('');
     setTestResult(null); // Reseta testes
@@ -471,6 +490,10 @@ export default function IntegrationsPage() {
       setConfigLlMachine(integration.config?.machineId || '');
       setConfigLlSequence(integration.config?.sequenceId || '');
       setConfigLlLevel(integration.config?.levelCode || '');
+    } else if (integration.type === 'meta_capi') {
+      setConfigMetaPixelId(integration.config?.pixelId || '');
+      setConfigMetaAccessToken(integration.config?.accessToken || '');
+      setConfigMetaTestCode(integration.config?.testEventCode || '');
     }
     setFormCustomIconUrl(integration.config?.customIconUrl || '');
     setTestResult(null); // Reseta testes
@@ -506,6 +529,12 @@ export default function IntegrationsPage() {
         machineId: configLlMachine.trim(), 
         sequenceId: configLlSequence.trim(), 
         levelCode: configLlLevel.trim() 
+      };
+    } else if (selectedProvider === 'meta_capi') {
+      config = {
+        pixelId: configMetaPixelId.trim(),
+        accessToken: configMetaAccessToken.trim(),
+        testEventCode: configMetaTestCode.trim()
       };
     }
 
@@ -568,6 +597,10 @@ export default function IntegrationsPage() {
       config.machineId = configLlMachine.trim();
       config.sequenceId = configLlSequence.trim();
       config.levelCode = configLlLevel.trim();
+    } else if (editingIntegration.type === 'meta_capi') {
+      config.pixelId = configMetaPixelId.trim();
+      config.accessToken = configMetaAccessToken.trim();
+      config.testEventCode = configMetaTestCode.trim();
     }
 
     config.customIconUrl = formCustomIconUrl.trim() || null;
@@ -669,6 +702,12 @@ export default function IntegrationsPage() {
           sequenceId: configLlSequence.trim(), 
           levelCode: configLlLevel.trim() 
         };
+      } else if (selectedProvider === 'meta_capi') {
+        config = {
+          pixelId: configMetaPixelId.trim(),
+          accessToken: configMetaAccessToken.trim(),
+          testEventCode: configMetaTestCode.trim()
+        };
       }
 
       const res = await fetch('/api/webhooks/test-outbound', {
@@ -703,6 +742,7 @@ export default function IntegrationsPage() {
   };
 
   const webhookIntegration = integrations.find(i => i.type === 'webhook');
+  const metaCapiIntegration = integrations.find(i => i.type === 'meta_capi');
   const hubspotIntegration = integrations.find(i => i.type === 'hubspot');
   const activecampaignIntegration = integrations.find(i => i.type === 'activecampaign');
   const zapiIntegration = integrations.find(i => i.type === 'zapi');
@@ -793,7 +833,7 @@ export default function IntegrationsPage() {
                   </button>
                 )}
                 <h2 style={{ marginTop: isAdmin ? '1rem' : '0' }}>Hub de Integrações</h2>
-                <p>Repasse seus leads capturados em tempo real para CRMs, automações ou WhatsApp.</p>
+                <p>Repasse seus leads capturados em tempo real para CRMs, automações ou Meta CAPI.</p>
               </div>
             </div>
 
@@ -832,6 +872,62 @@ export default function IntegrationsPage() {
 
             {/* Provedores Disponíveis */}
             <div className={styles.cardsGrid}>
+
+              {/* Meta Conversions API (Meta CAPI) */}
+              <div className={`${styles.providerCard} ${metaCapiIntegration ? (metaCapiIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
+                <div className={styles.providerHeader}>
+                  <div className={styles.providerBrand}>
+                    <div className={styles.providerLogoContainer}>
+                      <div className={styles.providerLogo} style={{ backgroundColor: 'rgba(0, 129, 251, 0.1)', color: '#0081FB', border: '1px solid rgba(0, 129, 251, 0.25)' }}>
+                        {renderProviderLogo('meta_capi', metaCapiIntegration)}
+                      </div>
+                      {metaCapiIntegration && (
+                        <button 
+                          type="button"
+                          className={styles.editLogoOverlay} 
+                          onClick={() => openIconModal(metaCapiIntegration)}
+                          title="Alterar imagem do card"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.providerTitleContainer}>
+                      <h3>Meta Conversions API (CAPI)</h3>
+                    </div>
+                  </div>
+                  {metaCapiIntegration?.status === 'active' && (
+                    <span className={`${styles.statusIndicator} ${styles.statusActive}`}>Ativo</span>
+                  )}
+                </div>
+                <div className={styles.providerBody}>
+                  <p>Dispare eventos de conversão (<strong>Lead</strong> e <strong>Purchase</strong>) direto para os servidores do Meta Ads (Facebook/Instagram). Envia fbc, fbp e dados criptografados em SHA-256 para elevar a Nota de Correspondência do Pixel.</p>
+                </div>
+                <div className={styles.providerFooter}>
+                  {metaCapiIntegration ? (
+                    <button className={styles.configureBtn} onClick={() => openEditModal(metaCapiIntegration)}>
+                      <Settings size={14} /> <span>Configurar</span>
+                    </button>
+                  ) : (
+                    <button className={styles.connectBtn} onClick={() => openCreateModal('meta_capi')}>
+                      <Plus size={14} /> <span>Conectar</span>
+                    </button>
+                  )}
+                  {metaCapiIntegration && (
+                    <div className={styles.switchContainer}>
+                      <span>{metaCapiIntegration.status === 'active' ? 'Ativo' : 'Pausado'}</span>
+                      <label className={styles.switch}>
+                        <input 
+                          type="checkbox"
+                          checked={metaCapiIntegration.status === 'active'}
+                          onChange={() => handleToggleStatus(metaCapiIntegration.id, metaCapiIntegration.status)}
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
               
               {/* Webhook Customizado */}
               <div className={`${styles.providerCard} ${webhookIntegration ? (webhookIntegration.status === 'active' ? styles.cardActiveNeon : styles.cardPausedNeon) : ''} glass`}>
@@ -1370,6 +1466,45 @@ export default function IntegrationsPage() {
                 </div>
 
 
+
+                {/* Campos Meta CAPI */}
+                {selectedProvider === 'meta_capi' && (
+                  <>
+                    <div className={styles.field}>
+                      <label>Pixel ID (Meta/Facebook)</label>
+                      <input 
+                        type="text" 
+                        value={configMetaPixelId}
+                        onChange={e => setConfigMetaPixelId(e.target.value)}
+                        placeholder="Ex: 123456789012345"
+                        required
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Token de Acesso da API de Conversões (Access Token)</label>
+
+                      <input 
+                        type="password" 
+                        value={configMetaAccessToken}
+                        onChange={e => setConfigMetaAccessToken(e.target.value)}
+                        placeholder="EAAG..."
+                        required
+                      />
+                      <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                        Gerado no Gerenciador de Eventos da Meta em Configurações &gt; API de Conversões.
+                      </small>
+                    </div>
+                    <div className={styles.field}>
+                      <label>Código de Evento de Teste (Test Event Code - Opcional)</label>
+                      <input 
+                        type="text" 
+                        value={configMetaTestCode}
+                        onChange={e => setConfigMetaTestCode(e.target.value)}
+                        placeholder="Ex: TEST12345 (Preencha para testar na aba Testar Eventos)"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Campos Webhook */}
                 {selectedProvider === 'webhook' && (

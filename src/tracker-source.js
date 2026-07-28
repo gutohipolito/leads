@@ -102,6 +102,24 @@
         return 'temp_' + Math.random().toString(36).substring(2, 18);
     }
 
+    function getCookie(name) {
+        try {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        } catch (e) {}
+        return null;
+    }
+
+    function setCookie(name, value, days) {
+        try {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + d.toUTCString();
+            document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
+        } catch (e) {}
+    }
+
     const STORAGE_TTL = 90 * 24 * 60 * 60 * 1000; // 90 dias
 
     function setLocalItem(key, value) {
@@ -468,16 +486,35 @@
 
     function getVisitorId() {
         try {
-            let visitorId = getLocalItem('asthros_visitor_id');
+            let visitorId = getCookie('_asthros_vid') || getLocalItem('asthros_visitor_id');
             if (!visitorId) {
                 visitorId = generateUUID();
-                setLocalItem('asthros_visitor_id', visitorId);
             }
+            setLocalItem('asthros_visitor_id', visitorId);
+            setCookie('_asthros_vid', visitorId, 365);
             return visitorId;
         } catch (e) {
             return 'temp_' + randomId();
         }
     }
+
+    function initMetaCookies() {
+        try {
+            // Meta _fbp (Browser ID)
+            if (!getCookie('_fbp')) {
+                const fbpValue = `fb.1.${Date.now()}.${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+                setCookie('_fbp', fbpValue, 365);
+            }
+            // Meta _fbc (Click ID from fbclid query string)
+            const queryParams = new URLSearchParams(window.location.search);
+            const fbclid = queryParams.get('fbclid');
+            if (fbclid) {
+                const fbcValue = `fb.1.${Date.now()}.${fbclid}`;
+                setCookie('_fbc', fbcValue, 365);
+            }
+        } catch (e) {}
+    }
+    initMetaCookies();
 
     function getConversionTime() {
         try {
@@ -787,6 +824,8 @@
 
         return {
             ...getUtms(),
+            fbc: getCookie('_fbc') || null,
+            fbp: getCookie('_fbp') || null,
             referrer: getReferrerContext(),
             page_title: document.title,
             page_url: window.location.href,

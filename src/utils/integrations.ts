@@ -1,4 +1,5 @@
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
+import { sendMetaCapiEvent } from '@/lib/capiService';
 
 /**
  * Função utilitária para repassar os dados de um lead capturado para todas
@@ -338,6 +339,38 @@ export async function sendLeadToIntegrations(params: {
             responseText = await res.text();
           } else {
             throw new Error('token do Leadlovers ausente.');
+          }
+        }
+        else if (integration.type === 'meta_capi') {
+          const pixelId = integration.config?.pixelId;
+          const accessToken = integration.config?.accessToken;
+          const testEventCode = integration.config?.testEventCode;
+
+          if (pixelId && accessToken) {
+            const isPurchase = source === 'purchase' || source === 'shopify' || body.event_name === 'Purchase';
+            const capiResult = await sendMetaCapiEvent({
+              pixelId,
+              accessToken,
+              eventName: isPurchase ? 'Purchase' : 'Lead',
+              eventId: lead.id,
+              eventSourceUrl: body.marketing?.page_url || body.marketing?.page_title,
+              userData: {
+                email: email,
+                phone: phone,
+                name: name,
+                ipAddress: body.device?.ip || body.device?.client_ip,
+                userAgent: body.device?.user_agent,
+                fbc: body.marketing?.fbc || (body.marketing?.fbclid ? `fb.1.${Date.now()}.${body.marketing?.fbclid}` : null),
+                fbp: body.marketing?.fbp
+              },
+              customData: body.value !== undefined ? { currency: 'BRL', value: Number(body.value) } : undefined,
+              testEventCode
+            });
+
+            status = capiResult.success ? 200 : 400;
+            responseText = JSON.stringify(capiResult);
+          } else {
+            throw new Error('Pixel ID ou Access Token do Meta CAPI ausentes.');
           }
         }
       } catch (err: any) {

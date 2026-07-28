@@ -38,6 +38,24 @@
         return 'temp_' + Math.random().toString(36).substring(2, 18);
     }
 
+    function getCookie(name) {
+        try {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        } catch (e) {}
+        return null;
+    }
+
+    function setCookie(name, value, days) {
+        try {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + d.toUTCString();
+            document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
+        } catch (e) {}
+    }
+
     const STORAGE_TTL = 90 * 24 * 60 * 60 * 1000; // 90 dias
 
     function setLocalItem(key, value) {
