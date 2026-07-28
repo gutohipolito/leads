@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
@@ -43,10 +43,11 @@ export default function Home() {
     return false;
   });
   const [allLeads, setAllLeads] = useState<any[]>([]);
+  const [allPurchases, setAllPurchases] = useState<any[]>([]);
   const [lastSignalTime, setLastSignalTime] = useState<number | null>(null);
   const [activeClientsCount, setActiveClientsCount] = useState(0);
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords' | 'ecommerce'>('all');
   const [dashboardPeriod, setDashboardPeriod] = useState<7 | 15 | 30>(7);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const isPaid = useMemo(() => selectedLead ? isPaidMedia(selectedLead) : false, [selectedLead]);
@@ -118,6 +119,20 @@ export default function Home() {
           const { decryptLeadsList } = await import('@/utils/frontendEncryption');
           const decryptedLeads = await decryptLeadsList(leadsList);
           setAllLeads(decryptedLeads);
+
+          // 3. Query de compras/pedidos dos últimos 30 dias
+          let purchasesQuery = supabase
+            .from('purchases')
+            .select('*, clients(name)')
+            .gte('created_at', dataLimite)
+            .order('created_at', { ascending: false });
+
+          if (!(isUserAdmin && !impersonated)) {
+            purchasesQuery = purchasesQuery.eq('client_id', activeClientId);
+          }
+
+          const { data: purchasesRaw } = await purchasesQuery;
+          setAllPurchases(purchasesRaw || []);
 
           const lastLead = leadsList[0];
           const lastSignal = lastLead ? new Date(lastLead.created_at).getTime() : null;
@@ -205,6 +220,11 @@ export default function Home() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // E-commerce Purchases no período
+    const purchasesInPeriod = allPurchases.filter(p => p.created_at >= periodStart);
+    const ecommerceCount = purchasesInPeriod.length;
+    const ecommerceRevenue = purchasesInPeriod.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+
     // Pizza (Divisão de origens)
     const wppCount = leadsInPeriod.filter(l => l.source === 'whatsapp_tracker').length;
     const selectorCount = leadsInPeriod.filter(l => 
@@ -223,12 +243,19 @@ export default function Home() {
     ).length;
     const formCount = leadsInPeriod.length - wppCount - selectorCount - keywordCount;
 
+    const totalVolume = leadsInPeriod.length + ecommerceCount;
+
     const sourceData = [
       { name: 'WhatsApp', value: wppCount, color: '#25d366' },
+      { name: 'Formulários', value: formCount, color: '#56d7fd' },
       { name: 'Seletores', value: selectorCount, color: '#a855f7' },
       { name: 'Palavras-Chave', value: keywordCount, color: '#f97316' },
-      { name: 'Formulários', value: formCount, color: '#56d7fd' }
-    ].filter(s => activeFilter === 'all' ? true : s.value > 0);
+      { name: 'E-commerce', value: ecommerceCount, revenue: ecommerceRevenue, color: '#ec4899' }
+    ].filter(s => {
+      if (activeFilter === 'ecommerce') return s.name === 'E-commerce';
+      if (activeFilter === 'all') return true;
+      return s.value > 0;
+    });
 
     // UTMs
     const utmMap: any = {};
@@ -303,6 +330,7 @@ export default function Home() {
       totalLeads,
       leadsToday,
       leadsInPeriod: leadsInPeriod.length,
+      totalVolume,
       sourceData,
       topUtms,
       locationData,
@@ -310,7 +338,7 @@ export default function Home() {
       recentLeads,
       performanceData
     };
-  }, [filteredLeads, activeFilter, dashboardPeriod, recentLeadsPeriod]);
+  }, [filteredLeads, allPurchases, activeFilter, dashboardPeriod, recentLeadsPeriod]);
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : "";
 
@@ -855,6 +883,13 @@ export default function Home() {
             <Type size={16} />
             <span>Palavras-Chave</span>
           </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'ecommerce' ? styles.activeEcommerce : ''}`}
+            onClick={() => setActiveFilter('ecommerce')}
+          >
+            <ShoppingBag size={16} />
+            <span>E-commerce</span>
+          </button>
         </div>
 
         <div className={styles.statsGrid}>
@@ -989,11 +1024,9 @@ export default function Home() {
             </div>
             <div className={styles.sourcesContainer}>
               {statsSummary.sourceData.map((s: any) => {
-                const percentage = statsSummary.leadsInPeriod > 0 
-                  ? ((s.value / statsSummary.leadsInPeriod) * 100).toFixed(0) 
-                  : '0';
+                const totalVol = statsSummary.totalVolume || 1;
+                const percentage = ((s.value / totalVol) * 100).toFixed(0);
 
-                // Selecionar o ícone de forma dinâmica
                 const renderIcon = () => {
                   switch (s.name) {
                     case 'WhatsApp':
@@ -1002,6 +1035,8 @@ export default function Home() {
                       return <MousePointerClick size={18} />;
                     case 'Palavras-Chave':
                       return <Type size={18} />;
+                    case 'E-commerce':
+                      return <ShoppingBag size={18} />;
                     case 'Formulários':
                     default:
                       return <FileText size={18} />;
@@ -1026,7 +1061,14 @@ export default function Home() {
                     
                     <div className={styles.sourceCardBody}>
                       <span className={styles.sourceName}>{s.name}</span>
-                      <h4 className={styles.sourceValue}>{s.value}</h4>
+                      <div className={styles.sourceValueRow}>
+                        <h4 className={styles.sourceValue}>{s.value}</h4>
+                        {s.revenue !== undefined && s.revenue > 0 && (
+                          <span className={styles.sourceRevenueTag} style={{ color: s.color }}>
+                            R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className={styles.sourceBarContainer}>
