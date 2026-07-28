@@ -27,7 +27,9 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  Play
+  Play,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -38,12 +40,29 @@ export default function PurchasesPage() {
   const [webhooksList, setWebhooksList] = useState<any[]>([]);
   const [selectedWebhookId, setSelectedWebhookId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+
+  // Estados do Dropdown Customizado de Webhooks / E-commerce
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState('');
+  const [dropdownFilterEcommerce, setDropdownFilterEcommerce] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [gatewayFilter, setGatewayFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [copied, setCopied] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Partículas de E-commerce ativadas ao abrir o recibo
   const [particles, setParticles] = useState<Array<{ id: number; left: number; symbol: string; delay: number; duration: number; size: number }>>([]);
@@ -73,8 +92,8 @@ export default function PurchasesPage() {
           }
         }
 
-        // 1. Buscar a lista de Webhooks disponíveis
-        let whQuery = supabase.from('webhooks').select('*, clients(name)').eq('status', 'active');
+        // 1. Buscar a lista de Webhooks disponíveis (incluindo flag is_ecommerce do cliente)
+        let whQuery = supabase.from('webhooks').select('*, clients(name, is_ecommerce)').eq('status', 'active');
         if (activeClientId) {
           whQuery = whQuery.eq('client_id', activeClientId);
         }
@@ -160,6 +179,22 @@ export default function PurchasesPage() {
     if (selectedWebhookId === 'all') return null;
     return webhooksList.find((w) => w.id === selectedWebhookId) || null;
   }, [selectedWebhookId, webhooksList]);
+
+  // Webhooks filtrados para o Dropdown Customizado (Busca + E-commerce)
+  const filteredWebhooksForDropdown = useMemo(() => {
+    return webhooksList.filter((wh) => {
+      if (dropdownFilterEcommerce && !wh.clients?.is_ecommerce) {
+        return false;
+      }
+      if (dropdownSearch) {
+        const term = dropdownSearch.toLowerCase();
+        const matchWhName = wh.name?.toLowerCase().includes(term);
+        const matchClientName = wh.clients?.name?.toLowerCase().includes(term);
+        return matchWhName || matchClientName;
+      }
+      return true;
+    });
+  }, [webhooksList, dropdownFilterEcommerce, dropdownSearch]);
 
   // URL do Webhook calculada (apenas para webhook selecionado)
   const webhookUrl = useMemo(() => {
@@ -292,18 +327,127 @@ export default function PurchasesPage() {
               <span>Selecione a Loja / Webhook para Integração:</span>
             </div>
 
-            <select
-              className={styles.selectDropdown}
-              value={selectedWebhookId}
-              onChange={(e) => setSelectedWebhookId(e.target.value)}
-            >
-              <option value="all">Todas as Lojas (Visão Geral)</option>
-              {webhooksList.map((wh) => (
-                <option key={wh.id} value={wh.id}>
-                  {wh.name} {wh.clients?.name ? `(${wh.clients.name})` : ''}
-                </option>
-              ))}
-            </select>
+            {/* Dropdown Customizado de Webhooks & E-commerce */}
+            <div className={styles.customSelectWrapper} ref={dropdownRef}>
+              <button 
+                type="button"
+                className={`${styles.customSelectTrigger} ${isDropdownOpen ? styles.triggerOpen : ''}`}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <div className={styles.triggerContent}>
+                  <Store size={18} color="var(--primary)" />
+                  <span className={styles.triggerText}>
+                    {selectedWebhookId === 'all' 
+                      ? 'Todas as Lojas (Visão Geral)' 
+                      : `${currentWebhook?.name || 'Loja'} ${currentWebhook?.clients?.name ? `(${currentWebhook.clients.name})` : ''}`
+                    }
+                  </span>
+                  {currentWebhook?.clients?.is_ecommerce && (
+                    <span className={styles.miniEcomBadge}>
+                      <ShoppingBag size={10} /> E-com
+                    </span>
+                  )}
+                </div>
+                <ChevronDown size={18} className={`${styles.arrowIcon} ${isDropdownOpen ? styles.arrowRotated : ''}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className={styles.customSelectMenu}>
+                  {/* Cabeçalho do Menu com Busca e Filtros */}
+                  <div className={styles.menuHeader}>
+                    <div className={styles.searchBoxMenu}>
+                      <Search size={14} color="var(--muted-foreground)" />
+                      <input 
+                        type="text" 
+                        placeholder="Buscar loja ou cliente..." 
+                        value={dropdownSearch}
+                        onChange={(e) => setDropdownSearch(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {dropdownSearch && (
+                        <X size={14} style={{ cursor: 'pointer' }} onClick={() => setDropdownSearch('')} />
+                      )}
+                    </div>
+
+                    <div className={styles.filterTabsMenu}>
+                      <button 
+                        type="button" 
+                        className={`${styles.filterTabBtn} ${!dropdownFilterEcommerce ? styles.activeTabBtn : ''}`}
+                        onClick={(e) => { e.stopPropagation(); setDropdownFilterEcommerce(false); }}
+                      >
+                        Todas ({webhooksList.length})
+                      </button>
+                      <button 
+                        type="button" 
+                        className={`${styles.filterTabBtn} ${dropdownFilterEcommerce ? styles.activeTabBtn : ''}`}
+                        onClick={(e) => { e.stopPropagation(); setDropdownFilterEcommerce(true); }}
+                      >
+                        <ShoppingBag size={12} />
+                        E-commerce ({webhooksList.filter(w => w.clients?.is_ecommerce).length})
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Lista de Opções */}
+                  <div className={styles.menuList}>
+                    <div 
+                      className={`${styles.menuOption} ${selectedWebhookId === 'all' ? styles.optionSelected : ''}`}
+                      onClick={() => {
+                        setSelectedWebhookId('all');
+                        setIsDropdownOpen(false);
+                      }}
+                    >
+                      <div className={styles.optionInfo}>
+                        <Store size={16} color="var(--primary)" />
+                        <span className={styles.optionTitle}>Todas as Lojas (Visão Geral)</span>
+                      </div>
+                      {selectedWebhookId === 'all' && <Check size={16} color="var(--primary)" />}
+                    </div>
+
+                    {filteredWebhooksForDropdown.map((wh) => {
+                      const isSelected = selectedWebhookId === wh.id;
+                      const isEcom = wh.clients?.is_ecommerce;
+
+                      return (
+                        <div 
+                          key={wh.id}
+                          className={`${styles.menuOption} ${isSelected ? styles.optionSelected : ''}`}
+                          onClick={() => {
+                            setSelectedWebhookId(wh.id);
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <div className={styles.optionInfo}>
+                            <Webhook size={16} color={isEcom ? '#10b981' : 'var(--primary)'} />
+                            <div className={styles.optionTextGroup}>
+                              <span className={styles.optionTitle}>{wh.name}</span>
+                              {wh.clients?.name && (
+                                <span className={styles.optionSub}>{wh.clients.name}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className={styles.optionBadges}>
+                            {isEcom && (
+                              <span className={styles.ecommerceBadge}>
+                                <ShoppingBag size={10} /> E-commerce
+                              </span>
+                            )}
+                            {isSelected && <Check size={16} color="var(--primary)" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {filteredWebhooksForDropdown.length === 0 && (
+                      <div className={styles.emptyMenu}>
+                        Nenhuma loja encontrada para este filtro.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Oculta a URL se estiver em "Todas as Lojas" */}

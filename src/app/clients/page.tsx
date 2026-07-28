@@ -32,7 +32,8 @@ import {
   Clock,
   X,
   Eraser,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingBag
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
@@ -57,6 +58,7 @@ export default function ClientsPage() {
   const [newClientLogo, setNewClientLogo] = useState('');
   const [newClientLogoBg, setNewClientLogoBg] = useState('#ffffff');
   const [newClientPrimaryColor, setNewClientPrimaryColor] = useState('#56d7fd');
+  const [newClientIsEcommerce, setNewClientIsEcommerce] = useState(false);
   const [isLookingUpCnpj, setIsLookingUpCnpj] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -242,7 +244,8 @@ export default function ClientsPage() {
           name: newClientName,
           logo_url: newClientLogo,
           logo_bg: newClientLogoBg,
-          primary_color: newClientPrimaryColor
+          primary_color: newClientPrimaryColor,
+          is_ecommerce: newClientIsEcommerce
         }])
         .select()
         .single();
@@ -258,6 +261,7 @@ export default function ClientsPage() {
         setNewClientName('');
         setNewClientEmail('');
         setNewClientLogo('');
+        setNewClientIsEcommerce(false);
         loadClients();
       }
     } catch (err: any) {
@@ -279,7 +283,8 @@ export default function ClientsPage() {
           name: editingClient.name,
           logo_url: editingClient.logo_url,
           logo_bg: editingClient.logo_bg,
-          primary_color: editingClient.primary_color
+          primary_color: editingClient.primary_color,
+          is_ecommerce: !!editingClient.is_ecommerce
         })
         .eq('id', editingClient.id);
 
@@ -607,6 +612,11 @@ export default function ClientsPage() {
                         </div>
                         <div className={styles.clientInfo}>
                           <span className={styles.clientName}>{client.name}</span>
+                          {client.is_ecommerce && (
+                            <span className={styles.ecommerceBadge}>
+                              <ShoppingBag size={10} /> E-commerce
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -1170,6 +1180,18 @@ export default function ClientsPage() {
                     ))}
                   </div>
                 </div>
+                <div className={styles.checkboxGroup}>
+                  <label className={styles.checkboxLabel}>
+                    <input 
+                      type="checkbox" 
+                      checked={newClientIsEcommerce} 
+                      onChange={(e) => setNewClientIsEcommerce(e.target.checked)} 
+                    />
+                    <ShoppingBag size={18} color="var(--primary)" />
+                    <span>Esta empresa possui E-commerce / Loja Virtual?</span>
+                  </label>
+                </div>
+
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancelar</button>
                   <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
@@ -1251,6 +1273,18 @@ export default function ClientsPage() {
                     ))}
                   </div>
                 </div>
+                <div className={styles.checkboxGroup}>
+                  <label className={styles.checkboxLabel}>
+                    <input 
+                      type="checkbox" 
+                      checked={!!editingClient.is_ecommerce} 
+                      onChange={(e) => setEditingClient({ ...editingClient, is_ecommerce: e.target.checked })} 
+                    />
+                    <ShoppingBag size={18} color="var(--primary)" />
+                    <span>Esta empresa possui E-commerce / Loja Virtual?</span>
+                  </label>
+                </div>
+
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={() => setIsEditModalOpen(false)}>Cancelar</button>
                   <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
