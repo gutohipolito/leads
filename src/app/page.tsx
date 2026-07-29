@@ -1071,7 +1071,7 @@ export default function Home() {
                     <div className={styles.perfInfo}>
                       <div className={styles.perfNameWrapper}>
                         <span className={styles.perfRank}>#{i + 1}</span>
-                        <span className={styles.perfName}>{p.name}</span>
+                        <span className={styles.perfName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{p.name}</span>
                       </div>
                       <div className={styles.perfValueWrapper}>
                         <span className={styles.perfValue}>{p.count}</span>
@@ -1429,7 +1429,7 @@ export default function Home() {
                         {(isAdmin && !impersonatedName) && (
                           <td>
                             <div className={styles.clientCell}>
-                              <span className={styles.clientName} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>{lead.clients?.name || 'N/A'}</span>
+                              <span className={styles.clientName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{lead.clients?.name || 'N/A'}</span>
                               <span className={styles.webhookSub}>
                                 {lead.webhooks?.name || lead.data?.captured_by?.name || 'Sem webhook'}
                               </span>
@@ -1454,8 +1454,8 @@ export default function Home() {
                             </div>
                           ) : (
                             <div className={styles.leadInfoMini}>
-                              <span className={styles.leadName} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>{lead.name || 'Sem nome'}</span>
-                              <span className={styles.leadEmail} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>{lead.email || 'Sem e-mail'}</span>
+                              <span className={styles.leadName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{lead.name || 'Sem nome'}</span>
+                              <span className={styles.leadEmail} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{lead.email || 'Sem e-mail'}</span>
                             </div>
                           )}
                         </td>
@@ -1506,19 +1506,19 @@ export default function Home() {
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nome</span>
-                      <span className={`${styles.infoVal} ${!selectedLead.name ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>
+                      <span className={`${styles.infoVal} ${!selectedLead.name ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>
                         {selectedLead.name || 'Sem nome'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>E-mail</span>
-                      <span className={`${styles.infoVal} ${!selectedLead.email ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>
+                      <span className={`${styles.infoVal} ${!selectedLead.email ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>
                         {selectedLead.email || 'Sem e-mail'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Telefone</span>
-                      <span className={`${styles.infoVal} ${!selectedLead.phone ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>
+                      <span className={`${styles.infoVal} ${!selectedLead.phone ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>
                         {selectedLead.phone || 'Sem telefone'}
                       </span>
                     </div>
