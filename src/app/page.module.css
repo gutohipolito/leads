@@ -640,7 +640,7 @@
 }
 
 .bottomGridMapActive {
-  grid-template-columns: 1fr 0.9fr 2.4fr;
+  grid-template-columns: 0.8fr 2.4fr 1.5fr;
 }
 
 @media (max-width: 1280px) {
