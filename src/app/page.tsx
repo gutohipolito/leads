@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, ShoppingBag, Map as MapView, List as ListView } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, EyeOff, ShoppingBag, Map as MapView, List as ListView } from 'lucide-react';
 import Brazil from '@react-map/brazil';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -41,6 +41,7 @@ const isPaidMedia = (lead: any): boolean => {
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
+  const [hideNames, setHideNames] = useState(false);
   const [isAdmin, setIsAdmin] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('user_role') === 'admin';
@@ -837,7 +838,19 @@ export default function Home() {
         
         {/* Cabeçalho do Dashboard */}
         <div className={styles.dashboardHeader}>
-          <h2>{dashboardTitle || 'Visão Geral'}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2>{dashboardTitle || 'Visão Geral'}</h2>
+            <div className="glass" style={{ padding: '4px', borderRadius: '10px', display: 'flex', alignItems: 'center' }}>
+              <button 
+                className={`${styles.periodBtn} ${hideNames ? styles.activePeriod : ''}`}
+                onClick={() => setHideNames(!hideNames)}
+                title={hideNames ? "Mostrar Dados" : "Ocultar Dados"}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 10px', margin: 0 }}
+              >
+                {hideNames ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
           <div className={styles.headerControls}>
             <div className={styles.periodSelectorBar}>
               <button 
@@ -1441,8 +1454,8 @@ export default function Home() {
                             </div>
                           ) : (
                             <div className={styles.leadInfoMini}>
-                              <span className={styles.leadName}>{lead.name || 'Sem nome'}</span>
-                              <span className={styles.leadEmail}>{lead.email || 'Sem e-mail'}</span>
+                              <span className={styles.leadName} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>{lead.name || 'Sem nome'}</span>
+                              <span className={styles.leadEmail} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>{lead.email || 'Sem e-mail'}</span>
                             </div>
                           )}
                         </td>
@@ -1493,19 +1506,19 @@ export default function Home() {
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nome</span>
-                      <span className={`${styles.infoVal} ${!selectedLead.name ? styles.infoValEmpty : ''}`}>
+                      <span className={`${styles.infoVal} ${!selectedLead.name ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>
                         {selectedLead.name || 'Sem nome'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>E-mail</span>
-                      <span className={`${styles.infoVal} ${!selectedLead.email ? styles.infoValEmpty : ''}`}>
+                      <span className={`${styles.infoVal} ${!selectedLead.email ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>
                         {selectedLead.email || 'Sem e-mail'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Telefone</span>
-                      <span className={`${styles.infoVal} ${!selectedLead.phone ? styles.infoValEmpty : ''}`}>
+                      <span className={`${styles.infoVal} ${!selectedLead.phone ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>
                         {selectedLead.phone || 'Sem telefone'}
                       </span>
                     </div>
