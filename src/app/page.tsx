@@ -226,8 +226,7 @@ export default function Home() {
     });
     const performanceData: { name: string; count: number }[] = Object.entries(counts)
       .map(([name, count]) => ({ name, count: count as number }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .sort((a, b) => b.count - a.count);
 
     // E-commerce Purchases no período
     const purchasesInPeriod = allPurchases.filter(p => p.created_at >= periodStart);
@@ -275,8 +274,7 @@ export default function Home() {
     });
     const topUtms: { name: string; value: number }[] = Object.entries(utmMap)
       .map(([name, value]) => ({ name, value: value as number }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .sort((a, b) => b.value - a.value);
 
     // Localização
     const locMap: any = {};
@@ -289,8 +287,7 @@ export default function Home() {
     });
     const locationData: { name: string; value: number }[] = Object.entries(locMap)
       .map(([name, value]) => ({ name, value: value as number }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .sort((a, b) => b.value - a.value);
 
     // Chart Data
     const chartData = Array.from({ length: dashboardPeriod }).map((_, i) => {
@@ -1014,7 +1011,7 @@ export default function Home() {
               <div className={styles.cardHeader}>
                 <div className={styles.titleWithIcon}>
                   <Users size={18} className={styles.iconPrimary} />
-                  <h3>Performance por Parceiro (Top 5)</h3>
+                  <h3>Performance por Parceiro</h3>
                 </div>
               </div>
               <div className={styles.performanceList}>
@@ -1189,7 +1186,7 @@ export default function Home() {
             <div className={styles.cardHeader}>
               <div className={styles.titleWithIcon}>
                 <MapPin size={18} className={styles.iconWarning} />
-                <h3>Top Fontes (UTMs)</h3>
+                <h3>Fontes (UTMs)</h3>
               </div>
             </div>
             <div className={styles.utmList}>

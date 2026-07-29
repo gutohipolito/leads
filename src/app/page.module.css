@@ -924,7 +924,13 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1rem 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
+
+.performanceList::-webkit-scrollbar { width: 4px; }
+.performanceList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
 .perfItem {
   display: flex;
