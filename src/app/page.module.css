@@ -685,6 +685,51 @@
 .utmList::-webkit-scrollbar { width: 4px; }
 .utmList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
+/* Geographic Map List Visuals */
+.mapListItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  margin-bottom: 0.25rem;
+}
+
+.mapListItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.mapListInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mapListIcon {
+  color: #56d7fd;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(86, 215, 253, 0.1);
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.mapLocationBar {
+  height: 6px;
+  background: linear-gradient(90deg, #2ecc71, #56d7fd);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(86, 215, 253, 0.2);
+  transition: width 1s ease-out;
+}
+
 .utmItem {
   display: flex;
   flex-direction: column;

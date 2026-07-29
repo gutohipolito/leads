@@ -1280,13 +1280,16 @@ export default function Home() {
             {locationView === 'list' ? (
               <div className={styles.utmList}>
                 {statsSummary.locationData.length > 0 ? statsSummary.locationData.map((loc: any, i: number) => (
-                  <div key={loc.name} className={styles.utmItem}>
-                    <div className={styles.utmInfo}>
+                  <div key={loc.name} className={styles.mapListItem}>
+                    <div className={styles.mapListInfo}>
+                      <div className={styles.mapListIcon}>
+                        <MapPin size={14} />
+                      </div>
                       <span className={styles.utmRank}>#{i + 1}</span>
                       <span className={styles.utmName}>{loc.name}</span>
                     </div>
                     <div className={styles.utmBarWrapper}>
-                      <div className={styles.locationBar} style={{ width: `${(loc.value / (statsSummary.locationData[0]?.value || 1)) * 100}%` }} />
+                      <div className={styles.mapLocationBar} style={{ width: `${(loc.value / (statsSummary.locationData[0]?.value || 1)) * 100}%` }} />
                       <span className={styles.utmValue}>
                         {loc.value} <span className={styles.separator}>•</span> {((loc.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
                       </span>
@@ -1327,13 +1330,16 @@ export default function Home() {
                       return Object.entries(statsSummary.cityByStateMap[selectedStateMap])
                         .sort((a: any, b: any) => b[1] - a[1])
                         .map(([cityName, value]: any, i: number) => (
-                        <div key={cityName} className={styles.utmItem}>
-                          <div className={styles.utmInfo}>
+                        <div key={cityName} className={styles.mapListItem}>
+                          <div className={styles.mapListInfo}>
+                            <div className={styles.mapListIcon}>
+                              <MapPin size={14} />
+                            </div>
                             <span className={styles.utmRank}>#{i + 1}</span>
                             <span className={styles.utmName}>{cityName}</span>
                           </div>
                           <div className={styles.utmBarWrapper}>
-                            <div className={styles.locationBar} style={{ width: `${(value / maxCityValue) * 100}%` }} />
+                            <div className={styles.mapLocationBar} style={{ width: `${(value / maxCityValue) * 100}%` }} />
                             <span className={styles.utmValue}>
                               {value} <span className={styles.separator}>•</span> {((value / stateTotal) * 100).toFixed(1)}%
                             </span>
@@ -1342,7 +1348,10 @@ export default function Home() {
                       ));
                     })() : (
                       <div className={styles.emptyLocations}>
-                        <p>Nenhuma cidade registrada.</p>
+                        <MapView size={32} style={{ opacity: 0.5, marginBottom: '0.75rem', color: '#56d7fd' }} />
+                        <p style={{ opacity: 0.8, textAlign: 'center', fontSize: '0.9rem' }}>
+                          Selecione um estado no mapa para ver as cidades.
+                        </p>
                       </div>
                     )}
                   </div>
