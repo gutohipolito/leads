@@ -935,7 +935,19 @@
 .perfItem {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.8rem;
+  padding: 1rem 1.25rem;
+  background: rgba(var(--foreground-rgb), 0.02);
+  border: 1px solid rgba(var(--foreground-rgb), 0.05);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.perfItem:hover {
+  background: rgba(var(--foreground-rgb), 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: rgba(var(--foreground-rgb), 0.1);
 }
 
 .perfInfo {
@@ -944,34 +956,62 @@
   align-items: center;
 }
 
+.perfNameWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.perfRank {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
 .perfName {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--foreground);
 }
 
+.perfValueWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .perfValue {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 800;
-  color: #56d7fd;
-  background: rgba(86, 215, 253, 0.1);
+  color: #fff;
+  background: linear-gradient(90deg, #56d7fd, #2ecc71);
   padding: 2px 8px;
   border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(86, 215, 253, 0.3);
+}
+
+.perfUnit {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
 }
 
 .perfBarContainer {
-  height: 8px;
-  background: rgba(var(--foreground-rgb), 0.05);
+  height: 6px;
+  background: rgba(var(--foreground-rgb), 0.08);
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid var(--border);
 }
 
 .perfBarFill {
   height: 100%;
   border-radius: 10px;
   transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 15px rgba(86, 215, 253, 0.2);
+  box-shadow: 0 0 10px rgba(86, 215, 253, 0.5);
 }
 
 /* Ajuste no layout para acomodar o novo gráfico */

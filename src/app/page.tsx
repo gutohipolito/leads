@@ -1018,8 +1018,14 @@ export default function Home() {
                 {statsSummary.performanceData.map((p: any, i: number) => (
                   <div key={p.name} className={styles.perfItem}>
                     <div className={styles.perfInfo}>
-                      <span className={styles.perfName}>{p.name}</span>
-                      <span className={styles.perfValue}>{p.count} leads</span>
+                      <div className={styles.perfNameWrapper}>
+                        <span className={styles.perfRank}>#{i + 1}</span>
+                        <span className={styles.perfName}>{p.name}</span>
+                      </div>
+                      <div className={styles.perfValueWrapper}>
+                        <span className={styles.perfValue}>{p.count}</span>
+                        <span className={styles.perfUnit}>leads</span>
+                      </div>
                     </div>
                     <div className={styles.perfBarContainer}>
                       <div 
