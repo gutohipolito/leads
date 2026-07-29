@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
-import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, ShoppingBag } from 'lucide-react';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, ShoppingBag, Map as MapView, List as ListView } from 'lucide-react';
+import Brazil from '@react-map/brazil';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
@@ -49,6 +50,8 @@ export default function Home() {
   const [impersonatedName, setImpersonatedName] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords' | 'ecommerce'>('all');
   const [dashboardPeriod, setDashboardPeriod] = useState<7 | 15 | 30>(7);
+  const [locationView, setLocationView] = useState<'list' | 'map'>('list');
+  const [selectedStateMap, setSelectedStateMap] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const isPaid = useMemo(() => selectedLead ? isPaidMedia(selectedLead) : false, [selectedLead]);
   const [exportType, setExportType] = useState<{ show: boolean; type: string }>({ show: false, type: '' });
@@ -276,16 +279,43 @@ export default function Home() {
       .map(([name, value]) => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
 
+    const stateNameToUF: Record<string, string> = {
+      'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
+    };
+    
     // Localização
     const locMap: any = {};
+    const stateMap: any = {};
+    const cityByStateMap: any = {};
+    
     leadsInPeriod.forEach(l => {
       const cityRaw = l.data?.location?.city;
+      const stateRaw = l.data?.location?.region;
+
       if (cityRaw && cityRaw !== 'Desconhecida') {
         const city = decodeURIComponent(cityRaw);
         locMap[city] = (locMap[city] || 0) + 1;
       }
+      
+      if (stateRaw && stateRaw !== 'Desconhecido') {
+        const decodedState = decodeURIComponent(stateRaw);
+        const uf = stateNameToUF[decodedState] || decodedState.toUpperCase();
+        if (uf.length === 2) {
+          stateMap[uf] = (stateMap[uf] || 0) + 1;
+          if (cityRaw && cityRaw !== 'Desconhecida') {
+            const city = decodeURIComponent(cityRaw);
+            if (!cityByStateMap[uf]) cityByStateMap[uf] = {};
+            cityByStateMap[uf][city] = (cityByStateMap[uf][city] || 0) + 1;
+          }
+        }
+      }
     });
+    
     const locationData: { name: string; value: number }[] = Object.entries(locMap)
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value);
+
+    const stateData: { name: string; value: number }[] = Object.entries(stateMap)
       .map(([name, value]) => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
 
@@ -340,11 +370,19 @@ export default function Home() {
       sourceData,
       topUtms,
       locationData,
+      stateData,
+      cityByStateMap,
       chartData,
       recentLeads,
       performanceData
     };
   }, [filteredLeads, allPurchases, activeFilter, dashboardPeriod, recentLeadsPeriod]);
+
+  useEffect(() => {
+    if (locationView === 'map' && statsSummary.stateData.length > 0 && !selectedStateMap) {
+      setSelectedStateMap(statsSummary.stateData[0].name);
+    }
+  }, [locationView, statsSummary, selectedStateMap]);
 
   const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : "";
 
@@ -1213,34 +1251,104 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`${styles.utmCard} glass`}>
+          <div className={`${styles.utmCard} glass`} style={{ gridColumn: locationView === 'map' ? '1 / -1' : 'auto' }}>
             <div className={styles.cardHeader}>
               <div className={styles.titleWithIcon}>
                 <Globe size={18} className={styles.iconInfo} />
                 <h3>Distribuição Geográfica</h3>
               </div>
+              <div className={styles.cardPeriodSelector}>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${locationView === 'list' ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setLocationView('list')}
+                  title="Visualização em Lista"
+                >
+                  <ListView size={14} />
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${locationView === 'map' ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setLocationView('map')}
+                  title="Visualização no Mapa"
+                >
+                  <MapView size={14} />
+                </button>
+              </div>
             </div>
-            <div className={styles.utmList}>
-              {statsSummary.locationData.length > 0 ? statsSummary.locationData.map((loc: any, i: number) => (
-                <div key={loc.name} className={styles.utmItem}>
-                  <div className={styles.utmInfo}>
-                    <span className={styles.utmRank}>#{i + 1}</span>
-                    <span className={styles.utmName}>{loc.name}</span>
+            
+            {locationView === 'list' ? (
+              <div className={styles.utmList}>
+                {statsSummary.locationData.length > 0 ? statsSummary.locationData.map((loc: any, i: number) => (
+                  <div key={loc.name} className={styles.utmItem}>
+                    <div className={styles.utmInfo}>
+                      <span className={styles.utmRank}>#{i + 1}</span>
+                      <span className={styles.utmName}>{loc.name}</span>
+                    </div>
+                    <div className={styles.utmBarWrapper}>
+                      <div className={styles.locationBar} style={{ width: `${(loc.value / (statsSummary.locationData[0]?.value || 1)) * 100}%` }} />
+                      <span className={styles.utmValue}>
+                        {loc.value} <span className={styles.separator}>•</span> {((loc.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
-                  <div className={styles.utmBarWrapper}>
-                    <div className={styles.locationBar} style={{ width: `${(loc.value / (statsSummary.locationData[0]?.value || 1)) * 100}%` }} />
-                    <span className={styles.utmValue}>
-                      {loc.value} <span className={styles.separator}>•</span> {((loc.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
-                    </span>
+                )) : (
+                  <div className={styles.emptyLocations}>
+                    <MapPin size={24} />
+                    <p>Aguardando capturas geográficas...</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={styles.mapContainer}>
+                <div className={styles.mapWrapper}>
+                  <Brazil 
+                    type="select-single" 
+                    size={400} 
+                    mapColor="rgba(255,255,255,0.05)"
+                    strokeColor="rgba(255,255,255,0.2)"
+                    hoverColor="rgba(86, 215, 253, 0.4)"
+                    selectColor="#56d7fd"
+                    onSelect={(state) => {
+                      if (state) setSelectedStateMap(state);
+                    }}
+                  />
+                </div>
+                <div className={styles.mapListWrapper}>
+                  <h4 className={styles.mapListTitle}>
+                    Cidades em {selectedStateMap || '...'}
+                  </h4>
+                  <div className={styles.utmList} style={{ paddingRight: '0.5rem', flex: 1, minHeight: 0 }}>
+                    {selectedStateMap && statsSummary.cityByStateMap[selectedStateMap] ? (() => {
+                      const cityValues = Object.values(statsSummary.cityByStateMap[selectedStateMap]) as number[];
+                      const maxCityValue = cityValues.sort((a, b) => b - a)[0] || 1;
+                      const stateTotal = statsSummary.stateData.find((s: any) => s.name === selectedStateMap)?.value || 1;
+                      
+                      return Object.entries(statsSummary.cityByStateMap[selectedStateMap])
+                        .sort((a: any, b: any) => b[1] - a[1])
+                        .map(([cityName, value]: any, i: number) => (
+                        <div key={cityName} className={styles.utmItem}>
+                          <div className={styles.utmInfo}>
+                            <span className={styles.utmRank}>#{i + 1}</span>
+                            <span className={styles.utmName}>{cityName}</span>
+                          </div>
+                          <div className={styles.utmBarWrapper}>
+                            <div className={styles.locationBar} style={{ width: `${(value / maxCityValue) * 100}%` }} />
+                            <span className={styles.utmValue}>
+                              {value} <span className={styles.separator}>•</span> {((value / stateTotal) * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ));
+                    })() : (
+                      <div className={styles.emptyLocations}>
+                        <p>Nenhuma cidade registrada.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )) : (
-                <div className={styles.emptyLocations}>
-                  <MapPin size={24} />
-                  <p>Aguardando capturas geográficas...</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <div className={`${styles.logsCard} glass`}>
