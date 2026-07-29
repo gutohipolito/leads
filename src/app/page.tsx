@@ -13,6 +13,10 @@ import jsPDF from 'jspdf';
 import ExportModal from '@/components/ExportModal/ExportModal';
 import { decodeHtml } from '@/utils/decode';
 
+const STATE_NAME_TO_UF: Record<string, string> = {
+  'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
+};
+
 const isPaidMedia = (lead: any): boolean => {
   if (!lead || !lead.data) return false;
   
@@ -279,10 +283,6 @@ export default function Home() {
       .map(([name, value]) => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
 
-    const stateNameToUF: Record<string, string> = {
-      'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
-    };
-    
     // Localização
     const locMap: any = {};
     const stateMap: any = {};
@@ -299,7 +299,7 @@ export default function Home() {
       
       if (stateRaw && stateRaw !== 'Desconhecido') {
         const decodedState = decodeURIComponent(stateRaw);
-        const uf = stateNameToUF[decodedState] || decodedState.toUpperCase();
+        const uf = STATE_NAME_TO_UF[decodedState] || decodedState.toUpperCase();
         if (uf.length === 2) {
           stateMap[uf] = (stateMap[uf] || 0) + 1;
           if (cityRaw && cityRaw !== 'Desconhecida') {
@@ -1225,7 +1225,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={styles.bottomGrid}>
+        <div className={`${styles.bottomGrid} ${locationView === 'map' ? styles.bottomGridMapActive : ''}`}>
           <div className={`${styles.utmCard} glass`}>
             <div className={styles.cardHeader}>
               <div className={styles.titleWithIcon}>
@@ -1304,13 +1304,13 @@ export default function Home() {
                 <div className={styles.mapWrapper}>
                   <Brazil 
                     type="select-single" 
-                    size={200} 
+                    size={350} 
                     mapColor="rgba(255,255,255,0.05)"
                     strokeColor="rgba(255,255,255,0.2)"
                     hoverColor="rgba(86, 215, 253, 0.4)"
                     selectColor="#56d7fd"
                     onSelect={(state) => {
-                      if (state) setSelectedStateMap(state);
+                      if (state) setSelectedStateMap(STATE_NAME_TO_UF[state] || state);
                     }}
                   />
                 </div>
