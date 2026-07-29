@@ -1429,7 +1429,7 @@ export default function Home() {
                         {(isAdmin && !impersonatedName) && (
                           <td>
                             <div className={styles.clientCell}>
-                              <span className={styles.clientName}>{lead.clients?.name || 'N/A'}</span>
+                              <span className={styles.clientName} style={hideNames ? { filter: 'blur(5px)', userSelect: 'none' } : {}}>{lead.clients?.name || 'N/A'}</span>
                               <span className={styles.webhookSub}>
                                 {lead.webhooks?.name || lead.data?.captured_by?.name || 'Sem webhook'}
                               </span>
