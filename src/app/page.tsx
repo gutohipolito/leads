@@ -1251,7 +1251,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`${styles.utmCard} glass`} style={{ gridColumn: locationView === 'map' ? '1 / -1' : 'auto' }}>
+          <div className={`${styles.utmCard} glass`}>
             <div className={styles.cardHeader}>
               <div className={styles.titleWithIcon}>
                 <Globe size={18} className={styles.iconInfo} />
@@ -1304,7 +1304,7 @@ export default function Home() {
                 <div className={styles.mapWrapper}>
                   <Brazil 
                     type="select-single" 
-                    size={400} 
+                    size={200} 
                     mapColor="rgba(255,255,255,0.05)"
                     strokeColor="rgba(255,255,255,0.2)"
                     hoverColor="rgba(86, 215, 253, 0.4)"
