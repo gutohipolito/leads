@@ -48,6 +48,10 @@
   bottom: 2rem;
   left: 2rem;
   right: 2rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 1.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .impersonationBanner {

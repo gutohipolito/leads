@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: 1.25rem;
   width: 100%;
+  min-height: 0;
+  padding-bottom: 2rem;
 }
 
 .headerBar {
