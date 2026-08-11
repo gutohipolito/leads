@@ -79,7 +79,7 @@ async function resolveBySecret(secret: string | null | undefined) {
   if (!value) return null;
   const { data, error } = await supabase
     .from('webhooks')
-    .select('id, client_id, user_id, secret, status')
+    .select('id, client_id, secret, status')
     .eq('secret', value)
     .limit(5);
   if (error) {
@@ -92,11 +92,15 @@ async function resolveBySecret(secret: string | null | undefined) {
 async function resolveWebhook(clientId: string, secret?: string | null) {
   // 1) ID do terminal (webhook.id) — URL recomendada para WooCommerce
   if (UUID_RE.test(clientId)) {
-    const { data: byWebhookId } = await supabase
+    const { data: byWebhookId, error: byIdError } = await supabase
       .from('webhooks')
-      .select('id, client_id, user_id, secret, status')
+      .select('id, client_id, secret, status')
       .eq('id', clientId)
       .maybeSingle();
+
+    if (byIdError) {
+      console.error('[Purchases] resolve by webhook id:', byIdError.message);
+    }
 
     if (byWebhookId) {
       return { webhook: byWebhookId, error: null, clientId: byWebhookId.client_id };
@@ -105,7 +109,7 @@ async function resolveWebhook(clientId: string, secret?: string | null) {
     // 2) client_id do parceiro
     const { data: byClient, error: clientError } = await supabase
       .from('webhooks')
-      .select('id, client_id, user_id, secret, status')
+      .select('id, client_id, secret, status')
       .eq('client_id', clientId)
       .limit(10);
 
@@ -127,7 +131,7 @@ async function resolveWebhook(clientId: string, secret?: string | null) {
 
     if (client) {
       return {
-        webhook: { id: null, client_id: client.id, user_id: null, secret: null, status: 'active' },
+        webhook: { id: null, client_id: client.id, secret: null, status: 'active' },
         error: null,
         clientId: client.id,
       };
@@ -274,6 +278,34 @@ export async function handlePurchaseIngest(options: {
         message: `Pedido #${parsed.orderId} de ${parsed.customerName} ${formattedAmount ? `- Total: ${formattedAmount}` : ''}`.trim(),
         read: false,
       });
+    } catch (notifErr) {
+      console.error('Erro ao enviar notificação de compra:', notifErr);
+    }
+  } else {
+    // Notifica gestores do cliente se a coluna user_id não existir no webhook
+    try {
+      const { data: managers } = await supabase
+        .from('system_users')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('status', 'active')
+        .limit(5);
+
+      if (managers?.length) {
+        const formattedAmount =
+          parsed.totalAmount > 0
+            ? `R$ ${parsed.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+            : '';
+        await supabase.from('notifications').insert(
+          managers.map((manager) => ({
+            user_id: manager.id,
+            client_id: clientId,
+            title: `Nova Venda (${parsed.gateway.toUpperCase()})`,
+            message: `Pedido #${parsed.orderId} de ${parsed.customerName} ${formattedAmount ? `- Total: ${formattedAmount}` : ''}`.trim(),
+            read: false,
+          }))
+        );
+      }
     } catch (notifErr) {
       console.error('Erro ao enviar notificação de compra:', notifErr);
     }
