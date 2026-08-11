@@ -74,45 +74,64 @@ export function isCommerceWebhook(request: NextRequest, body: any) {
   return false;
 }
 
-async function resolveWebhook(clientId: string) {
-  const { data: byClient, error: clientError } = await supabase
+async function resolveBySecret(secret: string | null | undefined) {
+  const value = String(secret || '').trim();
+  if (!value) return null;
+  const { data } = await supabase
     .from('webhooks')
     .select('id, client_id, user_id, secret, status')
-    .eq('client_id', clientId)
-    .limit(10);
+    .eq('secret', value)
+    .limit(5);
+  const rows = data || [];
+  return rows.find((row) => row.status === 'active') || rows[0] || null;
+}
 
-  if (clientError) {
-    return { webhook: null as any, error: clientError, clientId };
+async function resolveWebhook(clientId: string, secret?: string | null) {
+  if (UUID_RE.test(clientId)) {
+    const { data: byClient, error: clientError } = await supabase
+      .from('webhooks')
+      .select('id, client_id, user_id, secret, status')
+      .eq('client_id', clientId)
+      .limit(10);
+
+    if (clientError) {
+      return { webhook: null as any, error: clientError, clientId };
+    }
+
+    const rows = byClient || [];
+    const active = rows.find((row) => row.status === 'active') || rows[0];
+    if (active) {
+      return { webhook: active, error: null, clientId: active.client_id };
+    }
+
+    const { data: byWebhookId } = await supabase
+      .from('webhooks')
+      .select('id, client_id, user_id, secret, status')
+      .eq('id', clientId)
+      .maybeSingle();
+
+    if (byWebhookId) {
+      return { webhook: byWebhookId, error: null, clientId: byWebhookId.client_id };
+    }
+
+    const { data: client } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', clientId)
+      .maybeSingle();
+
+    if (client) {
+      return {
+        webhook: { id: null, client_id: client.id, user_id: null, secret: null, status: 'active' },
+        error: null,
+        clientId: client.id,
+      };
+    }
   }
 
-  const rows = byClient || [];
-  const active = rows.find((row) => row.status === 'active') || rows[0];
-  if (active) {
-    return { webhook: active, error: null, clientId: active.client_id };
-  }
-
-  const { data: byWebhookId } = await supabase
-    .from('webhooks')
-    .select('id, client_id, user_id, secret, status')
-    .eq('id', clientId)
-    .maybeSingle();
-
-  if (byWebhookId) {
-    return { webhook: byWebhookId, error: null, clientId: byWebhookId.client_id };
-  }
-
-  const { data: client } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('id', clientId)
-    .maybeSingle();
-
-  if (client) {
-    return {
-      webhook: { id: null, client_id: client.id, user_id: null, secret: null, status: 'active' },
-      error: null,
-      clientId: client.id,
-    };
+  const bySecret = await resolveBySecret(secret);
+  if (bySecret) {
+    return { webhook: bySecret, error: null, clientId: bySecret.client_id };
   }
 
   return { webhook: null as any, error: null, clientId };
@@ -120,37 +139,28 @@ async function resolveWebhook(clientId: string) {
 
 export async function handlePurchaseIngest(options: {
   request: NextRequest;
-  clientIdParam: string;
+  clientIdParam?: string;
   rawBody: any;
+  secretOverride?: string;
 }) {
   const { request, rawBody } = options;
   const searchParams = request.nextUrl.searchParams;
-  const clientIdParam = normalizeClientId(options.clientIdParam);
-
-  if (!UUID_RE.test(clientIdParam)) {
-    return NextResponse.json(
-      {
-        error: 'ID do cliente inválido na URL.',
-        received_id: clientIdParam,
-        hint: 'Em Asthros abra Vendas, selecione a loja e copie a URL /api/webhooks/purchases/<uuid>. Não use a URL de Leads.',
-      },
-      { status: 401, headers: PURCHASE_CORS_HEADERS }
-    );
-  }
+  const clientIdParam = normalizeClientId(options.clientIdParam || '');
 
   const secret =
+    options.secretOverride ||
     request.headers.get('x-asthros-secret') ||
     rawBody?.secret ||
     searchParams.get('secret');
 
-  const { webhook, error: authError, clientId } = await resolveWebhook(clientIdParam);
+  const { webhook, error: authError, clientId } = await resolveWebhook(clientIdParam, secret);
 
   if (authError || !webhook) {
     return NextResponse.json(
       {
         error: 'Cliente não encontrado ou webhook inativo.',
         received_id: clientIdParam,
-        hint: 'Copie a URL em Vendas com a loja selecionada. O UUID precisa ser o do cliente (parceiro), não um ID inventado.',
+        hint: 'Em Vendas, selecione a loja e copie a URL /api/webhooks/woo/whsec_... Cole essa URL no WooCommerce.',
       },
       { status: 401, headers: PURCHASE_CORS_HEADERS }
     );

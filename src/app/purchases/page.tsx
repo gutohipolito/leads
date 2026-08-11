@@ -228,8 +228,13 @@ export default function PurchasesPage() {
   const webhookUrl = useMemo(() => {
     if (typeof window === 'undefined' || !currentWebhook) return '';
     const origin = window.location.origin;
-    const secParam = currentWebhook.secret ? `?secret=${currentWebhook.secret}` : '';
-    return `${origin}/api/webhooks/purchases/${currentWebhook.client_id}${secParam}`;
+    if (currentWebhook.secret) {
+      return `${origin}/api/webhooks/woo/${encodeURIComponent(currentWebhook.secret)}`;
+    }
+    if (currentWebhook.client_id) {
+      return `${origin}/api/webhooks/purchases/${currentWebhook.client_id}`;
+    }
+    return '';
   }, [currentWebhook]);
 
   const copyWebhookUrl = () => {
@@ -535,8 +540,8 @@ export default function PurchasesPage() {
                     <li>Marque o cliente como <strong>E-commerce</strong> em Clientes.</li>
                     <li>WooCommerce → Configurações → Avançado → Webhooks → Adicionar webhook.</li>
                     <li>Tópico: <code>Pedido criado</code> e outro para <code>Pedido atualizado</code>.</li>
-                    <li>URL de entrega: a URL copiada acima. Não troque o <code>secret</code> da URL pelo Secret do WooCommerce.</li>
-                    <li>Campo Secret do WooCommerce: deixe o que ele gerar (é só assinatura HMAC). Status: Ativo · API v3 · JSON.</li>
+                    <li>URL de entrega: cole <strong>exatamente</strong> a URL copiada acima (<code>/api/webhooks/woo/...</code>). Não use a URL de Leads.</li>
+                    <li>Campo Secret do WooCommerce: deixe em branco ou o valor que ele gerar. Não altere a URL.</li>
                     <li>Opcional — cole o snippet no <code>functions.php</code> do tema para gravar UTMs e visitor id no pedido:</li>
                   </ol>
                   <pre className={styles.phpSnippet}>{WOO_ORDER_META_SNIPPET}</pre>
