@@ -159,8 +159,10 @@ export async function handlePurchaseIngest(options: {
     return NextResponse.json(
       {
         error: 'Cliente não encontrado ou webhook inativo.',
-        received_id: clientIdParam,
-        hint: 'Em Vendas, selecione a loja e copie a URL /api/webhooks/woo/whsec_... Cole essa URL no WooCommerce.',
+        received_id: clientIdParam || null,
+        secret_prefix: secret ? String(secret).slice(0, 10) : null,
+        secret_length: secret ? String(secret).length : 0,
+        hint: 'Em Vendas, selecione a loja, clique em Testar URL e só então cole no WooCommerce a URL /api/webhooks/woo/whsec_...',
       },
       { status: 401, headers: PURCHASE_CORS_HEADERS }
     );

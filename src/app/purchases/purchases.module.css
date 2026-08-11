@@ -382,6 +382,8 @@
 .urlBox {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--border);
   border-radius: 10px;

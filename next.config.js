@@ -6,7 +6,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Forçando a detecção do diretório src se necessário
+  // WooCommerce/Shopify POSTs break when Next responds 308 trailing-slash redirects
+  skipTrailingSlashRedirect: true,
   experimental: {
     // turbo: {} 
   },

@@ -67,6 +67,10 @@ export default function PurchasesPage() {
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [installTab, setInstallTab] = useState<'woocommerce' | 'shopify' | 'yampi'>('woocommerce');
+  const [urlTest, setUrlTest] = useState<{ status: 'idle' | 'loading' | 'ok' | 'fail'; message: string }>({
+    status: 'idle',
+    message: '',
+  });
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -242,6 +246,47 @@ export default function PurchasesPage() {
     navigator.clipboard.writeText(webhookUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const testWebhookUrl = async () => {
+    if (!webhookUrl) return;
+    setUrlTest({ status: 'loading', message: 'Testando...' });
+    try {
+      const getRes = await fetch(webhookUrl, { method: 'GET' });
+      const getJson = await getRes.json().catch(() => ({}));
+      if (!getRes.ok || !getJson?.matched) {
+        setUrlTest({
+          status: 'fail',
+          message: getJson?.error || `GET falhou (${getRes.status}). Recarregue a página e selecione a loja de novo.`,
+        });
+        return;
+      }
+
+      const postRes = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WC-Webhook-Topic': 'action.woocommerce_webhook_ping',
+          'X-WC-Webhook-Source': window.location.origin,
+        },
+        body: JSON.stringify({ webhook_id: 1 }),
+      });
+      const postJson = await postRes.json().catch(() => ({}));
+      if (!postRes.ok || !postJson?.success) {
+        setUrlTest({
+          status: 'fail',
+          message: postJson?.error || `Ping POST falhou (${postRes.status}).`,
+        });
+        return;
+      }
+
+      setUrlTest({
+        status: 'ok',
+        message: `OK — ${getJson.webhook_name || 'loja'} autenticada. Cole exatamente esta URL no WooCommerce.`,
+      });
+    } catch (err: any) {
+      setUrlTest({ status: 'fail', message: err?.message || 'Falha de rede ao testar a URL.' });
+    }
   };
 
   const copyWooSnippet = () => {
@@ -507,7 +552,20 @@ export default function PurchasesPage() {
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 <span>{copied ? 'Copiado!' : 'Copiar URL'}</span>
               </button>
+              <button className={styles.copyBtn} onClick={testWebhookUrl} type="button" disabled={urlTest.status === 'loading'}>
+                {urlTest.status === 'ok' ? <CheckCircle2 size={14} /> : <Play size={14} />}
+                <span>{urlTest.status === 'loading' ? 'Testando...' : 'Testar URL'}</span>
+              </button>
             </div>
+            {urlTest.status !== 'idle' && (
+              <p style={{
+                margin: '0.6rem 0 0',
+                fontSize: '0.82rem',
+                color: urlTest.status === 'ok' ? '#2ecc71' : urlTest.status === 'fail' ? '#f87171' : 'var(--muted-foreground)',
+              }}>
+                {urlTest.message}
+              </p>
+            )}
 
             <div className={styles.installBox}>
               <div className={styles.installTabs}>
@@ -537,12 +595,13 @@ export default function PurchasesPage() {
               {installTab === 'woocommerce' && (
                 <>
                   <ol className={styles.installSteps}>
-                    <li>Marque o cliente como <strong>E-commerce</strong> em Clientes.</li>
+                    <li>Selecione a loja acima e clique em <strong>Testar URL</strong> — só continue se aparecer OK.</li>
                     <li>WooCommerce → Configurações → Avançado → Webhooks → Adicionar webhook.</li>
                     <li>Tópico: <code>Pedido criado</code> e outro para <code>Pedido atualizado</code>.</li>
-                    <li>URL de entrega: cole <strong>exatamente</strong> a URL copiada acima (<code>/api/webhooks/woo/...</code>). Não use a URL de Leads.</li>
-                    <li>Campo Secret do WooCommerce: deixe em branco ou o valor que ele gerar. Não altere a URL.</li>
-                    <li>Opcional — cole o snippet no <code>functions.php</code> do tema para gravar UTMs e visitor id no pedido:</li>
+                    <li>URL de entrega: cole <strong>exatamente</strong> a URL copiada (<code>/api/webhooks/woo/whsec_...</code>). Sem barra no final.</li>
+                    <li>Campo Secret do WooCommerce: deixe o que ele gerar. Não altere a URL.</li>
+                    <li>Status: Ativo · API v3 · JSON. Depois salve e confira o log da entrega.</li>
+                    <li>Opcional — cole o snippet no <code>functions.php</code> para gravar UTMs no pedido:</li>
                   </ol>
                   <pre className={styles.phpSnippet}>{WOO_ORDER_META_SNIPPET}</pre>
                   <button className={styles.copyBtn} onClick={copyWooSnippet} type="button">
