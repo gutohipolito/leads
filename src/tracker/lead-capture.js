@@ -104,6 +104,10 @@
             return;
         }
 
+        if (trackerMatch.source === 'custom_tracker' && isEcommerceCheckoutPage()) {
+            return;
+        }
+
         // Proteção contra duplo clique e race condition de envio por elemento (resistente a re-renders em React/Vue)
         const rect = link.getBoundingClientRect();
         const docTop = Math.round(rect.top + (window.scrollY || window.pageYOffset || 0));
@@ -250,6 +254,11 @@
             if (form.classList.contains('wpcf7-form') || 
                 form.closest('.elementor-form') || 
                 form.getAttribute('data-asthros-ajax') === 'true') {
+                return;
+            }
+
+            // Checkout WooCommerce/Shopify vai para Vendas via webhook, não para Leads
+            if (isEcommerceCheckoutForm(form) || isEcommerceCheckoutPage()) {
                 return;
             }
 
@@ -464,10 +473,44 @@
         } catch (e) {}
     }
 
+    function isEcommerceCheckoutPage() {
+        try {
+            const path = (window.location.pathname || '').toLowerCase();
+            const bodyClass = (document.body && document.body.className)
+                ? String(document.body.className).toLowerCase()
+                : '';
+            return (
+                bodyClass.includes('woocommerce-checkout') ||
+                bodyClass.includes('woocommerce-order-received') ||
+                bodyClass.includes('woocommerce-cart') ||
+                path.includes('/checkout') ||
+                path.includes('/order-received') ||
+                path.includes('/order-pay')
+            );
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function isEcommerceCheckoutForm(form) {
+        if (!form) return false;
+        try {
+            const cls = String(form.className || '').toLowerCase();
+            const id = String(form.id || '').toLowerCase();
+            const action = String(form.getAttribute('action') || '').toLowerCase();
+            if (form.classList.contains('woocommerce-checkout')) return true;
+            if (id === 'checkout' || id === 'order_review') return true;
+            if (cls.includes('woocommerce') && cls.includes('checkout')) return true;
+            if (form.closest && form.closest('.woocommerce-checkout')) return true;
+            if (action.includes('wc-ajax') || action.includes('order-pay')) return true;
+        } catch (e) {}
+        return false;
+    }
+
     function isCheckoutLink(url) {
         if (!url) return false;
         const lowerUrl = String(url).toLowerCase();
-        return /yampi\.com|pay\.yampi|kiwify\.com|hotmart\.com|cartpanda\.com|eduzz\.com|monetizze\.com|checkout\.shopify\.com|\/checkout/.test(lowerUrl);
+        return /yampi\.com|pay\.yampi|kiwify\.com|hotmart\.com|cartpanda\.com|eduzz\.com|monetizze\.com|checkout\.shopify\.com|\/checkout|order-received|order-pay/.test(lowerUrl);
     }
 
     function decorateCheckoutLinks() {

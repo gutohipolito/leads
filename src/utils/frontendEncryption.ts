@@ -73,3 +73,22 @@ export async function decryptLeadsList(leadsList: any[]): Promise<any[]> {
   
   return await Promise.all(leadsList.map(lead => decryptLead(lead, key)));
 }
+
+export async function decryptPurchase(purchase: any, key: string): Promise<any> {
+  if (!purchase) return purchase;
+  return {
+    ...purchase,
+    customer_email: purchase.customer_email
+      ? await decrypt(purchase.customer_email, key)
+      : purchase.customer_email,
+    customer_phone: purchase.customer_phone
+      ? await decrypt(purchase.customer_phone, key)
+      : purchase.customer_phone,
+  };
+}
+
+export async function decryptPurchasesList(purchasesList: any[]): Promise<any[]> {
+  const key = await fetchEncryptionKey();
+  if (!key) return purchasesList;
+  return Promise.all(purchasesList.map((purchase) => decryptPurchase(purchase, key)));
+}

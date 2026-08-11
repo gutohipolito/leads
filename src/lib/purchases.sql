@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.purchases (
     gateway TEXT DEFAULT 'generic',
     customer_name TEXT,
     customer_email TEXT,
+    customer_phone TEXT,
     total_amount NUMERIC(10, 2) DEFAULT 0.00,
     status TEXT DEFAULT 'approved',
     currency TEXT DEFAULT 'BRL',
@@ -15,7 +16,8 @@ CREATE TABLE IF NOT EXISTS public.purchases (
     utm_medium TEXT,
     utm_campaign TEXT,
     raw_payload JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (client_id, order_id)
 );
 
 -- Habilitar RLS

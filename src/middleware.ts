@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
     const origin = request.headers.get('origin')
     const headers: Record<string, string> = {
       'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Asthros-Secret, X-Asthros-Webhook-Id, Authorization, X-Shopify-Topic, X-Shopify-Hmac-Sha256, X-Shopify-Shop-Domain, X-WC-Webhook-Topic, X-WC-Webhook-Signature, X-WC-Webhook-Source, X-Yampi-Hmac-Sha256',
       'Access-Control-Allow-Credentials': 'true',
     }
     if (origin && origin !== '*') {
@@ -85,15 +85,16 @@ export async function middleware(request: NextRequest) {
     // Lógica de proteção de rotas
     const pathname = request.nextUrl.pathname
     const isLoginPage = pathname.startsWith('/login')
-    const isPublicApi = pathname.startsWith('/api/leads') // Webhooks externos
+    const isPublicApi = pathname.startsWith('/api/leads') // Webhooks de leads
+    const isPurchasesApi = pathname.startsWith('/api/webhooks') // Shopify, WooCommerce, Yampi
     const isUptimeApi = pathname.startsWith('/api/uptime') // API do Monitor de Uptime
-    const isInternalApi = pathname.startsWith('/api') && !isPublicApi && !isUptimeApi
+    const isInternalApi = pathname.startsWith('/api') && !isPublicApi && !isPurchasesApi && !isUptimeApi
     const isPublicAsset = pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
     const isTracker = pathname === '/tracker.js' || pathname === '/tracker.min.js'
     const isPing = pathname === '/ping'
 
     // 1. Assets públicos, Tracker, Endpoint de Leads (Webhooks) e Uptime são liberados
-    if (isPublicAsset || isPublicApi || isTracker || isPing || isUptimeApi) {
+    if (isPublicAsset || isPublicApi || isPurchasesApi || isTracker || isPing || isUptimeApi) {
       return response
     }
 

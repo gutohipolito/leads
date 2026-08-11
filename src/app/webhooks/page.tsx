@@ -656,7 +656,7 @@ export default function WebhooksManagePage() {
                       </div>
                       <p>
                         {scriptFormatTab === 'single' ? (
-                          <>Na Shopify, cole no arquivo <code>theme.liquid</code> logo antes da tag <strong>&lt;/head&gt;</strong> ou <strong>&lt;/body&gt;</strong>.</>
+                          <>Na Shopify, cole no arquivo <code>theme.liquid</code> logo antes da tag <strong>&lt;/head&gt;</strong> ou <strong>&lt;/body&gt;</strong>. Isso rastreia cliques e formulários como leads — pedidos pagos entram na aba <strong>Vendas</strong>, via webhook em <code>/api/webhooks/purchases</code>.</>
                         ) : (
                           <>Para sites em geral ou WordPress/Elementor, cole em todas as páginas logo antes de <strong>&lt;/body&gt;</strong> ou via <strong>Google Tag Manager</strong>.</>
                         )}

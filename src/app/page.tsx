@@ -239,7 +239,7 @@ export default function Home() {
     // E-commerce Purchases no período
     const purchasesInPeriod = allPurchases.filter(p => p.created_at >= periodStart);
     const ecommerceCount = purchasesInPeriod.length;
-    const ecommerceRevenue = purchasesInPeriod.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+    const ecommerceRevenue = purchasesInPeriod.reduce((acc, p) => acc + Number(p.total_amount || p.amount || 0), 0);
 
     // Pizza (Divisão de origens)
     const wppCount = leadsInPeriod.filter(l => l.source === 'whatsapp_tracker').length;

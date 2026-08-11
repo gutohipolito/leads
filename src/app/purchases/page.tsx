@@ -19,6 +19,7 @@ import {
   Sparkles,
   User,
   Mail,
+  Phone,
   Receipt,
   Tag,
   CreditCard,
@@ -34,6 +35,18 @@ import {
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
 import { playBoostedAudio } from '@/utils/audio';
+
+const WOO_ORDER_META_SNIPPET = `add_action('woocommerce_checkout_create_order', function ($order) {
+  if (!empty($_COOKIE['_asthros_vid'])) {
+    $order->update_meta_data('_asthros_vid', sanitize_text_field($_COOKIE['_asthros_vid']));
+  }
+  foreach (['utm_source', 'utm_medium', 'utm_campaign'] as $key) {
+    $cookie = '_asthros_' . $key;
+    if (!empty($_COOKIE[$cookie])) {
+      $order->update_meta_data('_' . $key, sanitize_text_field($_COOKIE[$cookie]));
+    }
+  }
+});`;
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -51,7 +64,9 @@ export default function PurchasesPage() {
   const [gatewayFilter, setGatewayFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [copied, setCopied] = useState(false);
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [installTab, setInstallTab] = useState<'woocommerce' | 'shopify' | 'yampi'>('woocommerce');
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -116,7 +131,8 @@ export default function PurchasesPage() {
         const { data: dbPurchases, error: pError } = await pQuery;
 
         if (!pError && dbPurchases) {
-          setPurchases(dbPurchases);
+          const { decryptPurchasesList } = await import('@/utils/frontendEncryption');
+          setPurchases(await decryptPurchasesList(dbPurchases));
         }
       } catch (err) {
         console.error('Erro ao carregar dados de vendas:', err);
@@ -161,10 +177,22 @@ export default function PurchasesPage() {
       .channel('purchases-realtime')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'purchases' },
-        (payload) => {
-          const newPurchase = payload.new;
-          setPurchases((prev) => [newPurchase, ...prev]);
+        { event: '*', schema: 'public', table: 'purchases' },
+        async (payload) => {
+          if (payload.eventType !== 'INSERT' && payload.eventType !== 'UPDATE') return;
+          const { decryptPurchase, fetchEncryptionKey } = await import('@/utils/frontendEncryption');
+          const key = await fetchEncryptionKey();
+          const newPurchase = key
+            ? await decryptPurchase(payload.new, key)
+            : payload.new;
+          setPurchases((prev) => {
+            if (prev.some((p) => p.id === newPurchase.id || p.order_id === newPurchase.order_id)) {
+              return prev.map((p) =>
+                p.id === newPurchase.id || p.order_id === newPurchase.order_id ? newPurchase : p
+              );
+            }
+            return [newPurchase, ...prev];
+          });
         }
       )
       .subscribe();
@@ -211,6 +239,12 @@ export default function PurchasesPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const copyWooSnippet = () => {
+    navigator.clipboard.writeText(WOO_ORDER_META_SNIPPET);
+    setCopiedSnippet(true);
+    setTimeout(() => setCopiedSnippet(false), 2000);
+  };
+
   // Botão de Simulação de Venda de Teste
   const handleSimulateTestOrder = () => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -249,7 +283,8 @@ export default function PurchasesPage() {
         !searchTerm ||
         item.order_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.customer_email?.toLowerCase().includes(searchTerm.toLowerCase());
+        item.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchGateway = gatewayFilter === 'all' || item.gateway === gatewayFilter;
       const matchStatus = statusFilter === 'all' || item.status === statusFilter;
@@ -281,12 +316,15 @@ export default function PurchasesPage() {
     const lower = (gtw || '').toLowerCase();
     if (lower === 'yampi') return <span className={`${styles.gatewayBadge} ${styles.gatewayYampi}`}>Yampi</span>;
     if (lower === 'shopify') return <span className={`${styles.gatewayBadge} ${styles.gatewayShopify}`}>Shopify</span>;
+    if (lower === 'woocommerce') return <span className={`${styles.gatewayBadge} ${styles.gatewayWoo}`}>WooCommerce</span>;
     return <span className={`${styles.gatewayBadge} ${styles.gatewayGeneric}`}>{gtw || 'Webhook'}</span>;
   };
 
   const getStatusBadge = (st: string) => {
     const lower = (st || '').toLowerCase();
-    if (lower === 'approved' || lower === 'paid') return <span className={styles.statusApproved}>Aprovado</span>;
+    if (lower === 'approved' || lower === 'paid' || lower === 'processing' || lower === 'completed') {
+      return <span className={styles.statusApproved}>Aprovado</span>;
+    }
     if (lower === 'pending') return <span className={styles.statusPending}>Pendente</span>;
     return <span className={styles.statusCanceled}>Cancelado</span>;
   };
@@ -309,7 +347,7 @@ export default function PurchasesPage() {
               Gestão de Vendas & E-commerce
             </h1>
             <p className={styles.subtitle}>
-              Acompanhe faturamento, pedidos e integre seu checkout (Yampi, Shopify) via Webhook.
+              Acompanhe faturamento, pedidos e integre WooCommerce, Shopify ou Yampi via webhook de compras.
             </p>
           </div>
 
@@ -464,6 +502,67 @@ export default function PurchasesPage() {
                 <span>{copied ? 'Copiado!' : 'Copiar URL'}</span>
               </button>
             </div>
+
+            <div className={styles.installBox}>
+              <div className={styles.installTabs}>
+                <button
+                  type="button"
+                  className={`${styles.installTab} ${installTab === 'woocommerce' ? styles.installTabActive : ''}`}
+                  onClick={() => setInstallTab('woocommerce')}
+                >
+                  WooCommerce
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.installTab} ${installTab === 'shopify' ? styles.installTabActive : ''}`}
+                  onClick={() => setInstallTab('shopify')}
+                >
+                  Shopify
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.installTab} ${installTab === 'yampi' ? styles.installTabActive : ''}`}
+                  onClick={() => setInstallTab('yampi')}
+                >
+                  Yampi
+                </button>
+              </div>
+
+              {installTab === 'woocommerce' && (
+                <>
+                  <ol className={styles.installSteps}>
+                    <li>Marque o cliente como <strong>E-commerce</strong> em Clientes.</li>
+                    <li>WooCommerce → Configurações → Avançado → Webhooks → Adicionar webhook.</li>
+                    <li>Tópico: <code>Pedido criado</code> e outro para <code>Pedido atualizado</code>.</li>
+                    <li>URL de entrega: a URL copiada acima (já inclui o secret).</li>
+                    <li>Status: Ativo. API versão: WP REST API v3. Formato JSON.</li>
+                    <li>Opcional — cole o snippet no <code>functions.php</code> do tema para gravar UTMs e visitor id no pedido:</li>
+                  </ol>
+                  <pre className={styles.phpSnippet}>{WOO_ORDER_META_SNIPPET}</pre>
+                  <button className={styles.copyBtn} onClick={copyWooSnippet} type="button">
+                    {copiedSnippet ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{copiedSnippet ? 'Snippet copiado!' : 'Copiar snippet PHP'}</span>
+                  </button>
+                </>
+              )}
+
+              {installTab === 'shopify' && (
+                <ol className={styles.installSteps}>
+                  <li>Marque o cliente como <strong>E-commerce</strong> em Clientes.</li>
+                  <li>Shopify Admin → Configurações → Notificações → Webhooks.</li>
+                  <li>Criar webhook de <code>Order creation</code> e <code>Order payment</code>, formato JSON.</li>
+                  <li>Cole a URL copiada acima (o <code>?secret=</code> precisa ficar na URL).</li>
+                  <li>O tracker no <code>theme.liquid</code> continua sendo para leads/cliques — vendas entram só por este webhook.</li>
+                </ol>
+              )}
+
+              {installTab === 'yampi' && (
+                <ol className={styles.installSteps}>
+                  <li>No painel Yampi, crie um webhook de pedido pago apontando para a URL copiada.</li>
+                  <li>Eventos recomendados: <code>order.paid</code> (e <code>order.canceled</code> se quiser cancelamentos).</li>
+                </ol>
+              )}
+            </div>
           )}
         </div>
 
@@ -529,8 +628,9 @@ export default function PurchasesPage() {
               onChange={(e) => setGatewayFilter(e.target.value)}
             >
               <option value="all">Todos os Gateways</option>
-              <option value="yampi">Yampi</option>
+              <option value="woocommerce">WooCommerce</option>
               <option value="shopify">Shopify</option>
+              <option value="yampi">Yampi</option>
               <option value="generic">Webhooks Genéricos</option>
             </select>
 
@@ -577,6 +677,7 @@ export default function PurchasesPage() {
                         <span style={{ fontWeight: 600 }}>{item.customer_name || 'Cliente'}</span>
                         <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
                           {item.customer_email || 'Não informado'}
+                          {item.customer_phone ? ` · ${item.customer_phone}` : ''}
                         </span>
                       </div>
                     </td>
@@ -615,7 +716,7 @@ export default function PurchasesPage() {
               <ShoppingBag size={48} opacity={0.2} />
               <h3 style={{ margin: 0 }}>Nenhuma venda encontrada</h3>
               <p style={{ maxWidth: '420px', fontSize: '0.9rem', margin: 0 }}>
-                Clique no botão <strong>"Simular Venda de Teste"</strong> no topo para testar a experiência e visualizar o recibo e-commerce!
+                Selecione a loja acima, copie a URL do webhook e conecte WooCommerce, Shopify ou Yampi. Pedidos aparecem aqui — não na aba de Leads.
               </p>
             </div>
           )}
@@ -691,6 +792,9 @@ export default function PurchasesPage() {
                 <span className={styles.customerName}>{selectedOrder.customer_name || 'Cliente'}</span>
                 <div className={styles.customerMeta}>
                   <span><Mail size={12} style={{ marginRight: '0.2rem' }} />{selectedOrder.customer_email || 'E-mail não informado'}</span>
+                  {selectedOrder.customer_phone && (
+                    <span><Phone size={12} style={{ marginRight: '0.2rem' }} />{selectedOrder.customer_phone}</span>
+                  )}
                   {selectedOrder.visitor_id && (
                     <span>• VID: <code style={{ color: '#a7f3d0' }}>{selectedOrder.visitor_id}</code></span>
                   )}
