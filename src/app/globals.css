@@ -67,8 +67,10 @@ body {
   color: var(--foreground);
   font-family: var(--font-main) !important;
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   letter-spacing: -0.01em;
   line-height: 1.6;
