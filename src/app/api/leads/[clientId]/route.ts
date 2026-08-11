@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { sendLeadToIntegrations } from '@/utils/integrations';
 import crypto from 'crypto';
 import { encrypt, decrypt } from '@/utils/encryption';
+import { handlePurchaseIngest, isCommerceWebhook } from '@/lib/handlePurchaseIngest';
 
 function sanitizeInput(val: any): any {
   if (val === null || val === undefined) {
@@ -118,6 +119,16 @@ export async function POST(
       });
     }
     
+    // Pedido Woo/Shopify/Yampi às vezes é apontado para /api/leads por engano.
+    // Encaminha para o ingest de Vendas em vez de exigir secret de lead (401).
+    if (isCommerceWebhook(request, body)) {
+      return handlePurchaseIngest({
+        request,
+        clientIdParam: clientId,
+        rawBody: body,
+      });
+    }
+
     const secret = request.headers.get('x-asthros-secret') || body.secret || request.nextUrl.searchParams.get('secret');
     const webhookId = request.headers.get('x-asthros-webhook-id') || body.webhookId || request.nextUrl.searchParams.get('webhookId');
 
