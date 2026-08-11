@@ -490,6 +490,7 @@ export default function PurchasesPage() {
 
           {/* Oculta a URL se estiver em "Todas as Lojas" */}
           {selectedWebhookId !== 'all' && currentWebhook && (
+            <>
             <div className={styles.urlBox}>
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', display: 'block', marginBottom: '0.2rem' }}>
@@ -563,6 +564,7 @@ export default function PurchasesPage() {
                 </ol>
               )}
             </div>
+            </>
           )}
         </div>
 
