@@ -230,15 +230,8 @@ export default function PurchasesPage() {
 
   // URL do Webhook calculada (apenas para webhook selecionado)
   const webhookUrl = useMemo(() => {
-    if (typeof window === 'undefined' || !currentWebhook) return '';
-    const origin = window.location.origin;
-    if (currentWebhook.secret) {
-      return `${origin}/api/webhooks/woo/${encodeURIComponent(currentWebhook.secret)}`;
-    }
-    if (currentWebhook.client_id) {
-      return `${origin}/api/webhooks/purchases/${currentWebhook.client_id}`;
-    }
-    return '';
+    if (typeof window === 'undefined' || !currentWebhook?.id) return '';
+    return `${window.location.origin}/api/webhooks/commerce/${currentWebhook.id}`;
   }, [currentWebhook]);
 
   const copyWebhookUrl = () => {
@@ -598,8 +591,8 @@ export default function PurchasesPage() {
                     <li>Selecione a loja acima e clique em <strong>Testar URL</strong> — só continue se aparecer OK.</li>
                     <li>WooCommerce → Configurações → Avançado → Webhooks → Adicionar webhook.</li>
                     <li>Tópico: <code>Pedido criado</code> e outro para <code>Pedido atualizado</code>.</li>
-                    <li>URL de entrega: cole <strong>exatamente</strong> a URL copiada (<code>/api/webhooks/woo/whsec_...</code>). Sem barra no final.</li>
-                    <li>Campo Secret do WooCommerce: deixe o que ele gerar. Não altere a URL.</li>
+                    <li>URL de entrega: cole <strong>exatamente</strong> a URL copiada (<code>/api/webhooks/commerce/...</code>). Sem barra no final.</li>
+                    <li>Campo Secret do WooCommerce: deixe o que ele gerar. <strong>Não cole nada do Asthros nesse campo.</strong></li>
                     <li>Status: Ativo · API v3 · JSON. Depois salve e confira o log da entrega.</li>
                     <li>Opcional — cole o snippet no <code>functions.php</code> para gravar UTMs no pedido:</li>
                   </ol>

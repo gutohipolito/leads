@@ -77,17 +77,32 @@ export function isCommerceWebhook(request: NextRequest, body: any) {
 async function resolveBySecret(secret: string | null | undefined) {
   const value = String(secret || '').trim();
   if (!value) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('webhooks')
     .select('id, client_id, user_id, secret, status')
     .eq('secret', value)
     .limit(5);
+  if (error) {
+    console.error('[Purchases] resolveBySecret:', error.message);
+  }
   const rows = data || [];
   return rows.find((row) => row.status === 'active') || rows[0] || null;
 }
 
 async function resolveWebhook(clientId: string, secret?: string | null) {
+  // 1) ID do terminal (webhook.id) — URL recomendada para WooCommerce
   if (UUID_RE.test(clientId)) {
+    const { data: byWebhookId } = await supabase
+      .from('webhooks')
+      .select('id, client_id, user_id, secret, status')
+      .eq('id', clientId)
+      .maybeSingle();
+
+    if (byWebhookId) {
+      return { webhook: byWebhookId, error: null, clientId: byWebhookId.client_id };
+    }
+
+    // 2) client_id do parceiro
     const { data: byClient, error: clientError } = await supabase
       .from('webhooks')
       .select('id, client_id, user_id, secret, status')
@@ -102,16 +117,6 @@ async function resolveWebhook(clientId: string, secret?: string | null) {
     const active = rows.find((row) => row.status === 'active') || rows[0];
     if (active) {
       return { webhook: active, error: null, clientId: active.client_id };
-    }
-
-    const { data: byWebhookId } = await supabase
-      .from('webhooks')
-      .select('id, client_id, user_id, secret, status')
-      .eq('id', clientId)
-      .maybeSingle();
-
-    if (byWebhookId) {
-      return { webhook: byWebhookId, error: null, clientId: byWebhookId.client_id };
     }
 
     const { data: client } = await supabase
@@ -129,6 +134,7 @@ async function resolveWebhook(clientId: string, secret?: string | null) {
     }
   }
 
+  // 3) Fallback: secret Asthros (whsec_...)
   const bySecret = await resolveBySecret(secret);
   if (bySecret) {
     return { webhook: bySecret, error: null, clientId: bySecret.client_id };
@@ -162,7 +168,7 @@ export async function handlePurchaseIngest(options: {
         received_id: clientIdParam || null,
         secret_prefix: secret ? String(secret).slice(0, 10) : null,
         secret_length: secret ? String(secret).length : 0,
-        hint: 'Em Vendas, selecione a loja, clique em Testar URL e só então cole no WooCommerce a URL /api/webhooks/woo/whsec_...',
+        hint: 'Em Vendas, selecione a loja, clique em Testar URL e cole no WooCommerce a URL /api/webhooks/commerce/<id-do-terminal>.',
       },
       { status: 401, headers: PURCHASE_CORS_HEADERS }
     );
