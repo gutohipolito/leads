@@ -38,6 +38,75 @@ export async function OPTIONS() {
   return NextResponse.json({}, { status: 200, headers: CORS_HEADERS });
 }
 
+export async function GET() {
+  return NextResponse.json(
+    { ok: true, service: 'asthros-purchases' },
+    { status: 200, headers: CORS_HEADERS }
+  );
+}
+
+function isStorePlatformRequest(request: NextRequest) {
+  return Boolean(
+    request.headers.get('x-wc-webhook-topic') ||
+    request.headers.get('x-wc-webhook-source') ||
+    request.headers.get('x-wc-webhook-signature') ||
+    request.headers.get('x-shopify-topic') ||
+    request.headers.get('x-shopify-shop-domain') ||
+    request.headers.get('x-yampi-hmac-sha256')
+  );
+}
+
+function isWooCommercePing(body: any, request: NextRequest) {
+  const topic = (request.headers.get('x-wc-webhook-topic') || '').toLowerCase();
+  if (topic.includes('ping')) return true;
+  const keys = Object.keys(body || {});
+  return Boolean(body?.webhook_id) && keys.every((key) => key === 'webhook_id' || key === 'secret');
+}
+
+async function resolveWebhook(clientId: string) {
+  const { data: byClient, error: clientError } = await supabase
+    .from('webhooks')
+    .select('id, client_id, user_id, secret, status')
+    .eq('client_id', clientId)
+    .limit(10);
+
+  if (clientError) {
+    return { webhook: null as any, error: clientError, clientId };
+  }
+
+  const rows = byClient || [];
+  const active = rows.find((row) => row.status === 'active') || rows[0];
+  if (active) {
+    return { webhook: active, error: null, clientId: active.client_id };
+  }
+
+  const { data: byWebhookId } = await supabase
+    .from('webhooks')
+    .select('id, client_id, user_id, secret, status')
+    .eq('id', clientId)
+    .maybeSingle();
+
+  if (byWebhookId) {
+    return { webhook: byWebhookId, error: null, clientId: byWebhookId.client_id };
+  }
+
+  const { data: client } = await supabase
+    .from('clients')
+    .select('id')
+    .eq('id', clientId)
+    .maybeSingle();
+
+  if (client) {
+    return {
+      webhook: { id: null, client_id: client.id, user_id: null, secret: null, status: 'active' },
+      error: null,
+      clientId: client.id,
+    };
+  }
+
+  return { webhook: null as any, error: null, clientId };
+}
+
 async function readPayload(request: NextRequest): Promise<any> {
   const contentType = request.headers.get('content-type') || '';
   const rawText = await request.text();
@@ -69,7 +138,7 @@ export async function POST(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { clientId } = await params;
+    const { clientId: clientIdParam } = await params;
     const searchParams = request.nextUrl.searchParams;
     const rawBody = await readPayload(request);
 
@@ -78,14 +147,7 @@ export async function POST(
       rawBody.secret ||
       searchParams.get('secret');
 
-    const { data: webhook, error: authError } = await supabase
-      .from('webhooks')
-      .select('id, client_id, user_id, secret, status')
-      .eq('client_id', clientId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    const { webhook, error: authError, clientId } = await resolveWebhook(clientIdParam);
 
     if (authError || !webhook) {
       return NextResponse.json(
@@ -94,10 +156,20 @@ export async function POST(
       );
     }
 
-    if (webhook.secret && secret && webhook.secret !== secret) {
+    // Woo/Shopify autenticam pelo UUID do cliente + headers da plataforma.
+    // O campo Secret do WooCommerce NÃO é o mesmo do Asthros — se vier na query, ignoramos o mismatch.
+    const platformRequest = isStorePlatformRequest(request);
+    if (!platformRequest && webhook.secret && secret && webhook.secret !== secret) {
       return NextResponse.json(
         { error: 'Chave secreta inválida para este cliente.' },
         { status: 401, headers: CORS_HEADERS }
+      );
+    }
+
+    if (isWooCommercePing(rawBody, request)) {
+      return NextResponse.json(
+        { success: true, ping: true, message: 'Webhook WooCommerce ativo.' },
+        { status: 200, headers: CORS_HEADERS }
       );
     }
 

@@ -1,7 +1,25 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+function isUnauthenticatedPublicPath(pathname: string) {
+  return (
+    pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/leads') ||
+    pathname.startsWith('/api/uptime') ||
+    pathname === '/tracker.js' ||
+    pathname === '/tracker.min.js' ||
+    pathname === '/ping'
+  )
+}
+
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Webhooks de loja (Woo/Shopify/Yampi) não podem passar pelo login — senão o WooCommerce recebe 401
+  if (isUnauthenticatedPublicPath(pathname) && request.method !== 'OPTIONS') {
+    return NextResponse.next()
+  }
+
   // Interceptar e responder imediatamente a requisições de preflight CORS (OPTIONS)
   if (request.method === 'OPTIONS') {
     const origin = request.headers.get('origin')
@@ -83,18 +101,13 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // Lógica de proteção de rotas
-    const pathname = request.nextUrl.pathname
     const isLoginPage = pathname.startsWith('/login')
-    const isPublicApi = pathname.startsWith('/api/leads') // Webhooks de leads
-    const isPurchasesApi = pathname.startsWith('/api/webhooks') // Shopify, WooCommerce, Yampi
-    const isUptimeApi = pathname.startsWith('/api/uptime') // API do Monitor de Uptime
-    const isInternalApi = pathname.startsWith('/api') && !isPublicApi && !isPurchasesApi && !isUptimeApi
+    const isPublicApi = isUnauthenticatedPublicPath(pathname)
+    const isInternalApi = pathname.startsWith('/api') && !isPublicApi
     const isPublicAsset = pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
-    const isTracker = pathname === '/tracker.js' || pathname === '/tracker.min.js'
-    const isPing = pathname === '/ping'
 
-    // 1. Assets públicos, Tracker, Endpoint de Leads (Webhooks) e Uptime são liberados
-    if (isPublicAsset || isPublicApi || isPurchasesApi || isTracker || isPing || isUptimeApi) {
+    // 1. Assets públicos e webhooks externos são liberados
+    if (isPublicAsset || isPublicApi) {
       return response
     }
 
@@ -121,6 +134,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/leads|api/uptime).*)',
   ],
 }

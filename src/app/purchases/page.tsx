@@ -535,8 +535,8 @@ export default function PurchasesPage() {
                     <li>Marque o cliente como <strong>E-commerce</strong> em Clientes.</li>
                     <li>WooCommerce → Configurações → Avançado → Webhooks → Adicionar webhook.</li>
                     <li>Tópico: <code>Pedido criado</code> e outro para <code>Pedido atualizado</code>.</li>
-                    <li>URL de entrega: a URL copiada acima (já inclui o secret).</li>
-                    <li>Status: Ativo. API versão: WP REST API v3. Formato JSON.</li>
+                    <li>URL de entrega: a URL copiada acima. Não troque o <code>secret</code> da URL pelo Secret do WooCommerce.</li>
+                    <li>Campo Secret do WooCommerce: deixe o que ele gerar (é só assinatura HMAC). Status: Ativo · API v3 · JSON.</li>
                     <li>Opcional — cole o snippet no <code>functions.php</code> do tema para gravar UTMs e visitor id no pedido:</li>
                   </ol>
                   <pre className={styles.phpSnippet}>{WOO_ORDER_META_SNIPPET}</pre>
