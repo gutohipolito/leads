@@ -49,7 +49,7 @@ export async function encrypt(text: string, secret: string): Promise<string> {
     const cryptoKey = await getCryptoKey(secret);
     if (!cryptoKey || !webCrypto) return text;
 
-    const iv = webCrypto.getRandomValues(new Uint8Array(IV_LENGTH));
+    const iv: Uint8Array = webCrypto.getRandomValues(new Uint8Array(IV_LENGTH));
     const enc = new TextEncoder();
     const encrypted = await webCrypto.subtle.encrypt(
       {

@@ -22,22 +22,13 @@ export default function StatsDrawer({ isOpen, onClose, client }: StatsDrawerProp
     conversionRate: '100%'
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      loadClientStats();
-      setTimeout(() => setIsVisible(true), 10);
-    } else {
-      setIsVisible(false);
-    }
-  }, [isOpen, client.id]);
-
   async function loadClientStats() {
     setLoading(true);
-    
+
     // 1. Buscar Leads dos últimos 7 dias para o gráfico
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    
+
     const { data: leads } = await supabase
       .from('leads')
       .select('created_at')
@@ -51,7 +42,7 @@ export default function StatsDrawer({ isOpen, onClose, client }: StatsDrawerProp
         const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
         const dayEnd = dayStart + 24 * 60 * 60 * 1000;
-        
+
         const count = leads.filter(l => {
           const ts = new Date(l.created_at).getTime();
           return ts >= dayStart && ts < dayEnd;
@@ -65,6 +56,16 @@ export default function StatsDrawer({ isOpen, onClose, client }: StatsDrawerProp
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      loadClientStats();
+      const timer = setTimeout(() => setIsVisible(true), 10);
+      return () => clearTimeout(timer);
+    }
+    const timer = setTimeout(() => setIsVisible(false), 0);
+    return () => clearTimeout(timer);
+  }, [isOpen, client.id]);
 
   if (!isOpen) return null;
 

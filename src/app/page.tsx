@@ -350,13 +350,19 @@ export default function Home() {
       ).length;
       const dayForm = dayLeads.length - dayWpp - daySel - dayKey;
 
-      return { 
-        date: dateStr, 
+      const dayEcommerce = purchasesInPeriod.filter(p => {
+        const ts = new Date(p.created_at).getTime();
+        return ts >= dayStart && ts < dayEnd;
+      }).length;
+
+      return {
+        date: dateStr,
         leads: dayLeads.length,
         whatsapp: dayWpp,
         selectors: daySel,
         keywords: dayKey,
-        forms: dayForm
+        forms: dayForm,
+        ecommerce: dayEcommerce
       };
     });
 
@@ -1051,6 +1057,10 @@ export default function Home() {
                 <div className={styles.legendItem}>
                   <div className={styles.dot} style={{ background: '#f97316', boxShadow: '0 0 10px rgba(249, 115, 22, 0.5)' }} />
                   <span>Palavras-Chave</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#ec4899', boxShadow: '0 0 10px rgba(236, 72, 153, 0.5)' }} />
+                  <span>E-commerce</span>
                 </div>
               </div>
             </div>

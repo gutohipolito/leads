@@ -217,7 +217,7 @@ export default function LiveMonitorPage() {
             const updatedLead = { ...tempLead, clients: client };
             setLeads(prev => prev.map(l => l.id === newLeadData.id ? updatedLead : l));
             setLeadsToday(prev => prev.map(l => l.id === newLeadData.id ? updatedLead : l));
-            setCelebrationLead(prev => (prev && prev.id === newLeadData.id) ? updatedLead : prev);
+            setCelebrationLead((prev: any) => (prev && prev.id === newLeadData.id) ? updatedLead : prev);
           }
           loadData(selectedClient);
         }
@@ -277,7 +277,7 @@ export default function LiveMonitorPage() {
     ].filter(s => s.value > 0);
 
     // 2. Top Cidades (Geografia)
-    const locMap: any = {};
+    const locMap: Record<string, number> = {};
     leadsToday.forEach(l => {
       let city = l.data?.location?.city || 'Desconhecida';
       if (city && city !== 'Desconhecida' && city !== 'null' && city !== 'undefined') {
@@ -291,7 +291,7 @@ export default function LiveMonitorPage() {
       .slice(0, 5);
 
     // 3. Top UTMs (Origens de Tráfego)
-    const utmMap: any = {};
+    const utmMap: Record<string, number> = {};
     leadsToday.forEach(l => {
       let utm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
       if (utm) {
@@ -305,7 +305,7 @@ export default function LiveMonitorPage() {
       .slice(0, 5);
 
     // 4. Performance por Parceiro (se global) ou Quebra do Cliente
-    const clientMap: any = {};
+    const clientMap: Record<string, number> = {};
     leadsToday.forEach(l => {
       const cName = l.clients?.name || 'Desconhecido';
       clientMap[cName] = (clientMap[cName] || 0) + 1;

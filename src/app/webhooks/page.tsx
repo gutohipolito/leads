@@ -105,6 +105,7 @@ export default function WebhooksManagePage() {
     statusText: string | null;
     responseBody: string | null;
     payloadSent: any | null;
+    durationMs: number | null;
     error: string | null;
     isOpen: boolean;
   }>({
@@ -113,6 +114,7 @@ export default function WebhooksManagePage() {
     statusText: null,
     responseBody: null,
     payloadSent: null,
+    durationMs: null,
     error: null,
     isOpen: false
   });
@@ -132,6 +134,7 @@ export default function WebhooksManagePage() {
       statusText: null,
       responseBody: null,
       payloadSent: null,
+      durationMs: null,
       error: null,
       isOpen: true
     });
@@ -153,6 +156,7 @@ export default function WebhooksManagePage() {
           statusText: result.statusText,
           responseBody: result.responseBody,
           payloadSent: result.payloadSent,
+          durationMs: result.durationMs ?? null,
           error: result.error || null
         }));
       } else {
@@ -163,6 +167,7 @@ export default function WebhooksManagePage() {
           statusText: result.statusText || response.statusText,
           responseBody: result.responseBody || null,
           payloadSent: result.payloadSent || null,
+          durationMs: result.durationMs ?? null,
           error: result.error || 'Erro ao disparar webhook de saída.'
         }));
       }
@@ -175,6 +180,7 @@ export default function WebhooksManagePage() {
         statusText: null,
         responseBody: null,
         payloadSent: null,
+        durationMs: null,
         isOpen: true
       }));
     }
@@ -779,7 +785,7 @@ export default function WebhooksManagePage() {
               <form className={styles.form} onSubmit={handleCreateWebhook}>
                 <div className={styles.inputGroup}><label>Nome do Ponto</label><input type="text" placeholder="Ex: Site Principal" value={newWebhook.name} onChange={e => setNewWebhook({...newWebhook, name: e.target.value})} required /></div>
                 {isAdmin && (<div className={styles.inputGroup}><label>Cliente</label><select value={newWebhook.client_id} onChange={e => setNewWebhook({...newWebhook, client_id: e.target.value})} required><option value="">Selecionar...</option>{clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div>)}
-                <div className={styles.inputGroup}><label>Autenticação</label><select value={newWebhook.validation_type} onChange={e => setNewWebhook({...newWebhook, validation_type: e.target.value})}><option value="header">Header (Recomendado)</option><option value="query">URL Parameter</option></select></div>
+                <div className={styles.inputGroup}><label>Autenticação</label><select value={newWebhook.validation_type} onChange={e => setNewWebhook({...newWebhook, validation_type: e.target.value as 'header' | 'query'})}><option value="header">Header (Recomendado)</option><option value="query">URL Parameter</option></select></div>
                 <div className={styles.inputGroup}>
                   <label>Origens Permitidas (CORS)</label>
                   <input 
@@ -1017,7 +1023,9 @@ export default function WebhooksManagePage() {
                   <div className={styles.labEditor}>
                     <div className={styles.editorHeader}>
                       <span>Corpo da Requisição (JSON)</span>
-                      <Lightbulb size={14} className={styles.hintIcon} title="Campos suportados: name, email, phone, etc." />
+                      <span title="Campos suportados: name, email, phone, etc.">
+                        <Lightbulb size={14} className={styles.hintIcon} />
+                      </span>
                     </div>
                     <textarea 
                       className={styles.labTextarea}

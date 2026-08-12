@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   UserCircle,
   Database,
-  ChevronDown,
   FileText,
   Terminal,
   Tv,
@@ -43,7 +42,12 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false, onToggle
     return false;
   });
   const [user, setUser] = useState<any>(null);
-  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('impersonated_client');
+    }
+    return false;
+  });
 
   useEffect(() => {
     async function loadUser() {
@@ -56,9 +60,6 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false, onToggle
       }
     }
     loadUser();
-
-    const impersonated = localStorage.getItem('impersonated_client');
-    setIsImpersonating(!!impersonated);
   }, []);
 
   // Heartbeat para status Online
@@ -77,14 +78,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false, onToggle
     return () => clearInterval(interval);
   }, [user]);
 
-  useEffect(() => {
-    if (pathname.startsWith('/clients')) {
-      setIsClientsOpen(true);
-    }
-  }, [pathname]);
-
   const isActive = (path: string) => pathname === path;
-  const [isClientsOpen, setIsClientsOpen] = useState(false);
 
   const menuItems = [
     { name: 'Geral', path: '/', icon: LayoutDashboard },
@@ -145,41 +139,6 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false, onToggle
         <div className={styles.group}>
           {!isCollapsed && <span className={styles.groupLabel}>Monitoramento</span>}
           {menuItems.map((item) => {
-            if (item.submenu) {
-              const hasActiveSub = item.submenu.some(sub => isActive(sub.path));
-              return (
-                <div key={item.name} className={styles.menuItemGroup}>
-                  <button 
-                    className={`${styles.navLink} ${(hasActiveSub || isClientsOpen) ? styles.active : ''} ${isCollapsed ? styles.navLinkCollapsed : ''}`}
-                    onClick={() => setIsClientsOpen(!isClientsOpen)}
-                    title={isCollapsed ? item.name : undefined}
-                  >
-                    <div className={styles.iconCircle}>
-                      <item.icon size={18} />
-                    </div>
-                    {!isCollapsed && <span className={styles.linkText}>{item.name}</span>}
-                    {!isCollapsed && <ChevronDown size={14} className={`${styles.chevron} ${isClientsOpen ? styles.rotated : ''}`} />}
-                  </button>
-                  
-                  {isClientsOpen && !isCollapsed && (
-                    <div className={styles.submenu}>
-                      {item.submenu.map(sub => (
-                        <Link 
-                          key={sub.path} 
-                          href={sub.path}
-                          prefetch={false}
-                          className={`${styles.subLink} ${isActive(sub.path) ? styles.subActive : ''}`}
-                        >
-                          <div className={styles.subDot} />
-                          <span>{sub.name}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
             return (
               <Link 
                 key={item.path} 

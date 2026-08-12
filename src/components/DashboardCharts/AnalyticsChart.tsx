@@ -12,15 +12,16 @@ import {
 } from 'recharts';
 
 interface AnalyticsChartProps {
-  data: { 
-    date: string; 
-    leads: number; 
-    whatsapp?: number; 
+  data: {
+    date: string;
+    leads: number;
+    whatsapp?: number;
     selectors?: number;
     keywords?: number;
     forms?: number;
+    ecommerce?: number;
   }[];
-  activeFilter?: 'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords';
+  activeFilter?: 'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords' | 'ecommerce';
 }
 
 export default function AnalyticsChart({ data, activeFilter = 'all' }: AnalyticsChartProps) {
@@ -47,6 +48,10 @@ export default function AnalyticsChart({ data, activeFilter = 'all' }: Analytics
             <linearGradient id="colorKeywords" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
               <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorEcommerce" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#ec4899" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#ec4899" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid 
@@ -114,14 +119,26 @@ export default function AnalyticsChart({ data, activeFilter = 'all' }: Analytics
             />
           )}
           {(activeFilter === 'all' || activeFilter === 'keywords') && (
-            <Area 
-              type="monotone" 
+            <Area
+              type="monotone"
               name="Palavras-Chave"
-              dataKey="keywords" 
-              stroke="#f97316" 
+              dataKey="keywords"
+              stroke="#f97316"
               strokeWidth={2.5}
-              fillOpacity={1} 
-              fill="url(#colorKeywords)" 
+              fillOpacity={1}
+              fill="url(#colorKeywords)"
+              animationDuration={1200}
+            />
+          )}
+          {(activeFilter === 'all' || activeFilter === 'ecommerce') && (
+            <Area
+              type="monotone"
+              name="E-commerce"
+              dataKey="ecommerce"
+              stroke="#ec4899"
+              strokeWidth={2.5}
+              fillOpacity={1}
+              fill="url(#colorEcommerce)"
               animationDuration={1200}
             />
           )}
