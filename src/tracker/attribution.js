@@ -11,7 +11,7 @@
             const hashParams = new URLSearchParams(hashQueryPart);
 
             // 1. Capturar UTMs clássicas
-            ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
+            ['source', 'medium', 'campaign', 'term', 'content', 'id'].forEach(key => {
                 const valQuery = queryParams.get(`utm_${key}`);
                 const valHash = hashParams.get(`utm_${key}`);
                 const val = valQuery || valHash;
@@ -73,6 +73,7 @@
                 if (utmsToSave.campaign) setCookie('_asthros_utm_campaign', utmsToSave.campaign, 90);
                 if (utmsToSave.term) setCookie('_asthros_utm_term', utmsToSave.term, 90);
                 if (utmsToSave.content) setCookie('_asthros_utm_content', utmsToSave.content, 90);
+                if (utmsToSave.id) setCookie('_asthros_utm_id', utmsToSave.id, 90);
             }
 
             // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada - Limite de 5 itens)
@@ -311,3 +312,8 @@
             pages_visited: getPagesVisitedContext()
         };
     }
+
+    // Captura UTMs/jornada do carregamento inicial da página. O hook de popstate/pushState em
+    // session.js só cobre navegações client-side (SPA) — sem esta chamada, sites renderizados no
+    // servidor (WordPress, Shopify, HTML estático) nunca gravavam o primeiro touchpoint.
+    saveUtmsToStorageAndJourney();

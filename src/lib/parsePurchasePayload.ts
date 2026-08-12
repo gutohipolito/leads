@@ -14,6 +14,7 @@ export type ParsedPurchase = {
   utmCampaign: string;
   utmTerm: string;
   utmContent: string;
+  utmId: string;
   ignored?: boolean;
   ignoreReason?: string;
 };
@@ -171,6 +172,7 @@ function parseWooCommerce(body: Record<string, any>): ParsedPurchase {
       '_asthros_utm_content',
       'asthros_utm_content',
     ]),
+    utmId: metaValue(meta, ['_utm_id', 'utm_id', '_asthros_utm_id', 'asthros_utm_id']),
   };
 }
 
@@ -199,6 +201,7 @@ function parseShopify(body: Record<string, any>): ParsedPurchase {
     utmCampaign: noteAttr(body.note_attributes, ['utm_campaign', '_utm_campaign']),
     utmTerm: noteAttr(body.note_attributes, ['utm_term', '_utm_term']),
     utmContent: noteAttr(body.note_attributes, ['utm_content', '_utm_content']),
+    utmId: noteAttr(body.note_attributes, ['utm_id', '_utm_id']),
   };
 }
 
@@ -231,6 +234,7 @@ function parseYampi(body: Record<string, any>): ParsedPurchase {
     utmCampaign: pickString(orderData.utm_campaign),
     utmTerm: pickString(orderData.utm_term),
     utmContent: pickString(orderData.utm_content),
+    utmId: pickString(orderData.utm_id),
   };
 }
 
@@ -252,6 +256,7 @@ function parseGeneric(body: Record<string, any>): ParsedPurchase {
     utmCampaign: pickString(body.utm_campaign),
     utmTerm: pickString(body.utm_term),
     utmContent: pickString(body.utm_content),
+    utmId: pickString(body.utm_id),
   };
 }
 
@@ -305,6 +310,7 @@ export function parsePurchasePayload(
   parsed.utmTerm = parsed.utmTerm || pickString(searchParams.get('utm_term'), body.utm_term);
   parsed.utmContent =
     parsed.utmContent || pickString(searchParams.get('utm_content'), body.utm_content);
+  parsed.utmId = parsed.utmId || pickString(searchParams.get('utm_id'), body.utm_id);
 
   return parsed;
 }

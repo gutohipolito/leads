@@ -90,6 +90,7 @@ function contextFromOrderPayload(parsed: ParsedPurchase, body: Record<string, an
   if (parsed.utmCampaign) marketing.campaign = parsed.utmCampaign;
   if (parsed.utmTerm) marketing.term = parsed.utmTerm;
   if (parsed.utmContent) marketing.content = parsed.utmContent;
+  if (parsed.utmId) marketing.id = parsed.utmId;
 
   return {
     device,
@@ -112,6 +113,7 @@ export type PurchaseEnrichment = {
   utmCampaign: string;
   utmTerm: string;
   utmContent: string;
+  utmId: string;
 };
 
 export async function enrichPurchaseContext(
@@ -127,6 +129,7 @@ export async function enrichPurchaseContext(
   let utmCampaign = parsed.utmCampaign || '';
   let utmTerm = parsed.utmTerm || '';
   let utmContent = parsed.utmContent || '';
+  let utmId = parsed.utmId || '';
 
   if (visitorId) {
     try {
@@ -160,6 +163,7 @@ export async function enrichPurchaseContext(
           campaign: marketing.campaign || data.utm_campaign,
           term: marketing.term,
           content: marketing.content,
+          id: marketing.id,
         });
 
         // A jornada completa (até 5 touchpoints com source/medium/campaign por etapa)
@@ -178,6 +182,7 @@ export async function enrichPurchaseContext(
         utmCampaign = utmCampaign || pickString(context.marketing.campaign, data.utm_campaign);
         utmTerm = utmTerm || pickString(context.marketing.term);
         utmContent = utmContent || pickString(context.marketing.content);
+        utmId = utmId || pickString(context.marketing.id);
       }
     } catch (err) {
       console.error('[Purchases] enrich from lead failed:', err);
@@ -191,6 +196,7 @@ export async function enrichPurchaseContext(
     campaign: utmCampaign || undefined,
     term: utmTerm || undefined,
     content: utmContent || undefined,
+    id: utmId || undefined,
   });
 
   return {
@@ -201,5 +207,6 @@ export async function enrichPurchaseContext(
     utmCampaign,
     utmTerm,
     utmContent,
+    utmId,
   };
 }

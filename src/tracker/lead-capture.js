@@ -540,7 +540,8 @@
                             medium: 'utm_medium',
                             campaign: 'utm_campaign',
                             term: 'utm_term',
-                            content: 'utm_content'
+                            content: 'utm_content',
+                            id: 'utm_id'
                         };
                         for (const key in map) {
                             if (utms[key] && !url.searchParams.has(map[key])) {
@@ -588,6 +589,7 @@
             ensureHiddenInput(form, 'utm_campaign', utms.campaign);
             ensureHiddenInput(form, 'utm_term', utms.term);
             ensureHiddenInput(form, 'utm_content', utms.content);
+            ensureHiddenInput(form, 'utm_id', utms.id);
         } catch (e) {}
     }
 
@@ -607,6 +609,7 @@
             if (utms.campaign) attributes.utm_campaign = utms.campaign;
             if (utms.term) attributes.utm_term = utms.term;
             if (utms.content) attributes.utm_content = utms.content;
+            if (utms.id) attributes.utm_id = utms.id;
             if (Object.keys(attributes).length === 0) return;
 
             const signature = JSON.stringify(attributes);

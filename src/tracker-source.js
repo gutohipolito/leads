@@ -541,7 +541,7 @@
             const hashParams = new URLSearchParams(hashQueryPart);
 
             // 1. Capturar UTMs clássicas
-            ['source', 'medium', 'campaign', 'term', 'content'].forEach(key => {
+            ['source', 'medium', 'campaign', 'term', 'content', 'id'].forEach(key => {
                 const valQuery = queryParams.get(`utm_${key}`);
                 const valHash = hashParams.get(`utm_${key}`);
                 const val = valQuery || valHash;
@@ -603,6 +603,7 @@
                 if (utmsToSave.campaign) setCookie('_asthros_utm_campaign', utmsToSave.campaign, 90);
                 if (utmsToSave.term) setCookie('_asthros_utm_term', utmsToSave.term, 90);
                 if (utmsToSave.content) setCookie('_asthros_utm_content', utmsToSave.content, 90);
+                if (utmsToSave.id) setCookie('_asthros_utm_id', utmsToSave.id, 90);
             }
 
             // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada - Limite de 5 itens)
@@ -841,6 +842,11 @@
             pages_visited: getPagesVisitedContext()
         };
     }
+
+    // Captura UTMs/jornada do carregamento inicial da página. O hook de popstate/pushState em
+    // session.js só cobre navegações client-side (SPA) — sem esta chamada, sites renderizados no
+    // servidor (WordPress, Shopify, HTML estático) nunca gravavam o primeiro touchpoint.
+    saveUtmsToStorageAndJourney();
 
 
     let tempToken = null;
@@ -1815,7 +1821,8 @@
                             medium: 'utm_medium',
                             campaign: 'utm_campaign',
                             term: 'utm_term',
-                            content: 'utm_content'
+                            content: 'utm_content',
+                            id: 'utm_id'
                         };
                         for (const key in map) {
                             if (utms[key] && !url.searchParams.has(map[key])) {
@@ -1863,6 +1870,7 @@
             ensureHiddenInput(form, 'utm_campaign', utms.campaign);
             ensureHiddenInput(form, 'utm_term', utms.term);
             ensureHiddenInput(form, 'utm_content', utms.content);
+            ensureHiddenInput(form, 'utm_id', utms.id);
         } catch (e) {}
     }
 
@@ -1882,6 +1890,7 @@
             if (utms.campaign) attributes.utm_campaign = utms.campaign;
             if (utms.term) attributes.utm_term = utms.term;
             if (utms.content) attributes.utm_content = utms.content;
+            if (utms.id) attributes.utm_id = utms.id;
             if (Object.keys(attributes).length === 0) return;
 
             const signature = JSON.stringify(attributes);

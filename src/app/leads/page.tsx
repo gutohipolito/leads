@@ -1052,6 +1052,9 @@ export default function LeadsPage() {
     const contentVal = marketing.content || 'N/A';
     marketingItems.push({ label: 'UTM Content', value: contentVal, highlight: isPaid && marketing.content, isFallback: !marketing.content });
 
+    const idVal = marketing.id || 'N/A';
+    marketingItems.push({ label: 'UTM ID', value: idVal, highlight: isPaid && marketing.id, isFallback: !marketing.id });
+
     if (marketing.gclid) marketingItems.push({ label: 'Google Ads ID', value: 'Ativo (GCLID)', highlight: true });
     if (marketing.fbclid) marketingItems.push({ label: 'Facebook Ads ID', value: 'Ativo (FBCLID)', highlight: true });
     if (marketing.ttclid) marketingItems.push({ label: 'TikTok Ads ID', value: 'Ativo (TTCLID)', highlight: true });
@@ -2407,9 +2410,10 @@ export default function LeadsPage() {
       )}
 
       {deleteModal.show && (
-        <DeleteModal 
+        <DeleteModal
           title="Excluir Lead"
           message={`Você está prestes a excluir o lead "${leads.find(l => l.id === deleteModal.leadId)?.name || 'Sem Nome'}".`}
+          confirmLabel="Sim, Excluir Lead"
           onConfirm={() => handleDeleteLead(deleteModal.leadId)}
           onCancel={() => setDeleteModal({ show: false, leadId: '' })}
         />

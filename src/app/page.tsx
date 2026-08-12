@@ -705,6 +705,9 @@ export default function Home() {
         const contentVal = marketing.content || 'N/A';
         marketingItems.push({ label: 'UTM Content', value: contentVal, highlight: isPaid && marketing.content, isFallback: !marketing.content });
 
+        const idVal = marketing.id || 'N/A';
+        marketingItems.push({ label: 'UTM ID', value: idVal, highlight: isPaid && marketing.id, isFallback: !marketing.id });
+
         if (marketing.gclid) marketingItems.push({ label: 'Google Ads ID', value: 'Ativo (GCLID)', highlight: true });
         if (marketing.fbclid) marketingItems.push({ label: 'Facebook Ads ID', value: 'Ativo (FBCLID)', highlight: true });
         if (marketing.ttclid) marketingItems.push({ label: 'TikTok Ads ID', value: 'Ativo (TTCLID)', highlight: true });
@@ -1692,6 +1695,10 @@ export default function Home() {
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Content</span>
                       <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.content ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.content || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM ID</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.id ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.id || 'N/A'}</span>
                     </div>
                     {selectedLead.data?.marketing?.gclid && (
                       <div className={styles.infoRow}>
