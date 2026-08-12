@@ -86,10 +86,9 @@ export default function PurchasesPage() {
   const [selectedWebhookId, setSelectedWebhookId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
-  // Estados do Dropdown Customizado de Webhooks / E-commerce
+  // Estados do Dropdown Customizado de Webhooks (já vem pré-filtrado por E-commerce)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState('');
-  const [dropdownFilterEcommerce, setDropdownFilterEcommerce] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,8 +147,13 @@ export default function PurchasesPage() {
           }
         }
 
-        // 1. Buscar a lista de Webhooks disponíveis (incluindo flag is_ecommerce do cliente)
-        let whQuery = supabase.from('webhooks').select('*, clients(name, is_ecommerce)').eq('status', 'active');
+        // 1. Buscar a lista de Webhooks disponíveis — só de clientes com E-commerce marcado,
+        // já que esta tela é inteiramente sobre vendas (não faz sentido listar clientes sem loja).
+        let whQuery = supabase
+          .from('webhooks')
+          .select('*, clients!inner(name, is_ecommerce)')
+          .eq('status', 'active')
+          .eq('clients.is_ecommerce', true);
         if (activeClientId) {
           whQuery = whQuery.eq('client_id', activeClientId);
         }
@@ -325,12 +329,10 @@ export default function PurchasesPage() {
     return webhooksList.find((w) => w.id === selectedWebhookId) || null;
   }, [selectedWebhookId, webhooksList]);
 
-  // Webhooks filtrados para o Dropdown Customizado (Busca + E-commerce)
+  // Webhooks filtrados para o Dropdown Customizado (Busca) — a lista já vem só com
+  // clientes E-commerce direto do banco (ver loadData).
   const filteredWebhooksForDropdown = useMemo(() => {
     return webhooksList.filter((wh) => {
-      if (dropdownFilterEcommerce && !wh.clients?.is_ecommerce) {
-        return false;
-      }
       if (dropdownSearch) {
         const term = dropdownSearch.toLowerCase();
         const matchWhName = wh.name?.toLowerCase().includes(term);
@@ -339,7 +341,7 @@ export default function PurchasesPage() {
       }
       return true;
     });
-  }, [webhooksList, dropdownFilterEcommerce, dropdownSearch]);
+  }, [webhooksList, dropdownSearch]);
 
   // URL do Webhook calculada (apenas para webhook selecionado)
   const webhookUrl = useMemo(() => {
@@ -723,30 +725,29 @@ export default function PurchasesPage() {
               >
                 <div className={styles.triggerContent}>
                   <Store size={18} color="var(--primary)" />
-                  <span className={styles.triggerText}>
-                    {selectedWebhookId === 'all' 
-                      ? 'Todas as Lojas (Visão Geral)' 
-                      : `${currentWebhook?.name || 'Loja'} ${currentWebhook?.clients?.name ? `(${currentWebhook.clients.name})` : ''}`
+                  <span className={styles.triggerText} title={
+                    selectedWebhookId === 'all'
+                      ? 'Todas as Lojas (Visão Geral)'
+                      : `${currentWebhook?.name || 'Loja'}${currentWebhook?.clients?.name ? ` (${currentWebhook.clients.name})` : ''}`
+                  }>
+                    {selectedWebhookId === 'all'
+                      ? 'Todas as Lojas (Visão Geral)'
+                      : `${currentWebhook?.name || 'Loja'}${currentWebhook?.clients?.name ? ` (${currentWebhook.clients.name})` : ''}`
                     }
                   </span>
-                  {currentWebhook?.clients?.is_ecommerce && (
-                    <span className={styles.miniEcomBadge}>
-                      <ShoppingBag size={10} /> E-com
-                    </span>
-                  )}
                 </div>
                 <ChevronDown size={18} className={`${styles.arrowIcon} ${isDropdownOpen ? styles.arrowRotated : ''}`} />
               </button>
 
               {isDropdownOpen && (
                 <div className={styles.customSelectMenu}>
-                  {/* Cabeçalho do Menu com Busca e Filtros */}
+                  {/* Cabeçalho do Menu com Busca */}
                   <div className={styles.menuHeader}>
                     <div className={styles.searchBoxMenu}>
                       <Search size={14} color="var(--muted-foreground)" />
-                      <input 
-                        type="text" 
-                        placeholder="Buscar loja ou cliente..." 
+                      <input
+                        type="text"
+                        placeholder="Buscar loja ou cliente..."
                         value={dropdownSearch}
                         onChange={(e) => setDropdownSearch(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -755,29 +756,11 @@ export default function PurchasesPage() {
                         <X size={14} style={{ cursor: 'pointer' }} onClick={() => setDropdownSearch('')} />
                       )}
                     </div>
-
-                    <div className={styles.filterTabsMenu}>
-                      <button 
-                        type="button" 
-                        className={`${styles.filterTabBtn} ${!dropdownFilterEcommerce ? styles.activeTabBtn : ''}`}
-                        onClick={(e) => { e.stopPropagation(); setDropdownFilterEcommerce(false); }}
-                      >
-                        Todas ({webhooksList.length})
-                      </button>
-                      <button 
-                        type="button" 
-                        className={`${styles.filterTabBtn} ${dropdownFilterEcommerce ? styles.activeTabBtn : ''}`}
-                        onClick={(e) => { e.stopPropagation(); setDropdownFilterEcommerce(true); }}
-                      >
-                        <ShoppingBag size={12} />
-                        E-commerce ({webhooksList.filter(w => w.clients?.is_ecommerce).length})
-                      </button>
-                    </div>
                   </div>
 
                   {/* Lista de Opções */}
                   <div className={styles.menuList}>
-                    <div 
+                    <div
                       className={`${styles.menuOption} ${selectedWebhookId === 'all' ? styles.optionSelected : ''}`}
                       onClick={() => {
                         setSelectedWebhookId('all');
@@ -793,19 +776,19 @@ export default function PurchasesPage() {
 
                     {filteredWebhooksForDropdown.map((wh) => {
                       const isSelected = selectedWebhookId === wh.id;
-                      const isEcom = wh.clients?.is_ecommerce;
 
                       return (
-                        <div 
+                        <div
                           key={wh.id}
                           className={`${styles.menuOption} ${isSelected ? styles.optionSelected : ''}`}
                           onClick={() => {
                             setSelectedWebhookId(wh.id);
                             setIsDropdownOpen(false);
                           }}
+                          title={`${wh.name}${wh.clients?.name ? ` — ${wh.clients.name}` : ''}`}
                         >
                           <div className={styles.optionInfo}>
-                            <Webhook size={16} color={isEcom ? '#10b981' : 'var(--primary)'} />
+                            <Webhook size={16} color="var(--primary)" />
                             <div className={styles.optionTextGroup}>
                               <span className={styles.optionTitle}>{wh.name}</span>
                               {wh.clients?.name && (
@@ -814,21 +797,14 @@ export default function PurchasesPage() {
                             </div>
                           </div>
 
-                          <div className={styles.optionBadges}>
-                            {isEcom && (
-                              <span className={styles.ecommerceBadge}>
-                                <ShoppingBag size={10} /> E-commerce
-                              </span>
-                            )}
-                            {isSelected && <Check size={16} color="var(--primary)" />}
-                          </div>
+                          {isSelected && <Check size={16} className={styles.optionCheck} color="var(--primary)" />}
                         </div>
                       );
                     })}
 
                     {filteredWebhooksForDropdown.length === 0 && (
                       <div className={styles.emptyMenu}>
-                        Nenhuma loja encontrada para este filtro.
+                        Nenhuma loja encontrada para esta busca.
                       </div>
                     )}
                   </div>
