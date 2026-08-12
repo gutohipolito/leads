@@ -12,6 +12,8 @@ export type ParsedPurchase = {
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
   ignored?: boolean;
   ignoreReason?: string;
 };
@@ -154,9 +156,21 @@ function parseWooCommerce(body: Record<string, any>): ParsedPurchase {
     customerPhone: pickString(billing.phone, shipping.phone, order.phone, body.phone),
     items: normalizeItems(order.line_items || body.line_items),
     visitorId: metaValue(meta, ['_asthros_vid', 'asthros_vid', 'visitor_id']),
-    utmSource: metaValue(meta, ['_utm_source', 'utm_source', '_asthros_utm_source']),
-    utmMedium: metaValue(meta, ['_utm_medium', 'utm_medium', '_asthros_utm_medium']),
-    utmCampaign: metaValue(meta, ['_utm_campaign', 'utm_campaign', '_asthros_utm_campaign']),
+    utmSource: metaValue(meta, ['_utm_source', 'utm_source', '_asthros_utm_source', 'asthros_utm_source']),
+    utmMedium: metaValue(meta, ['_utm_medium', 'utm_medium', '_asthros_utm_medium', 'asthros_utm_medium']),
+    utmCampaign: metaValue(meta, [
+      '_utm_campaign',
+      'utm_campaign',
+      '_asthros_utm_campaign',
+      'asthros_utm_campaign',
+    ]),
+    utmTerm: metaValue(meta, ['_utm_term', 'utm_term', '_asthros_utm_term', 'asthros_utm_term']),
+    utmContent: metaValue(meta, [
+      '_utm_content',
+      'utm_content',
+      '_asthros_utm_content',
+      'asthros_utm_content',
+    ]),
   };
 }
 
@@ -180,9 +194,11 @@ function parseShopify(body: Record<string, any>): ParsedPurchase {
     customerPhone: pickString(body.phone, customer.phone, billing.phone, shipping.phone),
     items: normalizeItems(body.line_items),
     visitorId: noteAttr(body.note_attributes, ['asthros_vid', 'visitor_id', '_asthros_vid']),
-    utmSource: noteAttr(body.note_attributes, ['utm_source']) || pickString(body.landing_site_ref),
-    utmMedium: noteAttr(body.note_attributes, ['utm_medium']),
-    utmCampaign: noteAttr(body.note_attributes, ['utm_campaign']),
+    utmSource: noteAttr(body.note_attributes, ['utm_source', '_utm_source']) || pickString(body.landing_site_ref),
+    utmMedium: noteAttr(body.note_attributes, ['utm_medium', '_utm_medium']),
+    utmCampaign: noteAttr(body.note_attributes, ['utm_campaign', '_utm_campaign']),
+    utmTerm: noteAttr(body.note_attributes, ['utm_term', '_utm_term']),
+    utmContent: noteAttr(body.note_attributes, ['utm_content', '_utm_content']),
   };
 }
 
@@ -206,13 +222,15 @@ function parseYampi(body: Record<string, any>): ParsedPurchase {
     customerPhone: pickString(customer.phone, customer.cellphone, customer.whatsapp),
     items: normalizeItems(orderData.items),
     visitorId: pickString(
-      orderData.src,
-      orderData.utm_content,
-      orderData.custom_fields?.asthros_vid
+      orderData.custom_fields?.asthros_vid,
+      orderData.asthros_vid,
+      orderData.visitor_id
     ),
     utmSource: pickString(orderData.utm_source, orderData.src),
     utmMedium: pickString(orderData.utm_medium),
     utmCampaign: pickString(orderData.utm_campaign),
+    utmTerm: pickString(orderData.utm_term),
+    utmContent: pickString(orderData.utm_content),
   };
 }
 
@@ -232,6 +250,8 @@ function parseGeneric(body: Record<string, any>): ParsedPurchase {
     utmSource: pickString(body.utm_source),
     utmMedium: pickString(body.utm_medium),
     utmCampaign: pickString(body.utm_campaign),
+    utmTerm: pickString(body.utm_term),
+    utmContent: pickString(body.utm_content),
   };
 }
 
@@ -282,6 +302,9 @@ export function parsePurchasePayload(
   parsed.utmMedium = parsed.utmMedium || pickString(searchParams.get('utm_medium'), body.utm_medium);
   parsed.utmCampaign =
     parsed.utmCampaign || pickString(searchParams.get('utm_campaign'), body.utm_campaign);
+  parsed.utmTerm = parsed.utmTerm || pickString(searchParams.get('utm_term'), body.utm_term);
+  parsed.utmContent =
+    parsed.utmContent || pickString(searchParams.get('utm_content'), body.utm_content);
 
   return parsed;
 }

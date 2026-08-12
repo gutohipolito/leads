@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { encrypt } from '@/utils/encryption';
 import { parsePurchasePayload } from '@/lib/parsePurchasePayload';
+import { enrichPurchaseContext } from '@/lib/enrichPurchaseContext';
 
 export const PURCHASE_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -203,6 +204,8 @@ export async function handlePurchaseIngest(options: {
     );
   }
 
+  const enrichment = await enrichPurchaseContext(supabase, clientId, parsed, body);
+
   const encryptionSecret =
     process.env.LEADS_ENCRYPTION_KEY || 'asthros-default-secret-encryption-key-value-991823901';
   const encryptedEmail = parsed.customerEmail
@@ -214,7 +217,7 @@ export async function handlePurchaseIngest(options: {
 
   const purchaseData: Record<string, any> = {
     client_id: clientId,
-    visitor_id: parsed.visitorId || null,
+    visitor_id: enrichment.visitorId || null,
     order_id: parsed.orderId,
     gateway: parsed.gateway,
     customer_name: parsed.customerName,
@@ -224,9 +227,12 @@ export async function handlePurchaseIngest(options: {
     status: parsed.status,
     currency: parsed.currency || 'BRL',
     items: parsed.items,
-    utm_source: parsed.utmSource || null,
-    utm_medium: parsed.utmMedium || null,
-    utm_campaign: parsed.utmCampaign || null,
+    utm_source: enrichment.utmSource || null,
+    utm_medium: enrichment.utmMedium || null,
+    utm_campaign: enrichment.utmCampaign || null,
+    utm_term: enrichment.utmTerm || null,
+    utm_content: enrichment.utmContent || null,
+    context: enrichment.context,
     raw_payload: body,
   };
 
@@ -251,9 +257,29 @@ export async function handlePurchaseIngest(options: {
 
   let { data: saved, error: dbError } = await persist(purchaseData);
 
-  if (dbError && /customer_phone/i.test(dbError.message || '')) {
-    const { customer_phone: _phone, ...withoutPhone } = purchaseData;
-    ({ data: saved, error: dbError } = await persist(withoutPhone));
+  // Compatibilidade: colunas novas podem ainda não existir no Supabase
+  if (
+    dbError &&
+    /(customer_phone|utm_term|utm_content|context)/i.test(dbError.message || '')
+  ) {
+    const fallback = { ...purchaseData };
+    if (/customer_phone/i.test(dbError.message || '')) delete fallback.customer_phone;
+    if (/utm_term/i.test(dbError.message || '')) delete fallback.utm_term;
+    if (/utm_content/i.test(dbError.message || '')) delete fallback.utm_content;
+    if (/context/i.test(dbError.message || '')) delete fallback.context;
+    ({ data: saved, error: dbError } = await persist(fallback));
+  }
+
+  // Segunda tentativa: remove todas as colunas opcionais de uma vez
+  if (dbError && /(customer_phone|utm_term|utm_content|context)/i.test(dbError.message || '')) {
+    const {
+      customer_phone: _p,
+      utm_term: _t,
+      utm_content: _c,
+      context: _ctx,
+      ...minimal
+    } = purchaseData;
+    ({ data: saved, error: dbError } = await persist(minimal));
   }
 
   if (dbError) {

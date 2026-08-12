@@ -983,3 +983,52 @@
     opacity: 1;
   }
 }
+
+.journeyTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.journeyTimeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.journeyStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.journeyDot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.journeyUrl {
+  color: var(--foreground);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.journeyTime {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}

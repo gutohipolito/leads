@@ -28,23 +28,41 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
+import { decodeHtml } from '@/utils/decode';
 
 const isPaidPurchase = (order: any): boolean => {
   if (!order) return false;
-  const medium = (order.utm_medium || '').toLowerCase();
-  const source = (order.utm_source || '').toLowerCase();
+  const marketing = order.context?.marketing || {};
+  const medium = (order.utm_medium || marketing.medium || '').toLowerCase();
+  const source = (order.utm_source || marketing.source || '').toLowerCase();
   const paidMediums = ['cpc', 'ppc', 'paid', 'ads', 'traffic', 'cmp-paid'];
-  return paidMediums.includes(medium) || source.includes('ads') || medium.includes('ads');
+  const hasClickId = !!(
+    marketing.gclid ||
+    marketing.fbclid ||
+    marketing.ttclid ||
+    marketing.msclkid ||
+    marketing.gbraid ||
+    marketing.wbraid
+  );
+  return paidMediums.includes(medium) || hasClickId || source.includes('ads') || medium.includes('ads');
 };
 
 const WOO_ORDER_META_SNIPPET = `add_action('woocommerce_checkout_create_order', function ($order) {
-  if (!empty($_COOKIE['_asthros_vid'])) {
-    $order->update_meta_data('_asthros_vid', sanitize_text_field($_COOKIE['_asthros_vid']));
+  $vid = !empty($_POST['asthros_vid'])
+    ? $_POST['asthros_vid']
+    : (!empty($_COOKIE['_asthros_vid']) ? $_COOKIE['_asthros_vid'] : '');
+  if ($vid) {
+    $order->update_meta_data('_asthros_vid', sanitize_text_field($vid));
   }
-  foreach (['utm_source', 'utm_medium', 'utm_campaign'] as $key) {
-    $cookie = '_asthros_' . $key;
-    if (!empty($_COOKIE[$cookie])) {
-      $order->update_meta_data('_' . $key, sanitize_text_field($_COOKIE[$cookie]));
+
+  foreach (['source', 'medium', 'campaign', 'term', 'content'] as $key) {
+    $post_key = 'utm_' . $key;
+    $cookie_key = '_asthros_utm_' . $key;
+    $val = !empty($_POST[$post_key])
+      ? $_POST[$post_key]
+      : (!empty($_COOKIE[$cookie_key]) ? $_COOKIE[$cookie_key] : '');
+    if ($val) {
+      $order->update_meta_data('_utm_' . $key, sanitize_text_field($val));
     }
   }
 });`;
@@ -67,6 +85,7 @@ export default function PurchasesPage() {
   const [copied, setCopied] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [orderContextLoading, setOrderContextLoading] = useState(false);
   const [installTab, setInstallTab] = useState<'woocommerce' | 'shopify' | 'yampi'>('woocommerce');
   const [urlTest, setUrlTest] = useState<{ status: 'idle' | 'loading' | 'ok' | 'fail'; message: string }>({
     status: 'idle',
@@ -150,6 +169,90 @@ export default function PurchasesPage() {
     () => (selectedOrder ? isPaidPurchase(selectedOrder) : false),
     [selectedOrder]
   );
+
+  const orderCtx = useMemo(() => {
+    const ctx = selectedOrder?.context || {};
+    const marketing = ctx.marketing || {};
+    return {
+      device: ctx.device || {},
+      location: ctx.location || {},
+      behavior: ctx.behavior || {},
+      marketing,
+      journey: Array.isArray(ctx.journey)
+        ? ctx.journey
+        : Array.isArray(marketing.journey)
+          ? marketing.journey
+          : [],
+      utmSource: selectedOrder?.utm_source || marketing.source || '',
+      utmMedium: selectedOrder?.utm_medium || marketing.medium || '',
+      utmCampaign: selectedOrder?.utm_campaign || marketing.campaign || '',
+      utmTerm: selectedOrder?.utm_term || marketing.term || '',
+      utmContent: selectedOrder?.utm_content || marketing.content || '',
+    };
+  }, [selectedOrder]);
+
+  // Enriquece o modal com contexto do lead (visitor_id) quando o pedido veio sem snapshot
+  useEffect(() => {
+    if (!selectedOrder?.visitor_id) return;
+    const hasRich =
+      selectedOrder.context?.device?.os ||
+      selectedOrder.context?.location?.city ||
+      (selectedOrder.context?.journey && selectedOrder.context.journey.length > 0) ||
+      selectedOrder.context?.marketing?.journey?.length > 0;
+    if (hasRich && (selectedOrder.utm_source || selectedOrder.context?.marketing?.source)) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setOrderContextLoading(true);
+        const { data: leads } = await supabase
+          .from('leads')
+          .select('id, data, created_at')
+          .eq('client_id', selectedOrder.client_id)
+          .eq('data->>visitor_id', selectedOrder.visitor_id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (cancelled) return;
+        const lead = leads?.[0];
+        const data = lead?.data || {};
+        if (!lead || !data) return;
+
+        const marketing = data.marketing || {};
+        setSelectedOrder((prev: any) => {
+          if (!prev || prev.id !== selectedOrder.id) return prev;
+          return {
+            ...prev,
+            utm_source: prev.utm_source || marketing.source || data.utm_source || null,
+            utm_medium: prev.utm_medium || marketing.medium || data.utm_medium || null,
+            utm_campaign: prev.utm_campaign || marketing.campaign || data.utm_campaign || null,
+            utm_term: prev.utm_term || marketing.term || null,
+            utm_content: prev.utm_content || marketing.content || null,
+            context: {
+              ...(prev.context || {}),
+              device: { ...(prev.context?.device || {}), ...(data.device || {}) },
+              location: { ...(prev.context?.location || {}), ...(data.location || {}) },
+              behavior: { ...(prev.context?.behavior || {}), ...(data.behavior || {}) },
+              marketing: { ...(prev.context?.marketing || {}), ...marketing },
+              journey:
+                (prev.context?.journey && prev.context.journey.length > 0
+                  ? prev.context.journey
+                  : marketing.journey) || [],
+              source_lead_id: lead.id,
+            },
+          };
+        });
+      } catch (err) {
+        console.error('Falha ao enriquecer pedido com lead:', err);
+      } finally {
+        if (!cancelled) setOrderContextLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedOrder?.id, selectedOrder?.visitor_id, selectedOrder?.client_id]);
 
   // Realtime Supabase Subscription
   useEffect(() => {
@@ -269,6 +372,7 @@ export default function PurchasesPage() {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const mockOrder = {
       id: `test-${Date.now()}`,
+      client_id: currentWebhook?.client_id || null,
       order_id: `YAMPI-${randomNum}`,
       gateway: 'yampi',
       customer_name: 'Ana Clara Silva',
@@ -285,6 +389,32 @@ export default function PurchasesPage() {
       utm_source: 'instagram_ads',
       utm_medium: 'cpc',
       utm_campaign: 'campanha_verao_2026',
+      utm_term: 'skincare premium',
+      utm_content: 'stories_cta',
+      context: {
+        device: { os: 'iOS', is_mobile: true, language: 'pt-BR', timezone: 'America/Sao_Paulo', screen: '390x844' },
+        location: { ip: '177.92.10.22', city: 'São Paulo', region: 'SP', country: 'BR' },
+        behavior: {
+          page_url: 'https://loja.exemplo.com.br/produto/kit-glow',
+          time_on_page: '2m 14s',
+          scroll_depth: '78%',
+          session_duration_seconds: 312,
+          conversion_time_seconds: 186,
+        },
+        marketing: {
+          source: 'instagram_ads',
+          medium: 'cpc',
+          campaign: 'campanha_verao_2026',
+          term: 'skincare premium',
+          content: 'stories_cta',
+          fbclid: 'IwAR0test',
+        },
+        journey: [
+          { url: 'https://loja.exemplo.com.br/?utm_source=instagram_ads', timestamp: new Date(Date.now() - 3600000).toISOString() },
+          { url: 'https://loja.exemplo.com.br/produto/kit-glow', timestamp: new Date(Date.now() - 1800000).toISOString() },
+          { url: 'https://loja.exemplo.com.br/checkout', timestamp: new Date(Date.now() - 300000).toISOString() },
+        ],
+      },
       created_at: new Date().toISOString()
     };
 
@@ -564,7 +694,10 @@ export default function PurchasesPage() {
                     <li>URL de entrega: cole <strong>exatamente</strong> a URL copiada (<code>/api/webhooks/commerce/...</code>). Sem barra no final.</li>
                     <li>Campo Secret do WooCommerce: deixe o que ele gerar. <strong>Não cole nada do Asthros nesse campo.</strong></li>
                     <li>Status: Ativo · API v3 · JSON. Depois salve e confira o log da entrega.</li>
-                    <li>Opcional — cole o snippet no <code>functions.php</code> para gravar UTMs no pedido:</li>
+                    <li>
+                      <strong>Necessário para UTM/visitor</strong> — cole o snippet no <code>functions.php</code> (ou Code Snippets).
+                      Sem isso o pedido chega sem origem.
+                    </li>
                   </ol>
                   <pre className={styles.phpSnippet}>{WOO_ORDER_META_SNIPPET}</pre>
                   <button className={styles.copyBtn} onClick={copyWooSnippet} type="button">
@@ -768,6 +901,7 @@ export default function PurchasesPage() {
                 <span className={styles.modalSubtitle}>
                   #{selectedOrder.order_id}
                   {selectedOrder.id ? ` · ID: ${selectedOrder.id}` : ''}
+                  {orderContextLoading ? ' · carregando contexto…' : ''}
                 </span>
               </div>
               <button className={styles.closeBtn} onClick={() => setSelectedOrder(null)} aria-label="Fechar">
@@ -778,7 +912,7 @@ export default function PurchasesPage() {
             <div className={styles.modalBody}>
               <div className={styles.sectionGrid}>
                 <div className={styles.infoSection}>
-                  <h4>Pedido & Pagamento</h4>
+                  <h4>Pedido & Cliente</h4>
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Valor Total</span>
@@ -794,28 +928,6 @@ export default function PurchasesPage() {
                       <span className={styles.infoLabel}>Gateway</span>
                       <span className={styles.infoVal}>{getGatewayBadge(selectedOrder.gateway)}</span>
                     </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Moeda</span>
-                      <span className={`${styles.infoVal} ${!selectedOrder.currency ? styles.infoValEmpty : ''}`}>
-                        {selectedOrder.currency || 'BRL'}
-                      </span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Data</span>
-                      <span className={styles.infoVal}>
-                        {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}
-                      </span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Nº do Pedido</span>
-                      <span className={styles.infoVal}>#{selectedOrder.order_id}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.infoSection}>
-                  <h4>Cliente</h4>
-                  <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nome</span>
                       <span className={`${styles.infoVal} ${!selectedOrder.customer_name ? styles.infoValEmpty : ''}`}>
@@ -835,9 +947,106 @@ export default function PurchasesPage() {
                       </span>
                     </div>
                     <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Data</span>
+                      <span className={styles.infoVal}>
+                        {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Visitor ID</span>
                       <span className={`${styles.infoVal} ${!selectedOrder.visitor_id ? styles.infoValEmpty : ''}`}>
                         {selectedOrder.visitor_id || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>IP</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.location.ip ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.location.ip || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Localização</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.location.city ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.location.city
+                          ? `${decodeHtml(orderCtx.location.city)}/${decodeHtml(orderCtx.location.region || '')} (${orderCtx.location.country || 'BR'})`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Sistema</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.device.os ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.device.os || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Dispositivo</span>
+                      <span className={`${styles.infoVal} ${orderCtx.device.is_mobile === undefined ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.device.is_mobile === undefined
+                          ? 'N/A'
+                          : orderCtx.device.is_mobile
+                            ? 'Mobile'
+                            : 'Desktop'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.infoSection}>
+                  <h4>Comportamento & Engajamento</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Página de Origem</span>
+                      <span
+                        className={`${styles.infoVal} ${(!orderCtx.behavior.page_url && !orderCtx.behavior.pageUrl) ? styles.infoValEmpty : ''}`}
+                        title={decodeHtml(orderCtx.behavior.page_url || orderCtx.behavior.pageUrl || 'N/A')}
+                      >
+                        {decodeHtml(orderCtx.behavior.page_url || orderCtx.behavior.pageUrl || 'N/A')}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tempo Ativo na Pág.</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.behavior.time_on_page ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.behavior.time_on_page || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Rolagem Máxima</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.behavior.scroll_depth ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.behavior.scroll_depth || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Duração da Sessão</span>
+                      <span className={`${styles.infoVal} ${orderCtx.behavior.session_duration_seconds === undefined ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.behavior.session_duration_seconds !== undefined
+                          ? `${orderCtx.behavior.session_duration_seconds}s`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tempo p/ Conversão</span>
+                      <span className={`${styles.infoVal} ${orderCtx.behavior.conversion_time_seconds === undefined ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.behavior.conversion_time_seconds !== undefined
+                          ? `${orderCtx.behavior.conversion_time_seconds}s`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Idioma</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.device.language ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.device.language || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Timezone</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.device.timezone ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.device.timezone ? decodeHtml(orderCtx.device.timezone) : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Resolução</span>
+                      <span className={`${styles.infoVal} ${!orderCtx.device.screen ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.device.screen || 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -851,37 +1060,85 @@ export default function PurchasesPage() {
                   <div className={styles.infoList}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Source</span>
-                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_source ? styles.infoValEmpty : ''}`}>
-                        {selectedOrder.utm_source || 'Direto / Orgânico'}
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!orderCtx.utmSource ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.utmSource || 'Direto / Orgânico'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Medium</span>
-                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_medium ? styles.infoValEmpty : ''}`}>
-                        {selectedOrder.utm_medium || 'N/A'}
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!orderCtx.utmMedium ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.utmMedium || 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Campaign</span>
-                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_campaign ? styles.infoValEmpty : ''}`}>
-                        {selectedOrder.utm_campaign || 'N/A'}
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!orderCtx.utmCampaign ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.utmCampaign || 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Term</span>
-                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_term ? styles.infoValEmpty : ''}`}>
-                        {selectedOrder.utm_term || 'N/A'}
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!orderCtx.utmTerm ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.utmTerm || 'N/A'}
                       </span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>UTM Content</span>
-                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_content ? styles.infoValEmpty : ''}`}>
-                        {selectedOrder.utm_content || 'N/A'}
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!orderCtx.utmContent ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.utmContent || 'N/A'}
                       </span>
                     </div>
+                    {orderCtx.marketing.gclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Google Ads ID</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={orderCtx.marketing.gclid}>
+                          GCLID (Ativo)
+                        </span>
+                      </div>
+                    )}
+                    {orderCtx.marketing.fbclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Facebook Ads ID</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={orderCtx.marketing.fbclid}>
+                          FBCLID (Ativo)
+                        </span>
+                      </div>
+                    )}
+                    {orderCtx.marketing.ttclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>TikTok Ads ID</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={orderCtx.marketing.ttclid}>
+                          TTCLID (Ativo)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {orderCtx.journey.length > 0 && (
+                <div className={styles.extraFieldsArea}>
+                  <h4 className={styles.extraFieldsTitle}>Jornada do Visitante</h4>
+                  <div className={styles.infoSection}>
+                    <div className={styles.journeyTimeline}>
+                      {orderCtx.journey.map((step: any, index: number) => (
+                        <div key={index} className={styles.journeyStep}>
+                          <div className={styles.journeyDot} />
+                          <span className={styles.journeyUrl}>
+                            {decodeHtml(step.url || step.page_url || 'URL desconhecida')}
+                          </span>
+                          <span className={styles.journeyTime}>
+                            {step.timestamp
+                              ? new Date(step.timestamp).toLocaleString('pt-BR')
+                              : 'Data não registrada'}
+                            {step.referrer ? ` • Referência: ${decodeHtml(step.referrer)}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className={styles.extraFieldsArea}>
                 <h4 className={styles.extraFieldsTitle}>Itens do Pedido</h4>

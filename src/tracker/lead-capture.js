@@ -535,12 +535,25 @@
                         updated = true;
                     }
                     if (utms) {
-                        for (const k in utms) {
-                            if (utms[k] && !url.searchParams.has(k)) {
-                                url.searchParams.set(k, utms[k]);
+                        const map = {
+                            source: 'utm_source',
+                            medium: 'utm_medium',
+                            campaign: 'utm_campaign',
+                            term: 'utm_term',
+                            content: 'utm_content'
+                        };
+                        for (const key in map) {
+                            if (utms[key] && !url.searchParams.has(map[key])) {
+                                url.searchParams.set(map[key], utms[key]);
                                 updated = true;
                             }
                         }
+                        ['gclid', 'fbclid', 'ttclid', 'msclkid'].forEach(function(clickId) {
+                            if (utms[clickId] && !url.searchParams.has(clickId)) {
+                                url.searchParams.set(clickId, utms[clickId]);
+                                updated = true;
+                            }
+                        });
                     }
                     if (updated) {
                         link.setAttribute('href', url.toString());
@@ -550,13 +563,80 @@
         });
     }
 
+    function ensureHiddenInput(form, name, value) {
+        if (!form || !name || value === null || value === undefined || value === '') return;
+        let input = form.querySelector('input[name="' + name + '"]');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            form.appendChild(input);
+        }
+        input.value = String(value);
+    }
+
+    function injectWooCheckoutAttribution() {
+        try {
+            if (!isEcommerceCheckoutPage()) return;
+            const form = document.querySelector('form.woocommerce-checkout, form.checkout, form#checkout');
+            if (!form) return;
+            const visitorId = getVisitorId();
+            const utms = getUtms() || {};
+            ensureHiddenInput(form, 'asthros_vid', visitorId);
+            ensureHiddenInput(form, 'utm_source', utms.source);
+            ensureHiddenInput(form, 'utm_medium', utms.medium);
+            ensureHiddenInput(form, 'utm_campaign', utms.campaign);
+            ensureHiddenInput(form, 'utm_term', utms.term);
+            ensureHiddenInput(form, 'utm_content', utms.content);
+        } catch (e) {}
+    }
+
+    function syncShopifyCartAttributes() {
+        try {
+            const isShopify =
+                typeof window.Shopify !== 'undefined' ||
+                !!document.querySelector('script[src*="cdn.shopify.com"]');
+            if (!isShopify) return;
+
+            const visitorId = getVisitorId();
+            const utms = getUtms() || {};
+            const attributes = {};
+            if (visitorId) attributes.asthros_vid = visitorId;
+            if (utms.source) attributes.utm_source = utms.source;
+            if (utms.medium) attributes.utm_medium = utms.medium;
+            if (utms.campaign) attributes.utm_campaign = utms.campaign;
+            if (utms.term) attributes.utm_term = utms.term;
+            if (utms.content) attributes.utm_content = utms.content;
+            if (Object.keys(attributes).length === 0) return;
+
+            const signature = JSON.stringify(attributes);
+            if (window.__asthrosShopifyAttrs === signature) return;
+            window.__asthrosShopifyAttrs = signature;
+
+            fetch('/cart/update.js', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ attributes: attributes }),
+                credentials: 'same-origin'
+            }).catch(function() {});
+        } catch (e) {}
+    }
+
+    function syncEcommerceAttribution() {
+        injectWooCheckoutAttribution();
+        syncShopifyCartAttributes();
+    }
+
     if (typeof document !== 'undefined') {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', decorateCheckoutLinks);
+            document.addEventListener('DOMContentLoaded', syncEcommerceAttribution);
         } else {
             decorateCheckoutLinks();
+            syncEcommerceAttribution();
         }
         setInterval(decorateCheckoutLinks, 3000);
+        setInterval(syncEcommerceAttribution, 4000);
     }
 
     window.Asthros = window.Asthros || {};
@@ -568,3 +648,4 @@
         }
     };
     window.Asthros.decorateCheckoutLinks = decorateCheckoutLinks;
+    window.Asthros.syncEcommerceAttribution = syncEcommerceAttribution;

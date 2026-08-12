@@ -71,6 +71,8 @@
                 if (utmsToSave.source) setCookie('_asthros_utm_source', utmsToSave.source, 90);
                 if (utmsToSave.medium) setCookie('_asthros_utm_medium', utmsToSave.medium, 90);
                 if (utmsToSave.campaign) setCookie('_asthros_utm_campaign', utmsToSave.campaign, 90);
+                if (utmsToSave.term) setCookie('_asthros_utm_term', utmsToSave.term, 90);
+                if (utmsToSave.content) setCookie('_asthros_utm_content', utmsToSave.content, 90);
             }
 
             // 2. Gravar o Touchpoint na jornada (Atribuição Multitouch Otimizada - Limite de 5 itens)
