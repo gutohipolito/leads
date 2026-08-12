@@ -76,6 +76,13 @@ body {
   line-height: 1.6;
 }
 
+/* Home (viewport lock): a página não rola; overflow fica nos cards */
+html[data-layout='viewport'],
+html[data-layout='viewport'] body {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Enhanced Grainy Texture - Softer now */
 body::before {
   content: "";

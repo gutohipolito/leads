@@ -828,7 +828,9 @@ export default function Home() {
   };
 
   return (
-    <DashboardLayout title={
+    <DashboardLayout
+      lockViewport
+      title={
       <Link href="/admin/live" prefetch={false} className={styles.liveStatusPill}>
         <Tv size={20} className={styles.liveIconPulse} />
         <span className={styles.liveLabel}>Monitor ao Vivo</span>

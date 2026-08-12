@@ -14,9 +14,11 @@ import { primeAudio } from '@/utils/audio';
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: React.ReactNode;
+  /** Home: prende o layout à altura da tela; overflow fica dentro dos cards */
+  lockViewport?: boolean;
 }
 
-export default function DashboardLayout({ children, title = '' }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title = '', lockViewport = false }: DashboardLayoutProps) {
   const [impersonatedClient, setImpersonatedClient] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,14 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (!lockViewport) return;
+    document.documentElement.setAttribute('data-layout', 'viewport');
+    return () => {
+      document.documentElement.removeAttribute('data-layout');
+    };
+  }, [lockViewport]);
 
   const toggleSidebar = () => {
     const newVal = !isSidebarCollapsed;
@@ -328,7 +338,10 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
   }
 
   return (
-    <div className={styles.layoutWrapper} onPointerDown={primeAudio}>
+    <div
+      className={`${styles.layoutWrapper} ${lockViewport ? styles.layoutWrapperViewport : ''}`}
+      onPointerDown={primeAudio}
+    >
       {activeLeadNotif && (
         <FunnyLeadModal 
           lead={activeLeadNotif} 
@@ -345,7 +358,7 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
       />
-      <div className={`${styles.mainContainer} ${isSidebarCollapsed ? styles.mainContainerCollapsed : ''}`}>
+      <div className={`${styles.mainContainer} ${isSidebarCollapsed ? styles.mainContainerCollapsed : ''} ${lockViewport ? styles.mainContainerViewport : ''}`}>
         {impersonatedClient && (
           <div className={styles.impersonationBanner}>
             <div className={styles.bannerContent}>
@@ -359,8 +372,8 @@ export default function DashboardLayout({ children, title = '' }: DashboardLayou
           </div>
         )}
         <Header title={title} onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className={styles.pageContent}>
-          <div className={styles.innerWrapper}>
+        <main className={`${styles.pageContent} ${lockViewport ? styles.pageContentViewport : ''}`}>
+          <div className={`${styles.innerWrapper} ${lockViewport ? styles.innerWrapperViewport : ''}`}>
             {children}
           </div>
         </main>
