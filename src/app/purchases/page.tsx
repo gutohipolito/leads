@@ -3,16 +3,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './purchases.module.css';
-import { 
-  ShoppingBag, 
-  TrendingUp, 
-  DollarSign, 
-  CheckCircle, 
-  Search, 
-  Copy, 
-  Check, 
-  Webhook, 
-  Eye, 
+import {
+  ShoppingBag,
+  TrendingUp,
+  DollarSign,
+  CheckCircle,
+  Search,
+  Copy,
+  Check,
+  Webhook,
+  Eye,
   X,
   Package,
   Store,
@@ -24,11 +24,17 @@ import {
   XCircle,
   Play,
   ChevronDown,
-  Filter
+  Filter,
+  Trash2,
+  Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
+import DeleteModal from '@/components/DeleteModal/DeleteModal';
 import { decodeHtml } from '@/utils/decode';
+import { logAction } from '@/utils/logger';
 
 const isPaidPurchase = (order: any): boolean => {
   if (!order) return false;
@@ -55,7 +61,7 @@ const WOO_ORDER_META_SNIPPET = `add_action('woocommerce_checkout_create_order', 
     $order->update_meta_data('_asthros_vid', sanitize_text_field($vid));
   }
 
-  foreach (['source', 'medium', 'campaign', 'term', 'content'] as $key) {
+  foreach (['source', 'medium', 'campaign', 'term', 'content', 'id'] as $key) {
     $post_key = 'utm_' . $key;
     $cookie_key = '_asthros_utm_' . $key;
     $val = !empty($_POST[$post_key])
@@ -91,6 +97,12 @@ export default function PurchasesPage() {
     status: 'idle',
     message: '',
   });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; orderId: string; orderLabel: string }>({
+    show: false,
+    orderId: '',
+    orderLabel: '',
+  });
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -117,8 +129,9 @@ export default function PurchasesPage() {
           .single();
 
         const isUserAdmin = profile?.role === 'admin';
+        setIsAdmin(isUserAdmin);
         const impersonated = typeof window !== 'undefined' ? localStorage.getItem('impersonated_client') : null;
-        
+
         let activeClientId = profile?.client_id;
         if (isUserAdmin && impersonated) {
           try {
@@ -196,6 +209,7 @@ export default function PurchasesPage() {
       utmCampaign: selectedOrder?.utm_campaign || marketing.campaign || '',
       utmTerm: selectedOrder?.utm_term || marketing.term || '',
       utmContent: selectedOrder?.utm_content || marketing.content || '',
+      utmId: marketing.id || '',
     };
   }, [selectedOrder]);
 
@@ -380,6 +394,21 @@ export default function PurchasesPage() {
     setTimeout(() => setCopiedSnippet(false), 2000);
   };
 
+  const handleDeletePurchase = async (purchaseId: string) => {
+    if (!isAdmin || !purchaseId) return;
+
+    const { error } = await supabase.from('purchases').delete().eq('id', purchaseId);
+
+    if (!error) {
+      setPurchases(prev => prev.filter(p => p.id !== purchaseId));
+      if (selectedOrder?.id === purchaseId) setSelectedOrder(null);
+      setDeleteModal({ show: false, orderId: '', orderLabel: '' });
+      logAction('Venda Excluída', 'purchase', purchaseId, { deleted_by: 'admin' });
+    } else {
+      alert('Erro ao excluir venda: ' + error.message);
+    }
+  };
+
   // Botão de Simulação de Venda de Teste
   const handleSimulateTestOrder = () => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -492,6 +521,157 @@ export default function PurchasesPage() {
     return <span className={styles.statusCanceled}>Cancelado</span>;
   };
 
+  const getStatusLabel = (st: string) => {
+    const lower = (st || '').toLowerCase();
+    if (lower === 'approved' || lower === 'paid' || lower === 'processing' || lower === 'completed') return 'Aprovado';
+    if (lower === 'pending') return 'Pendente';
+    return 'Cancelado';
+  };
+
+  const handleExportPurchasesPDF = async () => {
+    const ordersToExport = filteredPurchases;
+    if (ordersToExport.length === 0) return;
+
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const clientName = currentWebhook?.clients?.name || 'Geral';
+    const webhookName = currentWebhook?.name || 'Todas as Lojas';
+
+    // 1. Cabeçalho Escuro Padrão (Ajustado para Landscape - 297mm de largura)
+    doc.setFillColor(10, 20, 35);
+    doc.rect(0, 0, 297, 40, 'F');
+
+    try {
+      const logoUrl = '/asthros-leads.png';
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = (e) => reject(e);
+        image.src = logoUrl;
+      });
+      const logoWidth = 40;
+      const logoHeight = (img.height * logoWidth) / img.width;
+      const logoY = (40 - logoHeight) / 2;
+      doc.addImage(img, 'PNG', 15, logoY, logoWidth, logoHeight);
+    } catch (err) {
+      doc.setTextColor(86, 215, 253);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ASTHROS', 15, 22);
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Vendas', 282, 16, { align: 'right' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Cliente: ${clientName}`, 282, 22, { align: 'right' });
+    doc.text(`Loja: ${webhookName}`, 282, 28, { align: 'right' });
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 282, 34, { align: 'right' });
+
+    // 2. Caixas de Estatísticas
+    const approved = ordersToExport.filter((p) => p.status === 'approved' || p.status === 'paid');
+    const totalRevenue = approved.reduce((acc, p) => acc + (parseFloat(p.total_amount) || 0), 0);
+    const avgTicket = approved.length > 0 ? totalRevenue / approved.length : 0;
+    const approvalRate = ordersToExport.length > 0 ? (approved.length / ordersToExport.length) * 100 : 0;
+
+    const drawStatBox = (x: number, y: number, w: number, h: number, title: string, value: string, color: [number, number, number]) => {
+      doc.setFillColor(24, 28, 41);
+      doc.rect(x, y, w, h, 'F');
+
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.rect(x, y, 3, h, 'F');
+
+      doc.setTextColor(150, 150, 150);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(title.toUpperCase(), x + 8, y + 6);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(value, x + 8, y + 13);
+    };
+
+    drawStatBox(15, 46, 62, 18, 'Total de Pedidos', String(ordersToExport.length), [86, 215, 253]);
+    drawStatBox(85, 46, 62, 18, 'Receita Aprovada', formatCurrency(totalRevenue), [46, 204, 113]);
+    drawStatBox(155, 46, 62, 18, 'Ticket Médio', formatCurrency(avgTicket), [168, 85, 247]);
+    drawStatBox(225, 46, 62, 18, 'Taxa de Aprovação', `${approvalRate.toFixed(1)}%`, [245, 158, 11]);
+
+    // 3. Tabelas Agrupadas por Gateway
+    const wooOrders = ordersToExport.filter((p) => (p.gateway || '').toLowerCase() === 'woocommerce');
+    const shopifyOrders = ordersToExport.filter((p) => (p.gateway || '').toLowerCase() === 'shopify');
+    const yampiOrders = ordersToExport.filter((p) => (p.gateway || '').toLowerCase() === 'yampi');
+    const genericOrders = ordersToExport.filter(
+      (p) => !['woocommerce', 'shopify', 'yampi'].includes((p.gateway || '').toLowerCase())
+    );
+
+    const generateGroupTable = (title: string, groupOrders: any[], startY: number) => {
+      if (groupOrders.length === 0) return startY;
+
+      const headers = ['Data/Hora', 'Pedido', 'Cliente', 'E-mail', 'Telefone', 'Total', 'Status', 'Canal (UTM)'];
+      const tableRows = groupOrders.map((p) => [
+        new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+        `#${p.order_id}`,
+        p.customer_name || 'Cliente',
+        p.customer_email || 'N/A',
+        p.customer_phone || 'N/A',
+        formatCurrency(parseFloat(p.total_amount || 0)),
+        getStatusLabel(p.status),
+        p.utm_source || 'Direto',
+      ]);
+
+      doc.setFillColor(10, 20, 35);
+      doc.rect(15, startY, 267, 10, 'F');
+
+      doc.setTextColor(86, 215, 253);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title.toUpperCase(), 22, startY + 6.5);
+
+      autoTable(doc, {
+        head: [headers],
+        body: tableRows,
+        startY: startY + 12,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [10, 20, 35],
+          textColor: [86, 215, 253],
+          fontSize: 9,
+          fontStyle: 'bold',
+        },
+        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+        margin: { top: 50, left: 15 },
+      });
+
+      return (doc as any).lastAutoTable.finalY + 15;
+    };
+
+    let currentY = 72;
+    currentY = generateGroupTable('WooCommerce', wooOrders, currentY);
+    currentY = generateGroupTable('Shopify', shopifyOrders, currentY);
+    currentY = generateGroupTable('Yampi', yampiOrders, currentY);
+    currentY = generateGroupTable('Webhooks Genéricos', genericOrders, currentY);
+
+    // 4. Rodapé com paginação
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Asthros | CO-B. - Relatório de Vendas - Confidencial`, 15, 200);
+      doc.text(`Página ${i} de ${pageCount}`, 260, 200);
+    }
+
+    const formattedClientName = clientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    doc.save(`vendas_${formattedClientName}_${new Date().getTime()}.pdf`);
+    logAction('Exportação de Vendas', 'purchase', undefined, {
+      format: 'pdf',
+      count: ordersToExport.length,
+    });
+  };
+
   return (
     <DashboardLayout title="Gestão de Vendas & Conversões">
       <div className={styles.container}>
@@ -507,10 +687,16 @@ export default function PurchasesPage() {
             </p>
           </div>
 
-          <button className={styles.testBtn} onClick={handleSimulateTestOrder} title="Simular venda de teste e abrir modal de detalhes">
-            <Sparkles size={18} />
-            <span>Simular Venda de Teste</span>
-          </button>
+          <div className={styles.headerActions}>
+            <button className={styles.exportPdfBtn} onClick={handleExportPurchasesPDF} title="Exportar vendas filtradas em PDF">
+              <Download size={18} />
+              <span>Exportar PDF</span>
+            </button>
+            <button className={styles.testBtn} onClick={handleSimulateTestOrder} title="Simular venda de teste e abrir modal de detalhes">
+              <Sparkles size={18} />
+              <span>Simular Venda de Teste</span>
+            </button>
+          </div>
         </div>
 
         {/* Seleção de Webhook & Card de Integração */}
@@ -877,17 +1063,31 @@ export default function PurchasesPage() {
                       {new Date(item.created_at).toLocaleString('pt-BR')}
                     </td>
                     <td>
-                      <button
-                        className={styles.detailsBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrder(item);
-                        }}
-                        title="Ver detalhes do pedido"
-                      >
-                        <Eye size={14} />
-                        <span>Detalhes</span>
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <button
+                          className={styles.detailsBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrder(item);
+                          }}
+                          title="Ver detalhes do pedido"
+                        >
+                          <Eye size={14} />
+                          <span>Detalhes</span>
+                        </button>
+                        {isAdmin && (
+                          <button
+                            className={styles.deleteBtnMini}
+                            title="Excluir venda"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteModal({ show: true, orderId: item.id, orderLabel: item.order_id });
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1101,6 +1301,12 @@ export default function PurchasesPage() {
                         {orderCtx.utmContent || 'N/A'}
                       </span>
                     </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM ID</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!orderCtx.utmId ? styles.infoValEmpty : ''}`}>
+                        {orderCtx.utmId || 'N/A'}
+                      </span>
+                    </div>
                     {orderCtx.marketing.gclid && (
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Google Ads ID</span>
@@ -1228,13 +1434,33 @@ export default function PurchasesPage() {
             </div>
 
             <div className={styles.modalFooter}>
-              <div />
+              {isAdmin ? (
+                <button
+                  className={styles.deleteBtn}
+                  onClick={() => setDeleteModal({ show: true, orderId: selectedOrder.id, orderLabel: selectedOrder.order_id })}
+                >
+                  <Trash2 size={16} />
+                  <span>Excluir Venda</span>
+                </button>
+              ) : (
+                <div />
+              )}
               <button className={styles.closeFooterBtn} onClick={() => setSelectedOrder(null)}>
                 Fechar
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {deleteModal.show && (
+        <DeleteModal
+          title="Excluir Venda"
+          message={`Você está prestes a excluir o pedido "#${deleteModal.orderLabel}". Isso remove o registro de faturamento e o vínculo com a jornada do lead.`}
+          confirmLabel="Sim, Excluir Venda"
+          onConfirm={() => handleDeletePurchase(deleteModal.orderId)}
+          onCancel={() => setDeleteModal({ show: false, orderId: '', orderLabel: '' })}
+        />
       )}
     </DashboardLayout>
   );

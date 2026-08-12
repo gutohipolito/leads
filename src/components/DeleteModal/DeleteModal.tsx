@@ -7,11 +7,12 @@ import styles from './DeleteModal.module.css';
 interface DeleteModalProps {
   title: string;
   message: string;
+  confirmLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function DeleteModal({ title, message, onConfirm, onCancel }: DeleteModalProps) {
+export default function DeleteModal({ title, message, confirmLabel, onConfirm, onCancel }: DeleteModalProps) {
   return (
     <div className={styles.overlay} onClick={onCancel}>
       <div className={`${styles.modal} glass`} onClick={e => e.stopPropagation()}>
@@ -39,7 +40,7 @@ export default function DeleteModal({ title, message, onConfirm, onCancel }: Del
             Cancelar
           </button>
           <button className={styles.confirmBtn} onClick={onConfirm}>
-            Sim, Excluir Lead
+            {confirmLabel}
           </button>
         </div>
       </div>
