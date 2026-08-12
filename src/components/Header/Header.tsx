@@ -13,6 +13,18 @@ interface HeaderProps {
   onMenuClick?: () => void;
 }
 
+// Mesmas cores por categoria do card "Divisão de Origens" no dashboard,
+// inferidas do título (a origem do evento não é gravada como coluna própria).
+function getNotificationColor(title?: string): string {
+  if (!title) return 'var(--primary)';
+  if (title.includes('WhatsApp')) return '#25d366';
+  if (title.startsWith('Nova Venda')) return '#ec4899';
+  if (title.includes('Seletor')) return '#a855f7';
+  if (title.includes('Palavra-Chave')) return '#f97316';
+  if (title.includes('Form') || title.includes('Botão')) return '#56d7fd';
+  return 'var(--primary)';
+}
+
 export default function Header({ title, onMenuClick }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [avatarStyle, setAvatarStyle] = useState(() => {
@@ -395,9 +407,14 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
             </div>
             
             <div className={styles.notifList}>
-              {notifications.length > 0 ? notifications.map(n => (
+              {notifications.length > 0 ? notifications.map(n => {
+                const notifColor = getNotificationColor(n.title);
+                return (
                 <div key={n.id} className={`${styles.notifItem} ${n.read ? '' : styles.unread}`}>
-                  <div className={styles.notifIndicator} />
+                  <div
+                    className={styles.notifIndicator}
+                    style={{ background: notifColor, boxShadow: n.read ? undefined : `0 0 10px ${notifColor}` }}
+                  />
                   <div className={styles.notifContent}>
                     <div className={styles.notifHeaderRow}>
                       <p className={styles.notifTitle}>{n.title}</p>
@@ -414,7 +431,8 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
                     </span>
                   </div>
                 </div>
-              )) : (
+                );
+              }) : (
                 <div className={styles.emptyNotif}>
                   <Bell size={48} strokeWidth={1} opacity={0.2} />
                   <p>Tudo limpo por aqui!</p>
