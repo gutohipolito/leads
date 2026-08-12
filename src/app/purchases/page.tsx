@@ -17,12 +17,6 @@ import {
   Package,
   Store,
   Sparkles,
-  User,
-  Mail,
-  Phone,
-  Receipt,
-  Tag,
-  CreditCard,
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
@@ -34,7 +28,14 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
-import { playBoostedAudio } from '@/utils/audio';
+
+const isPaidPurchase = (order: any): boolean => {
+  if (!order) return false;
+  const medium = (order.utm_medium || '').toLowerCase();
+  const source = (order.utm_source || '').toLowerCase();
+  const paidMediums = ['cpc', 'ppc', 'paid', 'ads', 'traffic', 'cmp-paid'];
+  return paidMediums.includes(medium) || source.includes('ads') || medium.includes('ads');
+};
 
 const WOO_ORDER_META_SNIPPET = `add_action('woocommerce_checkout_create_order', function ($order) {
   if (!empty($_COOKIE['_asthros_vid'])) {
@@ -82,9 +83,6 @@ export default function PurchasesPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Partículas de E-commerce ativadas ao abrir o recibo
-  const [particles, setParticles] = useState<Array<{ id: number; left: number; symbol: string; delay: number; duration: number; size: number }>>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -148,32 +146,10 @@ export default function PurchasesPage() {
     loadData();
   }, []);
 
-  // Efeito sonoro & partículas ao selecionar/abrir um recibo de compra
-  useEffect(() => {
-    if (selectedOrder) {
-      // 1. Tocar som de celebração de venda (Anime WOW com volume amplificado)
-      try {
-        playBoostedAudio('/anime-wow-sound-effect-mp3cut.mp3', 3.5);
-      } catch (e) {}
-
-      // 2. Gerar partículas festivas e-commerce (moedas, sacolas, notas de dinheiro, brilho)
-      const ecomSymbols = ['💸', '✨', '🛍️', '💰', '🎉', '🌟', '🛒', '💵'];
-      const tempParticles = [];
-      for (let i = 0; i < 22; i++) {
-        tempParticles.push({
-          id: i,
-          left: Math.random() * 100,
-          symbol: ecomSymbols[Math.floor(Math.random() * ecomSymbols.length)],
-          delay: Math.random() * 1.2,
-          duration: 3 + Math.random() * 2.5,
-          size: 0.9 + Math.random() * 1.3
-        });
-      }
-      setParticles(tempParticles);
-    } else {
-      setParticles([]);
-    }
-  }, [selectedOrder]);
+  const isPaid = useMemo(
+    () => (selectedOrder ? isPaidPurchase(selectedOrder) : false),
+    [selectedOrder]
+  );
 
   // Realtime Supabase Subscription
   useEffect(() => {
@@ -297,6 +273,7 @@ export default function PurchasesPage() {
       gateway: 'yampi',
       customer_name: 'Ana Clara Silva',
       customer_email: 'ana.clara@exemplo.com.br',
+      customer_phone: '(11) 98877-6655',
       visitor_id: 'v_asthros_98f21a7c',
       total_amount: 389.70,
       status: 'approved',
@@ -372,13 +349,6 @@ export default function PurchasesPage() {
     return <span className={styles.statusCanceled}>Cancelado</span>;
   };
 
-  const getCustomerInitials = (name: string) => {
-    if (!name) return 'C';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    return parts[0][0].toUpperCase();
-  };
-
   return (
     <DashboardLayout title="Gestão de Vendas & Conversões">
       <div className={styles.container}>
@@ -394,7 +364,7 @@ export default function PurchasesPage() {
             </p>
           </div>
 
-          <button className={styles.testBtn} onClick={handleSimulateTestOrder} title="Testar recibo de venda e modal de e-commerce">
+          <button className={styles.testBtn} onClick={handleSimulateTestOrder} title="Simular venda de teste e abrir modal de detalhes">
             <Sparkles size={18} />
             <span>Simular Venda de Teste</span>
           </button>
@@ -728,7 +698,11 @@ export default function PurchasesPage() {
               </thead>
               <tbody>
                 {filteredPurchases.map((item) => (
-                  <tr key={item.id || item.order_id}>
+                  <tr
+                    key={item.id || item.order_id}
+                    className={styles.clickableRow}
+                    onClick={() => setSelectedOrder(item)}
+                  >
                     <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>#{item.order_id}</td>
                     <td>{getGatewayBadge(item.gateway)}</td>
                     <td>
@@ -759,11 +733,14 @@ export default function PurchasesPage() {
                     <td>
                       <button
                         className={styles.detailsBtn}
-                        onClick={() => setSelectedOrder(item)}
-                        title="Ver Recibo do Pedido"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrder(item);
+                        }}
+                        title="Ver detalhes do pedido"
                       >
-                        <Receipt size={14} />
-                        <span>Recibo</span>
+                        <Eye size={14} />
+                        <span>Detalhes</span>
                       </button>
                     </td>
                   </tr>
@@ -782,143 +759,172 @@ export default function PurchasesPage() {
         </div>
       </div>
 
-      {/* MODAL PREMIUIM E-COMMERCE (RECIBO DE COMPRA COM PARTÍCULAS E SOM) */}
       {selectedOrder && (
         <div className={styles.modalOverlay} onClick={() => setSelectedOrder(null)}>
-          {/* Partículas flutuantes festivas de E-commerce */}
-          {particles.map((p) => (
-            <span
-              key={p.id}
-              className={styles.particle}
-              style={{
-                left: `${p.left}%`,
-                top: '-20px',
-                animationDelay: `${p.delay}s`,
-                animationDuration: `${p.duration}s`,
-                fontSize: `${p.size}rem`
-              }}
-            >
-              {p.symbol}
-            </span>
-          ))}
-
-          <div className={styles.ecommerceModal} onClick={(e) => e.stopPropagation()}>
-            {/* Header do Recibo */}
-            <div className={styles.modalReceiptHeader}>
-              <div className={styles.receiptBrand}>
-                <div className={styles.receiptIconBox}>
-                  <Receipt size={24} />
-                </div>
-                <div className={styles.receiptOrderInfo}>
-                  <div className={styles.receiptOrderTitle}>
-                    <span>Pedido #{selectedOrder.order_id}</span>
-                    {getGatewayBadge(selectedOrder.gateway)}
-                  </div>
-                  <span className={styles.receiptOrderDate}>
-                    {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}
-                  </span>
-                </div>
+          <div className={`${styles.detailModal} glass`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleArea}>
+                <h3>Detalhes do Pedido</h3>
+                <span className={styles.modalSubtitle}>
+                  #{selectedOrder.order_id}
+                  {selectedOrder.id ? ` · ID: ${selectedOrder.id}` : ''}
+                </span>
               </div>
-
-              <button className={styles.modalCloseBtn} onClick={() => setSelectedOrder(null)} aria-label="Fechar">
-                <X size={18} />
+              <button className={styles.closeBtn} onClick={() => setSelectedOrder(null)} aria-label="Fechar">
+                <X size={20} />
               </button>
             </div>
 
-            {/* Hero Summary Card */}
-            <div className={styles.heroSummary}>
-              <div>
-                <span className={styles.heroPriceLabel}>Valor Total Pago</span>
-                <div className={styles.heroPriceValue}>
-                  {formatCurrency(parseFloat(selectedOrder.total_amount || 0))}
-                </div>
-              </div>
-
-              <div className={styles.heroBadges}>
-                {getStatusBadge(selectedOrder.status)}
-                <span className={styles.gatewayBadge} style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
-                  <CreditCard size={12} style={{ marginRight: '0.2rem' }} /> Aprovado
-                </span>
-              </div>
-            </div>
-
-            {/* Card do Cliente */}
-            <div className={styles.customerCard}>
-              <div className={styles.customerAvatar}>
-                {getCustomerInitials(selectedOrder.customer_name)}
-              </div>
-              <div className={styles.customerDetails}>
-                <span className={styles.customerName}>{selectedOrder.customer_name || 'Cliente'}</span>
-                <div className={styles.customerMeta}>
-                  <span><Mail size={12} style={{ marginRight: '0.2rem' }} />{selectedOrder.customer_email || 'E-mail não informado'}</span>
-                  {selectedOrder.customer_phone && (
-                    <span><Phone size={12} style={{ marginRight: '0.2rem' }} />{selectedOrder.customer_phone}</span>
-                  )}
-                  {selectedOrder.visitor_id && (
-                    <span>• VID: <code style={{ color: '#a7f3d0' }}>{selectedOrder.visitor_id}</code></span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Lista de Produtos / Itens Comprados */}
-            <div className={styles.itemsCard}>
-              <div className={styles.itemsHeader}>
-                <span>Produto(s) no Pedido</span>
-                <span>Subtotal</span>
-              </div>
-
-              {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
-                selectedOrder.items.map((prod: any, idx: number) => (
-                  <div key={idx} className={styles.productRow}>
-                    <div className={styles.productMain}>
-                      <div className={styles.productThumb}>
-                        <Package size={18} />
-                      </div>
-                      <div>
-                        <div className={styles.productName}>{prod.name}</div>
-                        <div className={styles.productQty}>Qtd: {prod.quantity || 1}x</div>
-                      </div>
+            <div className={styles.modalBody}>
+              <div className={styles.sectionGrid}>
+                <div className={styles.infoSection}>
+                  <h4>Pedido & Pagamento</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Valor Total</span>
+                      <span className={`${styles.infoVal} ${styles.amountHighlight}`}>
+                        {formatCurrency(parseFloat(selectedOrder.total_amount || 0))}
+                      </span>
                     </div>
-                    <div className={styles.productPrice}>
-                      {formatCurrency(parseFloat(prod.price || 0) * (prod.quantity || 1))}
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Status</span>
+                      <span className={styles.infoVal}>{getStatusBadge(selectedOrder.status)}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Gateway</span>
+                      <span className={styles.infoVal}>{getGatewayBadge(selectedOrder.gateway)}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Moeda</span>
+                      <span className={`${styles.infoVal} ${!selectedOrder.currency ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.currency || 'BRL'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Data</span>
+                      <span className={styles.infoVal}>
+                        {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Nº do Pedido</span>
+                      <span className={styles.infoVal}>#{selectedOrder.order_id}</span>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className={styles.productRow}>
-                  <div className={styles.productMain}>
-                    <div className={styles.productThumb}><Package size={18} /></div>
-                    <span className={styles.productName}>Pedido de Item Único</span>
-                  </div>
-                  <div className={styles.productPrice}>{formatCurrency(parseFloat(selectedOrder.total_amount || 0))}</div>
                 </div>
-              )}
-            </div>
 
-            {/* Card de Atribuição & Origem */}
-            <div className={styles.attributionCard}>
-              <span className={styles.attrTitle}>
-                <Tag size={14} /> Atribuição & Origem da Compra
-              </span>
-              <div className={styles.attrPillsGroup}>
-                <div className={styles.attrPill}>
-                  <span>Fonte:</span> <strong>{selectedOrder.utm_source || 'Direto'}</strong>
+                <div className={styles.infoSection}>
+                  <h4>Cliente</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Nome</span>
+                      <span className={`${styles.infoVal} ${!selectedOrder.customer_name ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.customer_name || 'Sem nome'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>E-mail</span>
+                      <span className={`${styles.infoVal} ${!selectedOrder.customer_email ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.customer_email || 'Sem e-mail'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Telefone</span>
+                      <span className={`${styles.infoVal} ${!selectedOrder.customer_phone ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.customer_phone || 'Sem telefone'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Visitor ID</span>
+                      <span className={`${styles.infoVal} ${!selectedOrder.visitor_id ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.visitor_id || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                {selectedOrder.utm_medium && (
-                  <div className={styles.attrPill}>
-                    <span>Meio:</span> <strong>{selectedOrder.utm_medium}</strong>
+
+                <div className={`${styles.infoSection} ${isPaid ? styles.paidMediaSection : ''}`}>
+                  <div className={styles.sectionTitleRow}>
+                    <h4 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}>Aquisição & UTMs</h4>
+                    {isPaid && <span className={styles.paidMediaBadge}>Mídia Paga</span>}
                   </div>
-                )}
-                {selectedOrder.utm_campaign && (
-                  <div className={styles.attrPill}>
-                    <span>Campanha:</span> <strong>{selectedOrder.utm_campaign}</strong>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Source</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_source ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.utm_source || 'Direto / Orgânico'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Medium</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_medium ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.utm_medium || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Campaign</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_campaign ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.utm_campaign || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Term</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_term ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.utm_term || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Content</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedOrder.utm_content ? styles.infoValEmpty : ''}`}>
+                        {selectedOrder.utm_content || 'N/A'}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className={styles.attrPill}>
-                  <span>Gateway:</span> <strong style={{ textTransform: 'uppercase' }}>{selectedOrder.gateway}</strong>
                 </div>
               </div>
+
+              <div className={styles.extraFieldsArea}>
+                <h4 className={styles.extraFieldsTitle}>Itens do Pedido</h4>
+                <div className={styles.infoSection}>
+                  {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                    selectedOrder.items.map((prod: any, idx: number) => (
+                      <div key={idx} className={styles.productRow}>
+                        <div className={styles.productMain}>
+                          <div className={styles.productThumb}>
+                            <Package size={18} />
+                          </div>
+                          <div>
+                            <div className={styles.productName}>{prod.name || 'Produto'}</div>
+                            <div className={styles.productQty}>Qtd: {prod.quantity || 1}x</div>
+                          </div>
+                        </div>
+                        <div className={styles.productPrice}>
+                          {formatCurrency(parseFloat(prod.price || 0) * (prod.quantity || 1))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.productRow}>
+                      <div className={styles.productMain}>
+                        <div className={styles.productThumb}>
+                          <Package size={18} />
+                        </div>
+                        <span className={styles.productName}>Pedido sem itens detalhados</span>
+                      </div>
+                      <div className={styles.productPrice}>
+                        {formatCurrency(parseFloat(selectedOrder.total_amount || 0))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <div />
+              <button className={styles.closeFooterBtn} onClick={() => setSelectedOrder(null)}>
+                Fechar
+              </button>
             </div>
           </div>
         </div>
