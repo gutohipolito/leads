@@ -55,12 +55,16 @@ function fullName(first?: unknown, last?: unknown, fallback = 'Cliente'): string
 
 function metaValue(meta: unknown, keys: string[]): string {
   if (!Array.isArray(meta)) return '';
-  const wanted = keys.map((k) => k.toLowerCase());
-  const hit = meta.find((entry) => {
-    const key = String(entry?.key || entry?.name || '').toLowerCase();
-    return wanted.includes(key);
-  });
-  return pickString(hit?.value);
+  // Respeita a ordem de prioridade de `keys` — varre por chave desejada em vez de
+  // percorrer o array de metadados na ordem em que ele chegou (que é arbitrária e
+  // não reflete qual fonte deve ganhar quando mais de uma está presente).
+  for (const wantedKey of keys) {
+    const lowerWanted = wantedKey.toLowerCase();
+    const hit = meta.find((entry) => String((entry as any)?.key || (entry as any)?.name || '').toLowerCase() === lowerWanted);
+    const val = pickString((hit as any)?.value);
+    if (val) return val;
+  }
+  return '';
 }
 
 function noteAttr(attrs: unknown, keys: string[]): string {
@@ -156,23 +160,52 @@ function parseWooCommerce(body: Record<string, any>): ParsedPurchase {
     customerEmail: pickString(billing.email, order.email, order.customer_email, body.email),
     customerPhone: pickString(billing.phone, shipping.phone, order.phone, body.phone),
     items: normalizeItems(order.line_items || body.line_items),
+    // Prioriza o Order Attribution nativo do WooCommerce (WC 8.5+, meta `_wc_order_attribution_utm_*`)
+    // sobre o nosso snippet: ele é gravado pelo próprio WooCommerce no client-side do checkout e não
+    // depende do tracker/cookies do Asthros terem carregado a tempo.
     visitorId: metaValue(meta, ['_asthros_vid', 'asthros_vid', 'visitor_id']),
-    utmSource: metaValue(meta, ['_utm_source', 'utm_source', '_asthros_utm_source', 'asthros_utm_source']),
-    utmMedium: metaValue(meta, ['_utm_medium', 'utm_medium', '_asthros_utm_medium', 'asthros_utm_medium']),
+    utmSource: metaValue(meta, [
+      '_wc_order_attribution_utm_source',
+      '_utm_source',
+      'utm_source',
+      '_asthros_utm_source',
+      'asthros_utm_source',
+    ]),
+    utmMedium: metaValue(meta, [
+      '_wc_order_attribution_utm_medium',
+      '_utm_medium',
+      'utm_medium',
+      '_asthros_utm_medium',
+      'asthros_utm_medium',
+    ]),
     utmCampaign: metaValue(meta, [
+      '_wc_order_attribution_utm_campaign',
       '_utm_campaign',
       'utm_campaign',
       '_asthros_utm_campaign',
       'asthros_utm_campaign',
     ]),
-    utmTerm: metaValue(meta, ['_utm_term', 'utm_term', '_asthros_utm_term', 'asthros_utm_term']),
+    utmTerm: metaValue(meta, [
+      '_wc_order_attribution_utm_term',
+      '_utm_term',
+      'utm_term',
+      '_asthros_utm_term',
+      'asthros_utm_term',
+    ]),
     utmContent: metaValue(meta, [
+      '_wc_order_attribution_utm_content',
       '_utm_content',
       'utm_content',
       '_asthros_utm_content',
       'asthros_utm_content',
     ]),
-    utmId: metaValue(meta, ['_utm_id', 'utm_id', '_asthros_utm_id', 'asthros_utm_id']),
+    utmId: metaValue(meta, [
+      '_wc_order_attribution_utm_id',
+      '_utm_id',
+      'utm_id',
+      '_asthros_utm_id',
+      'asthros_utm_id',
+    ]),
   };
 }
 
