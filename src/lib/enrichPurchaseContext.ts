@@ -97,6 +97,9 @@ function contextFromOrderPayload(parsed: ParsedPurchase, body: Record<string, an
     marketing,
     behavior: {} as Record<string, any>,
     journey: [] as any[],
+    pages_visited: [] as any[],
+    first_touch: null as Record<string, any> | null,
+    last_touch: null as Record<string, any> | null,
     source_lead_id: null as string | null,
   };
 }
@@ -117,8 +120,8 @@ export async function enrichPurchaseContext(
   parsed: ParsedPurchase,
   body: Record<string, any>
 ): Promise<PurchaseEnrichment> {
-  let context = contextFromOrderPayload(parsed, body);
-  let visitorId = parsed.visitorId || '';
+  const context = contextFromOrderPayload(parsed, body);
+  const visitorId = parsed.visitorId || '';
   let utmSource = parsed.utmSource || '';
   let utmMedium = parsed.utmMedium || '';
   let utmCampaign = parsed.utmCampaign || '';
@@ -135,7 +138,14 @@ export async function enrichPurchaseContext(
         .order('created_at', { ascending: false })
         .limit(3);
 
-      const lead = Array.isArray(leads) ? leads[0] : null;
+      // Usa o lead mais recente com contexto útil — se o mais recente vier "vazio"
+      // (ex.: evento sem marketing salvo), cai para o próximo candidato mais recente
+      // em vez de desistir da atribuição.
+      const candidates = Array.isArray(leads) ? leads : [];
+      const lead =
+        candidates.find((l) => Object.keys(asRecord(l?.data)).length > 0) ||
+        candidates[0] ||
+        null;
       const data = asRecord(lead?.data);
       if (lead?.id && Object.keys(data).length > 0) {
         context.source_lead_id = lead.id;
@@ -152,12 +162,16 @@ export async function enrichPurchaseContext(
           content: marketing.content,
         });
 
-        const journey = Array.isArray(marketing.journey)
-          ? marketing.journey
-          : Array.isArray(data.marketing?.journey)
-            ? data.marketing.journey
-            : [];
-        if (journey.length > 0) context.journey = journey;
+        // A jornada completa (até 5 touchpoints com source/medium/campaign por etapa)
+        // já vem dentro de data.marketing.journey — não precisa buscar em outro lugar.
+        if (Array.isArray(marketing.journey) && marketing.journey.length > 0) {
+          context.journey = marketing.journey;
+        }
+        if (marketing.first_touch) context.first_touch = marketing.first_touch;
+        if (marketing.last_touch) context.last_touch = marketing.last_touch;
+        if (Array.isArray(marketing.pages_visited) && marketing.pages_visited.length > 0) {
+          context.pages_visited = marketing.pages_visited;
+        }
 
         utmSource = utmSource || pickString(context.marketing.source, data.utm_source);
         utmMedium = utmMedium || pickString(context.marketing.medium, data.utm_medium);

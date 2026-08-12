@@ -183,6 +183,14 @@ export default function PurchasesPage() {
         : Array.isArray(marketing.journey)
           ? marketing.journey
           : [],
+      pagesVisited: Array.isArray(ctx.pages_visited)
+        ? ctx.pages_visited
+        : Array.isArray(marketing.pages_visited)
+          ? marketing.pages_visited
+          : [],
+      firstTouch: ctx.first_touch || marketing.first_touch || null,
+      lastTouch: ctx.last_touch || marketing.last_touch || null,
+      referrer: marketing.referrer || '',
       utmSource: selectedOrder?.utm_source || marketing.source || '',
       utmMedium: selectedOrder?.utm_medium || marketing.medium || '',
       utmCampaign: selectedOrder?.utm_campaign || marketing.campaign || '',
@@ -238,6 +246,11 @@ export default function PurchasesPage() {
                 (prev.context?.journey && prev.context.journey.length > 0
                   ? prev.context.journey
                   : marketing.journey) || [],
+              first_touch: prev.context?.first_touch || marketing.first_touch || null,
+              last_touch: prev.context?.last_touch || marketing.last_touch || null,
+              pages_visited: prev.context?.pages_visited?.length > 0
+                ? prev.context.pages_visited
+                : marketing.pages_visited || [],
               source_lead_id: lead.id,
             },
           };
@@ -1116,25 +1129,62 @@ export default function PurchasesPage() {
                 </div>
               </div>
 
-              {orderCtx.journey.length > 0 && (
+              {(orderCtx.journey.length > 0 || orderCtx.firstTouch || orderCtx.pagesVisited.length > 0) && (
                 <div className={styles.extraFieldsArea}>
                   <h4 className={styles.extraFieldsTitle}>Jornada do Visitante</h4>
                   <div className={styles.infoSection}>
+                    {orderCtx.firstTouch && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Primeiro Toque</span>
+                        <span className={styles.infoVal}>
+                          {[orderCtx.firstTouch.source, orderCtx.firstTouch.medium].filter(Boolean).join(' / ') || 'N/A'}
+                          {orderCtx.firstTouch.timestamp ? ` — ${new Date(orderCtx.firstTouch.timestamp).toLocaleString('pt-BR')}` : ''}
+                        </span>
+                      </div>
+                    )}
+                    {orderCtx.lastTouch && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Último Toque</span>
+                        <span className={styles.infoVal}>
+                          {[orderCtx.lastTouch.source, orderCtx.lastTouch.medium].filter(Boolean).join(' / ') || 'N/A'}
+                          {orderCtx.lastTouch.timestamp ? ` — ${new Date(orderCtx.lastTouch.timestamp).toLocaleString('pt-BR')}` : ''}
+                        </span>
+                      </div>
+                    )}
+                    {orderCtx.referrer && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Referência de Entrada</span>
+                        <span className={styles.infoVal}>{decodeHtml(orderCtx.referrer)}</span>
+                      </div>
+                    )}
+                    {orderCtx.pagesVisited.length > 0 && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Páginas Visitadas</span>
+                        <span className={styles.infoVal} title={orderCtx.pagesVisited.map((p: any) => p.path || p).join(', ')}>
+                          {orderCtx.pagesVisited.length} página(s)
+                        </span>
+                      </div>
+                    )}
                     <div className={styles.journeyTimeline}>
-                      {orderCtx.journey.map((step: any, index: number) => (
-                        <div key={index} className={styles.journeyStep}>
-                          <div className={styles.journeyDot} />
-                          <span className={styles.journeyUrl}>
-                            {decodeHtml(step.url || step.page_url || 'URL desconhecida')}
-                          </span>
-                          <span className={styles.journeyTime}>
-                            {step.timestamp
-                              ? new Date(step.timestamp).toLocaleString('pt-BR')
-                              : 'Data não registrada'}
-                            {step.referrer ? ` • Referência: ${decodeHtml(step.referrer)}` : ''}
-                          </span>
-                        </div>
-                      ))}
+                      {orderCtx.journey.map((step: any, index: number) => {
+                        const channel = [step.source, step.medium].filter(Boolean).join(' / ');
+                        return (
+                          <div key={index} className={styles.journeyStep}>
+                            <div className={styles.journeyDot} />
+                            <span className={styles.journeyUrl}>
+                              {decodeHtml(step.url || step.page_url || 'URL desconhecida')}
+                              {channel ? ` — ${decodeHtml(channel)}` : ''}
+                            </span>
+                            <span className={styles.journeyTime}>
+                              {step.timestamp
+                                ? new Date(step.timestamp).toLocaleString('pt-BR')
+                                : 'Data não registrada'}
+                              {step.campaign && step.campaign !== 'N/A' ? ` • Campanha: ${decodeHtml(step.campaign)}` : ''}
+                              {step.referrer ? ` • Referência: ${decodeHtml(step.referrer)}` : ''}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
