@@ -590,6 +590,13 @@
             ensureHiddenInput(form, 'utm_term', utms.term);
             ensureHiddenInput(form, 'utm_content', utms.content);
             ensureHiddenInput(form, 'utm_id', utms.id);
+            // Comportamento & Engajamento — captura o mesmo dado que já vai num lead, pra chegar
+            // completo no pedido mesmo quando o comprador nunca virou lead antes de comprar.
+            ensureHiddenInput(form, 'asthros_time_on_page', getActiveTimeOnPage());
+            ensureHiddenInput(form, 'asthros_scroll_depth', maxScroll + '%');
+            ensureHiddenInput(form, 'asthros_conversion_time_seconds', getConversionTime());
+            ensureHiddenInput(form, 'asthros_session_duration_seconds', getSessionDurationSeconds());
+            ensureHiddenInput(form, 'asthros_page_url', window.location.href);
         } catch (e) {}
     }
 
@@ -610,10 +617,25 @@
             if (utms.term) attributes.utm_term = utms.term;
             if (utms.content) attributes.utm_content = utms.content;
             if (utms.id) attributes.utm_id = utms.id;
+
+            // Comportamento & Engajamento só é anexado no checkout — fora dele o tempo na
+            // página muda a cada tick e forçaria reenvio continuo ao /cart/update.js em
+            // toda pagina do site, sem necessidade.
+            const isCheckout = isEcommerceCheckoutPage();
+            if (isCheckout) {
+                attributes.asthros_time_on_page = getActiveTimeOnPage();
+                attributes.asthros_scroll_depth = maxScroll + '%';
+                attributes.asthros_conversion_time_seconds = String(getConversionTime());
+                attributes.asthros_session_duration_seconds = String(getSessionDurationSeconds());
+                attributes.asthros_page_url = window.location.href;
+            }
+
             if (Object.keys(attributes).length === 0) return;
 
             const signature = JSON.stringify(attributes);
-            if (window.__asthrosShopifyAttrs === signature) return;
+            // No checkout o comportamento muda a cada tick por natureza — não faz sentido
+            // dedupelar ali. Fora do checkout, mantém a dedupe original.
+            if (!isCheckout && window.__asthrosShopifyAttrs === signature) return;
             window.__asthrosShopifyAttrs = signature;
 
             fetch('/cart/update.js', {

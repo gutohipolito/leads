@@ -15,6 +15,7 @@ export type ParsedPurchase = {
   utmTerm: string;
   utmContent: string;
   utmId: string;
+  behavior: Record<string, any>;
   ignored?: boolean;
   ignoreReason?: string;
 };
@@ -69,9 +70,44 @@ function metaValue(meta: unknown, keys: string[]): string {
 
 function noteAttr(attrs: unknown, keys: string[]): string {
   if (!Array.isArray(attrs)) return '';
-  const wanted = keys.map((k) => k.toLowerCase());
-  const hit = attrs.find((entry) => wanted.includes(String(entry?.name || '').toLowerCase()));
-  return pickString(hit?.value);
+  // Mesma lógica de prioridade do metaValue (ver comentário acima).
+  for (const wantedKey of keys) {
+    const lowerWanted = wantedKey.toLowerCase();
+    const hit = attrs.find((entry) => String(entry?.name || '').toLowerCase() === lowerWanted);
+    const val = pickString(hit?.value);
+    if (val) return val;
+  }
+  return '';
+}
+
+function metaBehavior(meta: unknown): Record<string, any> {
+  const behavior: Record<string, any> = {};
+  const timeOnPage = metaValue(meta, ['_asthros_time_on_page', 'asthros_time_on_page']);
+  if (timeOnPage) behavior.time_on_page = timeOnPage;
+  const scrollDepth = metaValue(meta, ['_asthros_scroll_depth', 'asthros_scroll_depth']);
+  if (scrollDepth) behavior.scroll_depth = scrollDepth;
+  const conversionTime = metaValue(meta, ['_asthros_conversion_time_seconds', 'asthros_conversion_time_seconds']);
+  if (conversionTime) behavior.conversion_time_seconds = toNumber(conversionTime);
+  const sessionDuration = metaValue(meta, ['_asthros_session_duration_seconds', 'asthros_session_duration_seconds']);
+  if (sessionDuration) behavior.session_duration_seconds = toNumber(sessionDuration);
+  const pageUrl = metaValue(meta, ['_asthros_page_url', 'asthros_page_url']);
+  if (pageUrl) behavior.page_url = pageUrl;
+  return behavior;
+}
+
+function noteAttrBehavior(attrs: unknown): Record<string, any> {
+  const behavior: Record<string, any> = {};
+  const timeOnPage = noteAttr(attrs, ['asthros_time_on_page']);
+  if (timeOnPage) behavior.time_on_page = timeOnPage;
+  const scrollDepth = noteAttr(attrs, ['asthros_scroll_depth']);
+  if (scrollDepth) behavior.scroll_depth = scrollDepth;
+  const conversionTime = noteAttr(attrs, ['asthros_conversion_time_seconds']);
+  if (conversionTime) behavior.conversion_time_seconds = toNumber(conversionTime);
+  const sessionDuration = noteAttr(attrs, ['asthros_session_duration_seconds']);
+  if (sessionDuration) behavior.session_duration_seconds = toNumber(sessionDuration);
+  const pageUrl = noteAttr(attrs, ['asthros_page_url']);
+  if (pageUrl) behavior.page_url = pageUrl;
+  return behavior;
 }
 
 function mapWooStatus(raw: string): ParsedPurchase['status'] {
@@ -206,6 +242,7 @@ function parseWooCommerce(body: Record<string, any>): ParsedPurchase {
       '_asthros_utm_id',
       'asthros_utm_id',
     ]),
+    behavior: metaBehavior(meta),
   };
 }
 
@@ -235,6 +272,7 @@ function parseShopify(body: Record<string, any>): ParsedPurchase {
     utmTerm: noteAttr(body.note_attributes, ['utm_term', '_utm_term']),
     utmContent: noteAttr(body.note_attributes, ['utm_content', '_utm_content']),
     utmId: noteAttr(body.note_attributes, ['utm_id', '_utm_id']),
+    behavior: noteAttrBehavior(body.note_attributes),
   };
 }
 
@@ -268,6 +306,7 @@ function parseYampi(body: Record<string, any>): ParsedPurchase {
     utmTerm: pickString(orderData.utm_term),
     utmContent: pickString(orderData.utm_content),
     utmId: pickString(orderData.utm_id),
+    behavior: {},
   };
 }
 
@@ -290,6 +329,7 @@ function parseGeneric(body: Record<string, any>): ParsedPurchase {
     utmTerm: pickString(body.utm_term),
     utmContent: pickString(body.utm_content),
     utmId: pickString(body.utm_id),
+    behavior: {},
   };
 }
 

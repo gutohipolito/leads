@@ -71,6 +71,13 @@ const WOO_ORDER_META_SNIPPET = `add_action('woocommerce_checkout_create_order', 
       $order->update_meta_data('_utm_' . $key, sanitize_text_field($val));
     }
   }
+
+  foreach (['time_on_page', 'scroll_depth', 'conversion_time_seconds', 'session_duration_seconds', 'page_url'] as $key) {
+    $post_key = 'asthros_' . $key;
+    if (!empty($_POST[$post_key])) {
+      $order->update_meta_data('_asthros_' . $key, sanitize_text_field($_POST[$post_key]));
+    }
+  }
 });`;
 
 export default function PurchasesPage() {

@@ -96,7 +96,10 @@ function contextFromOrderPayload(parsed: ParsedPurchase, body: Record<string, an
     device,
     location,
     marketing,
-    behavior: {} as Record<string, any>,
+    // Comportamento capturado pelo tracker no próprio checkout (tempo na página, scroll,
+    // duração de sessão) — mais confiável que o fallback por lead, que só existe se o
+    // comprador tiver gerado um lead antes de finalizar a compra.
+    behavior: { ...parsed.behavior } as Record<string, any>,
     journey: [] as any[],
     pages_visited: [] as any[],
     first_touch: null as Record<string, any> | null,
