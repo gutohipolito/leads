@@ -4,14 +4,16 @@ import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
 import styles from './page.module.css';
 import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, EyeOff, ShoppingBag, Map as MapView, List as ListView } from 'lucide-react';
-import Brazil from '@react-map/brazil';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
-import jsPDF from 'jspdf';
 import ExportModal from '@/components/ExportModal/ExportModal';
 import { decodeHtml } from '@/utils/decode';
+
+// Carregado sob demanda: só é necessário quando o usuário abre a visualização de mapa.
+const Brazil = dynamic(() => import('@react-map/brazil'), { ssr: false });
 
 const STATE_NAME_TO_UF: Record<string, string> = {
   'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
@@ -420,7 +422,8 @@ export default function Home() {
     let content = '';
     
     if (exportType.type === 'pdf') {
-      const doc = new jsPDF({ 
+      const { default: jsPDF } = await import('jspdf');
+      const doc = new jsPDF({
         orientation: 'portrait',
         encryption: password ? {
           userPassword: password,

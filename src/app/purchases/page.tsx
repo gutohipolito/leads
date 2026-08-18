@@ -28,8 +28,6 @@ import {
   Trash2,
   Download
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
 import DeleteModal from '@/components/DeleteModal/DeleteModal';
@@ -541,6 +539,8 @@ export default function PurchasesPage() {
     const ordersToExport = filteredPurchases;
     if (ordersToExport.length === 0) return;
 
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF({ orientation: 'landscape' });
     const clientName = currentWebhook?.clients?.name || 'Geral';
     const webhookName = currentWebhook?.name || 'Todas as Lojas';
