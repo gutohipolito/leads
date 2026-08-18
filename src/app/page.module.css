@@ -223,11 +223,20 @@
   min-height: 0;
 }
 
+/* Evita que o conteúdo (cards de origem) vaze para fora dos cantos arredondados do card */
+.sideCharts {
+  overflow: hidden;
+}
+
 .originsWrapper {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .heroOriginsRow {
