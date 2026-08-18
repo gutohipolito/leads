@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isLocalDev, setIsLocalDev] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,27 +24,33 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // Turnstile exige domínio configurado no painel da Cloudflare, o que não
+    // inclui localhost. Desativado apenas em dev local; em produção o
+    // hostname real continua exigindo o captcha normalmente.
+    if (typeof window !== 'undefined') {
+      setIsLocalDev(['localhost', '127.0.0.1'].includes(window.location.hostname));
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    if (!captchaToken) {
+    if (!isLocalDev && !captchaToken) {
       setError('Por favor, confirme que você não é um robô resolvendo a verificação do Turnstile.');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Iniciando tentativa de login para:', email);
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const signInPayload: Parameters<typeof supabase.auth.signInWithPassword>[0] = {
         email,
         password,
-        options: {
-          captchaToken: captchaToken,
-        }
-      });
-      console.log('Resposta do Supabase recebida:', { data, error: authError });
+        ...(captchaToken ? { options: { captchaToken } } : {}),
+      };
+      const { data, error: authError } = await supabase.auth.signInWithPassword(signInPayload);
 
       if (authError) throw authError;
 
@@ -134,9 +141,15 @@ export default function LoginPage() {
             />
           </div>
 
-          <div id="turnstile-widget" style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'center' }}></div>
+          {isLocalDev ? (
+            <div style={{ marginBottom: '1.25rem', textAlign: 'center', fontSize: '0.8rem', opacity: 0.7 }}>
+              Turnstile desativado (ambiente local)
+            </div>
+          ) : (
+            <div id="turnstile-widget" style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'center' }}></div>
+          )}
 
-          <button 
+          <button
             type="submit" 
             className={styles.submitBtn}
             disabled={loading}
@@ -155,24 +168,26 @@ export default function LoginPage() {
         © {new Date().getFullYear()} - Todos os direitos reservados.
       </p>
 
-      <Script 
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" 
-        onLoad={() => {
-          const sitekey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
-          if (!sitekey) {
-            console.error("Cloudflare Turnstile: NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY não definida no ambiente.");
-            return;
-          }
-          if (typeof window !== 'undefined' && (window as any).turnstile) {
-            (window as any).turnstile.render('#turnstile-widget', {
-              sitekey: sitekey,
-              callback: (token: string) => setCaptchaToken(token),
-              'expired-callback': () => setCaptchaToken(null),
-              'error-callback': () => setCaptchaToken(null)
-            });
-          }
-        }}
-      />
+      {!isLocalDev && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          onLoad={() => {
+            const sitekey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
+            if (!sitekey) {
+              console.error("Cloudflare Turnstile: NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY não definida no ambiente.");
+              return;
+            }
+            if (typeof window !== 'undefined' && (window as any).turnstile) {
+              (window as any).turnstile.render('#turnstile-widget', {
+                sitekey: sitekey,
+                callback: (token: string) => setCaptchaToken(token),
+                'expired-callback': () => setCaptchaToken(null),
+                'error-callback': () => setCaptchaToken(null)
+              });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -135,7 +135,6 @@ export default function UsersManagementPage() {
       if (!error) {
         // Se uma nova senha foi digitada, atualizamos via API Admin
         if (newUser.password && newUser.password.length >= 6) {
-          console.log('Solicitando atualização de senha administrativa...');
           const { data: { session } } = await supabase.auth.getSession();
           const response = await fetch('/api/admin/users/update', {
             method: 'POST',
@@ -160,8 +159,7 @@ export default function UsersManagementPage() {
     } else {
       try {
         setLoading(true);
-        console.log('Solicitando provisionamento administrativo para:', newUser.email);
-        
+
         const { data: { session } } = await supabase.auth.getSession();
         const response = await fetch('/api/admin/users/create', {
           method: 'POST',

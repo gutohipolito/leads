@@ -110,7 +110,6 @@ export async function sendMetaCapiEvent(params: MetaCapiParams) {
     try { resultJson = JSON.parse(resultText); } catch(e) {}
 
     if (res.ok && resultJson && !resultJson.error) {
-      console.log(`[Meta CAPI] Evento ${eventName} enviado com sucesso! Events Received: ${resultJson.events_received}`);
       return { success: true, response: resultJson };
     } else {
       console.error(`[Meta CAPI Erro]`, resultJson || resultText);

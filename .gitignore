@@ -42,3 +42,6 @@ next-env.d.ts
 
 # memories
 docs/memory_*
+
+# scripts de debug/investigação local, não fazem parte da aplicação
+/scratch
