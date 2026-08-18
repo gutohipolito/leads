@@ -114,6 +114,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Erro ao resetar dados do cliente:', error);
-    return NextResponse.json({ error: error.message || 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao resetar dados do cliente.' }, { status: 500 });
   }
 }

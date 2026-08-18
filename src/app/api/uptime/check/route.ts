@@ -50,7 +50,8 @@ export async function GET(request: Request) {
       .select('*');
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('[Uptime Check] Erro ao buscar monitores:', error);
+      return NextResponse.json({ error: 'Erro ao buscar monitores de uptime.' }, { status: 500 });
     }
 
     if (!monitors || monitors.length === 0) {
@@ -169,6 +170,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, results });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[Uptime Check] Erro inesperado:', error);
+    return NextResponse.json({ error: 'Erro ao processar checagem de uptime.' }, { status: 500 });
   }
 }

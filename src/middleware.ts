@@ -37,6 +37,23 @@ export async function middleware(request: NextRequest) {
     })
   }
 
+  const isLoginPage = pathname.startsWith('/login')
+  const isPublicApi = isUnauthenticatedPublicPath(pathname)
+  const isInternalApi = pathname.startsWith('/api') && !isPublicApi
+
+  // Nega o acesso com segurança quando a autenticação não pôde ser verificada
+  // (em vez de liberar a requisição sem checagem nenhuma).
+  const denyAccess = () => {
+    if (isInternalApi) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+    if (isLoginPage) {
+      // Já está na página de login: apenas segue sem sessão, sem redirecionar.
+      return NextResponse.next()
+    }
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -47,9 +64,10 @@ export async function middleware(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    // Se as variáveis estiverem ausentes, não conseguimos checar auth, então deixamos passar
+    // Se as variáveis estiverem ausentes, não conseguimos checar auth: nega por segurança.
     if (!supabaseUrl || !supabaseAnonKey) {
-      return response
+      console.error('[Middleware] Variáveis do Supabase ausentes — acesso negado por segurança.')
+      return denyAccess()
     }
 
     const supabase = createServerClient(
@@ -101,9 +119,6 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // Lógica de proteção de rotas
-    const isLoginPage = pathname.startsWith('/login')
-    const isPublicApi = isUnauthenticatedPublicPath(pathname)
-    const isInternalApi = pathname.startsWith('/api') && !isPublicApi
     const isPublicAsset = pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
 
     // 1. Assets públicos e webhooks externos são liberados
@@ -113,11 +128,7 @@ export async function middleware(request: NextRequest) {
 
     // 2. Se NÃO tem usuário e NÃO está na login -> Bloqueia acesso (incluindo APIs internas)
     if (!user && !isLoginPage) {
-      // Se for uma tentativa de acesso a API interna, retorna 401 em vez de redirect
-      if (isInternalApi) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-      }
-      return NextResponse.redirect(new URL('/login', request.url))
+      return denyAccess()
     }
 
     // 3. Se TEM usuário e ESTÁ na login -> Vai para a home
@@ -127,8 +138,9 @@ export async function middleware(request: NextRequest) {
 
     return response
   } catch (e) {
-    // Falha silenciosa para evitar erro 500 em produção
-    return response
+    // Falha ao verificar sessão: nega por segurança em vez de liberar sem checagem.
+    console.error('[Middleware] Erro ao verificar sessão — acesso negado por segurança:', e)
+    return denyAccess()
   }
 }
 

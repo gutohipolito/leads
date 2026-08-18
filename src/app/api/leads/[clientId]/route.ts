@@ -251,7 +251,7 @@ export async function POST(
         const payloadBase64 = parts[0];
         const serverSig = parts[1];
         
-        const serverSecret = process.env.APP_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'asthros-secret-fallback-token-key-1823901';
+        const serverSecret = process.env.APP_JWT_SECRET || 'asthros-secret-fallback-token-key-1823901';
         
         // Verificar assinatura do token emitida pelo servidor
         const computedServerSig = crypto.createHmac('sha256', serverSecret).update(payloadBase64).digest('hex');
@@ -326,7 +326,7 @@ export async function POST(
       delete body.secret;
     }
 
-    // Sanitizar recursivamente todo o body contra injeção de HTML e XSS (DOMPurify)
+    // Sanitizar recursivamente todo o body contra injeção de HTML e XSS (remove tags e escapa entidades, ver sanitizeInput)
     body = sanitizeInput(body);
 
     // Captura de Localização baseada em IP (Vercel Headers)
@@ -561,7 +561,6 @@ export async function POST(
         .maybeSingle();
 
       if (existingEvent) {
-        console.log(`[Deduplicação] Evento duplicado detectado (event_hash: ${eventHash}) nos últimos 5 minutos. Ignorando silenciosamente.`);
         return NextResponse.json(
           { 
             status: 'success',
@@ -588,14 +587,19 @@ export async function POST(
       if (recentLeads && recentLeads.length > 0) {
         let isDuplicate = false;
         let duplicateId = '';
-        
-        for (const recent of recentLeads) {
-          const decryptedEmail = recent.email ? await decrypt(recent.email, encryptionSecret) : null;
-          const decryptedPhone = recent.phone ? await decrypt(recent.phone, encryptionSecret) : null;
-          
-          const emailMatch = email && decryptedEmail && decryptedEmail.trim().toLowerCase() === email.trim().toLowerCase();
-          const phoneMatch = phone && decryptedPhone && decryptedPhone.trim() === phone.trim();
-          
+
+        // Decripta todos os candidatos em paralelo (em vez de um por um em série) para
+        // não acumular latência no endpoint de ingestão em picos de tráfego simultâneo.
+        const decryptedRecent = await Promise.all(recentLeads.map(async (recent) => ({
+          id: recent.id,
+          email: recent.email ? await decrypt(recent.email, encryptionSecret) : null,
+          phone: recent.phone ? await decrypt(recent.phone, encryptionSecret) : null,
+        })));
+
+        for (const recent of decryptedRecent) {
+          const emailMatch = email && recent.email && recent.email.trim().toLowerCase() === email.trim().toLowerCase();
+          const phoneMatch = phone && recent.phone && recent.phone.trim() === phone.trim();
+
           if (emailMatch || phoneMatch) {
             isDuplicate = true;
             duplicateId = recent.id;
@@ -604,7 +608,6 @@ export async function POST(
         }
 
         if (isDuplicate) {
-          console.log(`[Deduplicação] Lead duplicado detectado por email/telefone nos últimos 5 segundos. Ignorando inserção.`);
           return NextResponse.json(
             { 
               status: 'success',
@@ -673,7 +676,6 @@ export async function POST(
     await sendLeadToIntegrations({ lead: cleanLeadForIntegration, clientId, webhook, body });
 
     if (webhook.notification_email) {
-      console.log(`[Email] Disparando alerta para ${webhook.notification_email}`);
       // resend.emails.send({ from: 'Asthros <leads@asthros.com.br>', to: webhook.notification_email, ... });
     }
 
@@ -771,7 +773,7 @@ export async function POST(
   } catch (error: any) {
     console.error('Erro no processamento do uplink:', error);
     return NextResponse.json(
-      { error: 'Falha no processamento: ' + (error.message || 'Erro interno') },
+      { error: 'Falha no processamento da requisição.' },
       { 
         status: 500,
         headers: getResponseHeaders(isOriginAllowed)

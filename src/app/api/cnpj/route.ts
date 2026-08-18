@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   const cnpj = cnpjRaw.replace(/\D/g, '');
 
   try {
-    console.log(`Tentando BrasilAPI (V2) para CNPJ: ${cnpj}`);
     let response = await fetch(`https://brasilapi.com.br/api/cnpj/v2/${cnpj}`, { cache: 'no-store' });
     let data = null;
 
@@ -27,7 +26,6 @@ export async function GET(request: Request) {
           email: fallbackData.email,
           ...fallbackData
         };
-        console.log('Busca concluída via Fallback ReceitaWS.');
         return NextResponse.json(data);
       } else {
         // Segundo Fallback: CNPJ.ws
@@ -40,7 +38,6 @@ export async function GET(request: Request) {
             email: lastChanceData.estabelecimento.email,
             ...lastChanceData
           };
-          console.log('Busca concluída via Fallback CNPJ.ws.');
           return NextResponse.json(data);
         }
       }

@@ -110,6 +110,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Erro na rota de retry de integrações:', error);
-    return NextResponse.json({ error: 'Falha no processamento: ' + error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Falha no processamento da integração.' }, { status: 500 });
   }
 }

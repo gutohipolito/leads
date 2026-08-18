@@ -64,8 +64,9 @@ export async function GET(
     .maybeSingle();
 
   if (error) {
+    console.error('[Webhook WooCommerce] Erro ao consultar webhook:', error);
     return NextResponse.json(
-      { ok: false, error: 'Falha ao consultar webhooks.', details: error.message },
+      { ok: false, error: 'Falha ao consultar webhooks.' },
       { status: 500, headers: PURCHASE_CORS_HEADERS }
     );
   }

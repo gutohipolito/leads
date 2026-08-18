@@ -45,29 +45,29 @@ async function getCryptoKey(secret: string): Promise<CryptoKey | null> {
 
 export async function encrypt(text: string, secret: string): Promise<string> {
   if (!text) return '';
-  try {
-    const cryptoKey = await getCryptoKey(secret);
-    if (!cryptoKey || !webCrypto) return text;
 
-    const iv: Uint8Array = webCrypto.getRandomValues(new Uint8Array(IV_LENGTH));
-    const enc = new TextEncoder();
-    const encrypted = await webCrypto.subtle.encrypt(
-      {
-        name: ALGORITHM,
-        iv: iv
-      },
-      cryptoKey,
-      enc.encode(text)
-    );
-    
-    const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
-    const encryptedHex = Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    return `${ivHex}:${encryptedHex}`;
-  } catch (e) {
-    console.error('Erro na criptografia:', e);
-    return text;
+  const cryptoKey = await getCryptoKey(secret);
+  if (!cryptoKey || !webCrypto) {
+    // Nunca grava em texto plano silenciosamente: um dado sensível "criptografado com sucesso"
+    // que na verdade não foi cifrado é um vazamento de PII que passaria despercebido (LGPD).
+    throw new Error('Falha na criptografia: Web Crypto API indisponível.');
   }
+
+  const iv: Uint8Array = webCrypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const enc = new TextEncoder();
+  const encrypted = await webCrypto.subtle.encrypt(
+    {
+      name: ALGORITHM,
+      iv: iv
+    },
+    cryptoKey,
+    enc.encode(text)
+  );
+
+  const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+  const encryptedHex = Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return `${ivHex}:${encryptedHex}`;
 }
 
 export async function decrypt(cipherText: string, secret: string): Promise<string> {

@@ -58,6 +58,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Senha atualizada com sucesso' });
   } catch (error: any) {
     console.error('Erro ao atualizar senha via Admin API:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao atualizar senha.' }, { status: 500 });
   }
 }

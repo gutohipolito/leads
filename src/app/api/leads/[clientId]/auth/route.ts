@@ -126,7 +126,7 @@ export async function POST(
     }
 
     // Gerar token temporário (stateless)
-    const serverSecret = process.env.APP_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'asthros-secret-fallback-token-key-1823901';
+    const serverSecret = process.env.APP_JWT_SECRET || 'asthros-secret-fallback-token-key-1823901';
     const expiry = Date.now() + 15 * 60 * 1000; // 15 minutos de validade
     
     const tokenPayload = {
@@ -146,7 +146,7 @@ export async function POST(
   } catch (error: any) {
     console.error('[Auth API] Erro ao gerar token:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor: ' + (error.message || '') },
+      { error: 'Erro interno do servidor.' },
       { status: 500, headers: getResponseHeaders(isOriginAllowed) }
     );
   }

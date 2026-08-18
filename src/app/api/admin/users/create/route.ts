@@ -82,6 +82,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Usuário provisionado com sucesso', userId: authData.user.id });
   } catch (error: any) {
     console.error('Erro no provisionamento administrativo:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao provisionar usuário.' }, { status: 500 });
   }
 }

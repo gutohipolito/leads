@@ -1,12 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMetaCapiEvent } from '@/lib/capiService';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+
+async function getActiveUser(request: NextRequest) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace('Bearer ', '');
+  if (!token) return null;
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return null;
+
+  const { data: profile } = await supabaseAdmin
+    .from('system_users')
+    .select('status')
+    .eq('email', user.email)
+    .single();
+
+  if (!profile || profile.status !== 'active') return null;
+  return user;
+}
 
 /**
  * Endpoint de teste de envio de webhook externo (outbound).
  * URL: /api/webhooks/test-outbound
+ *
+ * Este endpoint dispara requisições HTTP do servidor para uma URL fornecida
+ * pelo chamador (SSRF por design, já que é justamente um "testador" de
+ * integrações externas) — por isso exige um usuário autenticado e ativo,
+ * evitando que qualquer visitante anônimo use o servidor como proxy.
  */
 export async function POST(request: NextRequest) {
   try {
+    const user = await getActiveUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const body = await request.json();
     let { type, config, outboundUrl } = body;
 
@@ -395,6 +424,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Erro interno no servidor de teste' }, { status: 500 });
+    console.error('[Webhook Test Outbound] Erro:', error);
+    return NextResponse.json({ error: 'Erro interno no servidor de teste.' }, { status: 500 });
   }
 }
