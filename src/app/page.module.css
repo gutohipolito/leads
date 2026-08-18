@@ -231,18 +231,19 @@
 .originsWrapper {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 0.6rem;
   width: 100%;
   flex: 1;
   min-height: 0;
 }
 
-/* Lado a lado (em vez de empilhado) para caber, com a linha de cards
-   secundários, dentro da altura fixa do card sem precisar de scroll */
+/* Lado a lado (em vez de empilhado), e ambas as linhas crescem via flex
+   para preencher toda a altura do card ao inves de sobrar espaco vazio */
 .heroOriginsRow {
   display: flex;
   flex-direction: row;
+  flex: 1.3;
+  min-height: 0;
   gap: 0.6rem;
   width: 100%;
 }
@@ -251,11 +252,12 @@
   background: rgba(var(--foreground-rgb), 0.025);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 0.65rem 0.8rem;
+  padding: 0.9rem 1rem;
   display: flex;
   flex: 1;
   min-width: 0;
   flex-direction: column;
+  justify-content: space-between;
   gap: 0.4rem;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
@@ -333,7 +335,7 @@
 
 .heroSourceValue {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   font-weight: 800;
   color: var(--foreground);
   margin: 0;
@@ -493,15 +495,18 @@
   grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
   gap: 0.65rem;
   width: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .secondarySourceCard {
   background: rgba(var(--foreground-rgb), 0.015);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 0.75rem 0.65rem;
+  padding: 0.85rem 0.8rem;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 0.5rem;
   transition: all 0.2s ease;
   min-width: 0;
@@ -514,9 +519,9 @@
 }
 
 .miniIconWrapper {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -543,7 +548,7 @@
 
 .secondarySourceValue {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--foreground);
   margin: 0;
