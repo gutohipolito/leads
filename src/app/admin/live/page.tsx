@@ -35,6 +35,25 @@ import {
   CartesianGrid
 } from 'recharts';
 
+// Isolado num componente próprio: só ele re-renderiza a cada segundo, em vez da
+// página inteira (incluindo os gráficos recharts) num monitor ligado 24/7.
+function LiveClock() {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className={styles.clock}>
+      <Clock size={18} />
+      <span>{now ? now.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
+    </div>
+  );
+}
+
 export default function LiveMonitorPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [leadsToday, setLeadsToday] = useState<any[]>([]);
@@ -55,7 +74,6 @@ export default function LiveMonitorPage() {
   const [isCelebration, setIsCelebration] = useState(false);
   const [celebrationLead, setCelebrationLead] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'error'>('connecting');
   const [appTheme, setAppTheme] = useState<'dark' | 'light'>('dark');
   const [isNightMode, setIsNightMode] = useState(false);
@@ -157,9 +175,6 @@ export default function LiveMonitorPage() {
 
   // Efeitos e Inscrição Realtime
   useEffect(() => {
-    setCurrentTime(new Date());
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-
     async function fetchClients() {
       const impersonated = localStorage.getItem('impersonated_client');
       if (impersonated) {
@@ -231,7 +246,6 @@ export default function LiveMonitorPage() {
       });
 
     return () => {
-      clearInterval(timer);
       supabase.removeChannel(channel);
     };
   }, [selectedClient]);
@@ -486,10 +500,7 @@ export default function LiveMonitorPage() {
             <span>{connectionStatus.toUpperCase()}</span>
           </div>
 
-          <div className={styles.clock}>
-            <Clock size={18} />
-            <span>{currentTime ? currentTime.toLocaleTimeString('pt-BR') : "--:--:--"}</span>
-          </div>
+          <LiveClock />
 
           <button className={styles.screenBtn} onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}

@@ -26,7 +26,8 @@ import {
   ChevronDown,
   Filter,
   Trash2,
-  Download
+  Download,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -80,6 +81,7 @@ const WOO_ORDER_META_SNIPPET = `add_action('woocommerce_checkout_create_order', 
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
+  const [purchasesTruncated, setPurchasesTruncated] = useState(false);
   const [webhooksList, setWebhooksList] = useState<any[]>([]);
   const [selectedWebhookId, setSelectedWebhookId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -165,7 +167,8 @@ export default function PurchasesPage() {
         let pQuery = supabase
           .from('purchases')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(1000); // Limite para evitar lentidão
 
         if (activeClientId) {
           pQuery = pQuery.eq('client_id', activeClientId);
@@ -174,6 +177,9 @@ export default function PurchasesPage() {
         const { data: dbPurchases, error: pError } = await pQuery;
 
         if (!pError && dbPurchases) {
+          // O limite de 1000 evita lentidão, mas corta as vendas mais antigas silenciosamente
+          // quando atingido — avisamos o usuário em vez de simplesmente truncar sem indicação.
+          setPurchasesTruncated(dbPurchases.length >= 1000);
           const { decryptPurchasesList } = await import('@/utils/frontendEncryption');
           setPurchases(await decryptPurchasesList(dbPurchases));
         }
@@ -990,6 +996,26 @@ export default function PurchasesPage() {
             </select>
           </div>
         </div>
+
+        {purchasesTruncated && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              margin: '0 0 16px',
+              borderRadius: '8px',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              background: 'rgba(245, 158, 11, 0.1)',
+              color: '#f59e0b',
+              fontSize: '0.85rem',
+            }}
+          >
+            <AlertTriangle size={16} />
+            <span>Mostrando apenas as 1000 vendas mais recentes. Use os filtros para ver vendas mais antigas.</span>
+          </div>
+        )}
 
         {/* Tabela de Vendas */}
         <div className={styles.tableWrapper}>

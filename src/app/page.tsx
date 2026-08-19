@@ -111,48 +111,51 @@ export default function Home() {
             setImpersonatedName(null);
           }
 
-          // 1. Obter quantidade de parceiros se admin
-          let activeClients = 0;
-          if (isUserAdmin && !impersonated) {
-            const { count } = await supabase
-              .from('clients')
-              .select('*', { count: 'exact', head: true })
-              .eq('status', 'active');
-            activeClients = count || 0;
-            setActiveClientsCount(activeClients);
-          }
-
-          // 2. Query de leads dos últimos 30 dias para graficos e analytics (com colunas completas)
+          // As três queries abaixo são independentes entre si — disparam em paralelo
+          // em vez de esperar uma pela outra, o que evita um waterfall sequencial.
           const dataLimite = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+          // 1. Quantidade de parceiros (só admin sem impersonação)
+          const clientsCountPromise = (isUserAdmin && !impersonated)
+            ? supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active')
+            : Promise.resolve({ count: 0 });
+
+          // 2. Leads dos últimos 30 dias para gráficos e analytics
           let analyticsQuery = supabase
             .from('leads')
             .select('*, clients(name), webhooks(name)')
             .neq('source', 'test_simulation')
             .gte('created_at', dataLimite)
             .order('created_at', { ascending: false });
-          
           if (!(isUserAdmin && !impersonated)) {
             analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
           }
-          
-          const { data: allLeadsRaw } = await analyticsQuery;
-          const leadsList = allLeadsRaw || [];
-          const { decryptLeadsList } = await import('@/utils/frontendEncryption');
-          const decryptedLeads = await decryptLeadsList(leadsList);
-          setAllLeads(decryptedLeads);
 
-          // 3. Query de compras/pedidos dos últimos 30 dias
+          // 3. Compras/pedidos dos últimos 30 dias
           let purchasesQuery = supabase
             .from('purchases')
             .select('*, clients(name)')
             .gte('created_at', dataLimite)
             .order('created_at', { ascending: false });
-
           if (!(isUserAdmin && !impersonated)) {
             purchasesQuery = purchasesQuery.eq('client_id', activeClientId);
           }
 
-          const { data: purchasesRaw } = await purchasesQuery;
+          const [{ count }, { data: allLeadsRaw }, { data: purchasesRaw }] = await Promise.all([
+            clientsCountPromise,
+            analyticsQuery,
+            purchasesQuery,
+          ]);
+
+          const activeClients = count || 0;
+          if (isUserAdmin && !impersonated) {
+            setActiveClientsCount(activeClients);
+          }
+
+          const leadsList = allLeadsRaw || [];
+          const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+          const decryptedLeads = await decryptLeadsList(leadsList);
+          setAllLeads(decryptedLeads);
           setAllPurchases(purchasesRaw || []);
 
           const lastLead = leadsList[0];
@@ -165,10 +168,21 @@ export default function Home() {
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, async (payload: any) => {
               const newLead = payload.new;
               const canSee = isUserAdmin && !impersonated ? true : (newLead.client_id === activeClientId);
-              if (!canSee) return;
-              
-              // Recarregar dados brutos ao receber lead em tempo real
-              loadDashboardData();
+              if (!canSee || newLead.source === 'test_simulation') return;
+
+              // Atualização incremental: busca só o lead novo (com os mesmos joins da query
+              // inicial) em vez de recarregar leads + compras + contagem de clientes inteiros.
+              const { data: fullLead } = await supabase
+                .from('leads')
+                .select('*, clients(name), webhooks(name)')
+                .eq('id', newLead.id)
+                .single();
+              if (!fullLead) return;
+
+              const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+              const [decryptedNew] = await decryptLeadsList([fullLead]);
+              setAllLeads(prev => [decryptedNew, ...prev]);
+              setLastSignalTime(new Date(fullLead.created_at).getTime());
             })
             .subscribe();
           notifChannel = channel;

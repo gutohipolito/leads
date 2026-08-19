@@ -1936,8 +1936,33 @@
             decorateCheckoutLinks();
             syncEcommerceAttribution();
         }
-        setInterval(decorateCheckoutLinks, 3000);
         setInterval(syncEcommerceAttribution, 4000);
+
+        // decorateCheckoutLinks só precisa rodar de novo quando o DOM muda (cart drawer,
+        // checkout carregado via AJAX etc.) — troca o polling fixo de 3s por um
+        // MutationObserver debounced, com um fallback bem mais espaçado (15s) para cobrir
+        // o caso raro de um script terceiro mudar algo fora do que o observer vigia.
+        if (typeof MutationObserver !== 'undefined') {
+            var decorateScheduled = false;
+            var scheduleDecorate = function() {
+                if (decorateScheduled) return;
+                decorateScheduled = true;
+                setTimeout(function() {
+                    decorateScheduled = false;
+                    decorateCheckoutLinks();
+                }, 300);
+            };
+            var linksObserver = new MutationObserver(scheduleDecorate);
+            linksObserver.observe(document.documentElement || document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['href']
+            });
+            setInterval(decorateCheckoutLinks, 15000);
+        } else {
+            setInterval(decorateCheckoutLinks, 3000);
+        }
 
         // Flush de última hora: o clique em "Finalizar compra" tira o visitante do domínio
         // da loja antes do próximo tick de 4s rodar, perdendo o snapshot mais recente de
