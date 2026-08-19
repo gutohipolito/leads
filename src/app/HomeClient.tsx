@@ -258,7 +258,6 @@ export default function HomeClient({
     // E-commerce Purchases no período
     const purchasesInPeriod = allPurchases.filter(p => p.created_at >= periodStart);
     const ecommerceCount = purchasesInPeriod.length;
-    const ecommerceRevenue = purchasesInPeriod.reduce((acc, p) => acc + Number(p.total_amount || p.amount || 0), 0);
 
     // Pizza (Divisão de origens)
     const wppCount = leadsInPeriod.filter(l => l._category === 'whatsapp').length;
@@ -270,7 +269,7 @@ export default function HomeClient({
 
     const sourceData = [
       { name: 'WhatsApp', value: wppCount, color: '#25d366' },
-      { name: 'E-commerce', value: ecommerceCount, revenue: ecommerceRevenue, color: '#ec4899' },
+      { name: 'E-commerce', value: ecommerceCount, color: '#ec4899' },
       { name: 'Formulários', value: formCount, color: '#56d7fd' },
       { name: 'Seletores', value: selectorCount, color: '#a855f7' },
       { name: 'Palavras-Chave', value: keywordCount, color: '#f97316' }
@@ -1159,23 +1158,16 @@ export default function HomeClient({
                               </span>
                             </div>
 
-                            {s.name === 'E-commerce' && s.revenue !== undefined && s.revenue > 0 ? (
-                              <div className={styles.heroRevenueTag}>
-                                <span className={styles.revenueLabel}>Faturamento Total:</span>
-                                <strong className={styles.revenueAmount}>R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                              </div>
-                            ) : (
-                              <div 
-                                className={styles.heroShareTag}
-                                style={{
-                                  color: s.color,
-                                  background: `${s.color}15`,
-                                  borderColor: `${s.color}35`
-                                }}
-                              >
-                                <span>{s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}</span>
-                              </div>
-                            )}
+                            <div
+                              className={styles.heroShareTag}
+                              style={{
+                                color: s.color,
+                                background: `${s.color}15`,
+                                borderColor: `${s.color}35`
+                              }}
+                            >
+                              <span>{s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}</span>
+                            </div>
                           </div>
                         </div>
 

@@ -349,31 +349,6 @@
   white-space: nowrap;
 }
 
-.heroRevenueTag {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  background: rgba(236, 72, 153, 0.06);
-  padding: 0.4rem 0.8rem;
-  border-radius: 10px;
-  border: 1px solid rgba(236, 72, 153, 0.2);
-}
-
-.revenueLabel {
-  font-size: 0.65rem;
-  color: var(--muted-foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-}
-
-.revenueAmount {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #ec4899;
-}
-
 .heroShareTag {
   font-size: 0.72rem;
   font-weight: 700;
@@ -419,10 +394,6 @@
 
   .heroSourceValue {
     font-size: 2.3rem;
-  }
-
-  .revenueAmount {
-    font-size: 1.3rem;
   }
 
   .secondarySourceCard {
@@ -471,10 +442,6 @@
 
   .heroSourceValue {
     font-size: 2.6rem;
-  }
-
-  .revenueAmount {
-    font-size: 1.45rem;
   }
 
   .secondarySourceCard {
