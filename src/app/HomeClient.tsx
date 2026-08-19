@@ -86,6 +86,7 @@ export default function HomeClient({
   // loading inicial nem getSession()/localStorage pra descobrir role/cliente.
   const [loading, setLoading] = useState(false);
   const [hideNames, setHideNames] = useState(false);
+  const [failedPartnerLogos, setFailedPartnerLogos] = useState<Record<string, boolean>>({});
   const [allLeads, setAllLeads] = useState<any[]>(initialLeads);
   const [allPurchases, setAllPurchases] = useState<any[]>(initialPurchases);
   const [lastSignalTime, setLastSignalTime] = useState<number | null>(
@@ -135,7 +136,7 @@ export default function HomeClient({
 
         let analyticsQuery = supabase
           .from('leads')
-          .select('*, clients(name), webhooks(name)')
+          .select('*, clients(name, logo_url), webhooks(name)')
           .neq('source', 'test_simulation')
           .gte('created_at', dataLimite)
           .order('created_at', { ascending: false });
@@ -189,7 +190,7 @@ export default function HomeClient({
         // inicial) em vez de recarregar leads + compras + contagem de clientes inteiros.
         const { data: fullLead } = await supabase
           .from('leads')
-          .select('*, clients(name), webhooks(name)')
+          .select('*, clients(name, logo_url), webhooks(name)')
           .eq('id', newLead.id)
           .single();
         if (!fullLead) return;
@@ -246,13 +247,16 @@ export default function HomeClient({
     const leadsInPeriod = filteredLeads.filter(l => l.created_at >= periodStart);
 
     // Performance por Parceiro (calculado de forma reativa a partir de leadsInPeriod)
-    const counts: any = {};
+    const partnerStats: Record<string, { name: string; logoUrl: string | null; count: number }> = {};
     leadsInPeriod.forEach(l => {
-      const name = l.clients?.name || 'Desconhecido';
-      counts[name] = (counts[name] || 0) + 1;
+      const key = l.client_id || l.clients?.name || 'desconhecido';
+      if (!partnerStats[key]) {
+        partnerStats[key] = { name: l.clients?.name || 'Desconhecido', logoUrl: l.clients?.logo_url || null, count: 0 };
+      }
+      partnerStats[key].count += 1;
     });
-    const performanceData: { name: string; count: number }[] = Object.entries(counts)
-      .map(([name, count]) => ({ name, count: count as number }))
+    const performanceData: { id: string; name: string; logoUrl: string | null; count: number }[] = Object.entries(partnerStats)
+      .map(([id, p]) => ({ id, ...p }))
       .sort((a, b) => b.count - a.count);
 
     // E-commerce Purchases no período
@@ -1075,27 +1079,27 @@ export default function HomeClient({
                   <h3>Performance por Parceiro</h3>
                 </div>
               </div>
-              <div className={styles.performanceList}>
+              <div className={styles.partnerGrid}>
                 {statsSummary.performanceData.map((p: any, i: number) => (
-                  <div key={p.name} className={styles.perfItem}>
-                    <div className={styles.perfInfo}>
-                      <div className={styles.perfNameWrapper}>
-                        <span className={styles.perfRank}>#{i + 1}</span>
-                        <span className={styles.perfName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{p.name}</span>
-                      </div>
-                      <div className={styles.perfValueWrapper}>
-                        <span className={styles.perfValue}>{p.count}</span>
-                        <span className={styles.perfUnit}>leads</span>
-                      </div>
+                  <div key={p.id} className={`${styles.partnerCard} ${i === 0 ? styles.partnerCardTop : ''}`}>
+                    {i < 3 && <span className={styles.partnerRankBadge}>#{i + 1}</span>}
+                    <div className={styles.partnerLogoWrapper}>
+                      {p.logoUrl && !failedPartnerLogos[p.id] ? (
+                        <img
+                          src={p.logoUrl}
+                          alt={p.name}
+                          onError={() => setFailedPartnerLogos(prev => ({ ...prev, [p.id]: true }))}
+                        />
+                      ) : (
+                        <span>{p.name.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
-                    <div className={styles.perfBarContainer}>
-                      <div 
-                        className={styles.perfBarFill} 
-                        style={{ 
-                          width: `${(p.count / statsSummary.performanceData[0].count) * 100}%`,
-                          background: `linear-gradient(90deg, #56d7fd, #2ecc71)`
-                        }} 
-                      />
+                    <div className={styles.partnerCardBody}>
+                      <span className={styles.partnerName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{p.name}</span>
+                      <div className={styles.partnerValueRow}>
+                        <strong className={styles.partnerValue}>{p.count}</strong>
+                        <span className={styles.partnerUnit}>leads</span>
+                      </div>
                     </div>
                   </div>
                 ))}

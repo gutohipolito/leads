@@ -994,99 +994,115 @@
 }
 
 /* Performance de Parceiros Styles */
-.performanceList {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.partnerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
   padding: 1rem 0.5rem;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  align-content: start;
 }
 
-.performanceList::-webkit-scrollbar { width: 4px; }
-.performanceList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.partnerGrid::-webkit-scrollbar { width: 4px; }
+.partnerGrid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-.perfItem {
+.partnerCard {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  padding: 1rem 1.25rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
   background: rgba(var(--foreground-rgb), 0.02);
   border: 1px solid rgba(var(--foreground-rgb), 0.05);
-  border-radius: 12px;
+  border-radius: 14px;
   transition: all 0.2s ease;
+  min-width: 0;
 }
 
-.perfItem:hover {
+.partnerCard:hover {
   background: rgba(var(--foreground-rgb), 0.04);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border-color: rgba(var(--foreground-rgb), 0.1);
 }
 
-.perfInfo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.partnerCardTop {
+  border-color: rgba(86, 215, 253, 0.35);
+  background: rgba(86, 215, 253, 0.04);
 }
 
-.perfNameWrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.perfRank {
-  font-size: 0.75rem;
+.partnerRankBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 0.62rem;
   font-weight: 800;
-  color: #a855f7;
-  background: rgba(168, 85, 247, 0.1);
+  color: #0a1420;
+  background: linear-gradient(135deg, #56d7fd, #2ecc71);
   padding: 2px 6px;
   border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(86, 215, 253, 0.4);
 }
 
-.perfName {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--foreground);
-}
-
-.perfValueWrapper {
+.partnerLogoWrapper {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(var(--foreground-rgb), 0.05);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-}
-
-.perfValue {
-  font-size: 0.85rem;
+  justify-content: center;
+  overflow: hidden;
   font-weight: 800;
-  color: #fff;
-  background: linear-gradient(90deg, #56d7fd, #2ecc71);
-  padding: 2px 8px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(86, 215, 253, 0.3);
+  font-size: 1rem;
+  color: var(--muted-foreground);
 }
 
-.perfUnit {
-  font-size: 0.7rem;
+.partnerLogoWrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.partnerCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.partnerName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partnerValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.partnerValue {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--foreground);
+  line-height: 1.1;
+}
+
+.partnerUnit {
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--muted-foreground);
   text-transform: uppercase;
-}
-
-.perfBarContainer {
-  height: 6px;
-  background: rgba(var(--foreground-rgb), 0.08);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.perfBarFill {
-  height: 100%;
-  border-radius: 10px;
-  transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 10px rgba(86, 215, 253, 0.5);
 }
 
 /* Ajuste no layout para acomodar o novo gráfico */

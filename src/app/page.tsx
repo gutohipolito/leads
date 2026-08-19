@@ -21,7 +21,7 @@ export default async function Home() {
 
   let leadsQuery = supabase
     .from('leads')
-    .select('*, clients(name), webhooks(name)')
+    .select('*, clients(name, logo_url), webhooks(name)')
     .neq('source', 'test_simulation')
     .gte('created_at', dataLimite)
     .order('created_at', { ascending: false });
