@@ -290,51 +290,39 @@ export async function handlePurchaseIngest(options: {
     );
   }
 
-  if (webhook.user_id) {
-    try {
+  // Notifica os gestores do cliente E todos os admins do sistema — mesmo público
+  // que já recebe notificação de lead novo (src/app/api/leads/[clientId]/route.ts).
+  // Antes só notificava webhook.user_id (raramente setado) ou os gestores do
+  // cliente, então admins nunca viam "Nova Venda" na Central de Notificações.
+  try {
+    const [{ data: clientUsers }, { data: adminUsers }] = await Promise.all([
+      supabase.from('system_users').select('id').eq('client_id', clientId).eq('status', 'active'),
+      supabase.from('system_users').select('id').eq('role', 'admin').eq('status', 'active'),
+    ]);
+
+    const userIds = new Set<string>();
+    clientUsers?.forEach((u) => userIds.add(u.id));
+    adminUsers?.forEach((u) => userIds.add(u.id));
+    if (webhook.user_id) userIds.add(webhook.user_id);
+
+    if (userIds.size > 0) {
       const formattedAmount =
         parsed.totalAmount > 0
           ? `R$ ${parsed.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
           : '';
 
-      await supabase.from('notifications').insert({
-        user_id: webhook.user_id,
-        client_id: clientId,
-        title: `Nova Venda (${parsed.gateway.toUpperCase()})`,
-        message: `Pedido #${parsed.orderId} de ${parsed.customerName} ${formattedAmount ? `- Total: ${formattedAmount}` : ''}`.trim(),
-        read: false,
-      });
-    } catch (notifErr) {
-      console.error('Erro ao enviar notificação de compra:', notifErr);
+      await supabase.from('notifications').insert(
+        Array.from(userIds).map((uid) => ({
+          user_id: uid,
+          client_id: clientId,
+          title: `Nova Venda (${parsed.gateway.toUpperCase()})`,
+          message: `Pedido #${parsed.orderId} de ${parsed.customerName} ${formattedAmount ? `- Total: ${formattedAmount}` : ''}`.trim(),
+          read: false,
+        }))
+      );
     }
-  } else {
-    // Notifica gestores do cliente se a coluna user_id não existir no webhook
-    try {
-      const { data: managers } = await supabase
-        .from('system_users')
-        .select('id')
-        .eq('client_id', clientId)
-        .eq('status', 'active')
-        .limit(5);
-
-      if (managers?.length) {
-        const formattedAmount =
-          parsed.totalAmount > 0
-            ? `R$ ${parsed.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            : '';
-        await supabase.from('notifications').insert(
-          managers.map((manager) => ({
-            user_id: manager.id,
-            client_id: clientId,
-            title: `Nova Venda (${parsed.gateway.toUpperCase()})`,
-            message: `Pedido #${parsed.orderId} de ${parsed.customerName} ${formattedAmount ? `- Total: ${formattedAmount}` : ''}`.trim(),
-            read: false,
-          }))
-        );
-      }
-    } catch (notifErr) {
-      console.error('Erro ao enviar notificação de compra:', notifErr);
-    }
+  } catch (notifErr) {
+    console.error('Erro ao enviar notificação de compra:', notifErr);
   }
 
   return NextResponse.json(
