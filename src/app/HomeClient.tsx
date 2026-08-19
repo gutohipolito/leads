@@ -1,0 +1,1791 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
+import styles from './page.module.css';
+import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChart as PieIcon, MapPin, Tv, Zap, Bell, BellOff, Globe, MessageCircle, MousePointerClick, Type, FileText, X, Download, Table as TableIcon, FileJson, FileDown, Eye, EyeOff, ShoppingBag, Map as MapView, List as ListView } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
+import Loader from '@/components/Loader/Loader';
+import ExportModal from '@/components/ExportModal/ExportModal';
+import { decodeHtml } from '@/utils/decode';
+
+// Carregado sob demanda: só é necessário quando o usuário abre a visualização de mapa.
+const Brazil = dynamic(() => import('@react-map/brazil'), { ssr: false });
+
+// Recharts é pesado (~90KB gzip) e só é usado neste gráfico; tira do bundle principal.
+const AnalyticsChart = dynamic(() => import('@/components/DashboardCharts/AnalyticsChart'), { ssr: false });
+
+const STATE_NAME_TO_UF: Record<string, string> = {
+  'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
+};
+
+type LeadCategory = 'whatsapp' | 'selector' | 'keyword' | 'form';
+
+// Categoriza um lead uma única vez (a mesma lógica de match_type era recalculada
+// várias vezes por lead — em filteredLeads, statsSummary e no chartData por dia).
+const getLeadCategory = (l: any): LeadCategory => {
+  if (l.source === 'whatsapp_tracker') return 'whatsapp';
+  if (l.source === 'custom_tracker') {
+    const isSelector =
+      l.data?.behavior?.match_type?.toLowerCase().includes('selector') ||
+      l.data?.match_type?.toLowerCase().includes('selector') ||
+      l.name?.toLowerCase().includes('selector');
+    if (isSelector) return 'selector';
+
+    const isKeyword =
+      l.data?.behavior?.match_type?.toLowerCase().includes('keyword') ||
+      l.data?.match_type?.toLowerCase().includes('keyword') ||
+      l.name?.toLowerCase().includes('keyword');
+    if (isKeyword) return 'keyword';
+  }
+  return 'form';
+};
+
+const isPaidMedia = (lead: any): boolean => {
+  if (!lead || !lead.data) return false;
+  
+  const marketing = lead.data.marketing || {};
+  const medium = (marketing.medium || lead.data.utm_medium || '').toLowerCase();
+  const source = (marketing.source || lead.data.utm_source || '').toLowerCase();
+  
+  const paidMediums = ['cpc', 'ppc', 'paid', 'ads', 'traffic', 'cmp-paid'];
+  const hasClickId = !!(
+    marketing.gclid || 
+    marketing.fbclid || 
+    marketing.ttclid || 
+    marketing.msclkid ||
+    marketing.gbraid ||
+    marketing.wbraid ||
+    marketing.twclid ||
+    marketing.li_fat_id
+  );
+  
+  return paidMediums.includes(medium) || hasClickId || source.includes('ads') || medium.includes('ads');
+};
+
+interface HomeClientProps {
+  initialLeads: any[];
+  initialPurchases: any[];
+  isAdmin: boolean;
+  activeClientId: string | null;
+  impersonatedName: string | null;
+  activeClientsCount: number;
+}
+
+export default function HomeClient({
+  initialLeads,
+  initialPurchases,
+  isAdmin,
+  activeClientId,
+  impersonatedName,
+  activeClientsCount: initialActiveClientsCount,
+}: HomeClientProps) {
+  // Dados já chegam prontos do Server Component (src/app/page.tsx) — sem
+  // loading inicial nem getSession()/localStorage pra descobrir role/cliente.
+  const [loading, setLoading] = useState(false);
+  const [hideNames, setHideNames] = useState(false);
+  const [allLeads, setAllLeads] = useState<any[]>(initialLeads);
+  const [allPurchases, setAllPurchases] = useState<any[]>(initialPurchases);
+  const [lastSignalTime, setLastSignalTime] = useState<number | null>(
+    () => (initialLeads[0] ? new Date(initialLeads[0].created_at).getTime() : null)
+  );
+  const [activeClientsCount, setActiveClientsCount] = useState(initialActiveClientsCount);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'forms' | 'whatsapp' | 'selectors' | 'keywords' | 'ecommerce'>('all');
+  const [dashboardPeriod, setDashboardPeriod] = useState<7 | 15 | 30>(7);
+  const [locationView, setLocationView] = useState<'list' | 'map'>('list');
+  const [selectedStateMap, setSelectedStateMap] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const isPaid = useMemo(() => selectedLead ? isPaidMedia(selectedLead) : false, [selectedLead]);
+  const [exportType, setExportType] = useState<{ show: boolean; type: string }>({ show: false, type: '' });
+  const [exportOpen, setExportOpen] = useState(false);
+  const [recentLeadsPeriod, setRecentLeadsPeriod] = useState<7 | 15 | 30>(7);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('asthros_homepage_refresh_interval');
+      return saved ? parseInt(saved, 10) : 300; // Padrão 5 minutos
+    }
+    return 300;
+  });
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+  // Rotação automática do efeito de destaque (hover) nos 4 cards KPI principais para telas grandes/TVs
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveCardIndex(prev => (prev + 1) % 4);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let notifChannel: any = null;
+    let refreshTimer: any = null;
+    const isFullAdminView = isAdmin && !impersonatedName;
+
+    // Refresh periódico (auto-atualizar) — o carregamento inicial já veio pronto do
+    // servidor; isso só recarrega em background depois de montado.
+    async function refreshDashboardData() {
+      try {
+        const dataLimite = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        const clientsCountPromise = isFullAdminView
+          ? supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active')
+          : Promise.resolve({ count: 0 });
+
+        let analyticsQuery = supabase
+          .from('leads')
+          .select('*, clients(name), webhooks(name)')
+          .neq('source', 'test_simulation')
+          .gte('created_at', dataLimite)
+          .order('created_at', { ascending: false });
+        if (!isFullAdminView) {
+          analyticsQuery = analyticsQuery.eq('client_id', activeClientId);
+        }
+
+        let purchasesQuery = supabase
+          .from('purchases')
+          .select('*, clients(name)')
+          .gte('created_at', dataLimite)
+          .order('created_at', { ascending: false });
+        if (!isFullAdminView) {
+          purchasesQuery = purchasesQuery.eq('client_id', activeClientId);
+        }
+
+        const [{ count }, { data: allLeadsRaw }, { data: purchasesRaw }] = await Promise.all([
+          clientsCountPromise,
+          analyticsQuery,
+          purchasesQuery,
+        ]);
+
+        if (isFullAdminView) {
+          setActiveClientsCount(count || 0);
+        }
+
+        const leadsList = allLeadsRaw || [];
+        const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+        const decryptedLeads = await decryptLeadsList(leadsList);
+        setAllLeads(decryptedLeads);
+        setAllPurchases(purchasesRaw || []);
+
+        const lastLead = leadsList[0];
+        setLastSignalTime(lastLead ? new Date(lastLead.created_at).getTime() : null);
+      } catch (error) {
+        console.error('Erro ao atualizar dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Inscrição Realtime para Notificações na Home
+    const channel = supabase.channel('dashboard-notifications');
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, async (payload: any) => {
+        const newLead = payload.new;
+        const canSee = isFullAdminView ? true : (newLead.client_id === activeClientId);
+        if (!canSee || newLead.source === 'test_simulation') return;
+
+        // Atualização incremental: busca só o lead novo (com os mesmos joins da query
+        // inicial) em vez de recarregar leads + compras + contagem de clientes inteiros.
+        const { data: fullLead } = await supabase
+          .from('leads')
+          .select('*, clients(name), webhooks(name)')
+          .eq('id', newLead.id)
+          .single();
+        if (!fullLead) return;
+
+        const { decryptLeadsList } = await import('@/utils/frontendEncryption');
+        const [decryptedNew] = await decryptLeadsList([fullLead]);
+        setAllLeads(prev => [decryptedNew, ...prev]);
+        setLastSignalTime(new Date(fullLead.created_at).getTime());
+      })
+      .subscribe();
+    notifChannel = channel;
+
+    if (autoRefreshInterval > 0) {
+      refreshTimer = setInterval(() => {
+        refreshDashboardData();
+      }, autoRefreshInterval * 1000);
+    }
+
+    return () => {
+      if (notifChannel) {
+        supabase.removeChannel(notifChannel);
+      }
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
+    };
+  }, [autoRefreshInterval, isAdmin, activeClientId, impersonatedName]);
+
+  // Categoriza cada lead uma única vez por mudança em allLeads (evita recalcular
+  // match_type repetidamente em filteredLeads, statsSummary e no chartData).
+  const categorizedLeads = useMemo(
+    () => allLeads.map(l => ({ ...l, _category: getLeadCategory(l) })),
+    [allLeads]
+  );
+
+  // Filtro de leads e computação reativa na memória
+  const filteredLeads = useMemo(() => {
+    return categorizedLeads.filter(l => {
+      if (activeFilter === 'whatsapp') return l._category === 'whatsapp';
+      if (activeFilter === 'selectors') return l._category === 'selector';
+      if (activeFilter === 'keywords') return l._category === 'keyword';
+      if (activeFilter === 'forms') return l._category === 'form';
+      return true; // 'all'
+    });
+  }, [categorizedLeads, activeFilter]);
+
+  const statsSummary = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const periodStart = new Date(now.getTime() - dashboardPeriod * 24 * 60 * 60 * 1000).toISOString();
+
+    const totalLeads = filteredLeads.length;
+    const leadsToday = filteredLeads.filter(l => l.created_at >= todayStart).length;
+    const leadsInPeriod = filteredLeads.filter(l => l.created_at >= periodStart);
+
+    // Performance por Parceiro (calculado de forma reativa a partir de leadsInPeriod)
+    const counts: any = {};
+    leadsInPeriod.forEach(l => {
+      const name = l.clients?.name || 'Desconhecido';
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const performanceData: { name: string; count: number }[] = Object.entries(counts)
+      .map(([name, count]) => ({ name, count: count as number }))
+      .sort((a, b) => b.count - a.count);
+
+    // E-commerce Purchases no período
+    const purchasesInPeriod = allPurchases.filter(p => p.created_at >= periodStart);
+    const ecommerceCount = purchasesInPeriod.length;
+    const ecommerceRevenue = purchasesInPeriod.reduce((acc, p) => acc + Number(p.total_amount || p.amount || 0), 0);
+
+    // Pizza (Divisão de origens)
+    const wppCount = leadsInPeriod.filter(l => l._category === 'whatsapp').length;
+    const selectorCount = leadsInPeriod.filter(l => l._category === 'selector').length;
+    const keywordCount = leadsInPeriod.filter(l => l._category === 'keyword').length;
+    const formCount = leadsInPeriod.length - wppCount - selectorCount - keywordCount;
+
+    const totalVolume = leadsInPeriod.length + ecommerceCount;
+
+    const sourceData = [
+      { name: 'WhatsApp', value: wppCount, color: '#25d366' },
+      { name: 'E-commerce', value: ecommerceCount, revenue: ecommerceRevenue, color: '#ec4899' },
+      { name: 'Formulários', value: formCount, color: '#56d7fd' },
+      { name: 'Seletores', value: selectorCount, color: '#a855f7' },
+      { name: 'Palavras-Chave', value: keywordCount, color: '#f97316' }
+    ].filter(s => {
+      if (activeFilter === 'ecommerce') return s.name === 'E-commerce';
+      if (activeFilter === 'all') return true;
+      return s.value > 0;
+    });
+
+    // UTMs
+    const utmMap: any = {};
+    leadsInPeriod.forEach(l => {
+      const rawUtm = l.data?.marketing?.source || l.data?.utm_source || 'Direto / Orgânico';
+      const utm = decodeURIComponent(rawUtm);
+      utmMap[utm] = (utmMap[utm] || 0) + 1;
+    });
+    const topUtms: { name: string; value: number }[] = Object.entries(utmMap)
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value);
+
+    // Localização
+    const locMap: any = {};
+    const stateMap: any = {};
+    const cityByStateMap: any = {};
+    
+    leadsInPeriod.forEach(l => {
+      const cityRaw = l.data?.location?.city;
+      const stateRaw = l.data?.location?.region;
+
+      if (cityRaw && cityRaw !== 'Desconhecida') {
+        const city = decodeURIComponent(cityRaw);
+        locMap[city] = (locMap[city] || 0) + 1;
+      }
+      
+      if (stateRaw && stateRaw !== 'Desconhecido') {
+        const decodedState = decodeURIComponent(stateRaw);
+        const uf = STATE_NAME_TO_UF[decodedState] || decodedState.toUpperCase();
+        if (uf.length === 2) {
+          stateMap[uf] = (stateMap[uf] || 0) + 1;
+          if (cityRaw && cityRaw !== 'Desconhecida') {
+            const city = decodeURIComponent(cityRaw);
+            if (!cityByStateMap[uf]) cityByStateMap[uf] = {};
+            cityByStateMap[uf][city] = (cityByStateMap[uf][city] || 0) + 1;
+          }
+        }
+      }
+    });
+    
+    const locationData: { name: string; value: number }[] = Object.entries(locMap)
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value);
+
+    const stateData: { name: string; value: number }[] = Object.entries(stateMap)
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value);
+
+    // Chart Data
+    const chartData = Array.from({ length: dashboardPeriod }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (dashboardPeriod - 1 - i));
+      const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      
+      const dayLeads = leadsInPeriod.filter(l => {
+        const ts = new Date(l.created_at).getTime();
+        return ts >= dayStart && ts < dayEnd;
+      });
+
+      const dayWpp = dayLeads.filter(l => l._category === 'whatsapp').length;
+      const daySel = dayLeads.filter(l => l._category === 'selector').length;
+      const dayKey = dayLeads.filter(l => l._category === 'keyword').length;
+      const dayForm = dayLeads.length - dayWpp - daySel - dayKey;
+
+      const dayEcommerce = purchasesInPeriod.filter(p => {
+        const ts = new Date(p.created_at).getTime();
+        return ts >= dayStart && ts < dayEnd;
+      }).length;
+
+      return {
+        date: dateStr,
+        leads: dayLeads.length,
+        whatsapp: dayWpp,
+        selectors: daySel,
+        keywords: dayKey,
+        forms: dayForm,
+        ecommerce: dayEcommerce
+      };
+    });
+
+    const cardPeriodStart = new Date(now.getTime() - recentLeadsPeriod * 24 * 60 * 60 * 1000).toISOString();
+    const recentLeads = filteredLeads.filter(l => l.created_at >= cardPeriodStart);
+
+    return {
+      totalLeads,
+      leadsToday,
+      leadsInPeriod: leadsInPeriod.length,
+      totalVolume,
+      sourceData,
+      topUtms,
+      locationData,
+      stateData,
+      cityByStateMap,
+      chartData,
+      recentLeads,
+      performanceData
+    };
+  }, [filteredLeads, allPurchases, activeFilter, dashboardPeriod, recentLeadsPeriod]);
+
+  useEffect(() => {
+    if (locationView === 'map' && statsSummary.stateData.length > 0 && !selectedStateMap) {
+      setSelectedStateMap(statsSummary.stateData[0].name);
+    }
+  }, [locationView, statsSummary, selectedStateMap]);
+
+  const dashboardTitle = impersonatedName ? `Dashboard: ${impersonatedName}` : "";
+
+  const getLastLeadTime = () => {
+    if (!lastSignalTime) return 'Nenhuma captura';
+    const mins = Math.floor((Date.now() - lastSignalTime) / 60000);
+    if (mins < 1) return 'Agora mesmo';
+    if (mins < 60) return `${mins} min atrás`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h atrás`;
+    return `${Math.floor(hours / 24)}d atrás`;
+  };
+
+  const handleExport = (format: string) => {
+    setExportType({ show: true, type: format });
+    setExportOpen(false);
+  };
+
+  const processExport = async (password: string | null, selectedFields: string[]) => {
+    if (!selectedLead) return;
+
+    const leadToExport = selectedLead;
+    const clientName = leadToExport.clients?.name || impersonatedName || 'asthros';
+    const formattedClientName = clientName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const formattedLeadName = (leadToExport.name || 'lead').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const webhookName = leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A';
+
+    let content = '';
+    
+    if (exportType.type === 'pdf') {
+      const { default: jsPDF } = await import('jspdf');
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        encryption: password ? {
+          userPassword: password,
+          ownerPassword: password,
+          userPermissions: ["print", "modify", "copy", "annot-forms"]
+        } : undefined
+      });
+
+      // 1. Cabeçalho Escuro Padrão (Altura de 40mm)
+      doc.setFillColor(10, 20, 35);
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      try {
+        const logoUrl = '/asthros-leads.png';
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = (e) => reject(e);
+          image.src = logoUrl;
+        });
+        const logoWidth = 40;
+        const logoHeight = (img.height * logoWidth) / img.width;
+        const logoY = (40 - logoHeight) / 2;
+        doc.addImage(img, 'PNG', 15, logoY, logoWidth, logoHeight);
+      } catch (err) {
+        doc.setTextColor(86, 215, 253);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ASTHROS', 15, 25);
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório de Lead Único', 195, 16, { align: 'right' });
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Cliente: ${clientName}`, 195, 22, { align: 'right' });
+      doc.text(`Terminal: ${webhookName}`, 195, 28, { align: 'right' });
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 195, 34, { align: 'right' });
+
+      // Subtítulo do relatório
+      doc.setTextColor(10, 20, 35);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório de Detalhes do Lead', 15, 52);
+
+      // Separador principal
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(15, 55, 195, 55);
+
+      let currentY = 62;
+      const isPaid = isPaidMedia(leadToExport);
+
+      // Função de Desenhar Cards Estruturados (2 colunas)
+      const drawCard = (title: string, items: { label: string, value: string, highlight?: boolean, isFallback?: boolean }[], borderGold: boolean = false) => {
+        if (items.length === 0) return;
+
+        const half = Math.ceil(items.length / 2);
+        const cardHeight = 15 + (half * 8) + 5;
+
+        // Quebra de página se passar de Y = 275
+        if (currentY + cardHeight > 275) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        // Fundo e Borda do Card
+        if (borderGold) {
+          doc.setDrawColor(245, 158, 11); // Gold
+          doc.setFillColor(254, 252, 232); // Fundo dourado sutil
+        } else {
+          doc.setDrawColor(226, 232, 240); // Borda neutra
+          doc.setFillColor(248, 250, 252); // Fundo neutro sutil
+        }
+        doc.rect(15, currentY, 180, cardHeight - 5, 'FD');
+
+        // Título da Seção
+        if (borderGold) {
+          doc.setTextColor(217, 119, 6);
+        } else {
+          doc.setTextColor(14, 165, 233);
+        }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        
+        let titleText = title.toUpperCase();
+        if (borderGold) titleText += "  [ MÍDIA PAGA ]";
+        doc.text(titleText, 20, currentY + 8);
+
+        // Separador interno
+        if (borderGold) {
+          doc.setDrawColor(253, 230, 138);
+        } else {
+          doc.setDrawColor(230, 235, 240);
+        }
+        doc.line(20, currentY + 11, 190, currentY + 11);
+
+        // Renderização dos campos em 2 colunas
+        doc.setFontSize(8.5);
+        let itemY = currentY + 16;
+
+        for (let i = 0; i < half; i++) {
+          // Coluna 1
+          const item1 = items[i];
+          if (item1) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(100, 116, 139); // Label cor cinza médio
+            doc.text(`${item1.label}:`, 20, itemY);
+
+            doc.setFont('helvetica', item1.highlight ? 'bold' : 'normal');
+            if (item1.isFallback) {
+              doc.setTextColor(160, 174, 192); // Fallback cor cinza apagado
+            } else if (item1.highlight && borderGold) {
+              doc.setTextColor(217, 119, 6); // Destaque gold
+            } else {
+              doc.setTextColor(15, 23, 42); // Valor padrão
+            }
+            doc.text(String(item1.value || 'N/A'), 55, itemY);
+          }
+
+          // Coluna 2
+          const item2 = items[i + half];
+          if (item2) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(100, 116, 139);
+            doc.text(`${item2.label}:`, 110, itemY);
+
+            doc.setFont('helvetica', item2.highlight ? 'bold' : 'normal');
+            if (item2.isFallback) {
+              doc.setTextColor(160, 174, 192);
+            } else if (item2.highlight && borderGold) {
+              doc.setTextColor(217, 119, 6);
+            } else {
+              doc.setTextColor(15, 23, 42);
+            }
+            doc.text(String(item2.value || 'N/A'), 145, itemY);
+          }
+
+          itemY += 8;
+        }
+
+        currentY += cardHeight;
+      };
+
+      // Função de Desenhar a Jornada do Visitante (Timeline)
+      const drawJourneyCard = (journey: any[]) => {
+        if (!journey || journey.length === 0) return;
+
+        const cardHeight = 15 + (journey.length * 12) + 5;
+
+        if (currentY + cardHeight > 275) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        doc.setDrawColor(226, 232, 240);
+        doc.setFillColor(248, 250, 252);
+        doc.rect(15, currentY, 180, cardHeight - 5, 'FD');
+
+        doc.setTextColor(14, 165, 233);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.text('JORNADA DO VISITANTE (HISTÓRICO)', 20, currentY + 8);
+
+        doc.setDrawColor(230, 235, 240);
+        doc.line(20, currentY + 11, 190, currentY + 11);
+
+        // Linha do tempo vertical
+        doc.setDrawColor(186, 230, 253);
+        doc.setLineWidth(0.5);
+        doc.line(24, currentY + 17, 24, currentY + 15 + ((journey.length - 1) * 12));
+
+        let stepY = currentY + 18;
+        doc.setFontSize(8);
+
+        journey.forEach((step: any) => {
+          // Marcador da timeline
+          doc.setFillColor(14, 165, 233);
+          doc.circle(24, stepY - 1, 1.2, 'FD');
+
+          // URL formatada
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 23, 42);
+          const urlStr = decodeHtml(step.url || step.page_url || 'URL desconhecida');
+          doc.text(urlStr, 29, stepY - 1);
+
+          // Data/Hora & Referrer
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 116, 139);
+          const timeStr = step.timestamp ? new Date(step.timestamp).toLocaleString('pt-BR') : 'Data não registrada';
+          const refStr = step.referrer ? `  •  Referência: ${decodeHtml(step.referrer)}` : '';
+          doc.text(`${timeStr}${refStr}`, 29, stepY + 2.5);
+
+          stepY += 12;
+        });
+
+        currentY += cardHeight;
+      };
+
+      // 1. Coleta e Desenho de Perfil & Sistema
+      const perfilItems = [];
+      if (selectedFields.includes('id')) perfilItems.push({ label: 'ID do Lead', value: leadToExport.id });
+      if (selectedFields.includes('created_at')) perfilItems.push({ label: 'Data', value: new Date(leadToExport.created_at).toLocaleString('pt-BR') });
+      if (selectedFields.includes('name')) perfilItems.push({ label: 'Nome', value: leadToExport.name || 'Sem nome', isFallback: !leadToExport.name });
+      if (selectedFields.includes('email')) perfilItems.push({ label: 'E-mail', value: leadToExport.email || 'Sem e-mail', isFallback: !leadToExport.email });
+      if (selectedFields.includes('phone')) perfilItems.push({ label: 'Telefone', value: leadToExport.phone || 'Sem telefone', isFallback: !leadToExport.phone });
+      if (selectedFields.includes('webhook')) perfilItems.push({ label: 'Terminal', value: leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A', isFallback: !leadToExport.webhooks?.name && !leadToExport.data?.captured_by?.name });
+      
+      if (leadToExport.data) {
+        if (selectedFields.includes('location')) {
+          perfilItems.push({ label: 'IP', value: leadToExport.data.location?.ip || 'N/A', isFallback: !leadToExport.data.location?.ip });
+          const locStr = leadToExport.data.location?.city 
+            ? `${decodeHtml(decodeURIComponent(leadToExport.data.location.city))}/${decodeHtml(decodeURIComponent(leadToExport.data.location.region || ''))} (${leadToExport.data.location.country || 'BR'})`
+            : 'N/A';
+          perfilItems.push({ label: 'Localização', value: locStr, isFallback: !leadToExport.data.location?.city });
+        }
+        if (leadToExport.data.device) {
+          const device = leadToExport.data.device;
+          perfilItems.push({ label: 'SO', value: device.os || 'N/A', isFallback: !device.os });
+          perfilItems.push({ label: 'Dispositivo', value: device.is_mobile ? 'Mobile' : 'Desktop' });
+          perfilItems.push({ label: 'Idioma', value: device.language || 'N/A', isFallback: !device.language });
+          perfilItems.push({ label: 'Timezone', value: device.timezone ? decodeHtml(device.timezone) : 'N/A', isFallback: !device.timezone });
+          perfilItems.push({ label: 'Resolução', value: device.screen || 'N/A', isFallback: !device.screen });
+        }
+      }
+      drawCard('Perfil & Sistema', perfilItems);
+
+      // 2. Coleta e Desenho de Comportamento & Engajamento
+      const comportamentoItems = [];
+      const sourceLabel = leadToExport.source === 'whatsapp_tracker' ? 'WhatsApp Click' : (leadToExport.source === 'custom_tracker' ? 'Rastreador' : 'Formulário');
+      comportamentoItems.push({ label: 'Origem', value: sourceLabel });
+      
+      if (leadToExport.data) {
+        if (selectedFields.includes('page_url')) {
+          comportamentoItems.push({ label: 'Pág. Origem', value: decodeHtml(leadToExport.data.behavior?.page_url || leadToExport.data.page_url || 'N/A'), isFallback: !leadToExport.data.behavior?.page_url && !leadToExport.data.page_url });
+        }
+        if (selectedFields.includes('button_text')) {
+          comportamentoItems.push({ label: 'Ação / Botão', value: leadToExport.data.behavior?.button_text || leadToExport.data.button_text || 'N/A', isFallback: !leadToExport.data.behavior?.button_text && !leadToExport.data.button_text });
+        }
+        if (selectedFields.includes('time_on_page')) {
+          comportamentoItems.push({ label: 'Tempo Pág.', value: leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page || 'N/A', isFallback: !leadToExport.data.behavior?.time_on_page && !leadToExport.data.time_on_page });
+        }
+        if (leadToExport.data.behavior) {
+          const behavior = leadToExport.data.behavior;
+          comportamentoItems.push({ label: 'Scroll Máx.', value: behavior.scroll_depth || 'N/A', isFallback: !behavior.scroll_depth });
+          const sessionDur = behavior.session_duration_seconds !== undefined ? `${behavior.session_duration_seconds}s` : 'N/A';
+          comportamentoItems.push({ label: 'Dur. Sessão', value: sessionDur, isFallback: behavior.session_duration_seconds === undefined });
+          const convTime = behavior.conversion_time_seconds !== undefined ? `${behavior.conversion_time_seconds}s` : 'N/A';
+          comportamentoItems.push({ label: 'Tempo Conv.', value: convTime, isFallback: behavior.conversion_time_seconds === undefined });
+        }
+        if (leadToExport.data.lead_score !== undefined) {
+          comportamentoItems.push({ label: 'Lead Score', value: `${leadToExport.data.lead_score}/100`, highlight: true });
+        }
+        const consentVal = leadToExport.data.consent_given !== undefined 
+          ? (leadToExport.data.consent_given ? 'Autorizado' : 'Negado') 
+          : 'Não especificado';
+        comportamentoItems.push({ label: 'Consent. LGPD', value: consentVal, isFallback: leadToExport.data.consent_given === undefined });
+      }
+      drawCard('Comportamento & Engajamento', comportamentoItems);
+
+      // 3. Coleta e Desenho de Aquisição & UTMs (Destaque Dourado)
+      const marketingItems = [];
+      if (selectedFields.includes('utm')) {
+        const marketing = leadToExport.data?.marketing || {};
+        const sourceVal = marketing.source || leadToExport.data?.utm_source || 'Direto / Orgânico';
+        const isSourceEmpty = !marketing.source && !leadToExport.data?.utm_source;
+        marketingItems.push({ label: 'UTM Source', value: sourceVal, highlight: isPaid && !isSourceEmpty, isFallback: isSourceEmpty });
+
+        const mediumVal = marketing.medium || leadToExport.data?.utm_medium || 'N/A';
+        const isMediumEmpty = !marketing.medium && !leadToExport.data?.utm_medium;
+        marketingItems.push({ label: 'UTM Medium', value: mediumVal, highlight: isPaid && !isMediumEmpty, isFallback: isMediumEmpty });
+
+        const campaignVal = marketing.campaign || leadToExport.data?.utm_campaign || 'N/A';
+        const isCampaignEmpty = !marketing.campaign && !leadToExport.data?.utm_campaign;
+        marketingItems.push({ label: 'UTM Campaign', value: campaignVal, highlight: isPaid && !isCampaignEmpty, isFallback: isCampaignEmpty });
+
+        const termVal = marketing.term || 'N/A';
+        marketingItems.push({ label: 'UTM Term', value: termVal, highlight: isPaid && marketing.term, isFallback: !marketing.term });
+
+        const contentVal = marketing.content || 'N/A';
+        marketingItems.push({ label: 'UTM Content', value: contentVal, highlight: isPaid && marketing.content, isFallback: !marketing.content });
+
+        const idVal = marketing.id || 'N/A';
+        marketingItems.push({ label: 'UTM ID', value: idVal, highlight: isPaid && marketing.id, isFallback: !marketing.id });
+
+        if (marketing.gclid) marketingItems.push({ label: 'Google Ads ID', value: 'Ativo (GCLID)', highlight: true });
+        if (marketing.fbclid) marketingItems.push({ label: 'Facebook Ads ID', value: 'Ativo (FBCLID)', highlight: true });
+        if (marketing.ttclid) marketingItems.push({ label: 'TikTok Ads ID', value: 'Ativo (TTCLID)', highlight: true });
+      }
+      drawCard('Aquisição & UTMs', marketingItems, isPaid);
+
+      // 4. Coleta e Desenho da Jornada do Visitante (Histórico)
+      if (leadToExport.data?.marketing?.journey && leadToExport.data.marketing.journey.length > 0) {
+        drawJourneyCard(leadToExport.data.marketing.journey);
+      }
+
+      // 5. Coleta e Desenho de Campos Extras/Customizados
+      if (selectedFields.includes('custom_fields') && leadToExport.data) {
+        const extraFields: any[] = [];
+        Object.keys(leadToExport.data).forEach(k => {
+          if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)) {
+            extraFields.push({ label: k, value: String(leadToExport.data[k]) });
+          }
+        });
+        drawCard('Campos Customizados do Formulário', extraFields);
+      }
+
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Asthros | CO-B. - Relatório de Leads - Confidencial`, 15, 285);
+        doc.text(`Página ${i} de ${pageCount}`, 195, 285, { align: 'right' });
+      }
+
+      doc.save(`lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.pdf`);
+    } else if (exportType.type === 'csv') {
+      const headers: string[] = [];
+      const row: string[] = [];
+
+      const addField = (header: string, val: string) => {
+        headers.push(header);
+        row.push(`"${String(val || '').replace(/"/g, '""')}"`);
+      };
+
+      if (selectedFields.includes('id')) addField('ID', leadToExport.id);
+      if (selectedFields.includes('created_at')) addField('Data/Hora', new Date(leadToExport.created_at).toLocaleString('pt-BR'));
+      if (selectedFields.includes('name')) addField('Nome', leadToExport.name);
+      if (selectedFields.includes('email')) addField('E-mail', leadToExport.email);
+      if (selectedFields.includes('phone')) addField('Telefone', leadToExport.phone || 'N/A');
+      if (selectedFields.includes('webhook')) addField('Terminal', leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name || 'N/A');
+      
+      if (leadToExport.data) {
+        if (selectedFields.includes('page_url')) addField('Página Origem', leadToExport.data.behavior?.page_url || leadToExport.data.page_url || '');
+        if (selectedFields.includes('button_text')) addField('Botão Clicado', leadToExport.data.behavior?.button_text || leadToExport.data.button_text || '');
+        if (selectedFields.includes('time_on_page')) addField('Tempo na Página', leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page || '');
+        if (selectedFields.includes('utm')) {
+          addField('UTM Source', leadToExport.data.marketing?.source || leadToExport.data.utm_source || '');
+          addField('UTM Medium', leadToExport.data.marketing?.medium || leadToExport.data.utm_medium || '');
+          addField('UTM Campaign', leadToExport.data.marketing?.campaign || leadToExport.data.utm_campaign || '');
+        }
+        if (selectedFields.includes('location')) {
+          addField('Cidade', leadToExport.data.location?.city || '');
+          addField('Estado', leadToExport.data.location?.region || '');
+          addField('IP', leadToExport.data.location?.ip || '');
+        }
+        if (selectedFields.includes('custom_fields')) {
+          Object.keys(leadToExport.data).forEach(k => {
+            if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp'].includes(k)) {
+              addField(k, leadToExport.data[k]);
+            }
+          });
+        }
+      }
+
+      content = "\uFEFF" + [headers.join(','), row.join(',')].join('\n');
+      const blob = new Blob([content], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.csv`;
+      a.click();
+    } else {
+      // JSON
+      const item: any = {};
+      if (selectedFields.includes('id')) item.id = leadToExport.id;
+      if (selectedFields.includes('created_at')) item.created_at = leadToExport.created_at;
+      if (selectedFields.includes('name')) item.name = leadToExport.name;
+      if (selectedFields.includes('email')) item.email = leadToExport.email;
+      if (selectedFields.includes('phone')) item.phone = leadToExport.phone;
+      if (selectedFields.includes('webhook')) item.webhook = leadToExport.webhooks?.name || leadToExport.data?.captured_by?.name;
+      
+      if (leadToExport.data) {
+        item.data = {};
+        if (selectedFields.includes('page_url')) {
+          item.data.page_url = leadToExport.data.behavior?.page_url || leadToExport.data.page_url;
+        }
+        if (selectedFields.includes('button_text')) {
+          item.data.button_text = leadToExport.data.behavior?.button_text || leadToExport.data.button_text;
+        }
+        if (selectedFields.includes('time_on_page')) {
+          item.data.time_on_page = leadToExport.data.behavior?.time_on_page || leadToExport.data.time_on_page;
+        }
+        if (selectedFields.includes('utm')) {
+          item.data.marketing = leadToExport.data.marketing;
+          if (leadToExport.data.utm_source) item.data.utm_source = leadToExport.data.utm_source;
+        }
+        if (selectedFields.includes('location')) {
+          item.data.location = leadToExport.data.location;
+        }
+        if (selectedFields.includes('custom_fields')) {
+          Object.keys(leadToExport.data).forEach(k => {
+            if (!['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp'].includes(k)) {
+              item.data[k] = leadToExport.data[k];
+            }
+          });
+        }
+      }
+
+      content = JSON.stringify(item, null, 2);
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lead_${formattedClientName}_${formattedLeadName}_${new Date().getTime()}.json`;
+      a.click();
+    }
+
+    setExportType({ show: false, type: '' });
+  };
+
+  return (
+    <DashboardLayout
+      lockViewport
+      title={
+      <Link href="/admin/live" prefetch={false} className={styles.liveStatusPill}>
+        <Tv size={20} className={styles.liveIconPulse} />
+        <span className={styles.liveLabel}>Monitor ao Vivo</span>
+      </Link>
+    }>
+      <div className={styles.dashboard}>
+        
+        {/* Cabeçalho do Dashboard */}
+        <div className={styles.dashboardHeader}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2>{dashboardTitle || 'Visão Geral'}</h2>
+            <div className="glass" style={{ padding: '4px', borderRadius: '10px', display: 'flex', alignItems: 'center' }}>
+              <button 
+                className={`${styles.periodBtn} ${hideNames ? styles.activePeriod : ''}`}
+                onClick={() => setHideNames(!hideNames)}
+                title={hideNames ? "Mostrar Dados" : "Ocultar Dados"}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 10px', margin: 0 }}
+              >
+                {hideNames ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <div className={styles.headerControls}>
+            <div className={styles.periodSelectorBar}>
+              <button 
+                className={`${styles.periodBtn} ${dashboardPeriod === 7 ? styles.activePeriod : ''}`}
+                onClick={() => setDashboardPeriod(7)}
+              >
+                07 dias
+              </button>
+              <button 
+                className={`${styles.periodBtn} ${dashboardPeriod === 15 ? styles.activePeriod : ''}`}
+                onClick={() => setDashboardPeriod(15)}
+              >
+                15 dias
+              </button>
+              <button 
+                className={`${styles.periodBtn} ${dashboardPeriod === 30 ? styles.activePeriod : ''}`}
+                onClick={() => setDashboardPeriod(30)}
+              >
+                30 dias
+              </button>
+            </div>
+
+            <div className={styles.refreshSelectorBar}>
+              {autoRefreshInterval > 0 ? (
+                <div className={styles.pulseContainer}>
+                  <span className={styles.refreshPulse} />
+                </div>
+              ) : (
+                <div className={styles.pulseContainer}>
+                  <span className={styles.refreshPulseOff} />
+                </div>
+              )}
+              <select
+                className={styles.refreshSelect}
+                value={autoRefreshInterval}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setAutoRefreshInterval(val);
+                  localStorage.setItem('asthros_homepage_refresh_interval', String(val));
+                }}
+              >
+                <option value={0}>Sem Auto-atualizar</option>
+                <option value={30}>Auto: 30 seg</option>
+                <option value={60}>Auto: 1 min</option>
+                <option value={300}>Auto: 5 min</option>
+                <option value={600}>Auto: 10 min</option>
+                <option value={900}>Auto: 15 min</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Barra de Filtros Rápidos */}
+        <div className={styles.filterBar}>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'all' ? styles.activeAll : ''}`}
+            onClick={() => setActiveFilter('all')}
+          >
+            <BarChart3 size={16} />
+            <span>Todos os Leads</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'whatsapp' ? styles.activeWhatsapp : ''}`}
+            onClick={() => setActiveFilter('whatsapp')}
+          >
+            <MessageCircle size={16} />
+            <span>WhatsApp</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'forms' ? styles.activeForms : ''}`}
+            onClick={() => setActiveFilter('forms')}
+          >
+            <FileText size={16} />
+            <span>Formulários</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'selectors' ? styles.activeSelectors : ''}`}
+            onClick={() => setActiveFilter('selectors')}
+          >
+            <MousePointerClick size={16} />
+            <span>Seletores</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'keywords' ? styles.activeKeywords : ''}`}
+            onClick={() => setActiveFilter('keywords')}
+          >
+            <Type size={16} />
+            <span>Palavras-Chave</span>
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${activeFilter === 'ecommerce' ? styles.activeEcommerce : ''}`}
+            onClick={() => setActiveFilter('ecommerce')}
+          >
+            <ShoppingBag size={16} />
+            <span>E-commerce</span>
+          </button>
+        </div>
+
+        <div className={styles.statsGrid}>
+          <div 
+            className={`${styles.statCard} ${styles.blue} glass ${styles.animateFadeInUp} ${activeCardIndex === 0 ? styles.activeAutoGlow : ''}`}
+            onMouseEnter={() => setActiveCardIndex(0)}
+          >
+            <div className={styles.statLeft}>
+              <div className={styles.statIcon}><TrendingUp size={22} /></div>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>Leads Totais</span>
+                <span className={styles.statSub}>Acumulado total (30d)</span>
+              </div>
+            </div>
+            <h2 className={styles.statValue}>{statsSummary.totalLeads}</h2>
+          </div>
+          
+          <div 
+            className={`${styles.statCard} ${styles.green} glass ${styles.animateFadeInUp} ${styles.delay1} ${activeCardIndex === 1 ? styles.activeAutoGlow : ''}`}
+            onMouseEnter={() => setActiveCardIndex(1)}
+          >
+            <div className={styles.statLeft}>
+              <div className={styles.statIcon}><Activity size={22} /></div>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>Capturas Hoje</span>
+                <span className={styles.statSub}>Últimas 24 horas</span>
+              </div>
+            </div>
+            <h2 className={styles.statValue}>{statsSummary.leadsToday}</h2>
+          </div>
+          
+          <div 
+            className={`${styles.statCard} ${styles.purple} glass ${styles.animateFadeInUp} ${styles.delay2} ${activeCardIndex === 2 ? styles.activeAutoGlow : ''}`}
+            onMouseEnter={() => setActiveCardIndex(2)}
+          >
+            <div className={styles.statLeft}>
+              <div className={styles.statIcon}><Clock size={22} /></div>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>Últimos {dashboardPeriod} dias</span>
+                <span className={styles.statSub}>Volume do período</span>
+              </div>
+            </div>
+            <h2 className={styles.statValue}>{statsSummary.leadsInPeriod}</h2>
+          </div>
+
+          {isAdmin && !impersonatedName ? (
+            <div 
+              className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3} ${activeCardIndex === 3 ? styles.activeAutoGlow : ''}`}
+              onMouseEnter={() => setActiveCardIndex(3)}
+            >
+              <div className={styles.statLeft}>
+                <div className={styles.statIcon}><Users size={22} /></div>
+                <div className={styles.statInfo}>
+                  <span className={styles.statLabel}>Parceiros Ativos</span>
+                  <span className={styles.statSub}>Clientes no sistema</span>
+                </div>
+              </div>
+              <h2 className={styles.statValue}>{activeClientsCount}</h2>
+            </div>
+          ) : (
+            <div 
+              className={`${styles.statCard} ${styles.orange} glass ${styles.animateFadeInUp} ${styles.delay3} ${activeCardIndex === 3 ? styles.activeAutoGlow : ''}`}
+              onMouseEnter={() => setActiveCardIndex(3)}
+            >
+              <div className={styles.statLeft}>
+                <div className={styles.statIcon}><Webhook size={22} /></div>
+                <div className={styles.statInfo}>
+                  <span className={styles.statLabel}>Status do Sistema</span>
+                  <div className={styles.statusContainer}>
+                    <div className={`${styles.pulse} ${styles.pulseGreen}`} />
+                    <span className={styles.statSub}>Última captura: {getLastLeadTime()}</span>
+                  </div>
+                </div>
+              </div>
+              <h2 className={styles.statValue}>Operacional</h2>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.mainGrid}>
+          <div className={`${styles.chartCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <BarChart3 size={18} className={styles.iconPrimary} />
+                <h3>Análise de Conversão</h3>
+              </div>
+              <div className={styles.chartLegend}>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#00D1FF', boxShadow: '0 0 10px rgba(0, 209, 255, 0.5)' }} />
+                  <span>Formulários</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#25d366', boxShadow: '0 0 10px rgba(37, 211, 102, 0.5)' }} />
+                  <span>WhatsApp</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#a855f7', boxShadow: '0 0 10px rgba(168, 85, 247, 0.5)' }} />
+                  <span>Seletores</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#f97316', boxShadow: '0 0 10px rgba(249, 115, 22, 0.5)' }} />
+                  <span>Palavras-Chave</span>
+                </div>
+                <div className={styles.legendItem}>
+                  <div className={styles.dot} style={{ background: '#ec4899', boxShadow: '0 0 10px rgba(236, 72, 153, 0.5)' }} />
+                  <span>E-commerce</span>
+                </div>
+              </div>
+            </div>
+            <div className={styles.chartArea}>
+              <AnalyticsChart data={statsSummary.chartData} activeFilter={activeFilter} />
+            </div>
+          </div>
+
+          {isAdmin && !impersonatedName && statsSummary.performanceData.length > 0 && (
+            <div className={`${styles.chartCard} glass`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.titleWithIcon}>
+                  <Users size={18} className={styles.iconPrimary} />
+                  <h3>Performance por Parceiro</h3>
+                </div>
+              </div>
+              <div className={styles.performanceList}>
+                {statsSummary.performanceData.map((p: any, i: number) => (
+                  <div key={p.name} className={styles.perfItem}>
+                    <div className={styles.perfInfo}>
+                      <div className={styles.perfNameWrapper}>
+                        <span className={styles.perfRank}>#{i + 1}</span>
+                        <span className={styles.perfName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{p.name}</span>
+                      </div>
+                      <div className={styles.perfValueWrapper}>
+                        <span className={styles.perfValue}>{p.count}</span>
+                        <span className={styles.perfUnit}>leads</span>
+                      </div>
+                    </div>
+                    <div className={styles.perfBarContainer}>
+                      <div 
+                        className={styles.perfBarFill} 
+                        style={{ 
+                          width: `${(p.count / statsSummary.performanceData[0].count) * 100}%`,
+                          background: `linear-gradient(90deg, #56d7fd, #2ecc71)`
+                        }} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={`${styles.sideCharts} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <PieIcon size={18} className={styles.iconSuccess} />
+                <h3>Divisão de Origens</h3>
+              </div>
+            </div>
+
+            <div className={styles.originsWrapper}>
+              {/* Nível 1: Canais Principais de Conversão (WhatsApp & E-commerce no Topo com Destaque) */}
+              <div className={styles.heroOriginsRow}>
+                {statsSummary.sourceData
+                  .filter((s: any) => s.name === 'WhatsApp' || s.name === 'E-commerce')
+                  .sort((a: any, b: any) => (a.name === 'WhatsApp' ? -1 : 1))
+                  .map((s: any) => {
+                    const totalVol = statsSummary.totalVolume || 1;
+                    const percentage = ((s.value / totalVol) * 100).toFixed(0);
+
+                    return (
+                      <div 
+                        key={s.name} 
+                        className={`${styles.heroSourceCard} ${s.name === 'E-commerce' ? styles.heroEcommerceCard : styles.heroWhatsappCard}`}
+                      >
+                        <div className={styles.sourceCardHeader}>
+                          <div className={styles.heroIconBadgeGroup}>
+                            <div 
+                              className={styles.sourceIconWrapper} 
+                              style={{ 
+                                color: s.color, 
+                                background: `${s.color}20`,
+                                borderColor: `${s.color}40` 
+                              }}
+                            >
+                              {s.name === 'WhatsApp' ? <MessageCircle size={20} /> : <ShoppingBag size={20} />}
+                            </div>
+                            <div className={styles.heroTitleGroup}>
+                              <span className={styles.sourceName}>{s.name}</span>
+                              <span className={styles.heroCardBadge} style={{ color: s.color, background: `${s.color}15`, borderColor: `${s.color}30` }}>
+                                {s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className={styles.sourcePercent} style={{ color: s.color }}>{percentage}% do volume</span>
+                        </div>
+
+                        <div className={styles.heroCardBody}>
+                          <div className={styles.heroValueGroup}>
+                            <div className={styles.heroValueRow}>
+                              <span className={styles.heroSourceValue}>{s.value}</span>
+                              <span className={styles.unitLabel}>
+                                {s.name === 'E-commerce' ? 'vendas registradas' : 'leads capturados'}
+                              </span>
+                            </div>
+
+                            {s.name === 'E-commerce' && s.revenue !== undefined && s.revenue > 0 ? (
+                              <div className={styles.heroRevenueTag}>
+                                <span className={styles.revenueLabel}>Faturamento Total:</span>
+                                <strong className={styles.revenueAmount}>R$ {s.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                              </div>
+                            ) : (
+                              <div 
+                                className={styles.heroShareTag}
+                                style={{
+                                  color: s.color,
+                                  background: `${s.color}15`,
+                                  borderColor: `${s.color}35`
+                                }}
+                              >
+                                <span>{s.name === 'E-commerce' ? 'Vendas Diretas' : 'Contato Direto'}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={styles.sourceBarContainer}>
+                          <div 
+                            className={styles.sourceBarFill} 
+                            style={{ 
+                              width: `${percentage}%`, 
+                              background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
+                              boxShadow: `0 0 14px ${s.color}60`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {/* Nível 2: Canais Complementares (Formulários, Seletores, Palavras-Chave em Grid de 3 Colunas) */}
+              <div className={styles.secondaryOriginsGrid}>
+                {statsSummary.sourceData
+                  .filter((s: any) => s.name !== 'WhatsApp' && s.name !== 'E-commerce')
+                  .map((s: any) => {
+                    const totalVol = statsSummary.totalVolume || 1;
+                    const percentage = ((s.value / totalVol) * 100).toFixed(0);
+
+                    const renderIcon = () => {
+                      switch (s.name) {
+                        case 'Seletores':
+                          return <MousePointerClick size={16} />;
+                        case 'Palavras-Chave':
+                          return <Type size={16} />;
+                        case 'Formulários':
+                        default:
+                          return <FileText size={16} />;
+                      }
+                    };
+
+                    return (
+                      <div key={s.name} className={styles.secondarySourceCard}>
+                        <div className={styles.sourceCardHeader}>
+                          <div 
+                            className={styles.miniIconWrapper} 
+                            style={{ color: s.color, background: `${s.color}15` }}
+                          >
+                            {renderIcon()}
+                          </div>
+                          <span className={styles.sourcePercent} style={{ color: s.color, fontSize: '0.7rem' }}>{percentage}%</span>
+                        </div>
+                        
+                        <div className={styles.secondaryCardBody}>
+                          <span className={styles.secondarySourceName}>{s.name}</span>
+                          <h4 className={styles.secondarySourceValue}>{s.value}</h4>
+                        </div>
+
+                        <div className={styles.sourceBarContainer}>
+                          <div 
+                            className={styles.sourceBarFill} 
+                            style={{ 
+                              width: `${percentage}%`, 
+                              background: `linear-gradient(90deg, ${s.color}cc, ${s.color})`,
+                              boxShadow: `0 0 8px ${s.color}30`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${styles.bottomGrid} ${locationView === 'map' ? styles.bottomGridMapActive : ''}`}>
+          <div className={`${styles.utmCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <MapPin size={18} className={styles.iconWarning} />
+                <h3>Fontes (UTMs)</h3>
+              </div>
+            </div>
+            <div className={styles.utmList}>
+              {statsSummary.topUtms.map((utm: any, i: number) => (
+                <div key={utm.name} className={styles.utmItem}>
+                  <div className={styles.utmInfo}>
+                    <span className={styles.utmRank}>#{i + 1}</span>
+                    <span className={styles.utmName}>{utm.name}</span>
+                  </div>
+                  <div className={styles.utmBarWrapper}>
+                    <div className={styles.utmBar} style={{ width: `${(utm.value / (statsSummary.totalLeads || 1)) * 100}%` }} />
+                    <span className={styles.utmValue}>
+                      {utm.value} <span className={styles.separator}>•</span> {((utm.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${styles.utmCard} glass`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.titleWithIcon}>
+                <Globe size={18} className={styles.iconInfo} />
+                <h3>Distribuição Geográfica</h3>
+              </div>
+              <div className={styles.cardPeriodSelector}>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${locationView === 'list' ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setLocationView('list')}
+                  title="Visualização em Lista"
+                >
+                  <ListView size={14} />
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${locationView === 'map' ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setLocationView('map')}
+                  title="Visualização no Mapa"
+                >
+                  <MapView size={14} />
+                </button>
+              </div>
+            </div>
+            
+            {locationView === 'list' ? (
+              <div className={styles.utmList}>
+                {statsSummary.locationData.length > 0 ? statsSummary.locationData.map((loc: any, i: number) => (
+                  <div key={loc.name} className={styles.mapListItem}>
+                    <div className={styles.mapListInfo}>
+                      <div className={styles.mapListIcon}>
+                        <MapPin size={14} />
+                      </div>
+                      <span className={styles.utmRank}>#{i + 1}</span>
+                      <span className={styles.utmName}>{loc.name}</span>
+                    </div>
+                    <div className={styles.utmBarWrapper}>
+                      <div className={styles.mapLocationBar} style={{ width: `${(loc.value / (statsSummary.locationData[0]?.value || 1)) * 100}%` }} />
+                      <span className={styles.utmValue}>
+                        {loc.value} <span className={styles.separator}>•</span> {((loc.value / (statsSummary.totalLeads || 1)) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                )) : (
+                  <div className={styles.emptyLocations}>
+                    <MapPin size={24} />
+                    <p>Aguardando capturas geográficas...</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={styles.mapContainer}>
+                <div className={styles.mapWrapper}>
+                  <Brazil 
+                    type="select-single" 
+                    size={350} 
+                    mapColor="rgba(255,255,255,0.05)"
+                    strokeColor="rgba(255,255,255,0.2)"
+                    hoverColor="rgba(86, 215, 253, 0.4)"
+                    selectColor="#56d7fd"
+                    onSelect={(state) => {
+                      if (state) setSelectedStateMap(STATE_NAME_TO_UF[state] || state);
+                    }}
+                  />
+                </div>
+                <div className={styles.mapListWrapper}>
+                  <h4 className={styles.mapListTitle}>
+                    Cidades em {selectedStateMap || '...'}
+                  </h4>
+                  <div className={styles.utmList} style={{ paddingRight: '0.5rem', flex: 1, minHeight: 0 }}>
+                    {selectedStateMap && statsSummary.cityByStateMap[selectedStateMap] ? (() => {
+                      const cityValues = Object.values(statsSummary.cityByStateMap[selectedStateMap]) as number[];
+                      const maxCityValue = cityValues.sort((a, b) => b - a)[0] || 1;
+                      const stateTotal = statsSummary.stateData.find((s: any) => s.name === selectedStateMap)?.value || 1;
+                      
+                      return Object.entries(statsSummary.cityByStateMap[selectedStateMap])
+                        .sort((a: any, b: any) => b[1] - a[1])
+                        .map(([cityName, value]: any, i: number) => (
+                        <div key={cityName} className={styles.mapListItem}>
+                          <div className={styles.mapListInfo}>
+                            <div className={styles.mapListIcon}>
+                              <MapPin size={14} />
+                            </div>
+                            <span className={styles.utmRank}>#{i + 1}</span>
+                            <span className={styles.utmName}>{cityName}</span>
+                          </div>
+                          <div className={styles.utmBarWrapper}>
+                            <div className={styles.mapLocationBar} style={{ width: `${(value / maxCityValue) * 100}%` }} />
+                            <span className={styles.utmValue}>
+                              {value} <span className={styles.separator}>•</span> {((value / stateTotal) * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ));
+                    })() : (
+                      <div className={styles.emptyLocations}>
+                        <MapView size={32} style={{ opacity: 0.5, marginBottom: '0.75rem', color: '#56d7fd' }} />
+                        <p style={{ opacity: 0.8, textAlign: 'center', fontSize: '0.9rem' }}>
+                          Selecione um estado no mapa para ver as cidades.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={`${styles.logsCard} glass`}>
+            <div className={styles.cardHeader}>
+              <h3>Últimos Leads Recebidos</h3>
+              <div className={styles.cardPeriodSelector}>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${recentLeadsPeriod === 7 ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setRecentLeadsPeriod(7)}
+                >
+                  07
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${recentLeadsPeriod === 15 ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setRecentLeadsPeriod(15)}
+                >
+                  15
+                </button>
+                <button 
+                  type="button"
+                  className={`${styles.cardPeriodBtn} ${recentLeadsPeriod === 30 ? styles.activeCardPeriod : ''}`}
+                  onClick={() => setRecentLeadsPeriod(30)}
+                >
+                  30
+                </button>
+              </div>
+            </div>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    {(isAdmin && !impersonatedName) && <th>Cliente</th>}
+                    <th>Lead</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {statsSummary.recentLeads.map((lead) => {
+                    const isSelector = lead._category === 'selector';
+                    const isKeyword = lead._category === 'keyword';
+
+                    return (
+                      <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
+                        {(isAdmin && !impersonatedName) && (
+                          <td>
+                            <div className={styles.clientCell}>
+                              <span className={styles.clientName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{lead.clients?.name || 'N/A'}</span>
+                              <span className={styles.webhookSub}>
+                                {lead.webhooks?.name || lead.data?.captured_by?.name || 'Sem webhook'}
+                              </span>
+                            </div>
+                          </td>
+                        )}
+                        <td>
+                          {lead.source === 'whatsapp_tracker' ? (
+                            <div className={styles.whatsappTag}>
+                              <MessageCircle className={styles.whatsappIcon} />
+                              <span>Whatsapp Click</span>
+                            </div>
+                          ) : isSelector ? (
+                            <div className={styles.selectorTag}>
+                              <MousePointerClick className={styles.selectorIcon} />
+                              <span>Selector</span>
+                            </div>
+                          ) : isKeyword ? (
+                            <div className={styles.keywordTag}>
+                              <Type className={styles.keywordIcon} />
+                              <span>Palavra-Chave</span>
+                            </div>
+                          ) : (
+                            <div className={styles.leadInfoMini}>
+                              <span className={styles.leadName} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{lead.name || 'Sem nome'}</span>
+                              <span className={styles.leadEmail} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>{lead.email || 'Sem e-mail'}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <div className={styles.leadTimeWrapper}>
+                            <span className={styles.leadDate}>
+                              {new Date(lead.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className={styles.leadTime}>
+                              {new Date(lead.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </td>
+                        <td><span className={styles.statusBadge}>OK</span></td>
+                      </tr>
+                    );
+                  })}
+                  {statsSummary.recentLeads.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className={styles.emptyTable}>Nenhum registro encontrado.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      {selectedLead && (
+        <div className={styles.modalOverlay} onClick={() => { setSelectedLead(null); setExportOpen(false); }}>
+          <div className={`${styles.detailModal} glass`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleArea}>
+                <h3>Detalhes do Lead</h3>
+                <span className={styles.modalSubtitle}>ID: {selectedLead.id}</span>
+              </div>
+              <button className={styles.closeBtn} onClick={() => { setSelectedLead(null); setExportOpen(false); }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.sectionGrid}>
+                {/* Coluna 1: Perfil & Sistema */}
+                <div className={styles.infoSection}>
+                  <h4>Perfil & Sistema</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Nome</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.name ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>
+                        {selectedLead.name || 'Sem nome'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>E-mail</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.email ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>
+                        {selectedLead.email || 'Sem e-mail'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Telefone</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.phone ? styles.infoValEmpty : ''}`} style={hideNames ? { filter: 'blur(4px)', userSelect: 'none' } : {}}>
+                        {selectedLead.phone || 'Sem telefone'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Data</span>
+                      <span className={styles.infoVal}>
+                        {new Date(selectedLead.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Terminal / Webhook</span>
+                      <span className={`${styles.infoVal} ${(!selectedLead.webhooks?.name && !selectedLead.data?.captured_by?.name) ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.webhooks?.name || selectedLead.data?.captured_by?.name || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>IP</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.location?.ip ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.location?.ip || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Localização</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.location?.city ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.location?.city 
+                          ? `${decodeHtml(decodeURIComponent(selectedLead.data.location.city))}/${decodeHtml(decodeURIComponent(selectedLead.data.location.region || ''))} (${selectedLead.data.location.country || 'BR'})`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Sistema Operacional</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.os ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.os || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Dispositivo</span>
+                      <span className={styles.infoVal}>{selectedLead.data?.device?.is_mobile ? 'Mobile' : 'Desktop'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Idioma</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.language ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.language || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Timezone</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.timezone ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.timezone ? decodeHtml(selectedLead.data.device.timezone) : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Resolução</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.device?.screen ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.device?.screen || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Coluna 2: Comportamento & Consentimento */}
+                <div className={styles.infoSection}>
+                  <h4>Comportamento & Engajamento</h4>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Origem do Lead</span>
+                      <span className={styles.infoVal}>
+                        <span className={selectedLead.source === 'whatsapp_tracker' ? styles.whatsappTag : (selectedLead.source === 'custom_tracker' ? styles.selectorTag : styles.statusBadge)}>
+                          {selectedLead.source === 'whatsapp_tracker' ? 'WhatsApp Click' : (selectedLead.source === 'custom_tracker' ? 'Rastreador' : 'Formulário')}
+                        </span>
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Página de Origem</span>
+                      <span className={`${styles.infoVal} ${(!selectedLead.data?.behavior?.page_url && !selectedLead.data?.page_url) ? styles.infoValEmpty : ''}`} title={decodeHtml(selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A')}>
+                        {decodeHtml(selectedLead.data?.behavior?.page_url || selectedLead.data?.page_url || 'N/A')}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Ação / Botão</span>
+                      <span className={`${styles.infoVal} ${(!selectedLead.data?.behavior?.button_text && !selectedLead.data?.button_text) ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.button_text || selectedLead.data?.button_text || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tempo Ativo na Pág.</span>
+                      <span className={`${styles.infoVal} ${(!selectedLead.data?.behavior?.time_on_page && !selectedLead.data?.time_on_page) ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.time_on_page || selectedLead.data?.time_on_page || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Rolagem Máxima</span>
+                      <span className={`${styles.infoVal} ${!selectedLead.data?.behavior?.scroll_depth ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.scroll_depth || 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Duração da Sessão</span>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.behavior?.session_duration_seconds === undefined ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.session_duration_seconds !== undefined 
+                          ? `${selectedLead.data.behavior.session_duration_seconds}s`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tempo p/ Conversão</span>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.behavior?.conversion_time_seconds === undefined ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.behavior?.conversion_time_seconds !== undefined 
+                          ? `${selectedLead.data.behavior.conversion_time_seconds}s`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Score do Lead</span>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.lead_score === undefined ? styles.infoValEmpty : ''}`} style={{ fontWeight: '800', color: selectedLead.data?.lead_score >= 70 ? '#2ecc71' : (selectedLead.data?.lead_score >= 40 ? '#f59e0b' : (selectedLead.data?.lead_score !== undefined ? '#3498db' : undefined)) }}>
+                        {selectedLead.data?.lead_score !== undefined ? `${selectedLead.data.lead_score}/100` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Consentimento LGPD</span>
+                      <span className={`${styles.infoVal} ${selectedLead.data?.consent_given === undefined ? styles.infoValEmpty : ''}`}>
+                        {selectedLead.data?.consent_given !== undefined 
+                          ? (selectedLead.data.consent_given ? '✅ Autorizado' : '❌ Negado')
+                          : 'Não especificado'}
+                      </span>
+                    </div>
+                    {selectedLead.data?.consent_timestamp && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Data Consentimento</span>
+                        <span className={styles.infoVal}>{new Date(selectedLead.data.consent_timestamp).toLocaleString('pt-BR')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Coluna 3: Aquisição & UTMs */}
+                <div className={`${styles.infoSection} ${isPaid ? styles.paidMediaSection : ''}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
+                    <h4 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}>Aquisição & UTMs</h4>
+                    {isPaid && <span className={styles.paidMediaBadge}>🎯 Mídia Paga</span>}
+                  </div>
+                  <div className={styles.infoList}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Source</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${(!selectedLead.data?.marketing?.source && !selectedLead.data?.utm_source) ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.source || selectedLead.data?.utm_source || 'Direto / Orgânico'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Medium</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${(!selectedLead.data?.marketing?.medium && !selectedLead.data?.utm_medium) ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.medium || selectedLead.data?.utm_medium || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Campaign</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${(!selectedLead.data?.marketing?.campaign && !selectedLead.data?.utm_campaign) ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.campaign || selectedLead.data?.utm_campaign || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Term</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.term ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.term || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM Content</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.content ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.content || 'N/A'}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>UTM ID</span>
+                      <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''} ${!selectedLead.data?.marketing?.id ? styles.infoValEmpty : ''}`}>{selectedLead.data?.marketing?.id || 'N/A'}</span>
+                    </div>
+                    {selectedLead.data?.marketing?.gclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Google Ads ID</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={selectedLead.data.marketing.gclid}>GCLID (Ativo)</span>
+                      </div>
+                    )}
+                    {selectedLead.data?.marketing?.fbclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Facebook Ads ID</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={selectedLead.data.marketing.fbclid}>FBCLID (Ativo)</span>
+                      </div>
+                    )}
+                    {selectedLead.data?.marketing?.ttclid && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>TikTok Ads ID</span>
+                        <span className={`${styles.infoVal} ${isPaid ? styles.paidHighlight : ''}`} title={selectedLead.data.marketing.ttclid}>TTCLID (Ativo)</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Jornada de Navegação do Visitante */}
+              {selectedLead.data?.marketing?.journey && selectedLead.data.marketing.journey.length > 0 && (
+                <div className={styles.extraFieldsArea}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Jornada do Visitante (Histórico de Páginas)</h4>
+                  <div className={styles.infoSection}>
+                    <div className={styles.journeyTimeline}>
+                      {selectedLead.data.marketing.journey.map((step: any, index: number) => (
+                        <div key={index} className={styles.journeyStep}>
+                          <div className={styles.journeyDot} />
+                          <span className={styles.journeyUrl}>
+                            {decodeHtml(step.url || step.page_url || 'URL desconhecida')}
+                          </span>
+                          <span className={styles.journeyTime}>
+                            {step.timestamp ? new Date(step.timestamp).toLocaleString('pt-BR') : 'Data não registrada'}
+                            {step.referrer && ` • Referência: ${decodeHtml(step.referrer)}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Campos Extras (Formulário) */}
+              {selectedLead.data && Object.keys(selectedLead.data).some(k => 
+                !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)
+              ) && (
+                <div className={styles.extraFieldsArea}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Campos Customizados do Formulário</h4>
+                  <div className={styles.infoSection} style={{ gap: '0.75rem' }}>
+                    {Object.keys(selectedLead.data).filter(k => 
+                      !['behavior', 'marketing', 'location', 'captured_by', 'page_url', 'button_text', 'time_on_page', 'utm_source', 'utm_medium', 'utm_campaign', 'lead_score', 'consent_given', 'consent_timestamp', 'source', 'name', 'email', 'phone', 'fields', 'session_id', 'visitor_id', 'device', 'timestamp', 'lead_id', 'event_hash'].includes(k)
+                    ).map(k => (
+                      <div key={k} className={styles.infoRow}>
+                        <span className={styles.infoLabel}>{k}</span>
+                        <span className={styles.infoVal}>{String(selectedLead.data[k])}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.modalFooter}>
+              <div className={styles.exportDropdownWrapper}>
+                <button className={styles.exportBtn} onClick={() => setExportOpen(!exportOpen)}>
+                  <Download size={16} />
+                  <span>Exportar Lead</span>
+                </button>
+                <div className={`${styles.exportMenu} ${exportOpen ? styles.open : ''}`}>
+                  <button className={styles.exportMenuItem} onClick={() => handleExport('csv')}>
+                    <TableIcon size={14} /> <span>CSV</span>
+                  </button>
+                  <button className={styles.exportMenuItem} onClick={() => handleExport('json')}>
+                    <FileJson size={14} /> <span>JSON</span>
+                  </button>
+                  <button className={styles.exportMenuItem} onClick={() => handleExport('pdf')}>
+                    <FileDown size={14} /> <span>PDF</span>
+                  </button>
+                </div>
+              </div>
+              <button className={styles.exportBtn} style={{ borderColor: 'rgba(255,255,255,0.1)' }} onClick={() => { setSelectedLead(null); setExportOpen(false); }}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {exportType.show && selectedLead && (
+        <ExportModal 
+          format={exportType.type}
+          leads={[selectedLead]}
+          onConfirm={(password, selectedFields) => processExport(password, selectedFields)}
+          onCancel={() => setExportType({ show: false, type: '' })}
+        />
+      )}
+    </DashboardLayout>
+  );
+}

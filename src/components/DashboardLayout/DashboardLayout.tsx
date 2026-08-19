@@ -8,6 +8,7 @@ import styles from './DashboardLayout.module.css';
 import { supabase } from '@/lib/supabase';
 import Loader from '../Loader/Loader';
 import { decryptLead, fetchEncryptionKey } from '@/utils/frontendEncryption';
+import { clearImpersonatedClientCookie } from '@/utils/impersonation';
 import FunnyLeadModal from '../FunnyLeadModal/FunnyLeadModal';
 import { primeAudio } from '@/utils/audio';
 
@@ -78,6 +79,7 @@ export default function DashboardLayout({ children, title = '', lockViewport = f
           localStorage.removeItem('user_password_changed');
           localStorage.removeItem('user_client_id');
           localStorage.removeItem('impersonated_client');
+          clearImpersonatedClientCookie();
         }
         window.location.href = '/login';
         return;
@@ -121,6 +123,7 @@ export default function DashboardLayout({ children, title = '', lockViewport = f
             localStorage.removeItem('user_password_changed');
             localStorage.removeItem('user_client_id');
             localStorage.removeItem('impersonated_client');
+            clearImpersonatedClientCookie();
           }
           window.location.href = '/login';
           return;
@@ -315,6 +318,7 @@ export default function DashboardLayout({ children, title = '', lockViewport = f
 
   const stopImpersonating = () => {
     localStorage.removeItem('impersonated_client');
+    clearImpersonatedClientCookie();
     window.location.reload();
   };
 

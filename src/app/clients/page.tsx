@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout/DashboardLayout';
+import { setImpersonatedClientCookie } from '@/utils/impersonation';
 import styles from './clients.module.css';
 import { 
   Plus, 
@@ -338,6 +339,9 @@ export default function ClientsPage() {
           id: client.id,
           name: client.name
         }));
+        // Espelha em cookie: Server Components (ex: Home) não têm acesso a localStorage,
+        // e o cookie precisa estar setado antes do router.push buscar o RSC da rota.
+        setImpersonatedClientCookie({ id: client.id, name: client.name });
         router.push('/');
       }
     });

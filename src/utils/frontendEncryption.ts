@@ -3,6 +3,8 @@
 // recebia a chave crua, capaz de decriptar os dados de qualquer cliente do
 // sistema, não apenas os seus próprios.
 
+import { mapLeadsForDecryption, mapPurchasesForDecryption, applyDecryptedValues } from './leadDecryption';
+
 let sessionAvailable: boolean | null = null;
 
 async function getAuthToken(): Promise<string | null> {
@@ -58,46 +60,11 @@ export async function decryptLead(lead: any, _key?: string | null): Promise<any>
 export async function decryptLeadsList(leadsList: any[]): Promise<any[]> {
   if (!leadsList || leadsList.length === 0) return leadsList;
 
-  const jobs: Array<{ target: any; key: string }> = [];
-  const values: string[] = [];
-
-  const registerField = (obj: any, key: string) => {
-    if (obj && typeof obj[key] === 'string' && obj[key]) {
-      jobs.push({ target: obj, key });
-      values.push(obj[key]);
-    }
-  };
-
-  const results = leadsList.map((lead) => ({ ...lead }));
-
-  for (const lead of results) {
-    registerField(lead, 'email');
-    registerField(lead, 'phone');
-
-    if (lead.data) {
-      lead.data = { ...lead.data };
-      registerField(lead.data, 'email');
-      registerField(lead.data, 'e_mail');
-      registerField(lead.data, 'phone');
-      registerField(lead.data, 'telefone');
-      registerField(lead.data, 'whatsapp');
-
-      if (lead.data.fields) {
-        lead.data.fields = { ...lead.data.fields };
-        registerField(lead.data.fields, 'email');
-        registerField(lead.data.fields, 'e_mail');
-        registerField(lead.data.fields, 'phone');
-        registerField(lead.data.fields, 'telefone');
-      }
-    }
-  }
-
+  const { results, jobs, values } = mapLeadsForDecryption(leadsList);
   if (values.length === 0) return results;
 
   const decryptedValues = await decryptBatch(values);
-  jobs.forEach((job, i) => {
-    job.target[job.key] = decryptedValues[i];
-  });
+  applyDecryptedValues(jobs, decryptedValues);
 
   return results;
 }
@@ -110,28 +77,11 @@ export async function decryptPurchase(purchase: any, _key?: string | null): Prom
 export async function decryptPurchasesList(purchasesList: any[]): Promise<any[]> {
   if (!purchasesList || purchasesList.length === 0) return purchasesList;
 
-  const jobs: Array<{ target: any; key: string }> = [];
-  const values: string[] = [];
-  const results = purchasesList.map((purchase) => ({ ...purchase }));
-
-  const registerField = (obj: any, key: string) => {
-    if (obj && typeof obj[key] === 'string' && obj[key]) {
-      jobs.push({ target: obj, key });
-      values.push(obj[key]);
-    }
-  };
-
-  for (const purchase of results) {
-    registerField(purchase, 'customer_email');
-    registerField(purchase, 'customer_phone');
-  }
-
+  const { results, jobs, values } = mapPurchasesForDecryption(purchasesList);
   if (values.length === 0) return results;
 
   const decryptedValues = await decryptBatch(values);
-  jobs.forEach((job, i) => {
-    job.target[job.key] = decryptedValues[i];
-  });
+  applyDecryptedValues(jobs, decryptedValues);
 
   return results;
 }
