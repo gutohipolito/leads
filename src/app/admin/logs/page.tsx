@@ -408,7 +408,7 @@ export default function LogsPage() {
             <div className={styles.topSection}>
               <div className={`${styles.scoreCard} glass`}>
                 {/* Imagem de Fundo de IA */}
-                <div className={styles.cardBgImage} style={{ backgroundImage: 'url("/cyber_ai_bg.png")' }}></div>
+                <div className={styles.cardBgImage} style={{ backgroundImage: 'url("/cyber_ai_bg.webp")' }}></div>
 
                 {/* Cantoneiras HUD Sci-Fi */}
                 <div className={styles.hudCornerTopLeft}></div>

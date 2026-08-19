@@ -7,13 +7,15 @@ import { Users, Webhook, Activity, Shield, Clock, BarChart3, TrendingUp, PieChar
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import AnalyticsChart from '@/components/DashboardCharts/AnalyticsChart';
 import Loader from '@/components/Loader/Loader';
 import ExportModal from '@/components/ExportModal/ExportModal';
 import { decodeHtml } from '@/utils/decode';
 
 // Carregado sob demanda: só é necessário quando o usuário abre a visualização de mapa.
 const Brazil = dynamic(() => import('@react-map/brazil'), { ssr: false });
+
+// Recharts é pesado (~90KB gzip) e só é usado neste gráfico; tira do bundle principal.
+const AnalyticsChart = dynamic(() => import('@/components/DashboardCharts/AnalyticsChart'), { ssr: false });
 
 const STATE_NAME_TO_UF: Record<string, string> = {
   'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'

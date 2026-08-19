@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste do Tracker</title>
+</head>
+<body>
+    <h1>Página de Teste do Asthros Leads Tracker</h1>
+    
+    <!-- Formulário comum -->
+    <form id="meu-form">
+        <input type="text" name="nome" placeholder="Seu Nome" value="Cliente Teste Browser" required>
+        <input type="email" name="email" placeholder="Seu E-mail" value="teste-browser@asthros.com.br" required>
+        <input type="tel" name="telefone" placeholder="Seu Telefone" value="11999999999" required>
+        <button type="submit" id="submit-btn">Enviar Lead</button>
+    </form>
+
+    <br>
+    <!-- Botão de WhatsApp -->
+    <a href="https://wa.me/5511999999999" id="whatsapp-link">Falar no WhatsApp</a>
+
+    <!-- Carrega o tracker ofuscado localmente -->
+    <script src="/tracker.js"
+            data-client-id="1eac9561-8a12-4920-acc0-952a3abafbcc"
+            data-secret="whsec_l33faalwcc7ti4yswgb1h"
+            data-auto-track-forms="true"
+            async></script>
+</body>
+</html>

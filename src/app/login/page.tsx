@@ -11,18 +11,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [videoSrc, setVideoSrc] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isLocalDev, setIsLocalDev] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    // Dispara o carregamento do vídeo apenas após a página estar disponível
-    const timer = setTimeout(() => {
-      setVideoSrc('/3141208-uhd_3840_2160_25fps.mp4');
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     // Turnstile exige domínio configurado no painel da Cloudflare, o que não
@@ -92,18 +83,7 @@ export default function LoginPage() {
 
   return (
     <div className={styles.container}>
-      {videoSrc && (
-        <video 
-          autoPlay 
-          muted 
-          loop 
-          playsInline 
-          preload="none"
-          className={styles.videoBackground}
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
-      )}
+      <div className={styles.ambientGrid} />
       <div className={styles.videoOverlay} />
       <div className={styles.backgroundGlow} />
       

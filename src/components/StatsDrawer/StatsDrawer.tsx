@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { X, TrendingUp, Users, Target, Activity, Zap, Calendar } from 'lucide-react';
 import styles from './StatsDrawer.module.css';
-import AnalyticsChart from '../DashboardCharts/AnalyticsChart';
 import { supabase } from '@/lib/supabase';
 import Loader from '../Loader/Loader';
+
+// Só é necessário quando o drawer é aberto; tira o recharts do bundle inicial.
+const AnalyticsChart = dynamic(() => import('../DashboardCharts/AnalyticsChart'), { ssr: false });
 
 interface StatsDrawerProps {
   isOpen: boolean;
