@@ -618,31 +618,26 @@
             if (utms.content) attributes.utm_content = utms.content;
             if (utms.id) attributes.utm_id = utms.id;
 
-            // Comportamento & Engajamento só é anexado no checkout — fora dele o tempo na
-            // página muda a cada tick e forçaria reenvio continuo ao /cart/update.js em
-            // toda pagina do site, sem necessidade.
-            const isCheckout = isEcommerceCheckoutPage();
-            if (isCheckout) {
-                attributes.asthros_time_on_page = getActiveTimeOnPage();
-                attributes.asthros_scroll_depth = maxScroll + '%';
-                attributes.asthros_conversion_time_seconds = String(getConversionTime());
-                attributes.asthros_session_duration_seconds = String(getSessionDurationSeconds());
-                attributes.asthros_page_url = window.location.href;
-            }
+            // O checkout de verdade da Shopify roda em checkout.shopify.com (Checkout
+            // Extensibility) — esse script nunca chega a carregar lá, então esperar por
+            // isEcommerceCheckoutPage() aqui nunca dispara. O jeito de fazer a Jornada &
+            // Comportamento chegar no pedido é manter o cart.attributes sempre atualizado
+            // enquanto o visitante ainda está nas páginas da própria loja (produto/carrinho);
+            // a Shopify copia esses atributos pro pedido no momento do redirect.
+            attributes.asthros_time_on_page = getActiveTimeOnPage();
+            attributes.asthros_scroll_depth = maxScroll + '%';
+            attributes.asthros_conversion_time_seconds = String(getConversionTime());
+            attributes.asthros_session_duration_seconds = String(getSessionDurationSeconds());
+            attributes.asthros_page_url = window.location.href;
 
             if (Object.keys(attributes).length === 0) return;
-
-            const signature = JSON.stringify(attributes);
-            // No checkout o comportamento muda a cada tick por natureza — não faz sentido
-            // dedupelar ali. Fora do checkout, mantém a dedupe original.
-            if (!isCheckout && window.__asthrosShopifyAttrs === signature) return;
-            window.__asthrosShopifyAttrs = signature;
 
             fetch('/cart/update.js', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({ attributes: attributes }),
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                keepalive: true
             }).catch(function() {});
         } catch (e) {}
     }
@@ -662,6 +657,14 @@
         }
         setInterval(decorateCheckoutLinks, 3000);
         setInterval(syncEcommerceAttribution, 4000);
+
+        // Flush de última hora: o clique em "Finalizar compra" tira o visitante do domínio
+        // da loja antes do próximo tick de 4s rodar, perdendo o snapshot mais recente de
+        // Jornada & Comportamento. keepalive garante que o fetch sobrevive à navegação.
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') syncShopifyCartAttributes();
+        });
+        window.addEventListener('pagehide', syncShopifyCartAttributes);
     }
 
     window.Asthros = window.Asthros || {};
