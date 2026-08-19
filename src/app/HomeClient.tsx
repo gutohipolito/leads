@@ -136,7 +136,7 @@ export default function HomeClient({
 
         let analyticsQuery = supabase
           .from('leads')
-          .select('*, clients(name, logo_url), webhooks(name)')
+          .select('*, clients(name, logo_url, logo_bg), webhooks(name)')
           .neq('source', 'test_simulation')
           .gte('created_at', dataLimite)
           .order('created_at', { ascending: false });
@@ -190,7 +190,7 @@ export default function HomeClient({
         // inicial) em vez de recarregar leads + compras + contagem de clientes inteiros.
         const { data: fullLead } = await supabase
           .from('leads')
-          .select('*, clients(name, logo_url), webhooks(name)')
+          .select('*, clients(name, logo_url, logo_bg), webhooks(name)')
           .eq('id', newLead.id)
           .single();
         if (!fullLead) return;
@@ -247,15 +247,20 @@ export default function HomeClient({
     const leadsInPeriod = filteredLeads.filter(l => l.created_at >= periodStart);
 
     // Performance por Parceiro (calculado de forma reativa a partir de leadsInPeriod)
-    const partnerStats: Record<string, { name: string; logoUrl: string | null; count: number }> = {};
+    const partnerStats: Record<string, { name: string; logoUrl: string | null; logoBg: string | null; count: number }> = {};
     leadsInPeriod.forEach(l => {
       const key = l.client_id || l.clients?.name || 'desconhecido';
       if (!partnerStats[key]) {
-        partnerStats[key] = { name: l.clients?.name || 'Desconhecido', logoUrl: l.clients?.logo_url || null, count: 0 };
+        partnerStats[key] = {
+          name: l.clients?.name || 'Desconhecido',
+          logoUrl: l.clients?.logo_url || null,
+          logoBg: l.clients?.logo_bg || null,
+          count: 0,
+        };
       }
       partnerStats[key].count += 1;
     });
-    const performanceData: { id: string; name: string; logoUrl: string | null; count: number }[] = Object.entries(partnerStats)
+    const performanceData: { id: string; name: string; logoUrl: string | null; logoBg: string | null; count: number }[] = Object.entries(partnerStats)
       .map(([id, p]) => ({ id, ...p }))
       .sort((a, b) => b.count - a.count);
 
@@ -1083,7 +1088,7 @@ export default function HomeClient({
                 {statsSummary.performanceData.map((p: any, i: number) => (
                   <div key={p.id} className={`${styles.partnerCard} ${i === 0 ? styles.partnerCardTop : ''}`}>
                     {i < 3 && <span className={styles.partnerRankBadge}>#{i + 1}</span>}
-                    <div className={styles.partnerLogoWrapper}>
+                    <div className={styles.partnerLogoWrapper} style={{ backgroundColor: p.logoBg || 'rgba(86, 215, 253, 0.1)' }}>
                       {p.logoUrl && !failedPartnerLogos[p.id] ? (
                         <img
                           src={p.logoUrl}
