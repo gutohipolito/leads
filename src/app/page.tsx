@@ -21,6 +21,28 @@ const STATE_NAME_TO_UF: Record<string, string> = {
   'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
 };
 
+type LeadCategory = 'whatsapp' | 'selector' | 'keyword' | 'form';
+
+// Categoriza um lead uma única vez (a mesma lógica de match_type era recalculada
+// várias vezes por lead — em filteredLeads, statsSummary e no chartData por dia).
+const getLeadCategory = (l: any): LeadCategory => {
+  if (l.source === 'whatsapp_tracker') return 'whatsapp';
+  if (l.source === 'custom_tracker') {
+    const isSelector =
+      l.data?.behavior?.match_type?.toLowerCase().includes('selector') ||
+      l.data?.match_type?.toLowerCase().includes('selector') ||
+      l.name?.toLowerCase().includes('selector');
+    if (isSelector) return 'selector';
+
+    const isKeyword =
+      l.data?.behavior?.match_type?.toLowerCase().includes('keyword') ||
+      l.data?.match_type?.toLowerCase().includes('keyword') ||
+      l.name?.toLowerCase().includes('keyword');
+    if (isKeyword) return 'keyword';
+  }
+  return 'form';
+};
+
 const isPaidMedia = (lead: any): boolean => {
   if (!lead || !lead.data) return false;
   
@@ -213,27 +235,23 @@ export default function Home() {
     };
   }, [autoRefreshInterval]);
 
+  // Categoriza cada lead uma única vez por mudança em allLeads (evita recalcular
+  // match_type repetidamente em filteredLeads, statsSummary e no chartData).
+  const categorizedLeads = useMemo(
+    () => allLeads.map(l => ({ ...l, _category: getLeadCategory(l) })),
+    [allLeads]
+  );
+
   // Filtro de leads e computação reativa na memória
   const filteredLeads = useMemo(() => {
-    return allLeads.filter(l => {
-      const isSelector = l.source === 'custom_tracker' && (
-        l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
-        l.data?.match_type?.toLowerCase().includes('selector') || 
-        l.name?.toLowerCase().includes('selector')
-      );
-      const isKeyword = l.source === 'custom_tracker' && (
-        l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
-        l.data?.match_type?.toLowerCase().includes('keyword') || 
-        l.name?.toLowerCase().includes('keyword')
-      );
-
-      if (activeFilter === 'whatsapp') return l.source === 'whatsapp_tracker';
-      if (activeFilter === 'selectors') return isSelector;
-      if (activeFilter === 'keywords') return isKeyword;
-      if (activeFilter === 'forms') return l.source !== 'whatsapp_tracker' && !isSelector && !isKeyword;
+    return categorizedLeads.filter(l => {
+      if (activeFilter === 'whatsapp') return l._category === 'whatsapp';
+      if (activeFilter === 'selectors') return l._category === 'selector';
+      if (activeFilter === 'keywords') return l._category === 'keyword';
+      if (activeFilter === 'forms') return l._category === 'form';
       return true; // 'all'
     });
-  }, [allLeads, activeFilter]);
+  }, [categorizedLeads, activeFilter]);
 
   const statsSummary = useMemo(() => {
     const now = new Date();
@@ -260,21 +278,9 @@ export default function Home() {
     const ecommerceRevenue = purchasesInPeriod.reduce((acc, p) => acc + Number(p.total_amount || p.amount || 0), 0);
 
     // Pizza (Divisão de origens)
-    const wppCount = leadsInPeriod.filter(l => l.source === 'whatsapp_tracker').length;
-    const selectorCount = leadsInPeriod.filter(l => 
-      l.source === 'custom_tracker' && (
-        l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
-        l.data?.match_type?.toLowerCase().includes('selector') || 
-        l.name?.toLowerCase().includes('selector')
-      )
-    ).length;
-    const keywordCount = leadsInPeriod.filter(l => 
-      l.source === 'custom_tracker' && (
-        l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
-        l.data?.match_type?.toLowerCase().includes('keyword') || 
-        l.name?.toLowerCase().includes('keyword')
-      )
-    ).length;
+    const wppCount = leadsInPeriod.filter(l => l._category === 'whatsapp').length;
+    const selectorCount = leadsInPeriod.filter(l => l._category === 'selector').length;
+    const keywordCount = leadsInPeriod.filter(l => l._category === 'keyword').length;
     const formCount = leadsInPeriod.length - wppCount - selectorCount - keywordCount;
 
     const totalVolume = leadsInPeriod.length + ecommerceCount;
@@ -351,21 +357,9 @@ export default function Home() {
         return ts >= dayStart && ts < dayEnd;
       });
 
-      const dayWpp = dayLeads.filter(l => l.source === 'whatsapp_tracker').length;
-      const daySel = dayLeads.filter(l => 
-        l.source === 'custom_tracker' && (
-          l.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
-          l.data?.match_type?.toLowerCase().includes('selector') || 
-          l.name?.toLowerCase().includes('selector')
-        )
-      ).length;
-      const dayKey = dayLeads.filter(l => 
-        l.source === 'custom_tracker' && (
-          l.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
-          l.data?.match_type?.toLowerCase().includes('keyword') || 
-          l.name?.toLowerCase().includes('keyword')
-        )
-      ).length;
+      const dayWpp = dayLeads.filter(l => l._category === 'whatsapp').length;
+      const daySel = dayLeads.filter(l => l._category === 'selector').length;
+      const dayKey = dayLeads.filter(l => l._category === 'keyword').length;
       const dayForm = dayLeads.length - dayWpp - daySel - dayKey;
 
       const dayEcommerce = purchasesInPeriod.filter(p => {
@@ -1446,17 +1440,8 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {statsSummary.recentLeads.map((lead) => {
-                    const isSelector = lead.source === 'custom_tracker' && (
-                      lead.data?.behavior?.match_type?.toLowerCase().includes('selector') || 
-                      lead.data?.match_type?.toLowerCase().includes('selector') || 
-                      lead.name?.toLowerCase().includes('selector')
-                    );
-
-                    const isKeyword = lead.source === 'custom_tracker' && (
-                      lead.data?.behavior?.match_type?.toLowerCase().includes('keyword') || 
-                      lead.data?.match_type?.toLowerCase().includes('keyword') || 
-                      lead.name?.toLowerCase().includes('keyword')
-                    );
+                    const isSelector = lead._category === 'selector';
+                    const isKeyword = lead._category === 'keyword';
 
                     return (
                       <tr key={lead.id} onClick={() => setSelectedLead(lead)} className={styles.clickableRow}>
