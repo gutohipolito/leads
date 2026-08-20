@@ -11,6 +11,12 @@
   gap: 1rem;
 }
 
+@media (max-width: 768px) {
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card {
   padding: 1.25rem;
   display: flex;

@@ -506,6 +506,12 @@
   font-size: 0.9rem;
 }
 
+@media (max-width: 768px) {
+  .table {
+    min-width: 760px;
+  }
+}
+
 .table th {
   padding: 1rem 1.25rem;
   background: rgba(0, 0, 0, 0.2);

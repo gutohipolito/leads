@@ -83,6 +83,17 @@ html[data-layout='viewport'] body {
   overflow: hidden;
 }
 
+/* No mobile o conteúdo empilha em coluna única e fica mais alto que a tela —
+   sem esse reset, o lock acima deixa boa parte do dashboard inacessível
+   (nenhum scroll de página, nenhum scroll interno alcançável). */
+@media (max-width: 768px) {
+  html[data-layout='viewport'],
+  html[data-layout='viewport'] body {
+    height: auto;
+    overflow: visible auto;
+  }
+}
+
 /* Glassmorphism Refined */
 .glass {
   background: var(--card) !important;

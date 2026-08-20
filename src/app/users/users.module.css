@@ -63,6 +63,20 @@
   border-collapse: collapse;
 }
 
+@media (max-width: 768px) {
+  .topActions {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .tableWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table {
+    min-width: 640px;
+  }
+}
+
 .table th {
   text-align: left;
   padding: 1.5rem;

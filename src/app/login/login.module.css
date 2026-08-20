@@ -6,6 +6,7 @@
   background: radial-gradient(circle at 80% 20%, rgba(0, 242, 255, 0.04) 0%, #020617 60%);
   position: relative;
   overflow: hidden;
+  padding: 1.5rem;
 }
 
 .ambientGrid {
@@ -53,6 +54,12 @@
   gap: 2rem;
   background: rgba(2, 6, 23, 0.7) !important;
   backdrop-filter: blur(20px) !important;
+}
+
+@media (max-width: 480px) {
+  .loginCard {
+    padding: 2.25rem 1.5rem;
+  }
 }
 
 .header {

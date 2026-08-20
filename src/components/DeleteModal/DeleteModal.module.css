@@ -138,6 +138,15 @@
   color: var(--foreground);
 }
 
+@media (max-width: 768px) {
+  .overlay {
+    padding: 1rem;
+  }
+  .modal {
+    padding: 2rem 1.5rem !important;
+  }
+}
+
 .cancelBtn:hover {
   background: rgba(0, 0, 0, 0.05);
   border-color: var(--border);

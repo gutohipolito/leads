@@ -1876,3 +1876,64 @@
   opacity: 0.65;
   font-weight: 500 !important;
 }
+
+/* Mobile: a Home usa lockViewport (altura travada em 100dvh, colunas fixas
+   preenchendo exatamente a tela). Em telas estreitas o conteúdo empilha em
+   coluna única e fica bem mais alto — sem este bloco boa parte do dashboard
+   fica inacessível (o lock global já foi destravado em globals.css /
+   DashboardLayout.module.css; aqui é só desfazer a cascata de alturas fixas
+   que dependia dele). */
+@media (max-width: 768px) {
+  .dashboard {
+    height: auto;
+    overflow: visible;
+    flex: none;
+  }
+
+  .mainGrid,
+  .bottomGrid {
+    grid-template-columns: 1fr;
+    flex: none;
+    height: auto;
+  }
+
+  .chartCard,
+  .logsCard,
+  .sideCharts,
+  .utmCard {
+    height: auto;
+  }
+
+  .chartArea {
+    flex: none;
+    height: 260px;
+    min-height: 260px;
+  }
+
+  .originsWrapper,
+  .secondaryOriginsGrid,
+  .mapContainer {
+    flex: none;
+  }
+
+  .heroOriginsRow,
+  .mapContainer {
+    flex-direction: column;
+  }
+
+  .utmList {
+    flex: none;
+    max-height: 260px;
+  }
+
+  .tableWrapper {
+    flex: none;
+    max-height: 320px;
+  }
+
+  .partnerGrid {
+    flex: none;
+    max-height: 320px;
+    grid-template-columns: 1fr;
+  }
+}

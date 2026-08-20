@@ -11,6 +11,12 @@
   }
 }
 
+@media (max-width: 768px) {
+  .configCard, .statusCard {
+    padding: 1.25rem !important;
+  }
+}
+
 .configCard, .statusCard {
   padding: 2rem !important;
   display: flex;

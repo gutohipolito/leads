@@ -23,6 +23,17 @@
   box-shadow: var(--glass-shadow) !important;
 }
 
+@media (max-width: 768px) {
+  .overlay {
+    padding: 1rem;
+  }
+  .modal {
+    padding: 1.5rem 1.25rem !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
 .iconWrapper {
   width: 80px;
   height: 80px;

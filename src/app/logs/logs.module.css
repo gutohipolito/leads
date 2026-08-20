@@ -11,6 +11,13 @@
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .searchBar {
+    flex: 1 1 100%;
+  }
 }
 
 .searchBar {

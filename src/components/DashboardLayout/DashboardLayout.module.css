@@ -131,4 +131,37 @@
   .pageContent {
     padding: 1rem 1rem 2.5rem;
   }
+
+  /* Destrava o lockViewport (usado pela Home): no mobile o conteúdo empilha em
+     coluna única e fica mais alto que a tela, então a página volta a rolar
+     normalmente em vez de depender de scroll interno fixo por altura. */
+  .layoutWrapperViewport {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .mainContainerViewport {
+    height: auto;
+    max-height: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .pageContentViewport {
+    min-height: 0;
+    overflow: visible;
+    padding-bottom: 1.25rem;
+  }
+  .innerWrapperViewport {
+    height: auto;
+    overflow: visible;
+    padding-bottom: 2rem;
+  }
+
+  .impersonationBanner {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }

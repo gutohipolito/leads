@@ -9,6 +9,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .tabDesc {
@@ -1618,6 +1620,18 @@
 @media (max-width: 768px) {
   .outboundResultGrid {
     grid-template-columns: 1fr;
+  }
+  .headerActions .primaryBtn {
+    width: 100%;
+    justify-content: center;
+  }
+  .tabsContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabBtn {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 

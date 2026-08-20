@@ -10,12 +10,15 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .headerActions {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .countBadge {
@@ -76,6 +79,16 @@
   border-radius: 24px;
   overflow: hidden;
   box-shadow: var(--glass-shadow);
+}
+
+@media (max-width: 768px) {
+  .tableWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table {
+    min-width: 560px;
+  }
 }
 
 .table {
