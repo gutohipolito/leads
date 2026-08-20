@@ -41,7 +41,7 @@
   background: rgba(0, 209, 255, 0.1);
   color: var(--primary);
   padding: 0.5rem 1rem;
-  border-radius: 2rem;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 0.5rem;

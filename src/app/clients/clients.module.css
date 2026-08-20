@@ -197,7 +197,7 @@
 .statusBadge {
   display: inline-flex;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -479,7 +479,7 @@
 
 .cardBadge {
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1091,7 +1091,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;

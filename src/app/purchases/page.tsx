@@ -688,7 +688,7 @@ export default function PurchasesPage() {
   };
 
   return (
-    <DashboardLayout title="Gestão de Vendas & Conversões">
+    <DashboardLayout>
       <div className={styles.container}>
         {/* Cabeçalho da Página */}
         <div className={styles.headerBar}>

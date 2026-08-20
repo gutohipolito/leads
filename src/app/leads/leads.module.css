@@ -118,7 +118,7 @@
   padding: 6px 14px;
   background: rgba(var(--foreground-rgb), 0.05);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 800;
   color: var(--muted-foreground);

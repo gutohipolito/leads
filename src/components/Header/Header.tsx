@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { playBoostedAudio } from '@/utils/audio';
 
 interface HeaderProps {
-  title: React.ReactNode;
+  title?: React.ReactNode;
   onMenuClick?: () => void;
 }
 
@@ -327,7 +327,7 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
             <Menu size={20} />
           </button>
         )}
-        <h1 className={styles.title}>{title}</h1>
+        {title && <h1 className={styles.title}>{title}</h1>}
       </div>
       
       <div className={styles.right}>
