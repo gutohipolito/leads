@@ -1243,12 +1243,13 @@ export default function UptimePage() {
                     <ExternalLink size={12} />
                   </a>
 
-                  {offlineReason && (
-                    <div className={styles.offlineReason} title={offlineReason}>
-                      <AlertTriangle size={13} />
-                      <span>{offlineReason}</span>
-                    </div>
-                  )}
+                  <div
+                    className={`${styles.offlineReason} ${offlineReason ? styles.hasReason : ''}`}
+                    title={offlineReason || undefined}
+                  >
+                    <AlertTriangle size={13} />
+                    <span>{offlineReason}</span>
+                  </div>
 
                   {/* Histórico Visual de Pings */}
                   <div className={styles.chartAndUptime}>

@@ -276,12 +276,19 @@
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: transparent;
+  border: 1px solid transparent;
   color: #ef4444;
   font-size: 0.72rem;
   font-weight: 700;
   min-width: 0;
+  visibility: hidden;
+}
+
+.offlineReason.hasReason {
+  visibility: visible;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .offlineReason svg {
