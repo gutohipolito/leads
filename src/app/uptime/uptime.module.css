@@ -121,21 +121,9 @@
 
 .monitorsList {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
   width: 100%;
-}
-
-@media (max-width: 1024px) {
-  .monitorsList {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .monitorsList {
-    grid-template-columns: 1fr;
-  }
 }
 
 .monitorCard {
@@ -163,9 +151,19 @@
   box-shadow: 0 12px 40px 0 rgba(16, 185, 129, 0.08), 0 0 15px 0 rgba(16, 185, 129, 0.05);
 }
 
+.monitorCard.offlineCard {
+  border-color: rgba(239, 68, 68, 0.35);
+  animation: offlineAlertPulse 2.2s infinite;
+}
+
 .monitorCard.offlineCard:hover {
-  border-color: rgba(239, 68, 68, 0.3);
-  box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.08), 0 0 15px 0 rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.1), 0 0 15px 0 rgba(239, 68, 68, 0.08);
+}
+
+@keyframes offlineAlertPulse {
+  0%, 100% { box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(239, 68, 68, 0.25); }
+  50% { box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15), 0 0 18px 3px rgba(239, 68, 68, 0.25); }
 }
 
 .monitorHeader {
@@ -754,8 +752,7 @@
 
 .pingHelpIcon {
   color: var(--primary);
-  opacity: 0.8;
-  animation: pulseHelpIcon 2.5s infinite ease-in-out;
+  opacity: 0.6;
   transition: color 0.2s, opacity 0.2s, transform 0.2s;
 }
 
@@ -763,20 +760,6 @@
   color: var(--primary);
   opacity: 1;
   transform: scale(1.2);
-  animation-play-state: paused;
-}
-
-@keyframes pulseHelpIcon {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0px rgba(56, 189, 248, 0));
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.18);
-    filter: drop-shadow(0 0 5px var(--primary));
-    opacity: 1;
-  }
 }
 
 .pingTooltipText {
@@ -1024,6 +1007,105 @@
   font-size: 0.65rem;
   font-weight: 500;
   opacity: 0.7;
+}
+
+/* Barra de Busca e Filtro de Status */
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.searchInputWrapper {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  max-width: 340px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+  border-radius: 10px;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(86, 215, 253, 0.15);
+}
+
+.filterPills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterPill:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--foreground);
+}
+
+.filterPill.activePill {
+  background: rgba(86, 215, 253, 0.12);
+  border-color: rgba(86, 215, 253, 0.35);
+  color: var(--primary);
+}
+
+.filterPill.pillOffline.activePill {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.filterPill.pillOnline.activePill {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #10b981;
+}
+
+.pillCount {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
 }
 
 

@@ -17,7 +17,9 @@ import {
   X,
   Pencil,
   HelpCircle,
-  FileText
+  FileText,
+  Search,
+  ListFilter
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Loader from '@/components/Loader/Loader';
@@ -38,6 +40,8 @@ export default function UptimePage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
 
   // Controle de edição de monitor
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -982,6 +986,21 @@ export default function UptimePage() {
 
   const uptimeTitle = impersonatedName ? `Uptime: ${impersonatedName}` : "Monitoramento de Uptime";
 
+  // Ordena instabilidades primeiro e aplica busca/filtro de status
+  const statusPriority = (status: string) => (status === 'offline' ? 0 : status === 'checking' ? 1 : 2);
+  const filteredMonitors = monitors
+    .filter(m => {
+      if (statusFilter !== 'all' && m.status !== statusFilter) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.trim().toLowerCase();
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.url.toLowerCase().includes(q) ||
+        (m.clients?.name || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => statusPriority(a.status) - statusPriority(b.status));
+
   return (
     <DashboardLayout>
       <div className={styles.container}>
@@ -1103,10 +1122,54 @@ export default function UptimePage() {
           </div>
         </div>
 
+        {/* Barra de Busca e Filtro de Status */}
+        {totalMonitors > 0 && (
+          <div className={styles.filterBar}>
+            <div className={styles.searchInputWrapper}>
+              <Search size={15} className={styles.searchIcon} />
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Buscar por nome, cliente ou URL..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.filterPills}>
+              <button
+                type="button"
+                className={`${styles.filterPill} ${statusFilter === 'all' ? styles.activePill : ''}`}
+                onClick={() => setStatusFilter('all')}
+              >
+                <ListFilter size={12} />
+                <span>Todos</span>
+                <span className={styles.pillCount}>{totalMonitors}</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.filterPill} ${styles.pillOnline} ${statusFilter === 'online' ? styles.activePill : ''}`}
+                onClick={() => setStatusFilter(statusFilter === 'online' ? 'all' : 'online')}
+              >
+                <span>Online</span>
+                <span className={styles.pillCount}>{onlineMonitors}</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.filterPill} ${styles.pillOffline} ${statusFilter === 'offline' ? styles.activePill : ''}`}
+                onClick={() => setStatusFilter(statusFilter === 'offline' ? 'all' : 'offline')}
+              >
+                <span>Offline</span>
+                <span className={styles.pillCount}>{offlineMonitors}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className={styles.mainGrid}>
           {/* Listagem de Monitores */}
           <div className={styles.monitorsList}>
-            {monitors.map(monitor => {
+            {filteredMonitors.map(monitor => {
               // Preenche histórico com barras vazias caso haja menos de 30 verificações
               const emptyBarsCount = Math.max(0, 30 - monitor.logs.length);
               const emptyBars = Array.from({ length: emptyBarsCount });
@@ -1140,7 +1203,8 @@ export default function UptimePage() {
                           <Pencil size={12} />
                         </button>
                       </h3>
-                      {monitor.clients?.name && (
+                      {monitor.clients?.name &&
+                        monitor.clients.name.trim().toLowerCase() !== monitor.name.trim().toLowerCase() && (
                         <span className={styles.monitorClientName}>{monitor.clients.name}</span>
                       )}
                     </div>
@@ -1208,13 +1272,13 @@ export default function UptimePage() {
                         </span>: <strong>{monitor.last_ping_ms ? `${monitor.last_ping_ms}ms` : 'N/A'}</strong>
                         {monitor.last_ping_ms && (
                           <span className={`${styles.latencyLabel} ${
-                            monitor.last_ping_ms <= 150 
-                              ? styles.latencyFast 
-                              : monitor.last_ping_ms <= 400 
-                              ? styles.latencyMedium 
+                            monitor.last_ping_ms <= 300
+                              ? styles.latencyFast
+                              : monitor.last_ping_ms <= 800
+                              ? styles.latencyMedium
                               : styles.latencySlow
                           }`}>
-                            {monitor.last_ping_ms <= 150 ? 'Rápido' : monitor.last_ping_ms <= 400 ? 'Moderado' : 'Lento'}
+                            {monitor.last_ping_ms <= 300 ? 'Rápido' : monitor.last_ping_ms <= 800 ? 'Moderado' : 'Lento'}
                           </span>
                         )}
                       </span>
@@ -1238,6 +1302,14 @@ export default function UptimePage() {
                 <Globe size={48} />
                 <p>Nenhuma página de vendas está cadastrada para monitoramento de uptime.</p>
                 <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Clique no botão "Adicionar Monitor" no topo para começar.</p>
+              </div>
+            )}
+
+            {monitors.length > 0 && filteredMonitors.length === 0 && (
+              <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
+                <Search size={40} />
+                <p>Nenhum monitor encontrado para essa busca/filtro.</p>
+                <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Tente limpar a busca ou selecionar "Todos".</p>
               </div>
             )}
           </div>
