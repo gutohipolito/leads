@@ -1,6 +1,28 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Limite de tempo para a checagem de sessão no Supabase. Se a chamada travar
+// (ex: instabilidade momentânea do Supabase Auth), falha rápido em vez de
+// deixar a Vercel matar a invocação inteira do middleware com 504
+// MIDDLEWARE_INVOCATION_TIMEOUT — o catch abaixo já nega o acesso por segurança.
+const AUTH_CHECK_TIMEOUT_MS = 5000
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Timeout de ${ms}ms excedido`)), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        clearTimeout(timer)
+        reject(err)
+      }
+    )
+  })
+}
+
 function isUnauthenticatedPublicPath(pathname: string) {
   return (
     pathname.startsWith('/api/webhooks') ||
@@ -116,7 +138,7 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), AUTH_CHECK_TIMEOUT_MS)
 
     // Lógica de proteção de rotas
     const isPublicAsset = pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|js)$/)
