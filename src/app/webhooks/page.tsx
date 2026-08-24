@@ -37,12 +37,48 @@ import {
   Smartphone,
   Activity,
   Lock,
-  Search
+  Search,
+  Clock,
+  Inbox
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAction } from '@/utils/logger';
 import Loader from '@/components/Loader/Loader';
 import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
+
+// Um webhook "active" no banco só diz que ninguém o desativou manualmente —
+// não diz se ele está realmente recebendo leads. Cruzamos com webhook_logs
+// pra distinguir integração viva de integração morta (sem sinal há dias).
+const WEBHOOK_STALE_DAYS = 14;
+
+type WebhookHealth = 'active' | 'stale' | 'waiting' | 'inactive';
+
+function getWebhookHealth(webhook: { status: string; lastReceivedAt: string | null }): WebhookHealth {
+  if (webhook.status !== 'active') return 'inactive';
+  if (!webhook.lastReceivedAt) return 'waiting';
+  const diffDays = (Date.now() - new Date(webhook.lastReceivedAt).getTime()) / 86400000;
+  return diffDays > WEBHOOK_STALE_DAYS ? 'stale' : 'active';
+}
+
+function formatLastReceived(iso: string | null): string {
+  if (!iso) return 'Nunca recebeu';
+  const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diffMin < 1) return 'agora mesmo';
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `há ${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
+  const diffMonths = Math.floor(diffDays / 30);
+  return `há ${diffMonths} ${diffMonths > 1 ? 'meses' : 'mês'}`;
+}
+
+const WEBHOOK_HEALTH_META: Record<WebhookHealth, { label: string; briefClass: string }> = {
+  active: { label: 'Ativo', briefClass: 'briefStatusActive' },
+  stale: { label: 'Sem atividade', briefClass: 'briefStatusStale' },
+  waiting: { label: 'Aguardando sinal', briefClass: 'briefStatusWaiting' },
+  inactive: { label: 'Inativo', briefClass: 'briefStatusInactive' },
+};
 
 export default function WebhooksManagePage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -218,11 +254,36 @@ export default function WebhooksManagePage() {
         if (activeClientId) query = query.eq('client_id', activeClientId);
         const { data: webhooksData } = await query;
         if (webhooksData) {
-          setWebhooks(webhooksData.map(w => ({
-            ...w,
-            clientName: w.clients?.name || 'N/A',
-            fullUrl: `${window.location.origin}/api/leads/${w.client_id}`
-          })));
+          // Cruza com webhook_logs para saber quem realmente está recebendo sinal
+          const webhookIds = webhooksData.map(w => w.id);
+          const activityByWebhook: Record<string, { count: number; lastAt: string }> = {};
+          if (webhookIds.length > 0) {
+            const { data: logsData } = await supabase
+              .from('webhook_logs')
+              .select('webhook_id, created_at')
+              .in('webhook_id', webhookIds)
+              .order('created_at', { ascending: false });
+            logsData?.forEach(log => {
+              const entry = activityByWebhook[log.webhook_id];
+              if (entry) {
+                entry.count += 1;
+              } else {
+                // Primeira ocorrência de cada webhook_id já é a mais recente (ordenado desc)
+                activityByWebhook[log.webhook_id] = { count: 1, lastAt: log.created_at };
+              }
+            });
+          }
+
+          setWebhooks(webhooksData.map(w => {
+            const activity = activityByWebhook[w.id];
+            return {
+              ...w,
+              clientName: w.clients?.name || 'N/A',
+              fullUrl: `${window.location.origin}/api/leads/${w.client_id}`,
+              totalReceived: activity?.count || 0,
+              lastReceivedAt: activity?.lastAt || null
+            };
+          }));
         }
         if (isUserAdmin && !impersonated) {
           const { data: clientsData } = await supabase.from('clients').select('id, name').eq('status', 'active');
@@ -461,26 +522,43 @@ export default function WebhooksManagePage() {
 
         {activeTab === 'webhooks' ? (
           <div className={styles.webhookGrid}>
-              {webhooks.map((webhook) => (
-                <div key={webhook.id} className={`${styles.compactCard} glass`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
-                  <div className={styles.cardHeaderCompact}>
-                    <div className={styles.typeIcon}><Server size={20} /></div>
-                    <div className={styles.mainInfo}>
-                      {isAdmin && <span className={styles.clientTag}>{webhook.clientName}</span>}
-                      <h4>{webhook.name}</h4>
+              {webhooks.map((webhook) => {
+                const health = getWebhookHealth(webhook);
+                const healthMeta = WEBHOOK_HEALTH_META[health];
+                return (
+                  <div key={webhook.id} className={`${styles.compactCard} glass`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
+                    <div className={styles.cardHeaderCompact}>
+                      <div className={styles.typeIcon}><Server size={20} /></div>
+                      <div className={styles.mainInfo}>
+                        {isAdmin && <span className={styles.clientTag}>{webhook.clientName}</span>}
+                        <h4>{webhook.name}</h4>
+                      </div>
+                      <div className={`${styles.miniStatus} ${styles[health]}`} title={healthMeta.label} />
                     </div>
-                    <div className={`${styles.miniStatus} ${webhook.status === 'active' ? styles.active : styles.inactive}`} />
-                  </div>
-                  <div className={styles.cardUrl}>{webhook.fullUrl}</div>
-                  <div className={styles.cardBrief}>
-                    <div className={`${styles.briefItem} ${webhook.status === 'active' ? styles.briefStatusActive : styles.briefStatusInactive}`}>
-                      <Zap size={13} />
-                      <span>{webhook.status === 'active' ? 'Ativo' : 'Inativo'}</span>
+                    <div className={styles.cardUrl}>{webhook.fullUrl}</div>
+
+                    <div className={styles.cardStatsRow}>
+                      <div className={styles.statPill}>
+                        <Inbox size={13} />
+                        <span>{webhook.totalReceived}</span>
+                        <small>recebidos</small>
+                      </div>
+                      <div className={styles.statPill}>
+                        <Clock size={13} />
+                        <span className={styles.statPillTruncate}>{formatLastReceived(webhook.lastReceivedAt)}</span>
+                      </div>
                     </div>
-                    <ArrowRight size={15} className={styles.arrow} />
+
+                    <div className={styles.cardBrief}>
+                      <div className={`${styles.briefItem} ${styles[healthMeta.briefClass]}`}>
+                        {health === 'stale' ? <AlertTriangle size={13} /> : health === 'inactive' ? <ShieldAlert size={13} /> : health === 'waiting' ? <Clock size={13} /> : <Zap size={13} />}
+                        <span>{healthMeta.label}</span>
+                      </div>
+                      <ArrowRight size={15} className={styles.arrow} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
         ) : (
           <div className={styles.whatsappTrackerSection}>

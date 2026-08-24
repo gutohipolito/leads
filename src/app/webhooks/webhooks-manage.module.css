@@ -180,6 +180,16 @@
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
 
+.miniStatus.stale {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.miniStatus.waiting {
+  background: #64748b;
+  box-shadow: 0 0 6px rgba(100, 116, 139, 0.4);
+}
+
 @keyframes pulseGreen {
   0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
   70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
@@ -191,12 +201,58 @@
   font-size: 0.7rem;
   color: var(--muted-foreground);
   opacity: 0.55;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: monospace;
   letter-spacing: -0.01em;
+}
+
+/* Linha de estatísticas de atividade real (recebidos / última vez) */
+.cardStatsRow {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.statPill {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  flex: 1;
+  min-width: 0;
+}
+
+.statPill svg {
+  flex-shrink: 0;
+  color: var(--primary);
+  opacity: 0.75;
+}
+
+.statPill span {
+  font-weight: 700;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.statPillTruncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.statPill small {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.8;
 }
 
 /* Rodapé do card */
@@ -224,6 +280,14 @@
 
 .briefStatusInactive {
   color: #ef4444;
+}
+
+.briefStatusStale {
+  color: #f59e0b;
+}
+
+.briefStatusWaiting {
+  color: var(--muted-foreground);
 }
 
 .arrow {
