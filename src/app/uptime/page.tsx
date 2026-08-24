@@ -1188,7 +1188,7 @@ export default function UptimePage() {
                   <div className={styles.monitorHeader}>
                     <div className={styles.monitorInfo}>
                       <h3>
-                        {monitor.name}
+                        <span className={styles.monitorNameText} title={monitor.name}>{monitor.name}</span>
                         {monitor.source === 'auto' && (
                           <span className={styles.autoBadge} title="Criado automaticamente a partir do cadastro do cliente">
                             Automático
@@ -1205,10 +1205,10 @@ export default function UptimePage() {
                       </h3>
                       {monitor.clients?.name &&
                         monitor.clients.name.trim().toLowerCase() !== monitor.name.trim().toLowerCase() && (
-                        <span className={styles.monitorClientName}>{monitor.clients.name}</span>
+                        <span className={styles.monitorClientName} title={monitor.clients.name}>{monitor.clients.name}</span>
                       )}
                     </div>
-                    
+
                     <div className={styles.statusWrapper}>
                       {monitor.status === 'online' ? (
                         <div className={styles.badgeOnline}>
