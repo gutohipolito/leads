@@ -113,6 +113,33 @@
   margin-bottom: 1.25rem;
 }
 
+/* Tira de destaque no topo do card, tingida pelo estado de saúde real do webhook */
+.healthStrip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+
+.healthStrip.health_active {
+  background: linear-gradient(90deg, #34d399, rgba(52, 211, 153, 0.25));
+}
+
+.healthStrip.health_stale {
+  background: linear-gradient(90deg, #f59e0b, rgba(245, 158, 11, 0.25));
+}
+
+.healthStrip.health_waiting {
+  background: linear-gradient(90deg, #64748b, rgba(100, 116, 139, 0.2));
+}
+
+.healthStrip.health_inactive {
+  background: linear-gradient(90deg, #ef4444, rgba(239, 68, 68, 0.25));
+}
+
 .typeIcon {
   width: 46px;
   height: 46px;
@@ -128,9 +155,37 @@
   box-shadow: 0 0 18px rgba(86, 215, 253, 0.1);
 }
 
+.typeIcon.health_active {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(52, 211, 153, 0.05));
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #34d399;
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.12);
+}
+
+.typeIcon.health_stale {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(245, 158, 11, 0.05));
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.12);
+}
+
+.typeIcon.health_waiting {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15), rgba(100, 116, 139, 0.05));
+  border-color: rgba(100, 116, 139, 0.25);
+  color: #94a3b8;
+  box-shadow: none;
+}
+
+.typeIcon.health_inactive {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.05));
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.12);
+}
+
 .compactCard:hover .typeIcon {
-  background: linear-gradient(135deg, rgba(86, 215, 253, 0.25), rgba(86, 215, 253, 0.1));
-  box-shadow: 0 0 24px rgba(86, 215, 253, 0.2);
+  filter: brightness(1.15);
+  box-shadow: 0 0 24px currentColor;
 }
 
 .mainInfo {
@@ -160,34 +215,71 @@
   text-overflow: ellipsis;
 }
 
-/* Status badge (substituindo bolinha simples) */
-.miniStatus {
-  width: 8px;
-  height: 8px;
-  min-width: 8px;
-  border-radius: 50%;
-  margin-top: 4px;
+/* Badge de saúde (substitui a bolinha simples) */
+.healthBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
-.miniStatus.active {
+.pulseDotSmall {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+}
+
+.healthBadge.health_active {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+.healthBadge.health_active .pulseDotSmall {
   background: #34d399;
-  box-shadow: 0 0 10px rgba(52, 211, 153, 0.6);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
   animation: pulseGreen 2s infinite;
 }
 
-.miniStatus.inactive {
+.healthBadge.health_stale {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.healthBadge.health_stale .pulseDotSmall {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+}
+
+.healthBadge.health_waiting {
+  background: rgba(100, 116, 139, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.22);
+}
+
+.healthBadge.health_waiting .pulseDotSmall {
+  background: #94a3b8;
+}
+
+.healthBadge.health_inactive {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.healthBadge.health_inactive .pulseDotSmall {
   background: #ef4444;
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
-}
-
-.miniStatus.stale {
-  background: #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
-}
-
-.miniStatus.waiting {
-  background: #64748b;
-  box-shadow: 0 0 6px rgba(100, 116, 139, 0.4);
 }
 
 @keyframes pulseGreen {
@@ -201,7 +293,7 @@
   font-size: 0.7rem;
   color: var(--muted-foreground);
   opacity: 0.55;
-  margin-bottom: 0.9rem;
+  margin-bottom: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -209,50 +301,102 @@
   letter-spacing: -0.01em;
 }
 
-/* Linha de estatísticas de atividade real (recebidos / última vez) */
-.cardStatsRow {
+/* Métricas em destaque (leads recebidos / última atividade) */
+.metricsRow {
   display: flex;
   gap: 0.6rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
 }
 
-.statPill {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.72rem;
-  color: var(--muted-foreground);
+.metricTile {
   flex: 1;
   min-width: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
-.statPill svg {
-  flex-shrink: 0;
-  color: var(--primary);
-  opacity: 0.75;
-}
-
-.statPill span {
-  font-weight: 700;
+.metricValue {
+  font-size: 1.02rem;
+  font-weight: 800;
   color: var(--foreground);
   white-space: nowrap;
-}
-
-.statPillTruncate {
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
 }
 
-.statPill small {
+.metricLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--muted-foreground);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   opacity: 0.8;
+}
+
+.metricLabel svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* Mini-gráfico de atividade diária (últimos N dias) */
+.activityWrapper {
+  margin-bottom: 1rem;
+}
+
+.activityLabel {
+  display: block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  opacity: 0.65;
+  margin-bottom: 0.4rem;
+}
+
+.activityBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+}
+
+.activityBar {
+  flex: 1;
+  height: 15%;
+  min-height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.activityBar:hover {
+  transform: scaleY(1.15);
+  opacity: 0.85;
+}
+
+.activityBarFilled.health_active {
+  background: linear-gradient(180deg, #34d399, rgba(52, 211, 153, 0.4));
+}
+
+.activityBarFilled.health_stale {
+  background: linear-gradient(180deg, #f59e0b, rgba(245, 158, 11, 0.4));
+}
+
+.activityBarFilled.health_waiting {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.activityBarFilled.health_inactive {
+  background: rgba(239, 68, 68, 0.5);
 }
 
 /* Rodapé do card */
@@ -265,29 +409,18 @@
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.briefItem {
+.cardBriefHint {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--muted-foreground);
+  transition: color 0.2s;
 }
 
-.briefStatusActive {
-  color: #34d399;
-}
-
-.briefStatusInactive {
-  color: #ef4444;
-}
-
-.briefStatusStale {
-  color: #f59e0b;
-}
-
-.briefStatusWaiting {
-  color: var(--muted-foreground);
+.compactCard:hover .cardBriefHint {
+  color: var(--primary);
 }
 
 .arrow {

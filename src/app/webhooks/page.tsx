@@ -50,6 +50,7 @@ import ConfirmModal from '@/components/ConfirmModal/ConfirmModal';
 // não diz se ele está realmente recebendo leads. Cruzamos com webhook_logs
 // pra distinguir integração viva de integração morta (sem sinal há dias).
 const WEBHOOK_STALE_DAYS = 14;
+const WEBHOOK_ACTIVITY_DAYS = 14;
 
 type WebhookHealth = 'active' | 'stale' | 'waiting' | 'inactive';
 
@@ -73,11 +74,11 @@ function formatLastReceived(iso: string | null): string {
   return `há ${diffMonths} ${diffMonths > 1 ? 'meses' : 'mês'}`;
 }
 
-const WEBHOOK_HEALTH_META: Record<WebhookHealth, { label: string; briefClass: string }> = {
-  active: { label: 'Ativo', briefClass: 'briefStatusActive' },
-  stale: { label: 'Sem atividade', briefClass: 'briefStatusStale' },
-  waiting: { label: 'Aguardando sinal', briefClass: 'briefStatusWaiting' },
-  inactive: { label: 'Inativo', briefClass: 'briefStatusInactive' },
+const WEBHOOK_HEALTH_META: Record<WebhookHealth, { label: string }> = {
+  active: { label: 'Ativo' },
+  stale: { label: 'Sem atividade' },
+  waiting: { label: 'Aguardando sinal' },
+  inactive: { label: 'Inativo' },
 };
 
 export default function WebhooksManagePage() {
@@ -256,7 +257,10 @@ export default function WebhooksManagePage() {
         if (webhooksData) {
           // Cruza com webhook_logs para saber quem realmente está recebendo sinal
           const webhookIds = webhooksData.map(w => w.id);
-          const activityByWebhook: Record<string, { count: number; lastAt: string }> = {};
+          const activityByWebhook: Record<string, { count: number; lastAt: string; daily: number[] }> = {};
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
           if (webhookIds.length > 0) {
             const { data: logsData } = await supabase
               .from('webhook_logs')
@@ -264,24 +268,31 @@ export default function WebhooksManagePage() {
               .in('webhook_id', webhookIds)
               .order('created_at', { ascending: false });
             logsData?.forEach(log => {
-              const entry = activityByWebhook[log.webhook_id];
-              if (entry) {
-                entry.count += 1;
-              } else {
-                // Primeira ocorrência de cada webhook_id já é a mais recente (ordenado desc)
-                activityByWebhook[log.webhook_id] = { count: 1, lastAt: log.created_at };
+              // Ordenado desc: a primeira ocorrência de cada webhook_id já é a mais recente (lastAt)
+              const entry = activityByWebhook[log.webhook_id] || { count: 0, lastAt: log.created_at, daily: Array(WEBHOOK_ACTIVITY_DAYS).fill(0) };
+              entry.count += 1;
+
+              const logDayStart = new Date(log.created_at);
+              logDayStart.setHours(0, 0, 0, 0);
+              const daysAgo = Math.round((todayStart.getTime() - logDayStart.getTime()) / 86400000);
+              if (daysAgo >= 0 && daysAgo < WEBHOOK_ACTIVITY_DAYS) {
+                entry.daily[WEBHOOK_ACTIVITY_DAYS - 1 - daysAgo] += 1;
               }
+              activityByWebhook[log.webhook_id] = entry;
             });
           }
 
           setWebhooks(webhooksData.map(w => {
             const activity = activityByWebhook[w.id];
+            const daily = activity?.daily || Array(WEBHOOK_ACTIVITY_DAYS).fill(0);
             return {
               ...w,
               clientName: w.clients?.name || 'N/A',
               fullUrl: `${window.location.origin}/api/leads/${w.client_id}`,
               totalReceived: activity?.count || 0,
-              lastReceivedAt: activity?.lastAt || null
+              lastReceivedAt: activity?.lastAt || null,
+              dailyActivity: daily,
+              dailyActivityMax: Math.max(1, ...daily)
             };
           }));
         }
@@ -525,35 +536,56 @@ export default function WebhooksManagePage() {
               {webhooks.map((webhook) => {
                 const health = getWebhookHealth(webhook);
                 const healthMeta = WEBHOOK_HEALTH_META[health];
+                const healthClass = styles[`health_${health}`];
+                const HealthIcon = health === 'stale' ? AlertTriangle : health === 'inactive' ? ShieldAlert : health === 'waiting' ? Clock : Zap;
                 return (
-                  <div key={webhook.id} className={`${styles.compactCard} glass`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
+                  <div key={webhook.id} className={`${styles.compactCard} glass ${healthClass}`} onClick={() => { setSelectedWebhook(webhook); setIsDetailsModalOpen(true); }}>
+                    <div className={`${styles.healthStrip} ${healthClass}`} />
+
                     <div className={styles.cardHeaderCompact}>
-                      <div className={styles.typeIcon}><Server size={20} /></div>
+                      <div className={`${styles.typeIcon} ${healthClass}`}><Server size={20} /></div>
                       <div className={styles.mainInfo}>
                         {isAdmin && <span className={styles.clientTag}>{webhook.clientName}</span>}
                         <h4>{webhook.name}</h4>
                       </div>
-                      <div className={`${styles.miniStatus} ${styles[health]}`} title={healthMeta.label} />
+                      <div className={`${styles.healthBadge} ${healthClass}`}>
+                        <span className={styles.pulseDotSmall} />
+                        <span>{healthMeta.label}</span>
+                      </div>
                     </div>
+
                     <div className={styles.cardUrl}>{webhook.fullUrl}</div>
 
-                    <div className={styles.cardStatsRow}>
-                      <div className={styles.statPill}>
-                        <Inbox size={13} />
-                        <span>{webhook.totalReceived}</span>
-                        <small>recebidos</small>
+                    <div className={styles.metricsRow}>
+                      <div className={styles.metricTile}>
+                        <span className={styles.metricValue}>{webhook.totalReceived}</span>
+                        <span className={styles.metricLabel}><Inbox size={11} /> Leads recebidos</span>
                       </div>
-                      <div className={styles.statPill}>
-                        <Clock size={13} />
-                        <span className={styles.statPillTruncate}>{formatLastReceived(webhook.lastReceivedAt)}</span>
+                      <div className={styles.metricTile}>
+                        <span className={styles.metricValue}>{formatLastReceived(webhook.lastReceivedAt)}</span>
+                        <span className={styles.metricLabel}><Clock size={11} /> Última atividade</span>
+                      </div>
+                    </div>
+
+                    <div className={styles.activityWrapper}>
+                      <span className={styles.activityLabel}>Atividade ({WEBHOOK_ACTIVITY_DAYS} dias)</span>
+                      <div className={styles.activityBars}>
+                        {webhook.dailyActivity.map((count: number, i: number) => (
+                          <div
+                            key={i}
+                            className={`${styles.activityBar} ${count > 0 ? `${styles.activityBarFilled} ${healthClass}` : ''}`}
+                            style={{ height: count > 0 ? `${Math.max(18, (count / webhook.dailyActivityMax) * 100)}%` : undefined }}
+                            title={`${count} lead${count === 1 ? '' : 's'}`}
+                          />
+                        ))}
                       </div>
                     </div>
 
                     <div className={styles.cardBrief}>
-                      <div className={`${styles.briefItem} ${styles[healthMeta.briefClass]}`}>
-                        {health === 'stale' ? <AlertTriangle size={13} /> : health === 'inactive' ? <ShieldAlert size={13} /> : health === 'waiting' ? <Clock size={13} /> : <Zap size={13} />}
-                        <span>{healthMeta.label}</span>
-                      </div>
+                      <span className={styles.cardBriefHint}>
+                        <HealthIcon size={13} />
+                        Ver configurações
+                      </span>
                       <ArrowRight size={15} className={styles.arrow} />
                     </div>
                   </div>
