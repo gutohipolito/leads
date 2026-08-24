@@ -1126,9 +1126,14 @@ export default function UptimePage() {
                     <div className={styles.monitorInfo}>
                       <h3>
                         {monitor.name}
-                        <button 
-                          type="button" 
-                          className={styles.editTitleBtn} 
+                        {monitor.source === 'auto' && (
+                          <span className={styles.autoBadge} title="Criado automaticamente a partir do cadastro do cliente">
+                            Automático
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className={styles.editTitleBtn}
                           onClick={() => openEditModal(monitor)}
                           title="Editar Monitor"
                         >

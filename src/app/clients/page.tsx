@@ -56,6 +56,7 @@ export default function ClientsPage() {
   const [newClientName, setNewClientName] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
   const [newClientCnpj, setNewClientCnpj] = useState('');
+  const [newClientSiteUrl, setNewClientSiteUrl] = useState('');
   const [newClientLogo, setNewClientLogo] = useState('');
   const [newClientLogoBg, setNewClientLogoBg] = useState('#ffffff');
   const [newClientPrimaryColor, setNewClientPrimaryColor] = useState('#56d7fd');
@@ -234,15 +235,23 @@ export default function ClientsPage() {
     }
   };
 
+  const normalizeSiteUrl = (rawUrl: string) => {
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      const normalizedSiteUrl = normalizeSiteUrl(newClientSiteUrl);
       const { data, error } = await supabase
         .from('clients')
-        .insert([{ 
+        .insert([{
           name: newClientName,
+          site_url: normalizedSiteUrl || null,
           logo_url: newClientLogo,
           logo_bg: newClientLogoBg,
           primary_color: newClientPrimaryColor,
@@ -256,11 +265,31 @@ export default function ClientsPage() {
       } else {
         if (data) {
           await logAction('Cliente Criado', 'client', data.id, { name: data.name });
+
+          if (normalizedSiteUrl) {
+            try {
+              await supabase.from('uptime_monitors').insert({
+                client_id: data.id,
+                name: data.name,
+                url: normalizedSiteUrl,
+                status: 'checking',
+                source: 'auto'
+              });
+              await logAction('Monitor de Uptime Adicionado', 'client', data.id, {
+                name: data.name,
+                url: normalizedSiteUrl,
+                source: 'auto'
+              });
+            } catch (monitorErr) {
+              console.error('Erro ao criar monitor de uptime automático:', monitorErr);
+            }
+          }
         }
         showAlert('Sucesso', 'Cliente provisionado com sucesso!', 'success');
         setIsModalOpen(false);
         setNewClientName('');
         setNewClientEmail('');
+        setNewClientSiteUrl('');
         setNewClientLogo('');
         setNewClientIsEcommerce(false);
         loadClients();
@@ -278,10 +307,12 @@ export default function ClientsPage() {
 
     setIsSubmitting(true);
     try {
+      const normalizedSiteUrl = normalizeSiteUrl(editingClient.site_url || '');
       const { error } = await supabase
         .from('clients')
-        .update({ 
+        .update({
           name: editingClient.name,
+          site_url: normalizedSiteUrl || null,
           logo_url: editingClient.logo_url,
           logo_bg: editingClient.logo_bg,
           primary_color: editingClient.primary_color,
@@ -293,6 +324,37 @@ export default function ClientsPage() {
         showAlert('Erro ao Atualizar', 'Erro ao atualizar cliente: ' + error.message, 'danger');
       } else {
         await logAction('Cliente Atualizado', 'client', editingClient.id, { name: editingClient.name });
+
+        if (normalizedSiteUrl) {
+          try {
+            const { data: autoMonitor } = await supabase
+              .from('uptime_monitors')
+              .select('id, url')
+              .eq('client_id', editingClient.id)
+              .eq('source', 'auto')
+              .maybeSingle();
+
+            if (autoMonitor) {
+              if (autoMonitor.url !== normalizedSiteUrl) {
+                await supabase
+                  .from('uptime_monitors')
+                  .update({ url: normalizedSiteUrl, status: 'checking' })
+                  .eq('id', autoMonitor.id);
+              }
+            } else {
+              await supabase.from('uptime_monitors').insert({
+                client_id: editingClient.id,
+                name: editingClient.name,
+                url: normalizedSiteUrl,
+                status: 'checking',
+                source: 'auto'
+              });
+            }
+          } catch (monitorErr) {
+            console.error('Erro ao sincronizar monitor de uptime automático:', monitorErr);
+          }
+        }
+
         showAlert('Sucesso', 'Dados atualizados com sucesso!', 'success');
         setIsEditModalOpen(false);
         loadClients();
@@ -1125,11 +1187,20 @@ export default function ClientsPage() {
                 </div>
                 <div className={styles.inputGroup}>
                   <label>E-mail Administrativo (Opcional)</label>
-                  <input 
-                    type="email" 
-                    placeholder="empresa@exemplo.com" 
+                  <input
+                    type="email"
+                    placeholder="empresa@exemplo.com"
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>URL do Site (Opcional - cria o monitor de Uptime automaticamente)</label>
+                  <input
+                    type="text"
+                    placeholder="https://exemplo.com"
+                    value={newClientSiteUrl}
+                    onChange={(e) => setNewClientSiteUrl(e.target.value)}
                   />
                 </div>
                 <div className={styles.inputGroup}>
@@ -1218,11 +1289,20 @@ export default function ClientsPage() {
               <form className={styles.form} onSubmit={handleUpdateClient}>
                 <div className={styles.inputGroup}>
                   <label>Nome da Empresa/Cliente</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editingClient.name}
                     onChange={(e) => setEditingClient({...editingClient, name: e.target.value})}
-                    required 
+                    required
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>URL do Site (Opcional - sincroniza o monitor de Uptime automaticamente)</label>
+                  <input
+                    type="text"
+                    placeholder="https://exemplo.com"
+                    value={editingClient.site_url || ''}
+                    onChange={(e) => setEditingClient({...editingClient, site_url: e.target.value})}
                   />
                 </div>
                 <div className={styles.inputGroup}>

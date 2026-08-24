@@ -200,6 +200,19 @@
   margin-top: -0.1rem;
 }
 
+.autoBadge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
 .editTitleBtn {
   background: transparent;
   border: none;
