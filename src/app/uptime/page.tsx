@@ -1189,10 +1189,16 @@ export default function UptimePage() {
                     <div className={styles.monitorInfo}>
                       <h3>
                         <span className={styles.monitorNameText} title={monitor.name}>{monitor.name}</span>
+                      </h3>
+                      <div className={styles.monitorMetaRow}>
                         {monitor.source === 'auto' && (
                           <span className={styles.autoBadge} title="Criado automaticamente a partir do cadastro do cliente">
                             Automático
                           </span>
+                        )}
+                        {monitor.clients?.name &&
+                          monitor.clients.name.trim().toLowerCase() !== monitor.name.trim().toLowerCase() && (
+                          <span className={styles.monitorClientName} title={monitor.clients.name}>{monitor.clients.name}</span>
                         )}
                         <button
                           type="button"
@@ -1202,11 +1208,7 @@ export default function UptimePage() {
                         >
                           <Pencil size={12} />
                         </button>
-                      </h3>
-                      {monitor.clients?.name &&
-                        monitor.clients.name.trim().toLowerCase() !== monitor.name.trim().toLowerCase() && (
-                        <span className={styles.monitorClientName} title={monitor.clients.name}>{monitor.clients.name}</span>
-                      )}
+                      </div>
                     </div>
 
                     <div className={styles.statusWrapper}>
