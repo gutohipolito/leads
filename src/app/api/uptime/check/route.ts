@@ -4,6 +4,45 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 // Força que a API seja sempre processada de forma dinâmica
 export const dynamic = 'force-dynamic';
 
+// Traduz o erro de rede/TLS do Node (geralmente genérico, ex: "fetch failed")
+// em uma mensagem legível, olhando para a causa real (err.cause) quando disponível.
+function describeFetchError(err: any): string {
+  if (err?.name === 'AbortError') {
+    return 'Timeout (15s) — o servidor não respondeu a tempo';
+  }
+
+  const cause = err?.cause;
+  const code = cause?.code || err?.code;
+  const rawMessage = cause?.message || err?.message || 'Erro de rede desconhecido';
+
+  switch (code) {
+    case 'CERT_HAS_EXPIRED':
+      return 'Certificado SSL expirado';
+    case 'DEPTH_ZERO_SELF_SIGNED_CERT':
+    case 'SELF_SIGNED_CERT_IN_CHAIN':
+      return 'Certificado SSL autoassinado/inválido';
+    case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
+      return 'Certificado SSL não confiável (cadeia incompleta)';
+    case 'ERR_TLS_CERT_ALTNAME_INVALID':
+      return 'Certificado SSL não corresponde ao domínio (hostname mismatch)';
+    case 'ENOTFOUND':
+    case 'EAI_AGAIN':
+      return 'Domínio não encontrado (DNS)';
+    case 'ECONNREFUSED':
+      return 'Conexão recusada pelo servidor';
+    case 'ECONNRESET':
+      return 'Conexão interrompida pelo servidor';
+    case 'ERR_TLS_CERT_EXPIRED':
+      return 'Certificado SSL expirado';
+  }
+
+  if (/certificate|ssl|tls/i.test(rawMessage)) {
+    return `Erro de SSL/TLS: ${rawMessage}`;
+  }
+
+  return rawMessage;
+}
+
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization') || '';
@@ -133,7 +172,7 @@ export async function GET(request: Request) {
           } catch (getErr: any) {
             responseTimeMs = Date.now() - startTime;
             status = 'offline';
-            errorMessage = getErr.name === 'AbortError' ? 'Timeout (15s)' : (getErr.message || 'Erro de rede');
+            errorMessage = describeFetchError(getErr);
           }
         }
       }

@@ -270,6 +270,31 @@
   color: var(--primary);
 }
 
+.offlineReason {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.offlineReason svg {
+  flex-shrink: 0;
+}
+
+.offlineReason span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .statusWrapper {
   display: flex;
   align-items: center;

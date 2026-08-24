@@ -1173,6 +1173,8 @@ export default function UptimePage() {
               // Preenche histórico com barras vazias caso haja menos de 30 verificações
               const emptyBarsCount = Math.max(0, 30 - monitor.logs.length);
               const emptyBars = Array.from({ length: emptyBarsCount });
+              const lastLog = monitor.logs[monitor.logs.length - 1];
+              const offlineReason = monitor.status === 'offline' ? lastLog?.error_message : null;
 
               return (
                 <div 
@@ -1240,6 +1242,13 @@ export default function UptimePage() {
                     <span>{monitor.url}</span>
                     <ExternalLink size={12} />
                   </a>
+
+                  {offlineReason && (
+                    <div className={styles.offlineReason} title={offlineReason}>
+                      <AlertTriangle size={13} />
+                      <span>{offlineReason}</span>
+                    </div>
+                  )}
 
                   {/* Histórico Visual de Pings */}
                   <div className={styles.chartAndUptime}>
